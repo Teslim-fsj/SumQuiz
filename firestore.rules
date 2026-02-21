@@ -1,0 +1,66 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) 
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['isPro', 'isPremium', 'subscriptionExpiry', 'currentProduct']);
+    }
+
+    // Payments Collection
+    match /payments/{txRef} {
+      allow read: if isAuthenticated() && (
+        !resource.data.uid || resource.data.uid == request.auth.uid
+      );
+    }
+
+    // Content Collections (Summaries, Quizzes, Flashcard Sets)
+    match /users/{userId}/{collection}/{contentId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Folders Collection
+    match /users/{userId}/folders/{folderId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Content-Folder Relationships
+    match /users/{userId}/content_folders/{contentFolderId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Public Decks Collection
+    match /public_decks/{deckId} {
+      allow read: if true; // Publicly accessible
+      
+      // Allow creation if user is authenticated and has the creator role
+      allow create: if isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'creator';
+      
+      // Allow update/delete if the user is the original creator
+      allow update, delete: if isAuthenticated() && 
+        resource.data.creatorId == request.auth.uid;
+
+      // Views subcollection for tracking unique views and Creator Bonus
+      match /views/{viewerId} {
+        allow read: if isAuthenticated();
+        // Allow recording a view via transaction (as seen in FirestoreService)
+        allow create: if isAuthenticated() && request.auth.uid == viewerId;
+      }
+    }
+  }
+}

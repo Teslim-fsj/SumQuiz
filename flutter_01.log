@@ -1,0 +1,62 @@
+Flutter crash report.
+Please report a bug at https://github.com/flutter/flutter/issues.
+
+## command
+
+flutter analyze .
+
+## exception
+
+_Exception: Exception: analysis server exited with code -1073740791 and output:
+[stdout] {"event":"server.connected","params":{"version":"1.40.0","pid":552}}
+[stdout] {"id":"1"}
+[stderr] ../../runtime/vm/zone.cc: 96: error: Out of memory.
+[stderr] version=3.10.3 (stable) (Tue Dec 2 01:04:53 2025 -0800) on "windows_x64"
+[stderr] pid=552, thread=436, isolate_group=main(000001D1692BDFD0), isolate=(nil)(0000000000000000)
+[stderr] os=windows, arch=x64, comp=no, sim=no
+[stderr] isolate_instructions=1d16e010000, vm_instructions=7ff637758080
+[stderr] fp=9b851fe080, sp=9b851fe038, pc=7ff637a3da13
+[stderr]   pc 0x00007ff637a3da13 fp 0x0000009b851fe080 Dart_DetectNullSafety+0x2dd303
+[stderr] -- End of DumpStackTrace
+[stderr] ../../runtime/vm/zone.cc: 96: error: Out of memory.
+[stderr] Aborting reentrant request for stack trace.
+
+```
+```
+
+## flutter doctor
+
+```
+[✓] Flutter (Channel stable, 3.38.4, on Microsoft Windows [Version 10.0.22631.6199], locale en-US) [671ms]
+    • Flutter version 3.38.4 on channel stable at C:\src\flutter
+    • Upstream repository https://github.com/flutter/flutter.git
+    • Framework revision 66dd93f9a2 (5 weeks ago), 2025-12-03 14:56:10 -0800
+    • Engine revision a5cb96369e
+    • Dart version 3.10.3
+    • DevTools version 2.51.1
+    • Feature flags: enable-web, enable-linux-desktop, enable-macos-desktop, enable-windows-desktop, enable-android, enable-ios, cli-animations, enable-native-assets, omit-legacy-version-file, enable-lldb-debugging
+
+[✓] Windows Version (11 Home 64-bit, 23H2, 2009) [18.5s]
+
+[✗] Android toolchain - develop for Android devices [127ms]
+    ✗ ANDROID_HOME = C:\FlutterAndroidSdk
+      but Android SDK not found at this location.
+
+[✓] Chrome - develop for the web [26ms]
+    • Chrome at C:\Users\hp\AppData\Local\Google\Chrome\Application\chrome.exe
+
+[✗] Visual Studio - develop Windows apps [23ms]
+    ✗ Visual Studio not installed; this is necessary to develop Windows apps.
+      Download at https://visualstudio.microsoft.com/downloads/.
+      Please install the "Desktop development with C++" workload, including all of its default components
+
+[✓] Connected device (3 available) [587ms]
+    • Windows (desktop) • windows • windows-x64    • Microsoft Windows [Version 10.0.22631.6199]
+    • Chrome (web)      • chrome  • web-javascript • Google Chrome 143.0.7499.170
+    • Edge (web)        • edge    • web-javascript • Microsoft Edge 143.0.3650.96
+
+[✓] Network resources [4.2s]
+    • All expected network resources are available.
+
+! Doctor found issues in 2 categories.
+```

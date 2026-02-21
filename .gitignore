@@ -1,0 +1,64 @@
+# Flutter/Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+*.dill
+*.dill.incremental
+*.freezed.dart
+*.g.dart
+
+# Android
+android/.gradle/
+android/gradle/
+android/local.properties
+android/key.properties
+android/*.keystore
+android/*.jks
+*.apk
+*.aab
+**/res/drawable-*/splash.png
+**/res/drawable-*/android12splash.png
+**/res/drawable-night-*/android12splash.png
+
+# iOS
+ios/.generated/
+ios/.tags/
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/ServiceDefinitions.json
+ios/Runner/GeneratedPluginRegistrant.*
+Pods/
+*.ipa
+
+# Firebase / Functions / Node
+**/node_modules/
+node_modules/
+functions/node_modules/
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+package-lock.json
+
+# Web
+web/splash/img/*.png
+web/icons/*.png
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.DS_Store
+
+# Misc
+.env
+analysis.txt
+*.log
+upload-key.pem
+upload-key.jks
+hs_err_pid*.log
+*.backup
+Untitled-1

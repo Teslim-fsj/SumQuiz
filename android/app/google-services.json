@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "1063163612294",
+    "project_id": "sumquiz-3d54e",
+    "storage_bucket": "sumquiz-3d54e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1063163612294:android:c2eddda0afa793abedd507",
+        "android_client_info": {
+          "package_name": "com.sumquiz.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1063163612294-bqbcsmmkeao9dfjer4qmro6j2tkv1lur.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sumquiz.app",
+            "certificate_hash": "5e6add74ffe573e69d194c9e9cc0c7416f395d84"
+          }
+        },
+        {
+          "client_id": "1063163612294-8abrnbldcd6jnijs9gino78uqq3ov52t.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCrbOH8ycFvKcIiyJ8vXnRvUQF2zBVVnso"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1063163612294-8abrnbldcd6jnijs9gino78uqq3ov52t.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1063163612294-72pkatrrl1lb6bmikpk1de87b3dgjcce.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.sumquiz.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
