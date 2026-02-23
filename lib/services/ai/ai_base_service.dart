@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:async';
 import 'dart:math';
 import 'package:google_generative_ai/google_generative_ai.dart';
