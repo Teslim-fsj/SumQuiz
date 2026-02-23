@@ -35,8 +35,8 @@ android {
         applicationId = "com.sumquiz.app"
         minSdk = 26
         targetSdk = 35  // ← Updated to 35 (safe & recommended)
-        versionCode = 21
-        versionName = "1.1.11"
+        versionCode = 22
+        versionName = "1.1.12"
         multiDexEnabled = true
     }
 
