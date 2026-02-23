@@ -5,11 +5,13 @@ import 'package:sumquiz/models/local_quiz.dart';
 import 'package:sumquiz/models/local_flashcard_set.dart';
 import 'package:sumquiz/models/local_quiz_question.dart';
 import 'package:sumquiz/models/local_flashcard.dart';
+import 'package:sumquiz/utils/cancellation_token.dart';
 import 'ai_base_service.dart';
 import 'dart:developer' as developer;
 
 class GeneratorAIService extends AIBaseService {
-  Future<LocalSummary> generateSummary(String text, {String? userId}) async {
+  Future<LocalSummary> generateSummary(String text,
+      {String? userId, CancellationToken? cancelToken}) async {
     developer.log('Generating summary for text length: ${text.length}',
         name: 'GeneratorAIService');
     final config = GenerationConfig(
@@ -46,20 +48,24 @@ OUTPUT REQUIREMENTS:
 Text: $text''';
 
     try {
-      final response =
-          await generateWithRetry(prompt, generationConfig: config);
+      final response = await generateWithRetry(prompt,
+          generationConfig: config, cancelToken: cancelToken);
       developer.log('AI Response received for summary',
           name: 'GeneratorAIService');
       final jsonStr = extractJson(response);
-      final data = json.decode(jsonStr);
+      final dynamic decoded = json.decode(jsonStr);
+      final Map<String, dynamic> data =
+          decoded is Map<String, dynamic> ? decoded : {};
 
       return LocalSummary(
         id: '', // To be set by caller
         userId: userId ?? '',
-        title: data['title'] ?? 'Study Guide',
-        content: data['content'] ?? '',
+        title: data['title']?.toString() ?? 'Study Guide',
+        content: data['content']?.toString() ?? '',
         timestamp: DateTime.now(),
-        tags: List<String>.from(data['tags'] ?? []),
+        tags: data['tags'] is List
+            ? (data['tags'] as List).map((e) => e.toString()).toList()
+            : [],
       );
     } catch (e, stack) {
       developer.log('Summary generation failed',
@@ -69,7 +75,9 @@ Text: $text''';
   }
 
   Future<LocalQuiz> generateQuiz(String text,
-      {String? userId, int questionCount = 10}) async {
+      {String? userId,
+      int questionCount = 10,
+      CancellationToken? cancelToken}) async {
     developer.log(
         'Generating quiz ($questionCount questions) for text length: ${text.length}',
         name: 'GeneratorAIService');
@@ -115,25 +123,37 @@ Text: $text''';
 
     try {
       final response = await generateWithRetry(prompt,
-          customModel: proModel, generationConfig: config);
+          customModel: proModel,
+          generationConfig: config,
+          cancelToken: cancelToken);
       developer.log('AI Response received for quiz',
           name: 'GeneratorAIService');
       final jsonStr = extractJson(response);
-      final data = json.decode(jsonStr);
+      final dynamic decoded = json.decode(jsonStr);
+      final Map<String, dynamic> data =
+          decoded is Map<String, dynamic> ? decoded : {};
 
-      final questions = (data['questions'] as List)
-          .map((q) => LocalQuizQuestion(
-                question: q['question'],
-                options: List<String>.from(q['options']),
-                correctAnswer: q['correctAnswer'],
-                explanation: q['explanation'],
-              ))
-          .toList();
+      final questionsData = data['questions'];
+      final List<LocalQuizQuestion> questions = [];
+      if (questionsData is List) {
+        for (final q in questionsData) {
+          if (q is Map) {
+            questions.add(LocalQuizQuestion(
+              question: q['question']?.toString() ?? 'Unknown Question',
+              options: q['options'] is List
+                  ? (q['options'] as List).map((e) => e.toString()).toList()
+                  : [],
+              correctAnswer: q['correctAnswer']?.toString() ?? '',
+              explanation: q['explanation']?.toString(),
+            ));
+          }
+        }
+      }
 
       return LocalQuiz(
         id: '',
         userId: userId ?? '',
-        title: data['title'] ?? 'Quick Quiz',
+        title: data['title']?.toString() ?? 'Quick Quiz',
         questions: questions,
         timestamp: DateTime.now(),
       );
@@ -145,7 +165,9 @@ Text: $text''';
   }
 
   Future<LocalFlashcardSet> generateFlashcards(String text,
-      {String? userId, int cardCount = 15}) async {
+      {String? userId,
+      int cardCount = 15,
+      CancellationToken? cancelToken}) async {
     developer.log(
         'Generating flashcards ($cardCount) for text length: ${text.length}',
         name: 'GeneratorAIService');
@@ -182,23 +204,33 @@ Text: $text''';
 
     try {
       final response = await generateWithRetry(prompt,
-          customModel: proModel, generationConfig: config);
+          customModel: proModel,
+          generationConfig: config,
+          cancelToken: cancelToken);
       developer.log('AI Response received for flashcards',
           name: 'GeneratorAIService');
       final jsonStr = extractJson(response);
-      final data = json.decode(jsonStr);
+      final dynamic decoded = json.decode(jsonStr);
+      final Map<String, dynamic> data =
+          decoded is Map<String, dynamic> ? decoded : {};
 
-      final flashcards = (data['flashcards'] as List)
-          .map((f) => LocalFlashcard(
-                question: f['question'],
-                answer: f['answer'],
-              ))
-          .toList();
+      final flashcardsData = data['flashcards'];
+      final List<LocalFlashcard> flashcards = [];
+      if (flashcardsData is List) {
+        for (final f in flashcardsData) {
+          if (f is Map) {
+            flashcards.add(LocalFlashcard(
+              question: f['question']?.toString() ?? '...',
+              answer: f['answer']?.toString() ?? '...',
+            ));
+          }
+        }
+      }
 
       return LocalFlashcardSet(
         id: '',
         userId: userId ?? '',
-        title: data['title'] ?? 'Flashcards',
+        title: data['title']?.toString() ?? 'Flashcards',
         flashcards: flashcards,
         timestamp: DateTime.now(),
       );
@@ -209,7 +241,8 @@ Text: $text''';
     }
   }
 
-  Future<String> refineContent(String rawText) async {
+  Future<String> refineContent(String rawText,
+      {CancellationToken? cancelToken}) async {
     developer.log('Refining content for text length: ${rawText.length}',
         name: 'GeneratorAIService');
     final prompt =
@@ -239,10 +272,14 @@ Return ONLY valid JSON:
 
 Text: $rawText''';
     try {
-      final response = await generateWithRetry(prompt);
+      final response =
+          await generateWithRetry(prompt, cancelToken: cancelToken);
       final jsonStr = extractJson(response);
-      final data = json.decode(jsonStr);
-      return data['cleanedText'] ?? response;
+      final dynamic decoded = json.decode(jsonStr);
+      if (decoded is Map<String, dynamic>) {
+        return decoded['cleanedText']?.toString() ?? response;
+      }
+      return response;
     } catch (e) {
       developer.log('RefineContent error',
           name: 'GeneratorAIService', error: e);
@@ -254,6 +291,7 @@ Text: $rawText''';
     required String topic,
     String depth = 'intermediate',
     int cardCount = 15,
+    CancellationToken? cancelToken,
   }) async {
     developer.log(
         'Generating from topic: $topic (depth: $depth, cards: $cardCount)',
@@ -298,9 +336,15 @@ Text: $rawText''';
       ]
     }''';
 
-    final response = await generateWithRetry(prompt, customModel: proModel);
+    final response = await generateWithRetry(prompt,
+        customModel: proModel, cancelToken: cancelToken);
     final jsonStr = extractJson(response);
-    return json.decode(jsonStr);
+    final dynamic decoded = json.decode(jsonStr);
+    if (decoded is Map<String, dynamic>) {
+      return decoded;
+    }
+    throw AIServiceException('Malformed AI response for topic generation',
+        code: 'MALFORMED_RESPONSE');
   }
 
   Future<LocalQuiz> generateExam({
@@ -312,6 +356,7 @@ Text: $rawText''';
     required List<String> questionTypes,
     required double difficultyMix,
     String? userId,
+    CancellationToken? cancelToken,
   }) async {
     final config = GenerationConfig(
       responseMimeType: 'application/json',
@@ -368,21 +413,32 @@ Text: $rawText''';
     Source: $text''';
 
     final response = await generateWithRetry(prompt,
-        customModel: proModel, generationConfig: config);
+        customModel: proModel,
+        generationConfig: config,
+        cancelToken: cancelToken);
     developer.log('AI Response received for exam generation',
         name: 'GeneratorAIService');
     final jsonStr = extractJson(response);
-    final data = json.decode(jsonStr);
+    final dynamic decoded = json.decode(jsonStr);
+    final Map<String, dynamic> data =
+        decoded is Map<String, dynamic> ? decoded : {};
 
-    final questions = (data['questions'] as List)
-        .map((q) => LocalQuizQuestion(
-              question: q['question'],
-              options:
-                  q['options'] != null ? List<String>.from(q['options']) : [],
-              correctAnswer: q['correctAnswer'],
-              explanation: q['explanation'],
-            ))
-        .toList();
+    final questionsData = data['questions'];
+    final List<LocalQuizQuestion> questions = [];
+    if (questionsData is List) {
+      for (final q in questionsData) {
+        if (q is Map) {
+          questions.add(LocalQuizQuestion(
+            question: q['question']?.toString() ?? 'Unknown Question',
+            options: q['options'] is List
+                ? (q['options'] as List).map((e) => e.toString()).toList()
+                : [],
+            correctAnswer: q['correctAnswer']?.toString() ?? '',
+            explanation: q['explanation']?.toString(),
+          ));
+        }
+      }
+    }
 
     return LocalQuiz(
       id: '',

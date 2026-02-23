@@ -87,7 +87,7 @@ class WebAIService extends AIBaseService {
         name: 'WebAIService');
     try {
       cancelToken?.throwIfCancelled();
-      final result = await _analyzeWithGemini(url)
+      final result = await _analyzeWithGemini(url, cancelToken: cancelToken)
           .timeout(Duration(seconds: AIConfig.youtubeTimeoutSeconds));
 
       if (result != null && result.text.trim().length >= 50) {
@@ -114,7 +114,8 @@ class WebAIService extends AIBaseService {
   }
 
   /// Tier 2: Send the URL to Gemini for AI-powered content extraction.
-  Future<ExtractionResult?> _analyzeWithGemini(String url) async {
+  Future<ExtractionResult?> _analyzeWithGemini(String url,
+      {CancellationToken? cancelToken}) async {
     if (!await ensureInitialized()) return null;
 
     final config = GenerationConfig(
@@ -154,14 +155,17 @@ OUTPUT FORMAT (JSON):
       prompt,
       customModel: model,
       generationConfig: config,
+      cancelToken: cancelToken,
     );
     final jsonStr = extractJson(response);
-    final data = json.decode(jsonStr);
+    final dynamic decoded = json.decode(jsonStr);
+    final Map<String, dynamic> data =
+        decoded is Map<String, dynamic> ? decoded : {};
 
-    final content = data['content'] ?? '';
-    final title = data['title'] ?? 'Web Page';
+    final content = data['content']?.toString() ?? '';
+    final title = data['title']?.toString() ?? 'Web Page';
 
-    if (content.toString().trim().isEmpty) return null;
+    if (content.trim().isEmpty) return null;
 
     return ExtractionResult(
       text: content,

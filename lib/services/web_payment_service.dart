@@ -115,7 +115,11 @@ class WebPaymentService {
   Future<List<ProductDetails>> getAvailableProducts() async {
     // Simulate network delay if needed, or just return static list
     await Future.delayed(const Duration(milliseconds: 500));
-    return webProducts;
+    // Only return Monthly and Yearly for the core subscription offering
+    return webProducts
+        .where((p) =>
+            p.id == 'sumquiz_pro_monthly' || p.id == 'sumquiz_pro_yearly')
+        .toList();
   }
 
   Future<WebPaymentResult> processWebPurchase({

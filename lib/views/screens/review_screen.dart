@@ -26,6 +26,7 @@ import '../../services/spaced_repetition_service.dart';
 import 'package:rxdart/rxdart.dart';
 import 'exam_creation_screen.dart';
 import '../../services/content_extraction_service.dart';
+import '../../utils/cancellation_token.dart';
 import '../../services/usage_service.dart';
 import '../../services/iap_service.dart';
 import '../widgets/extraction_progress_dialog.dart';
@@ -268,7 +269,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
         children: [
           SpeedDialChild(
             child: const Icon(Icons.school),
-            label: 'Tutor/Teacher Exam',
+            label: 'Tutor Exam',
             backgroundColor: Colors.amber,
             foregroundColor: Colors.white,
             onTap: () => _checkAccess(
@@ -286,6 +287,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             backgroundColor: Colors.redAccent,
             foregroundColor: Colors.white,
             onTap: () => _checkAccess(
+              requirePro: true,
               actionType: 'upload',
               action: () =>
                   _pickAndExtractFile(['pdf', 'doc', 'docx', 'ppt', 'pptx']),
@@ -297,6 +299,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             backgroundColor: Colors.blueAccent,
             foregroundColor: Colors.white,
             onTap: () => _checkAccess(
+              requirePro: true,
               actionType: 'text',
               action: _showLinkDialog,
             ),
@@ -307,6 +310,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             backgroundColor: Colors.orangeAccent,
             foregroundColor: Colors.white,
             onTap: () => _checkAccess(
+              requirePro: true,
               actionType: 'upload',
               action: () => _pickAndExtractImage(ImageSource.camera),
             ),
@@ -317,6 +321,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             backgroundColor: Colors.purpleAccent,
             foregroundColor: Colors.white,
             onTap: () => _checkAccess(
+              requirePro: true,
               actionType: 'upload',
               action: () => _pickAndExtractFile(['mp3', 'wav', 'm4a']),
             ),
@@ -1515,9 +1520,27 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
       if (result != null && result.files.isNotEmpty) {
         final file = result.files.single;
+        String? mimeType;
+        final extension = file.extension?.toLowerCase() ?? '';
+
+        if (extension == 'pdf') {
+          mimeType = 'application/pdf';
+        } else if (extension == 'doc' || extension == 'docx') {
+          mimeType =
+              'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        } else if (extension == 'ppt' || extension == 'pptx') {
+          mimeType =
+              'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+        } else if (['mp3', 'wav', 'm4a', 'aac'].contains(extension)) {
+          mimeType = 'audio/mpeg';
+        }
+
         await _processExtraction(
-          extensions.contains('pdf') ? 'pdf' : 'audio',
+          ['pdf', 'doc', 'docx', 'ppt', 'pptx'].contains(extension)
+              ? 'pdf'
+              : 'audio',
           file.bytes!,
+          mimeType: mimeType,
         );
       }
     } catch (e) {
@@ -1529,9 +1552,15 @@ class _ReviewScreenState extends State<ReviewScreen> {
     try {
       final picker = ImagePicker();
       final XFile? image = await picker.pickImage(source: source);
+      if (!mounted) return;
       if (image != null) {
         final bytes = await image.readAsBytes();
-        await _processExtraction('image', bytes);
+        if (!mounted) return;
+        String mimeType = 'image/jpeg';
+        if (image.path.toLowerCase().endsWith('.png')) {
+          mimeType = 'image/png';
+        }
+        await _processExtraction('image', bytes, mimeType: mimeType);
       }
     } catch (e) {
       _showError('Image extraction failed: $e');
@@ -1605,7 +1634,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
     );
   }
 
-  Future<void> _processExtraction(String type, dynamic input) async {
+  Future<void> _processExtraction(String type, dynamic input,
+      {String? mimeType}) async {
     final authService = Provider.of<AuthService>(context, listen: false);
     final userId = authService.currentUser?.uid;
     if (userId == null) return;
@@ -1615,11 +1645,18 @@ class _ReviewScreenState extends State<ReviewScreen> {
     final progressNotifier =
         ValueNotifier<String>('Initializing extraction...');
 
+    final cancelToken = CancellationToken();
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) =>
-          ExtractionProgressDialog(messageNotifier: progressNotifier),
+      builder: (context) => ExtractionProgressDialog(
+        messageNotifier: progressNotifier,
+        onCancel: () {
+          cancelToken.cancel();
+          Navigator.pop(context);
+        },
+      ),
     );
 
     try {
@@ -1627,7 +1664,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
         type: type,
         input: input,
         userId: userId,
+        mimeType: mimeType,
         onProgress: (m) => progressNotifier.value = m,
+        cancelToken: cancelToken,
       );
 
       if (mounted) {
@@ -1645,7 +1684,14 @@ class _ReviewScreenState extends State<ReviewScreen> {
     } catch (e) {
       if (mounted) {
         Navigator.pop(context);
-        _showError('Extraction failed: $e');
+        String errorMessage = 'Extraction failed. ';
+        if (e.toString().contains('NOT_FOUND') ||
+            e.toString().contains('404')) {
+          errorMessage += 'The AI model could not be reached.';
+        } else {
+          errorMessage += e.toString();
+        }
+        _showError(errorMessage);
       }
     }
   }

@@ -241,6 +241,10 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
         case 'pdf':
         case 'slides':
           if (_fileBytes == null) throw Exception('No file selected.');
+          if (!_checkProAccess('Document Analysis')) {
+            setState(() => _isLoading = false);
+            return;
+          }
           extractionResult = await extractionService.extractContent(
             type: 'pdf',
             input: _fileBytes!,
@@ -256,6 +260,10 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
           break;
         case 'image':
           if (_fileBytes == null) throw Exception('No image file selected.');
+          if (!_checkProAccess('Image Analysis')) {
+            setState(() => _isLoading = false);
+            return;
+          }
           extractionResult = await extractionService.extractContent(
             type: 'image',
             input: _fileBytes!,
@@ -271,6 +279,10 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
           break;
         case 'audio':
           if (_fileBytes == null) throw Exception('No audio file selected.');
+          if (!_checkProAccess('Audio Analysis')) {
+            setState(() => _isLoading = false);
+            return;
+          }
           extractionResult = await extractionService.extractContent(
             type: 'audio',
             input: _fileBytes!,
@@ -286,6 +298,10 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
           break;
         case 'video':
           if (_fileBytes == null) throw Exception('No video file selected.');
+          if (!_checkProAccess('Video Analysis')) {
+            setState(() => _isLoading = false);
+            return;
+          }
           extractionResult = await extractionService.extractContent(
             type: 'video',
             input: _fileBytes!,
@@ -300,15 +316,11 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
           );
           break;
         case 'exam':
-          // Navigate to dedicated exam creation screen
+          if (!_checkProAccess('Tutor Exam')) return;
           context.push('/exam-creation');
           return;
         default:
           throw Exception('Please provide some content first.');
-      }
-
-      if (extractionResult == null) {
-        throw Exception('Extraction returned no result.');
       }
 
       if (extractionResult.text.trim().isEmpty) {
@@ -513,6 +525,7 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
   }
 
   Widget _buildTabItem(IconData icon, String label) {
+    final isProFeature = label != 'Text' && label != 'Topic';
     return Tab(
       height: 50,
       child: Row(
@@ -521,6 +534,24 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
           Icon(icon, size: 20),
           const SizedBox(width: 8),
           Text(label),
+          if (isProFeature) ...[
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: WebColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                'PRO',
+                style: GoogleFonts.outfit(
+                  fontSize: 8,
+                  fontWeight: FontWeight.w900,
+                  color: WebColors.primary,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

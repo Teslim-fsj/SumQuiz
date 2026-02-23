@@ -41,8 +41,9 @@ class YouTubeAIService extends AIBaseService {
         name: 'YouTubeAIService');
     try {
       cancelToken?.throwIfCancelled();
-      final result = await _analyzeWithGeminiNative(videoUrl)
-          .timeout(Duration(seconds: AIConfig.youtubeTimeoutSeconds));
+      final result =
+          await _analyzeWithGeminiNative(videoUrl, cancelToken: cancelToken)
+              .timeout(Duration(seconds: AIConfig.youtubeTimeoutSeconds));
 
       if (result != null && result.text.trim().length >= 100) {
         developer.log('Tier 1 succeeded: ${result.text.length} chars extracted',
@@ -103,7 +104,8 @@ class YouTubeAIService extends AIBaseService {
   }
 
   /// Tier 1: Send the YouTube URL directly to Gemini for native multimodal analysis.
-  Future<ExtractionResult?> _analyzeWithGeminiNative(String videoUrl) async {
+  Future<ExtractionResult?> _analyzeWithGeminiNative(String videoUrl,
+      {CancellationToken? cancelToken}) async {
     if (!await ensureInitialized()) return null;
 
     final config = GenerationConfig(
@@ -149,14 +151,17 @@ OUTPUT FORMAT (JSON):
       prompt,
       customModel: youtubeModel,
       generationConfig: config,
+      cancelToken: cancelToken,
     );
     final jsonStr = extractJson(response);
-    final data = json.decode(jsonStr);
+    final dynamic decoded = json.decode(jsonStr);
+    final Map<String, dynamic> data =
+        decoded is Map<String, dynamic> ? decoded : {};
 
-    final content = data['content'] ?? '';
-    final title = data['title'] ?? 'YouTube Video';
+    final content = data['content']?.toString() ?? '';
+    final title = data['title']?.toString() ?? 'YouTube Video';
 
-    if (content.toString().trim().isEmpty) return null;
+    if (content.trim().isEmpty) return null;
 
     return ExtractionResult(
       text: content,

@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 
 class ExtractionProgressDialog extends StatelessWidget {
   final ValueNotifier<String> messageNotifier;
+  final VoidCallback? onCancel;
 
   const ExtractionProgressDialog({
     super.key,
     required this.messageNotifier,
+    this.onCancel,
   });
 
   @override
@@ -31,6 +33,17 @@ class ExtractionProgressDialog extends StatelessWidget {
               );
             },
           ),
+          if (onCancel != null) ...[
+            const SizedBox(height: 24),
+            TextButton.icon(
+              onPressed: onCancel,
+              icon: const Icon(Icons.close, color: Colors.redAccent),
+              label: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.redAccent),
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
         ],
       ),

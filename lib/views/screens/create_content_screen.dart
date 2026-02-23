@@ -154,7 +154,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
     bool canProceed = true;
 
     if (actionType == 'upload') {
-      canProceed = user.totalUploads < UsageConfig.freeUploadsLifetime;
+      canProceed = false; // Strictly Pro for uploads
     } else {
       // Daily generation limits are handled in AI services or during processing
       // but we can block here if we know they are over.
@@ -190,7 +190,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
   Future<void> _pickPdf() async {
     if (_isLoading || _isProcessing) return;
 
-    if (!_checkProAccess('PDF Upload')) return;
+    if (!_checkProAccess('PDF Upload', actionType: 'upload')) return;
     _resetInputs(); // Clear other inputs
 
     setState(() => _isLoading = true);
@@ -275,7 +275,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
   Future<void> _pickImage(ImageSource source) async {
     if (_isLoading || _isProcessing) return;
 
-    if (!_checkProAccess('Image Scan')) return;
+    if (!_checkProAccess('Image Scan', actionType: 'upload')) return;
     _resetInputs(); // Clear other inputs
 
     setState(() => _isLoading = true);
@@ -308,6 +308,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           _imageName =
               '${source == ImageSource.camera ? "camera_" : "gallery_"}${image.name}';
           _imageBytes = bytes;
+          _mimeType = _getMimeType(image.name);
         });
       }
     } catch (e) {
@@ -364,12 +365,20 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           input = _textController.text;
           break;
         case 'link':
+          if (!user.isPro) {
+            _checkProAccess('Analyze Link');
+            return;
+          }
           validationError = InputValidator.validateUrl(_linkController.text);
           type = 'link';
           input = _linkController.text;
           break;
         case 'pdf':
         case 'slides':
+          if (!user.isPro) {
+            _checkProAccess('Document Analysis', actionType: 'upload');
+            return;
+          }
           if (_pdfBytes == null) {
             validationError = 'Please upload a document';
           } else if (_pdfBytes!.length > 15 * 1024 * 1024) {
@@ -380,6 +389,10 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           input = _pdfBytes;
           break;
         case 'audio':
+          if (!user.isPro) {
+            _checkProAccess('Audio Analysis');
+            return;
+          }
           if (_pdfBytes == null) {
             validationError = 'Please upload an audio file';
           } else if (_pdfBytes!.length > 50 * 1024 * 1024) {
@@ -389,6 +402,10 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           input = _pdfBytes;
           break;
         case 'image':
+          if (!user.isPro) {
+            _checkProAccess('Image/Snap Scan');
+            return;
+          }
           if (_imageBytes == null) {
             validationError = 'Please capture or select an image';
           } else if (_imageBytes!.length > 10 * 1024 * 1024) {
@@ -398,7 +415,10 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           input = _imageBytes;
           break;
         case 'exam':
-          if (!_checkProAccess('Tutor Exam')) return;
+          if (!user.isPro) {
+            _checkProAccess('Tutor Exam');
+            return;
+          }
           context.push('/exam-creation');
           return;
 
@@ -633,6 +653,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
       String label, IconData icon, String method, ColorScheme colorScheme) {
     final isSelected = _selectedImportMethod == method;
     final isDisabled = _isProcessing || _isLoading;
+    final isProFeature = method != 'text';
 
     return IgnorePointer(
       ignoring: isDisabled,
@@ -659,69 +680,97 @@ class _CreateContentScreenState extends State<CreateContentScreen>
               String featureName = '';
               String actionType = 'upload';
 
-              if (method == 'link') {
-                featureName = 'Web/YouTube Analysis';
-                actionType = 'text'; // 2/day
+              if (method == 'link' ||
+                  method == 'pdf' ||
+                  method == 'image' ||
+                  method == 'slides' ||
+                  method == 'audio') {
+                // All non-text sources are strictly Pro-only
+                if (!_checkProAccess(featureName, actionType: 'upload')) return;
               }
-              if (method == 'pdf') featureName = 'PDF Upload';
-              if (method == 'image') featureName = 'Image Scanning';
-              if (method == 'slides') featureName = 'Slides Upload';
-              if (method == 'audio') featureName = 'Audio Upload';
-
-              if (!_checkProAccess(featureName, actionType: actionType)) return;
             }
             setState(() => _selectedImportMethod = method);
           },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? colorScheme.primary
-                  : colorScheme.surfaceContainerHighest.withAlpha(77),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isSelected
-                    ? colorScheme.primary
-                    : colorScheme.outline.withAlpha(51),
-                width: isSelected ? 2 : 1,
-              ),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon,
+          child: Stack(
+            children: [
+              AnimatedContainer(
+                width: double.infinity,
+                duration: const Duration(milliseconds: 200),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? colorScheme.primary
+                      : colorScheme.surfaceContainerHighest.withAlpha(77),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
                     color: isSelected
-                        ? colorScheme.onPrimary
-                        : colorScheme.primary,
-                    size: 28),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: isSelected
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurface,
-                    fontSize: 13,
+                        ? colorScheme.primary
+                        : colorScheme.outline.withAlpha(51),
+                    width: isSelected ? 2 : 1,
                   ),
                 ),
-                if (isDisabled) ...[
-                  const SizedBox(height: 4),
-                  SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        isSelected
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icon,
+                        color: isSelected
+                            ? colorScheme.onPrimary
+                            : colorScheme.primary,
+                        size: 28),
+                    const SizedBox(height: 8),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: isSelected
+                            ? colorScheme.onPrimary
+                            : colorScheme.onSurface,
+                        fontSize: 13,
+                      ),
+                    ),
+                    if (isDisabled) ...[
+                      const SizedBox(height: 4),
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            isSelected
+                                ? colorScheme.onPrimary
+                                : colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (isProFeature)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? colorScheme.onPrimary.withValues(alpha: 0.2)
+                          : colorScheme.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'PRO',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                        color: isSelected
                             ? colorScheme.onPrimary
                             : colorScheme.primary,
                       ),
                     ),
                   ),
-                ],
-              ],
-            ),
+                ),
+            ],
           ),
         ),
       ),

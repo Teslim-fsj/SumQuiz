@@ -14,17 +14,11 @@ class IAPService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static const String _proMonthlyId = 'sumquiz_pro_monthly';
   static const String _proYearlyId = 'sumquiz_pro_yearly';
-  static const String _proLifetimeId = 'sumquiz_pro_lifetime';
-  static const String _dailyPassId = 'sumquiz_daily_pass'; // NEW: 24-hour pass
-  static const String _weeklyPassId = 'sumquiz_weekly_pass'; // NEW: 7-day pass
 
   late StreamSubscription<List<PurchaseDetails>> _subscription;
   final Set<String> _productIds = {
     _proMonthlyId,
     _proYearlyId,
-    _proLifetimeId,
-    _dailyPassId, // NEW
-    _weeklyPassId, // NEW
   };
 
   // Freemium limits
@@ -121,24 +115,11 @@ class IAPService {
     try {
       // Determine subscription details
       DateTime? expiryDate;
-
-      if (purchaseDetails.productID == _proLifetimeId) {
-        // Lifetime: Set expiry far in the future (100 years)
-        expiryDate = DateTime.now().add(const Duration(days: 36500));
-      } else if (purchaseDetails.productID == _dailyPassId) {
-        // NEW: Daily Pass - 24 hours
-        expiryDate = DateTime.now().add(const Duration(hours: 24));
-      } else if (purchaseDetails.productID == _weeklyPassId) {
-        // NEW: Weekly Pass - 7 days
-        expiryDate = DateTime.now().add(const Duration(days: 7));
-      } else {
-        // For recurring subscriptions, set expiry to 1 month or 1 year from now
-        final now = DateTime.now();
-        if (purchaseDetails.productID == _proMonthlyId) {
-          expiryDate = now.add(const Duration(days: 30));
-        } else if (purchaseDetails.productID == _proYearlyId) {
-          expiryDate = now.add(const Duration(days: 365));
-        }
+      final now = DateTime.now();
+      if (purchaseDetails.productID == _proMonthlyId) {
+        expiryDate = now.add(const Duration(days: 30));
+      } else if (purchaseDetails.productID == _proYearlyId) {
+        expiryDate = now.add(const Duration(days: 365));
       }
 
       // Update user document in Firestore
@@ -174,20 +155,12 @@ class IAPService {
         orElse: () => throw Exception('Product not found: $productId'),
       );
 
-      // Make purchase - use consumable for passes, non-consumable for subscriptions
       final purchaseParam = PurchaseParam(productDetails: product);
 
-      if (productId == _dailyPassId || productId == _weeklyPassId) {
-        // Consumable: can be purchased multiple times
-        return await InAppPurchase.instance.buyConsumable(
-          purchaseParam: purchaseParam,
-        );
-      } else {
-        // Non-consumable: subscriptions and lifetime
-        return await InAppPurchase.instance.buyNonConsumable(
-          purchaseParam: purchaseParam,
-        );
-      }
+      // Non-consumable: monthly and yearly recurring subscriptions
+      return await InAppPurchase.instance.buyNonConsumable(
+        purchaseParam: purchaseParam,
+      );
     } catch (e) {
       developer.log('Failed to purchase product: $productId',
           name: 'IAPService', error: e);

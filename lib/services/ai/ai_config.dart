@@ -2,12 +2,13 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 
 class AIConfig {
   // Stable 2026 Model Names
-  static const String primaryModel = 'gemini-2.5-flash';
-  static const String proModel = 'gemini-2.5-pro';
-  static const String fallbackModel = 'gemini-1.5-flash';
-  static const String visionModel = 'gemini-2.5-flash'; // High-speed vision
+  static const String primaryModel = 'gemini-3-flash-preview';
+  static const String proModel = 'gemini-3.1-pro-preview';
+  static const String fallbackModel = 'gemini-3-flash-preview';
+  static const String visionModel =
+      'gemini-3-flash-preview'; // High-speed vision
   static const String youtubeModel =
-      'gemini-2.5-pro'; // Deep multimodal video analysis
+      'gemini-3.1-pro-preview'; // Deep multimodal video analysis
 
   // Retry configuration with exponential backoff
   static const int maxRetries = 5;

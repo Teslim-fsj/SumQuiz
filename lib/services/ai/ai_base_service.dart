@@ -4,6 +4,7 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:developer' as developer;
 import 'ai_config.dart';
+import '../../utils/cancellation_token.dart';
 
 // --- EXCEPTIONS ---
 class AIServiceException implements Exception {
@@ -48,7 +49,9 @@ abstract class AIBaseService {
     try {
       // API Key hardcoded for production/GitHub builds as requested by user
       const String hardcodedApiKey = 'AIzaSyCHKJA1xvUbGsPGL6CKiw5tlILQWYwb540';
-      final apiKey = dotenv.env['API_KEY'] ?? hardcodedApiKey;
+      final envKey = dotenv.env['API_KEY'];
+      final apiKey =
+          (envKey != null && envKey.isNotEmpty) ? envKey : hardcodedApiKey;
 
       if (apiKey.isEmpty) {
         _initializationError = 'API key is not configured.';
@@ -79,6 +82,12 @@ abstract class AIBaseService {
         generationConfig: AIConfig.defaultGenerationConfig,
       );
 
+      _youtubeModel = GenerativeModel(
+        model: AIConfig.youtubeModel,
+        apiKey: apiKey,
+        generationConfig: AIConfig.proGenerationConfig,
+      );
+
       _initialized = true;
     } catch (e) {
       _initializationError = 'Failed to initialize AI models: $e';
@@ -94,12 +103,6 @@ abstract class AIBaseService {
       await Future.delayed(const Duration(milliseconds: 100));
     }
     return _initialized;
-  }
-
-  bool _isValidApiKeyFormat(String apiKey) {
-    // Google API keys typically start with 'AIza' and have a specific format
-    final RegExp googleApiKeyRegex = RegExp(r'^AIza[\w-]{30,}$');
-    return googleApiKeyRegex.hasMatch(apiKey);
   }
 
   Future<bool> isServiceHealthy() async {
@@ -141,11 +144,13 @@ abstract class AIBaseService {
       }
     }
 
-    if (bestCutoff > maxLength * 0.8)
+    if (bestCutoff > maxLength * 0.8) {
       return input.substring(0, bestCutoff).trim();
+    }
     final lastSpace = input.lastIndexOf(' ', maxLength);
-    if (lastSpace > maxLength * 0.9)
+    if (lastSpace > maxLength * 0.9) {
       return '${input.substring(0, lastSpace).trim()}...';
+    }
     return '${input.substring(0, maxLength - 3).trim()}...';
   }
 
@@ -157,14 +162,18 @@ abstract class AIBaseService {
 
   Future<String> generateWithRetry(String prompt,
       {GenerativeModel? customModel,
-      GenerationConfig? generationConfig}) async {
+      GenerationConfig? generationConfig,
+      CancellationToken? cancelToken}) async {
     return generateMultimodal([TextPart(prompt)],
-        customModel: customModel, generationConfig: generationConfig);
+        customModel: customModel,
+        generationConfig: generationConfig,
+        cancelToken: cancelToken);
   }
 
   Future<String> generateMultimodal(List<Part> parts,
       {GenerativeModel? customModel,
-      GenerationConfig? generationConfig}) async {
+      GenerationConfig? generationConfig,
+      CancellationToken? cancelToken}) async {
     if (!await ensureInitialized()) {
       throw AIServiceException('AI Service not ready: $_initializationError',
           code: 'SERVICE_NOT_READY');
@@ -179,9 +188,10 @@ abstract class AIBaseService {
     }).toList();
 
     var targetModel = customModel ?? _model;
-    if (targetModel == null)
+    if (targetModel == null) {
       throw AIServiceException('Model not available',
           code: 'MODEL_NOT_AVAILABLE');
+    }
 
     // If custom config is provided, we need to re-wrap the model with it
     // Note: GenerativeModel is immutable, but we can use provide custom config per request in newer SDKs
@@ -189,6 +199,8 @@ abstract class AIBaseService {
 
     int attempt = 0;
     while (attempt < AIConfig.maxRetries) {
+      cancelToken?.throwIfCancelled();
+
       try {
         final response = await targetModel.generateContent(
           [Content.multi(sanitizedParts)],
@@ -196,9 +208,11 @@ abstract class AIBaseService {
               generationConfig, // Supported in newer versions of the SDK
         ).timeout(const Duration(seconds: AIConfig.requestTimeoutSeconds));
 
+        cancelToken?.throwIfCancelled();
+
         final text = response.text;
-        if (text == null || text.isEmpty) {
-          throw AIServiceException('Empty response from AI',
+        if (text == null || text.trim().isEmpty) {
+          throw AIServiceException('Empty or null response from AI',
               code: 'EMPTY_RESPONSE');
         }
         return text.trim();
@@ -222,24 +236,29 @@ abstract class AIBaseService {
   }
 
   String extractJson(String response) {
-    String cleaned = response.trim();
-    final jsonBlockRegex =
-        RegExp(r'```(?:json|JSON)?\s*\n?([\s\S]*?)\n?```', multiLine: true);
-    final match = jsonBlockRegex.firstMatch(cleaned);
+    try {
+      String cleaned = response.trim();
+      final jsonBlockRegex =
+          RegExp(r'```(?:json|JSON)?\s*\n?([\s\S]*?)\n?```', multiLine: true);
+      final match = jsonBlockRegex.firstMatch(cleaned);
 
-    if (match != null && match.group(1) != null) {
-      cleaned = match.group(1)!.trim();
-    }
+      if (match != null && match.group(1) != null) {
+        cleaned = match.group(1)!.trim();
+      }
 
-    if (!cleaned.startsWith('{') && !cleaned.startsWith('[')) {
-      final start = cleaned.indexOf(RegExp(r'[\{\[]'));
-      if (start >= 0) {
-        final end = cleaned.lastIndexOf(cleaned[start] == '{' ? '}' : ']');
-        if (end > start) {
-          cleaned = cleaned.substring(start, end + 1);
+      if (!cleaned.startsWith('{') && !cleaned.startsWith('[')) {
+        final start = cleaned.indexOf(RegExp(r'[\{\[]'));
+        if (start >= 0) {
+          final end = cleaned.lastIndexOf(cleaned[start] == '{' ? '}' : ']');
+          if (end > start) {
+            cleaned = cleaned.substring(start, end + 1);
+          }
         }
       }
+      return cleaned;
+    } catch (e) {
+      developer.log('Error in extractJson', name: 'AIBaseService', error: e);
+      return response.trim();
     }
-    return cleaned;
   }
 }

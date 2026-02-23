@@ -11,6 +11,7 @@ import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
 import 'package:sumquiz/services/auth_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sumquiz/models/extraction_result.dart';
+import 'package:sumquiz/utils/cancellation_token.dart';
 
 class ExtractionViewScreen extends StatefulWidget {
   final ExtractionResult? result;
@@ -35,6 +36,7 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
   bool _isLoading = false;
   String _loadingMessage = 'Generating...';
   bool _isEditingTitle = false;
+  CancellationToken? _cancelToken;
 
   // Add a minimum character count validation
   static const int minTextLength = 10;
@@ -100,6 +102,7 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
 
   @override
   void dispose() {
+    _cancelToken?.cancel();
     _textController.dispose();
     _titleController.dispose();
     super.dispose();
@@ -158,7 +161,9 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
     // Check usage limits for all users (Freemium & Pro caps)
     if (user != null) {
       final usageService = UsageService();
-      if (!await usageService.canGenerateDeck(user.uid)) {
+      final canProceed = await usageService.canGenerateDeck(user.uid);
+      if (!mounted) return;
+      if (!canProceed) {
         _showUpgradeDialog('Daily Limit');
         return;
       }
@@ -185,6 +190,8 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
         throw Exception('No output types selected');
       }
 
+      _cancelToken = CancellationToken();
+
       final folderId = await aiService.generateAndStoreOutputs(
         text: _textController.text,
         title: _titleController.text.isNotEmpty
@@ -198,12 +205,14 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
             setState(() => _loadingMessage = message);
           }
         },
+        cancelToken: _cancelToken,
       );
 
       // Record usage (Deck Generation)
       if (user != null) {
         await UsageService().recordDeckGeneration(user.uid);
       }
+      if (!mounted) return;
 
       // 🔔 Schedule notifications after content generation
       if (mounted) {
@@ -403,6 +412,7 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
                           const SizedBox(height: 24),
                           TextButton.icon(
                             onPressed: () {
+                              _cancelToken?.cancel();
                               setState(() => _isLoading = false);
                             },
                             icon: Icon(Icons.close, color: Colors.redAccent),

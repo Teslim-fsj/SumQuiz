@@ -44,27 +44,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       if (products.isEmpty && !kIsWeb) {
         products = [
           _FallbackProductDetails(
-            id: 'daily_pass',
-            title: 'Daily Pass',
-            description: '24 hours unlimited access',
-            price: 'US\$0.99',
-            rawPrice: 0.99,
-          ),
-          _FallbackProductDetails(
-            id: 'weekly_pass',
-            title: 'Weekly Pass',
-            description: '7 days unlimited access',
-            price: 'US\$3.99',
-            rawPrice: 3.99,
-          ),
-          _FallbackProductDetails(
-            id: 'unlimited_upload_pass',
-            title: 'Unlimited Uploads',
-            description: 'Unlimited sources upload',
-            price: 'US\$2.99',
-            rawPrice: 2.99,
-          ),
-          _FallbackProductDetails(
             id: 'monthly_subscription',
             title: 'Monthly Pro',
             description: 'Standard monthly plan',
@@ -78,17 +57,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             price: 'US\$59.99',
             rawPrice: 59.99,
           ),
-          _FallbackProductDetails(
-            id: 'lifetime_access',
-            title: 'Lifetime',
-            description: 'One-time payment',
-            price: 'US\$129.99',
-            rawPrice: 129.99,
-          ),
         ];
       }
 
-      // Sort: Monthly < Yearly < Lifetime
+      // Sort: Monthly < Yearly
       products.sort((a, b) => a.rawPrice.compareTo(b.rawPrice));
 
       if (mounted) {
@@ -112,14 +84,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           return _products.firstWhere(
             (p) => p.id.contains('monthly'),
             orElse: () {
-              // Then try to find a lifetime product
-              return _products.firstWhere(
-                (p) => p.id.contains('lifetime'),
-                orElse: () {
-                  // Finally, just pick the first available product
-                  return _products.first;
-                },
-              );
+              // Finally, just pick the first available product
+              return _products.first;
             },
           );
         },
@@ -309,13 +275,22 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                             ),
                             const SizedBox(height: 16),
 
-                            // Filter to Monthly and Yearly only
-                            ..._products
-                                .where((p) =>
-                                    p.id.contains('monthly') ||
-                                    p.id.contains('yearly'))
-                                .map((product) =>
-                                    _buildPlanCard(product, theme)),
+                            // Services (IAPService/WebPaymentService) already filter to allowed plans
+                            if (_products.isEmpty)
+                              Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(32.0),
+                                  child: Text(
+                                    'Unable to load subscription plans. Please check your internet connection or try again later.',
+                                    textAlign: TextAlign.center,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ..._products.map(
+                                (product) => _buildPlanCard(product, theme)),
 
                             const SizedBox(
                                 height: 140), // Spacer for bottom button

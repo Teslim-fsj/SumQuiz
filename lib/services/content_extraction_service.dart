@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'dart:io';
+import 'dart:developer' as developer;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, compute;
 import 'package:sumquiz/models/extraction_result.dart';
@@ -164,6 +165,9 @@ class ContentExtractionService {
     String rawText = '';
     String suggestedTitle = 'Imported Content';
 
+    developer.log('Starting extraction: type=$type, mimeType=$mimeType',
+        name: 'ContentExtractionService');
+
     switch (type) {
       case 'text':
         onProgress?.call('Processing pasted text...');
@@ -209,6 +213,7 @@ class ContentExtractionService {
               url: url,
               mimeType: mimeType,
               userId: userId,
+              cancelToken: cancelToken,
             );
             if (result is Ok<ExtractionResult>) {
               return result.value;
@@ -258,6 +263,7 @@ class ContentExtractionService {
             bytes: input,
             mimeType: mimeType ?? 'application/pdf',
             userId: userId,
+            cancelToken: cancelToken,
           );
           if (result is Ok<ExtractionResult>) return result.value;
         }
@@ -280,6 +286,7 @@ class ContentExtractionService {
             bytes: input,
             mimeType: mimeType ?? 'image/jpeg',
             userId: userId,
+            cancelToken: cancelToken,
           );
           if (result is Ok<ExtractionResult>) return result.value;
         }
@@ -292,6 +299,7 @@ class ContentExtractionService {
           bytes: input,
           mimeType: mimeType ?? 'audio/mpeg',
           userId: userId,
+          cancelToken: cancelToken,
         );
         if (result is Ok<ExtractionResult>) return result.value;
         suggestedTitle = 'Audio Lesson';
@@ -303,6 +311,7 @@ class ContentExtractionService {
           bytes: input,
           mimeType: mimeType ?? 'video/mp4',
           userId: userId,
+          cancelToken: cancelToken,
         );
         if (result is Ok<ExtractionResult>) return result.value;
         suggestedTitle = 'Video Lesson';
@@ -314,12 +323,15 @@ class ContentExtractionService {
     if (refineWithAI && rawText.isNotEmpty) {
       onProgress?.call('Polishing extracted text with AI...');
       try {
-        rawText = await _enhancedAiService.refineContent(rawText);
+        rawText = await _enhancedAiService.refineContent(rawText,
+            cancelToken: cancelToken);
       } catch (e) {
         // Fallback to raw text
       }
     }
 
+    developer.log('Extraction complete: $suggestedTitle',
+        name: 'ContentExtractionService');
     return ExtractionResult(text: rawText, suggestedTitle: suggestedTitle);
   }
 

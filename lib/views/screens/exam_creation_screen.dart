@@ -5,15 +5,13 @@ import 'package:sumquiz/models/local_quiz_question.dart';
 import 'package:sumquiz/services/local_database_service.dart';
 import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/services/enhanced_ai_service.dart';
-import 'package:sumquiz/services/iap_service.dart';
 import 'package:uuid/uuid.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'dart:typed_data';
 import 'package:sumquiz/services/content_extraction_service.dart';
-import 'package:sumquiz/models/extraction_result.dart';
+import 'package:sumquiz/utils/cancellation_token.dart';
 
 class ExamCreationScreen extends StatefulWidget {
   const ExamCreationScreen({super.key});
@@ -40,9 +38,11 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
   bool _showFullPreview = false;
   bool _isProcessing = false;
   String _processingMessage = '';
+  CancellationToken? _cancelToken;
 
   @override
   void dispose() {
+    _cancelToken?.cancel();
     _titleController.dispose();
     _subjectController.dispose();
     super.dispose();
@@ -73,6 +73,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: () {
+                      _cancelToken?.cancel();
                       setState(() {
                         _isProcessing = false;
                       });
@@ -631,27 +632,35 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
         withData: true, // Important for web and direct bytes access
       );
 
+      if (!mounted) return;
+
       if (result != null) {
         final file = result.files.single;
         final bytes = file.bytes; // Works for web and if withData is true
         final name = file.name;
 
         if (bytes != null) {
-          setState(() => _processingMessage = 'Extracting content from $name...');
-          
+          setState(
+              () => _processingMessage = 'Extracting content from $name...');
+
           final user = Provider.of<UserModel?>(context, listen: false);
-          final enhancedAiService = Provider.of<EnhancedAIService>(context, listen: false);
+          final enhancedAiService =
+              Provider.of<EnhancedAIService>(context, listen: false);
           final extractionService = ContentExtractionService(enhancedAiService);
+          _cancelToken = CancellationToken();
 
           final extractionResult = await extractionService.extractContent(
             type: type.toLowerCase(),
             input: bytes,
             userId: user?.uid,
-            mimeType: type == 'PDF' ? 'application/pdf' : 'image/jpeg', // simplified mime assumption
+            mimeType: type == 'PDF' ? 'application/pdf' : 'image/jpeg',
             onProgress: (msg) {
               if (mounted) setState(() => _processingMessage = msg);
             },
+            cancelToken: _cancelToken,
           );
+
+          if (!mounted) return;
 
           setState(() {
             _sourceMaterial = extractionResult.text;
@@ -659,21 +668,23 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
           });
         }
       } else {
-         setState(() => _isProcessing = false);
+        setState(() => _isProcessing = false);
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isProcessing = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error extracting content: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('Error extracting content: $e'),
+              backgroundColor: Colors.red),
         );
       }
     }
   }
 
   void _showNotesInputDialog() {
-     final textController = TextEditingController();
-     showDialog(
+    final textController = TextEditingController();
+    showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Enter Notes'),
@@ -725,8 +736,9 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
     try {
       final user = Provider.of<UserModel?>(context, listen: false);
       if (user == null) throw Exception('User not authenticated');
-      
-      final enhancedAIService = Provider.of<EnhancedAIService>(context, listen: false);
+
+      final enhancedAIService =
+          Provider.of<EnhancedAIService>(context, listen: false);
 
       // Prepare question types
       final questionTypes = <String>[];
@@ -741,6 +753,8 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
       }
 
       // Generate the exam using AI service
+      _cancelToken = CancellationToken();
+
       final quiz = await enhancedAIService.generateExam(
         text: _sourceMaterial,
         title: _titleController.text,
@@ -757,7 +771,10 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
             });
           }
         },
+        cancelToken: _cancelToken,
       );
+
+      if (!mounted) return;
 
       final questions = quiz.questions;
 
@@ -880,7 +897,8 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
               'None of the above'
             ],
             correctAnswer: 'To evaluate knowledge',
-            explanation: "Exams are designed to assess a student's understanding of a subject.",
+            explanation:
+                "Exams are designed to assess a student's understanding of a subject.",
             questionType: type,
           );
         }
@@ -1144,6 +1162,7 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
     try {
       // Simulate AI regeneration process
       await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return;
 
       // In a real implementation, this would call the AI service to regenerate the specific question
       final oldQuestion = _questions[index];
@@ -1204,12 +1223,13 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
       _isProcessing = true;
       _processingMessage = 'Saving exam to library...';
     });
-    
+
     try {
       final user = Provider.of<UserModel?>(context, listen: false);
       if (user == null) throw Exception('User not authenticated');
-      
+
       await LocalDatabaseService().init();
+      if (!mounted) return;
 
       final quiz = LocalQuiz(
         id: const Uuid().v4(),
@@ -1221,20 +1241,24 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
       );
 
       await LocalDatabaseService().saveQuiz(quiz);
-      
+      if (!mounted) return;
+
       setState(() => _isProcessing = false);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Exam saved to library!'), backgroundColor: Colors.green),
+          const SnackBar(
+              content: Text('Exam saved to library!'),
+              backgroundColor: Colors.green),
         );
       }
     } catch (e) {
       debugPrint('Error saving exam: $e');
       setState(() => _isProcessing = false);
       if (mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error saving exam'), backgroundColor: Colors.red),
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Error saving exam'), backgroundColor: Colors.red),
         );
       }
     }
@@ -1441,14 +1465,14 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
       if (_randomizeOptions) {
         processedQuestions = processedQuestions.map((q) {
           if (q.questionType == 'Multiple Choice') {
-             final opts = List<String>.from(q.options)..shuffle();
-             return LocalQuizQuestion(
-               question: q.question,
-               options: opts,
-               correctAnswer: q.correctAnswer, 
-               explanation: q.explanation,
-               questionType: q.questionType,
-             );
+            final opts = List<String>.from(q.options)..shuffle();
+            return LocalQuizQuestion(
+              question: q.question,
+              options: opts,
+              correctAnswer: q.correctAnswer,
+              explanation: q.explanation,
+              questionType: q.questionType,
+            );
           }
           return q;
         }).toList();
@@ -1459,88 +1483,107 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4,
           build: (pw.Context context) {
-             return [
-               pw.Header(
-                 level: 0, 
-                 child: pw.Column(
-                   crossAxisAlignment: pw.CrossAxisAlignment.center,
-                   children: [
-                     pw.Text(widget.examTitle, style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
-                     pw.SizedBox(height: 8),
-                     pw.Text('${widget.subject} - ${widget.classLevel}', style: const pw.TextStyle(fontSize: 16)),
-                     pw.Text('Duration: ${widget.duration} mins', style: const pw.TextStyle(fontSize: 14)),
-                     pw.Divider(),
-                   ]
-                 )
-               ),
-               ...List.generate(processedQuestions.length, (index) {
-                 final q = processedQuestions[index];
-                 return pw.Container(
-                   margin: const pw.EdgeInsets.only(bottom: 16),
-                   child: pw.Column(
-                     crossAxisAlignment: pw.CrossAxisAlignment.start,
-                     children: [
-                       pw.Text('${index + 1}. ${q.question}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12)),
-                       if (q.questionType == 'Multiple Choice' || q.questionType == 'True/False')
-                         pw.Padding(
-                           padding: const pw.EdgeInsets.only(left: 16, top: 4),
-                           child: pw.Column(
-                             crossAxisAlignment: pw.CrossAxisAlignment.start,
-                             children: q.options.asMap().entries.map((entry) {
-                               final char = String.fromCharCode(65 + entry.key);
-                               return pw.Text('$char. ${entry.value}');
-                             }).toList(),
-                           ),
-                         ),
-                        if (q.questionType == 'Theory' || q.questionType == 'Short Answer')
-                           pw.Padding(
-                             padding: const pw.EdgeInsets.only(top: 8),
-                             child: pw.Container(height: 40, width: double.infinity, decoration: const pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide()))),
-                           ),
-                     ],
-                   ),
-                 );
-               })
-             ];
+            return [
+              pw.Header(
+                  level: 0,
+                  child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.center,
+                      children: [
+                        pw.Text(widget.examTitle,
+                            style: pw.TextStyle(
+                                fontSize: 24, fontWeight: pw.FontWeight.bold)),
+                        pw.SizedBox(height: 8),
+                        pw.Text('${widget.subject} - ${widget.classLevel}',
+                            style: const pw.TextStyle(fontSize: 16)),
+                        pw.Text('Duration: ${widget.duration} mins',
+                            style: const pw.TextStyle(fontSize: 14)),
+                        pw.Divider(),
+                      ])),
+              ...List.generate(processedQuestions.length, (index) {
+                final q = processedQuestions[index];
+                return pw.Container(
+                  margin: const pw.EdgeInsets.only(bottom: 16),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('${index + 1}. ${q.question}',
+                          style: pw.TextStyle(
+                              fontWeight: pw.FontWeight.bold, fontSize: 12)),
+                      if (q.questionType == 'Multiple Choice' ||
+                          q.questionType == 'True/False')
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.only(left: 16, top: 4),
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: q.options.asMap().entries.map((entry) {
+                              final char = String.fromCharCode(65 + entry.key);
+                              return pw.Text('$char. ${entry.value}');
+                            }).toList(),
+                          ),
+                        ),
+                      if (q.questionType == 'Theory' ||
+                          q.questionType == 'Short Answer')
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.only(top: 8),
+                          child: pw.Container(
+                              height: 40,
+                              width: double.infinity,
+                              decoration: const pw.BoxDecoration(
+                                  border: pw.Border(bottom: pw.BorderSide()))),
+                        ),
+                    ],
+                  ),
+                );
+              })
+            ];
           },
         ),
       );
 
       // 2. Answer Sheet / Marking Scheme (New Page)
       if (_includeAnswerSheet || _includeMarkingScheme) {
-         doc.addPage(
-           pw.MultiPage(
-             pageFormat: PdfPageFormat.a4,
-             build: (pw.Context context) {
-               return [
-                 pw.Header(level: 0, child: pw.Text('ANSWER KEY & MARKING SCHEME', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold))),
-                 pw.SizedBox(height: 16),
-                 ...List.generate(processedQuestions.length, (index) {
-                   final q = processedQuestions[index];
-                   return pw.Container(
-                     margin: const pw.EdgeInsets.only(bottom: 8),
-                     child: pw.Row(
-                       crossAxisAlignment: pw.CrossAxisAlignment.start,
-                       children: [
-                         pw.SizedBox(width: 30, child: pw.Text('${index+1}.', style: pw.TextStyle(fontWeight: pw.FontWeight.bold))),
-                         pw.Expanded(
-                           child: pw.Column(
-                             crossAxisAlignment: pw.CrossAxisAlignment.start,
-                             children: [
-                               pw.Text('Ans: ${q.correctAnswer == 'True' || q.correctAnswer == 'False' ? q.correctAnswer : q.correctAnswer}'),
-                               if (_includeMarkingScheme && q.explanation != null && q.explanation!.isNotEmpty)
-                                 pw.Text('Explanation: ${q.explanation}', style: pw.TextStyle(fontStyle: pw.FontStyle.italic, color: PdfColors.grey700, fontSize: 10)),
-                             ],
-                           )
-                         )
-                       ]
-                     )
-                   );
-                 })
-               ];
-             }
-           )
-         );
+        doc.addPage(pw.MultiPage(
+            pageFormat: PdfPageFormat.a4,
+            build: (pw.Context context) {
+              return [
+                pw.Header(
+                    level: 0,
+                    child: pw.Text('ANSWER KEY & MARKING SCHEME',
+                        style: pw.TextStyle(
+                            fontSize: 20, fontWeight: pw.FontWeight.bold))),
+                pw.SizedBox(height: 16),
+                ...List.generate(processedQuestions.length, (index) {
+                  final q = processedQuestions[index];
+                  return pw.Container(
+                      margin: const pw.EdgeInsets.only(bottom: 8),
+                      child: pw.Row(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.SizedBox(
+                                width: 30,
+                                child: pw.Text('${index + 1}.',
+                                    style: pw.TextStyle(
+                                        fontWeight: pw.FontWeight.bold))),
+                            pw.Expanded(
+                                child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                pw.Text(
+                                    'Ans: ${q.correctAnswer == 'True' || q.correctAnswer == 'False' ? q.correctAnswer : q.correctAnswer}'),
+                                if (_includeMarkingScheme &&
+                                    q.explanation != null &&
+                                    q.explanation!.isNotEmpty)
+                                  pw.Text('Explanation: ${q.explanation}',
+                                      style: pw.TextStyle(
+                                          fontStyle: pw.FontStyle.italic,
+                                          color: PdfColors.grey700,
+                                          fontSize: 10)),
+                              ],
+                            ))
+                          ]));
+                })
+              ];
+            }));
       }
 
       await Printing.layoutPdf(
@@ -1554,7 +1597,8 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isProcessing = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error exporting PDF: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error exporting PDF: $e')));
       }
     }
   }

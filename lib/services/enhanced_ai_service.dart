@@ -67,8 +67,9 @@ class EnhancedAIService {
     return _webService.extractWebpage(url, cancelToken: cancelToken);
   }
 
-  Future<String> refineContent(String rawText) async {
-    return _generatorService.refineContent(rawText);
+  Future<String> refineContent(String rawText,
+      {CancellationToken? cancelToken}) async {
+    return _generatorService.refineContent(rawText, cancelToken: cancelToken);
   }
 
   Future<LocalSummary> generateSummary({
@@ -76,9 +77,11 @@ class EnhancedAIService {
     required String userId,
     String depth = 'intermediate',
     void Function(String)? onProgress,
+    CancellationToken? cancelToken,
   }) async {
     onProgress?.call('Generating summary...');
-    return _generatorService.generateSummary(text, userId: userId);
+    return _generatorService.generateSummary(text,
+        userId: userId, cancelToken: cancelToken);
   }
 
   Future<LocalQuiz> generateQuiz({
@@ -86,10 +89,11 @@ class EnhancedAIService {
     required String userId,
     int questionCount = 10,
     void Function(String)? onProgress,
+    CancellationToken? cancelToken,
   }) async {
     onProgress?.call('Generating quiz...');
     return _generatorService.generateQuiz(text,
-        userId: userId, questionCount: questionCount);
+        userId: userId, questionCount: questionCount, cancelToken: cancelToken);
   }
 
   Future<LocalFlashcardSet> generateFlashcards({
@@ -97,10 +101,11 @@ class EnhancedAIService {
     required String userId,
     int cardCount = 15,
     void Function(String)? onProgress,
+    CancellationToken? cancelToken,
   }) async {
     onProgress?.call('Generating flashcards...');
     return _generatorService.generateFlashcards(text,
-        userId: userId, cardCount: cardCount);
+        userId: userId, cardCount: cardCount, cancelToken: cancelToken);
   }
 
   Future<LocalQuiz> generateExam({
@@ -113,6 +118,7 @@ class EnhancedAIService {
     required double difficultyMix,
     required String userId,
     void Function(String)? onProgress,
+    CancellationToken? cancelToken,
   }) async {
     await _checkUsageLimits(userId);
     onProgress?.call('Generating formal exam paper...');
@@ -125,6 +131,7 @@ class EnhancedAIService {
       questionTypes: questionTypes,
       difficultyMix: difficultyMix,
       userId: userId,
+      cancelToken: cancelToken,
     );
   }
 
@@ -133,11 +140,16 @@ class EnhancedAIService {
     required String mimeType,
     String? customPrompt,
     required String userId,
+    CancellationToken? cancelToken,
   }) async {
     await _checkUsageLimits(userId);
     try {
+      cancelToken?.throwIfCancelled();
       final response =
           await http.get(Uri.parse(url)).timeout(const Duration(seconds: 60));
+
+      cancelToken?.throwIfCancelled();
+
       if (response.statusCode != 200) {
         return Result.error(EnhancedAIServiceException(
             'Failed to download file. Status: ${response.statusCode}'));
@@ -147,8 +159,14 @@ class EnhancedAIService {
         mimeType: mimeType,
         userId: userId,
         customPrompt: customPrompt,
+        cancelToken: cancelToken,
       );
     } catch (e) {
+      if (e is CancelledException) {
+        return Result.error(EnhancedAIServiceException(
+            'Extraction cancelled by user.',
+            code: 'CANCELLED'));
+      }
       return Result.error(
           EnhancedAIServiceException('Failed to analyze content from URL: $e'));
     }
@@ -159,9 +177,11 @@ class EnhancedAIService {
     required String mimeType,
     String? customPrompt,
     required String userId,
+    CancellationToken? cancelToken,
   }) async {
     await _checkUsageLimits(userId);
     try {
+      cancelToken?.throwIfCancelled();
       if (bytes.isEmpty)
         return Result.error(EnhancedAIServiceException('File data is empty.',
             code: 'EMPTY_FILE'));
@@ -196,23 +216,28 @@ OUTPUT FORMAT (JSON):
       ];
 
       final result = await _generatorService.generateMultimodal(parts,
-          customModel: _generatorService.visionModel, generationConfig: config);
+          customModel: _generatorService.visionModel,
+          generationConfig: config,
+          cancelToken: cancelToken);
       final jsonStr = _generatorService.extractJson(result);
-      final data = json.decode(jsonStr);
+      final dynamic decoded = json.decode(jsonStr);
+      final Map<String, dynamic> data =
+          decoded is Map<String, dynamic> ? decoded : {};
 
       return Result.ok(ExtractionResult(
-        text: data['content'] ?? result,
-        suggestedTitle: data['title'] ?? 'Extracted Content',
+        text: data['content']?.toString() ?? result,
+        suggestedTitle: data['title']?.toString() ?? 'Extracted Content',
       ));
-    } catch (e) {
+    } catch (e, stack) {
       developer.log('Multimodal Analysis failed',
-          name: 'EnhancedAIService', error: e);
-      return Result.error(EnhancedAIServiceException('Analysis failed: $e'));
+          name: 'EnhancedAIService', error: e, stackTrace: stack);
+      return Result.error(
+          EnhancedAIServiceException('Analysis failed: $e', originalError: e));
     }
   }
 
   Future<String> extractTextFromImage(Uint8List bytes,
-      {required String userId}) async {
+      {required String userId, CancellationToken? cancelToken}) async {
     await _checkUsageLimits(userId);
     try {
       final parts = [
@@ -222,7 +247,7 @@ OUTPUT FORMAT (JSON):
       ];
 
       final result = await _generatorService.generateMultimodal(parts,
-          customModel: _generatorService.visionModel);
+          customModel: _generatorService.visionModel, cancelToken: cancelToken);
       return result;
     } catch (e) {
       throw EnhancedAIServiceException('Failed to extract text from image: $e',
@@ -325,8 +350,10 @@ OUTPUT: Structured knowledge extracted from the file.''';
     required String userId,
     required LocalDatabaseService localDb,
     required void Function(String message) onProgress,
+    CancellationToken? cancelToken,
   }) async {
     onProgress('Creating folder...');
+    cancelToken?.throwIfCancelled();
     final folderId = const Uuid().v4();
     final folder = Folder(
       id: folderId,
@@ -352,20 +379,20 @@ OUTPUT: Structured knowledge extracted from the file.''';
         try {
           switch (outputType) {
             case 'summary':
-              final summary =
-                  await _generatorService.generateSummary(text, userId: userId);
+              final summary = await _generatorService.generateSummary(text,
+                  userId: userId, cancelToken: cancelToken);
               await localDb.saveSummary(summary, folderId);
               break;
 
             case 'quiz':
-              final quiz =
-                  await _generatorService.generateQuiz(text, userId: userId);
+              final quiz = await _generatorService.generateQuiz(text,
+                  userId: userId, cancelToken: cancelToken);
               await localDb.saveQuiz(quiz, folderId);
               break;
 
             case 'flashcards':
               final set = await _generatorService.generateFlashcards(text,
-                  userId: userId);
+                  userId: userId, cancelToken: cancelToken);
               await localDb.saveFlashcardSet(set, folderId);
               for (final card in set.flashcards) {
                 await srsService.scheduleReview(card.id, userId);
@@ -401,9 +428,11 @@ OUTPUT: Structured knowledge extracted from the file.''';
       SyncService(localDb).syncAllData();
 
       return folderId;
-    } catch (e) {
-      onProgress('Error occurred. Cleaning up...');
-      await localDb.deleteFolder(folderId);
+    } catch (e, stack) {
+      developer.log('Critical error in generateAndStoreOutputs',
+          name: 'EnhancedAIService', error: e, stackTrace: stack);
+      onProgress('Error occurred: $e. Cleaning up...');
+      await localDb.deleteFolder(folderId).catchError((_) => null);
       rethrow;
     }
   }
@@ -415,19 +444,25 @@ OUTPUT: Structured knowledge extracted from the file.''';
     String depth = 'intermediate',
     int cardCount = 15,
     void Function(String)? onProgress,
+    CancellationToken? cancelToken,
   }) async {
     await _checkUsageLimits(userId);
     onProgress?.call('Generating comprehensive study materials...');
 
+    String? folderId;
+
     try {
+      cancelToken?.throwIfCancelled();
       final data = await _generatorService.generateFromTopic(
         topic: topic,
         depth: depth,
         cardCount: cardCount,
+        cancelToken: cancelToken,
       );
 
-      final title = data['title'] as String;
+      final title = data['title']?.toString() ?? 'Study Deck';
       onProgress?.call('Creating study deck...');
+      cancelToken?.throwIfCancelled();
 
       final folder = Folder(
         id: const Uuid().v4(),
@@ -436,35 +471,56 @@ OUTPUT: Structured knowledge extracted from the file.''';
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
+      folderId = folder.id;
       await localDb.saveFolder(folder);
-      final folderId = folder.id;
 
       // Save Summary
       onProgress?.call('Saving summary...');
-      final summaryData = data['summary'] as Map<String, dynamic>;
+      cancelToken?.throwIfCancelled();
+      final summaryData = data['summary'];
+      final summaryText =
+          summaryData is Map ? summaryData['content']?.toString() ?? '' : '';
+      final summaryTags = summaryData is Map && summaryData['tags'] is List
+          ? (summaryData['tags'] as List).map((e) => e.toString()).toList()
+          : <String>[];
+
       final summary = LocalSummary(
         id: const Uuid().v4(),
         userId: userId,
         title: title,
-        content: summaryData['content'] as String,
+        content: summaryText,
         timestamp: DateTime.now(),
-        tags: List<String>.from(summaryData['tags'] ?? []),
+        tags: summaryTags,
       );
       await localDb.saveSummary(summary, folderId);
 
       // Save Quiz
       onProgress?.call('Saving quiz...');
-      final quizData = data['quiz'] as List<dynamic>;
-      final questions = quizData.map((q) {
-        final options = List<String>.from(q['options']);
-        final correctIndex = q['correctIndex'] as int;
-        return LocalQuizQuestion(
-          question: q['question'] as String,
-          options: options,
-          correctAnswer: options[correctIndex],
-          explanation: q['explanation'] as String?,
-        );
-      }).toList();
+      cancelToken?.throwIfCancelled();
+      final quizData = data['quiz'];
+      final List<LocalQuizQuestion> questions = [];
+      if (quizData is List) {
+        for (final q in quizData) {
+          if (q is Map) {
+            final options = q['options'] is List
+                ? (q['options'] as List).map((e) => e.toString()).toList()
+                : <String>[];
+            final correctIndex =
+                int.tryParse(q['correctIndex']?.toString() ?? '0') ?? 0;
+            final correctAnswer =
+                (correctIndex >= 0 && correctIndex < options.length)
+                    ? options[correctIndex]
+                    : (options.isNotEmpty ? options[0] : '');
+
+            questions.add(LocalQuizQuestion(
+              question: q['question']?.toString() ?? '...',
+              options: options,
+              correctAnswer: correctAnswer,
+              explanation: q['explanation']?.toString(),
+            ));
+          }
+        }
+      }
 
       final quiz = LocalQuiz(
         id: const Uuid().v4(),
@@ -477,13 +533,19 @@ OUTPUT: Structured knowledge extracted from the file.''';
 
       // Save Flashcards
       onProgress?.call('Saving flashcards...');
-      final flashcardsData = data['flashcards'] as List<dynamic>;
-      final flashcards = flashcardsData
-          .map((f) => LocalFlashcard(
-                question: f['question'] as String,
-                answer: f['answer'] as String,
-              ))
-          .toList();
+      cancelToken?.throwIfCancelled();
+      final flashcardsData = data['flashcards'];
+      final List<LocalFlashcard> flashcards = [];
+      if (flashcardsData is List) {
+        for (final f in flashcardsData) {
+          if (f is Map) {
+            flashcards.add(LocalFlashcard(
+              question: f['question']?.toString() ?? '...',
+              answer: f['answer']?.toString() ?? '...',
+            ));
+          }
+        }
+      }
 
       final flashcardSet = LocalFlashcardSet(
         id: const Uuid().v4(),
@@ -507,6 +569,17 @@ OUTPUT: Structured knowledge extracted from the file.''';
     } catch (e) {
       developer.log('Topic generation error',
           name: 'EnhancedAIService', error: e);
+
+      if (folderId != null) {
+        onProgress?.call('Cleaning up...');
+        await localDb.deleteFolder(folderId).catchError((_) => null);
+      }
+
+      if (e is CancelledException) {
+        throw EnhancedAIServiceException('Generation cancelled by user.',
+            code: 'CANCELLED');
+      }
+
       throw EnhancedAIServiceException('Failed to generate study materials.',
           code: 'GENERATION_FAILED', originalError: e);
     }
