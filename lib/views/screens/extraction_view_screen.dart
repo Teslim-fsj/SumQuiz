@@ -38,8 +38,8 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
   bool _isEditingTitle = false;
   CancellationToken? _cancelToken;
 
-  // Add a minimum character count validation
-  static const int minTextLength = 10;
+  // Minimum character count validation - 50 chars for better AI quality
+  static const int minTextLength = 50;
 
   @override
   void initState() {
@@ -244,8 +244,18 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
       debugPrint('Stack trace: $stackTrace');
 
       if (mounted) {
-        _showError(
-            'Failed to generate content. Please check your API key and internet connection, then try again. Error: ${e.toString()}');
+        String errorMsg = 'Failed to generate content.';
+        if (e.toString().contains('quota') || e.toString().contains('limit')) {
+          errorMsg =
+              'AI usage limit exceeded. Please try again later or upgrade to Pro.';
+        } else if (e.toString().contains('internet') ||
+            e.toString().contains('network')) {
+          errorMsg =
+              'Network error. Please check your internet connection and try again.';
+        } else {
+          errorMsg = 'Failed to generate content: ${e.toString()}';
+        }
+        _showError(errorMsg);
       }
     } finally {
       if (mounted) {

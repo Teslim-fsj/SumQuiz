@@ -53,9 +53,15 @@ Text: $text''';
       developer.log('AI Response received for summary',
           name: 'GeneratorAIService');
       final jsonStr = extractJson(response);
-      final dynamic decoded = json.decode(jsonStr);
-      final Map<String, dynamic> data =
-          decoded is Map<String, dynamic> ? decoded : {};
+      final data = safeJsonDecode(jsonStr);
+
+      final List<String> tags = [];
+      final rawTags = data['tags'];
+      if (rawTags is List) {
+        for (final e in rawTags) {
+          tags.add(e.toString());
+        }
+      }
 
       return LocalSummary(
         id: '', // To be set by caller
@@ -63,9 +69,7 @@ Text: $text''';
         title: data['title']?.toString() ?? 'Study Guide',
         content: data['content']?.toString() ?? '',
         timestamp: DateTime.now(),
-        tags: data['tags'] is List
-            ? (data['tags'] as List).map((e) => e.toString()).toList()
-            : [],
+        tags: tags,
       );
     } catch (e, stack) {
       developer.log('Summary generation failed',
@@ -129,20 +133,24 @@ Text: $text''';
       developer.log('AI Response received for quiz',
           name: 'GeneratorAIService');
       final jsonStr = extractJson(response);
-      final dynamic decoded = json.decode(jsonStr);
-      final Map<String, dynamic> data =
-          decoded is Map<String, dynamic> ? decoded : {};
+      final data = safeJsonDecode(jsonStr);
 
       final questionsData = data['questions'];
       final List<LocalQuizQuestion> questions = [];
       if (questionsData is List) {
         for (final q in questionsData) {
           if (q is Map) {
+            final List<String> options = [];
+            final rawOptions = q['options'];
+            if (rawOptions is List) {
+              for (final o in rawOptions) {
+                options.add(o.toString());
+              }
+            }
+
             questions.add(LocalQuizQuestion(
               question: q['question']?.toString() ?? 'Unknown Question',
-              options: q['options'] is List
-                  ? (q['options'] as List).map((e) => e.toString()).toList()
-                  : [],
+              options: options,
               correctAnswer: q['correctAnswer']?.toString() ?? '',
               explanation: q['explanation']?.toString(),
             ));
@@ -210,9 +218,7 @@ Text: $text''';
       developer.log('AI Response received for flashcards',
           name: 'GeneratorAIService');
       final jsonStr = extractJson(response);
-      final dynamic decoded = json.decode(jsonStr);
-      final Map<String, dynamic> data =
-          decoded is Map<String, dynamic> ? decoded : {};
+      final data = safeJsonDecode(jsonStr);
 
       final flashcardsData = data['flashcards'];
       final List<LocalFlashcard> flashcards = [];
@@ -275,11 +281,8 @@ Text: $rawText''';
       final response =
           await generateWithRetry(prompt, cancelToken: cancelToken);
       final jsonStr = extractJson(response);
-      final dynamic decoded = json.decode(jsonStr);
-      if (decoded is Map<String, dynamic>) {
-        return decoded['cleanedText']?.toString() ?? response;
-      }
-      return response;
+      final data = safeJsonDecode(jsonStr);
+      return data['cleanedText']?.toString() ?? response;
     } catch (e) {
       developer.log('RefineContent error',
           name: 'GeneratorAIService', error: e);
@@ -339,9 +342,9 @@ Text: $rawText''';
     final response = await generateWithRetry(prompt,
         customModel: proModel, cancelToken: cancelToken);
     final jsonStr = extractJson(response);
-    final dynamic decoded = json.decode(jsonStr);
-    if (decoded is Map<String, dynamic>) {
-      return decoded;
+    final data = safeJsonDecode(jsonStr);
+    if (data.containsKey('title')) {
+      return data;
     }
     throw AIServiceException('Malformed AI response for topic generation',
         code: 'MALFORMED_RESPONSE');
@@ -419,20 +422,24 @@ Text: $rawText''';
     developer.log('AI Response received for exam generation',
         name: 'GeneratorAIService');
     final jsonStr = extractJson(response);
-    final dynamic decoded = json.decode(jsonStr);
-    final Map<String, dynamic> data =
-        decoded is Map<String, dynamic> ? decoded : {};
+    final data = safeJsonDecode(jsonStr);
 
     final questionsData = data['questions'];
     final List<LocalQuizQuestion> questions = [];
     if (questionsData is List) {
       for (final q in questionsData) {
         if (q is Map) {
+          final List<String> options = [];
+          final rawOptions = q['options'];
+          if (rawOptions is List) {
+            for (final o in rawOptions) {
+              options.add(o.toString());
+            }
+          }
+
           questions.add(LocalQuizQuestion(
             question: q['question']?.toString() ?? 'Unknown Question',
-            options: q['options'] is List
-                ? (q['options'] as List).map((e) => e.toString()).toList()
-                : [],
+            options: options,
             correctAnswer: q['correctAnswer']?.toString() ?? '',
             explanation: q['explanation']?.toString(),
           ));

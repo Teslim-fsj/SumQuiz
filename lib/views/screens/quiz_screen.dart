@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sumquiz/services/iap_service.dart';
@@ -94,7 +95,8 @@ class _QuizScreenState extends State<QuizScreen> {
     if (userModel == null || usageService == null) return;
 
     if (!userModel.isPro) {
-      final canGenerate = await usageService.canPerformAction(userModel.uid, 'quizzes');
+      final canGenerate =
+          await usageService.canPerformAction(userModel.uid, 'quizzes');
       if (!canGenerate) {
         if (mounted) {
           showDialog(
@@ -131,17 +133,11 @@ class _QuizScreenState extends State<QuizScreen> {
       }
 
       final content = await _localDbService.getFolderContents(folderId);
-      final quizId =
-          content.firstWhere((c) => c.contentType == 'quiz').contentId;
-      final quiz = await _localDbService.getQuiz(quizId);
 
-      if (quiz != null && quiz.questions.isNotEmpty) {
-        setState(() {
-          _questions = quiz.questions;
-          _quizId = quiz.id;
-          _state = QuizState.inProgress;
-          _stopwatch.start();
-        });
+      if (content.isNotEmpty) {
+        if (!mounted) return;
+        // Navigate to the results screen
+        context.go('/library/results-view/$folderId');
       } else {
         throw Exception('AI service returned an empty quiz.');
       }

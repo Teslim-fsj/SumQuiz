@@ -48,7 +48,7 @@ abstract class AIBaseService {
   Future<void> _initializeModelsAsync() async {
     try {
       // API Key hardcoded for production/GitHub builds as requested by user
-      const String hardcodedApiKey = 'AIzaSyCHKJA1xvUbGsPGL6CKiw5tlILQWYwb540';
+      const String hardcodedApiKey = 'AIzaSyDWEUCZ9lfq7yspgl6fMt84jIUOAN9mItI';
       final envKey = dotenv.env['API_KEY'];
       final apiKey =
           (envKey != null && envKey.isNotEmpty) ? envKey : hardcodedApiKey;
@@ -133,25 +133,13 @@ abstract class AIBaseService {
 
     if (input.length <= AIConfig.maxInputLength) return input;
 
-    final maxLength = AIConfig.maxInputLength;
-    final sentenceEndings = ['. ', '! ', '? ', '.\n', '!\n', '?\n'];
-    int bestCutoff = -1;
+    // Hard Truncation to ensure stability
+    developer.log(
+        'AI Input truncated from ${input.length} to ${AIConfig.maxInputLength}',
+        name: 'AIBaseService',
+        level: 500);
 
-    for (final ending in sentenceEndings) {
-      final lastOccurrence = input.lastIndexOf(ending, maxLength);
-      if (lastOccurrence > bestCutoff) {
-        bestCutoff = lastOccurrence + ending.length;
-      }
-    }
-
-    if (bestCutoff > maxLength * 0.8) {
-      return input.substring(0, bestCutoff).trim();
-    }
-    final lastSpace = input.lastIndexOf(' ', maxLength);
-    if (lastSpace > maxLength * 0.9) {
-      return '${input.substring(0, lastSpace).trim()}...';
-    }
-    return '${input.substring(0, maxLength - 3).trim()}...';
+    return input.substring(0, AIConfig.maxInputLength).trim();
   }
 
   GenerativeModel get model => _model!;
@@ -259,6 +247,19 @@ abstract class AIBaseService {
     } catch (e) {
       developer.log('Error in extractJson', name: 'AIBaseService', error: e);
       return response.trim();
+    }
+  }
+
+  /// Safely decode JSON with a fallback. Returns fallback if parsing fails.
+  Map<String, dynamic> safeJsonDecode(String jsonStr,
+      {Map<String, dynamic> fallback = const {}}) {
+    try {
+      final decoded = json.decode(jsonStr);
+      if (decoded is Map<String, dynamic>) return decoded;
+      return fallback;
+    } catch (e) {
+      developer.log('Safe JSON decode failed', name: 'AIBaseService', error: e);
+      return fallback;
     }
   }
 }

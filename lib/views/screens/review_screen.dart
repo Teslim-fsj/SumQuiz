@@ -32,6 +32,7 @@ import '../../services/iap_service.dart';
 import '../widgets/extraction_progress_dialog.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
+import '../widgets/upgrade_dialog.dart';
 
 class ReviewScreen extends StatefulWidget {
   const ReviewScreen({super.key});
@@ -1457,7 +1458,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
       final isPro = await iapService.hasProAccess();
       if (!isPro) {
         if (!mounted) return;
-        _showUpgradePrompt('This premium feature requires a Pro subscription.');
+        showDialog(
+          context: context,
+          builder: (context) => const UpgradeDialog(featureName: 'Pro Feature'),
+        );
         return;
       }
     }
@@ -1466,48 +1470,16 @@ class _ReviewScreenState extends State<ReviewScreen> {
     if (!canUse) {
       if (!mounted) return;
 
-      String limitMessage = actionType == 'upload'
-          ? 'Lifetime file upload limit reached (1 file).'
-          : 'Daily AI generation limit reached (2/day).';
-
-      _showUpgradePrompt('$limitMessage Upgrade to Pro for unlimited access!');
+      final feature =
+          actionType == 'upload' ? 'Unlimited Uploads' : 'Daily Limit';
+      showDialog(
+        context: context,
+        builder: (context) => UpgradeDialog(featureName: feature),
+      );
       return;
     }
 
     action();
-  }
-
-  void _showUpgradePrompt(String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.stars, color: Colors.amber),
-            SizedBox(width: 10),
-            Text('Pro Feature'),
-          ],
-        ),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Maybe Later'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.push('/settings');
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.amber,
-              foregroundColor: Colors.black,
-            ),
-            child: const Text('View Plans'),
-          ),
-        ],
-      ),
-    );
   }
 
   Future<void> _pickAndExtractFile(List<String> extensions) async {

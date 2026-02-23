@@ -158,9 +158,7 @@ OUTPUT FORMAT (JSON):
       cancelToken: cancelToken,
     );
     final jsonStr = extractJson(response);
-    final dynamic decoded = json.decode(jsonStr);
-    final Map<String, dynamic> data =
-        decoded is Map<String, dynamic> ? decoded : {};
+    final data = safeJsonDecode(jsonStr);
 
     final content = data['content']?.toString() ?? '';
     final title = data['title']?.toString() ?? 'Web Page';

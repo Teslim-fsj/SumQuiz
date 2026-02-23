@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:sumquiz/models/extraction_result.dart';
 import 'package:sumquiz/services/enhanced_ai_service.dart';
@@ -31,184 +29,187 @@ class YouTubeAIService extends AIBaseService {
   }) async {
     if (!_isValidYouTubeUrl(videoUrl)) {
       return Result.error(EnhancedAIServiceException(
-        'Invalid YouTube URL format. Use: https://youtube.com/watch?v=VIDEO_ID',
+        'Invalid YouTube URL format.',
         code: 'INVALID_URL',
       ));
     }
 
-    // ── Tier 1: Native Gemini Video Analysis ──
-    developer.log('Tier 1: Attempting native Gemini video analysis...',
-        name: 'YouTubeAIService');
-    try {
-      cancelToken?.throwIfCancelled();
-      final result =
-          await _analyzeWithGeminiNative(videoUrl, cancelToken: cancelToken)
-              .timeout(Duration(seconds: AIConfig.youtubeTimeoutSeconds));
-
-      if (result != null && result.text.trim().length >= 100) {
-        developer.log('Tier 1 succeeded: ${result.text.length} chars extracted',
-            name: 'YouTubeAIService');
-        return Result.ok(result);
-      }
-      developer.log(
-          'Tier 1 returned sparse content (${result?.text.length ?? 0} chars), falling to Tier 2',
-          name: 'YouTubeAIService');
-    } on CancelledException {
-      return Result.error(EnhancedAIServiceException(
-          'Extraction cancelled by user.',
-          code: 'CANCELLED'));
-    } on TimeoutException {
-      developer.log(
-          'Tier 1 timed out after ${AIConfig.youtubeTimeoutSeconds}s, falling to Tier 2',
-          name: 'YouTubeAIService');
-    } catch (e) {
-      developer.log('Tier 1 failed: $e', name: 'YouTubeAIService', error: e);
-    }
-
-    // ── Tier 2: Transcript Extraction + AI Refinement ──
-    developer.log('Tier 2: Attempting transcript extraction...',
-        name: 'YouTubeAIService');
-    try {
-      cancelToken?.throwIfCancelled();
-      final result = await _extractViaTranscript(videoUrl).timeout(Duration(
-          seconds:
-              AIConfig.transcriptTimeoutSeconds + 30)); // 30s fetch + 30s AI
-
-      if (result != null && result.text.trim().isNotEmpty) {
-        developer.log('Tier 2 succeeded: ${result.text.length} chars extracted',
-            name: 'YouTubeAIService');
-        return Result.ok(result);
-      }
-      developer.log('Tier 2 returned empty content, falling to Tier 3 (error)',
-          name: 'YouTubeAIService');
-    } on CancelledException {
-      return Result.error(EnhancedAIServiceException(
-          'Extraction cancelled by user.',
-          code: 'CANCELLED'));
-    } on TimeoutException {
-      developer.log('Tier 2 timed out, falling to Tier 3 (error)',
-          name: 'YouTubeAIService');
-    } catch (e) {
-      developer.log('Tier 2 failed: $e', name: 'YouTubeAIService', error: e);
-    }
-
-    // ── Tier 3: Graceful Error ──
-    developer.log('Tier 3: All extraction strategies failed',
-        name: 'YouTubeAIService');
-    return Result.error(EnhancedAIServiceException(
-      'Could not extract content from this video. '
-      'The video may be private, age-restricted, too long, or lack captions. '
-      'Try a different public YouTube video.',
-      code: 'EXTRACTION_FAILED',
-    ));
-  }
-
-  /// Tier 1: Send the YouTube URL directly to Gemini for native multimodal analysis.
-  Future<ExtractionResult?> _analyzeWithGeminiNative(String videoUrl,
-      {CancellationToken? cancelToken}) async {
-    if (!await ensureInitialized()) return null;
-
-    final config = GenerationConfig(
-      responseMimeType: 'application/json',
-      responseSchema: Schema.object(
-        properties: {
-          'title':
-              Schema.string(description: 'A high-quality study session title'),
-          'content': Schema.string(
-              description: 'All the extracted educational text from the video'),
-        },
-        requiredProperties: ['title', 'content'],
-      ),
-    );
-
-    // Use "Browse Tool" naming per Google's best practice for URL context
-    final prompt =
-        '''Analyze this YouTube video and extract ALL educational content for study purposes.
-
-TASK: Use your native YouTube indexing and multimodal understanding (Browse Tool) to "watch" and "listen" to the video content from this URL. Provide a suggested title and all educational content.
-
-CRITICAL INSTRUCTIONS:
-1. EXTRACT all instructional content (do NOT summarize)
-2. Capture EVERYTHING the instructor teaches:
-   - All concepts, definitions, explanations (word-for-word when important)
-   - Visual content (slides, diagrams, demonstrations shown in video)
-   - Examples, case studies, practice problems
-   - Formulas, equations, code, technical details
-   - Step-by-step procedures
-   - Key timestamps [MM:SS] for important sections
-
-EXCLUDE: intros, promos, sponsor messages, and filler content.
-
-URL: $videoUrl
-
-OUTPUT FORMAT (JSON):
-{
-  "title": "A high-quality study session title",
-  "content": "All the extracted educational text..."
-}''';
-
-    final response = await generateWithRetry(
-      prompt,
-      customModel: youtubeModel,
-      generationConfig: config,
-      cancelToken: cancelToken,
-    );
-    final jsonStr = extractJson(response);
-    final dynamic decoded = json.decode(jsonStr);
-    final Map<String, dynamic> data =
-        decoded is Map<String, dynamic> ? decoded : {};
-
-    final content = data['content']?.toString() ?? '';
-    final title = data['title']?.toString() ?? 'YouTube Video';
-
-    if (content.trim().isEmpty) return null;
-
-    return ExtractionResult(
-      text: content,
-      suggestedTitle: title,
-      sourceUrl: videoUrl,
-    );
-  }
-
-  /// Tier 2: Extract transcript via youtube_explode_dart, then optionally refine with AI.
-  Future<ExtractionResult?> _extractViaTranscript(String videoUrl) async {
     final yt = YoutubeExplode();
     try {
       final videoId = _extractVideoId(videoUrl);
-      if (videoId == null) return null;
+      if (videoId == null) throw Exception('Could not extract video ID.');
 
+      developer.log('Fetching video metadata for $videoId',
+          name: 'YouTubeAIService');
       final video = await yt.videos
           .get(videoId)
           .timeout(Duration(seconds: AIConfig.transcriptTimeoutSeconds));
 
+      final duration = video.duration ?? Duration.zero;
+      final isShort =
+          duration.inSeconds < AIConfig.youtubeMultimodalThresholdSeconds;
+
+      // ── MODE A: Native Multimodal (< 10 min) ──
+      if (isShort) {
+        developer.log(
+            'Mode A: Short video (${duration.inSeconds}s). Using native multimodal.',
+            name: 'YouTubeAIService');
+        try {
+          cancelToken?.throwIfCancelled();
+          final result =
+              await _analyzeWithGeminiModeA(videoUrl, cancelToken: cancelToken)
+                  .timeout(Duration(seconds: AIConfig.youtubeTimeoutSeconds));
+
+          if (result != null && result.text.trim().length >= 100) {
+            return Result.ok(result);
+          }
+          developer.log('Mode A sparse, falling to Mode B/C.',
+              name: 'YouTubeAIService');
+        } catch (e) {
+          developer.log('Mode A failed: $e. Falling to Mode B/C.',
+              name: 'YouTubeAIService');
+        }
+      }
+
+      // ── MODE B/C: Transcript Pipeline (> 10 min or Mode A fail) ──
+      developer.log('Using Transcript Pipeline (Mode B/C)...',
+          name: 'YouTubeAIService');
+      cancelToken?.throwIfCancelled();
+
+      final transcriptData = await _getRawTranscript(yt, videoId);
+      if (transcriptData == null || transcriptData.trim().isEmpty) {
+        return Result.error(EnhancedAIServiceException(
+            'Could not find captions for this video. Use shorter videos or those with available transcripts.',
+            code: 'NO_CAPTIONS'));
+      }
+
+      // Hard truncation for stability before AI refinement
+      final cappedTranscript = transcriptData.length > AIConfig.maxInputLength
+          ? transcriptData.substring(0, AIConfig.maxInputLength)
+          : transcriptData;
+
+      // Mode C: Transcript refinement
+      final refinedResult = await _analyzeWithGeminiModeC(
+          cappedTranscript, video.title, videoUrl,
+          cancelToken: cancelToken);
+
+      if (refinedResult != null) {
+        return Result.ok(refinedResult);
+      }
+
+      // Mode B: Fallback to raw transcript if AI refinement fails
+      return Result.ok(ExtractionResult(
+        text: cappedTranscript,
+        suggestedTitle: video.title,
+        sourceUrl: videoUrl,
+      ));
+    } on CancelledException {
+      return Result.error(
+          EnhancedAIServiceException('Cancelled by user.', code: 'CANCELLED'));
+    } catch (e) {
+      developer.log('YouTube analysis failed: $e',
+          name: 'YouTubeAIService', error: e);
+      return Result.error(EnhancedAIServiceException(
+          'YouTube extraction failed. The video may be restricted or too long.',
+          code: 'EXTRACTION_FAILED'));
+    } finally {
+      yt.close();
+    }
+  }
+
+  Future<String?> _getRawTranscript(YoutubeExplode yt, String videoId) async {
+    try {
       final manifest = await yt.videos.closedCaptions
           .getManifest(videoId)
           .timeout(Duration(seconds: AIConfig.transcriptTimeoutSeconds));
 
-      if (manifest.tracks.isEmpty) {
-        developer.log('No captions available for video: $videoId',
-            name: 'YouTubeAIService');
-        return null;
-      }
+      if (manifest.tracks.isEmpty) return null;
 
       final track = manifest.tracks.first;
       final captions = await yt.videos.closedCaptions
           .get(track)
           .timeout(Duration(seconds: AIConfig.transcriptTimeoutSeconds));
 
-      final transcript = captions.captions.map((c) => c.text).join(' ');
-
-      if (transcript.trim().isEmpty) return null;
-
-      return ExtractionResult(
-        text: transcript,
-        suggestedTitle: video.title,
-        sourceUrl: videoUrl,
-      );
-    } finally {
-      // Always close the YoutubeExplode instance to free resources
-      yt.close();
+      return captions.captions.map((c) => c.text).join(' ');
+    } catch (e) {
+      return null;
     }
+  }
+
+  Future<ExtractionResult?> _analyzeWithGeminiModeA(String videoUrl,
+      {CancellationToken? cancelToken}) async {
+    if (!await ensureInitialized()) return null;
+
+    final prompt = '''Analyze this video: $videoUrl
+TASK: Use your native YouTube indexing and multimodal understanding (Browse Tool) to watch and listen to the video content from this URL. 
+
+Provide a detailed summary in 3 sections:
+1. OVERVIEW: Professional overview of the main subject.
+2. KEY TIMESTAMPS: List 5-10 important events/topics with precise MM:SS.
+3. EXTRACTED INSIGHTS: Deep bullet points of instructional content, quotes, and visual slide details.
+
+OUTPUT FORMAT (JSON):
+{
+  "title": "Topic-focused study title",
+  "content": "Detailed instructional text..."
+}''';
+
+    final response = await generateWithRetry(
+      prompt,
+      customModel: youtubeModel,
+      cancelToken: cancelToken,
+    );
+
+    final data = safeJsonDecode(extractJson(response));
+    final content = data['content']?.toString() ?? '';
+    if (content.isEmpty) return null;
+
+    return ExtractionResult(
+      text: content,
+      suggestedTitle: data['title']?.toString() ?? 'YouTube Analysis',
+      sourceUrl: videoUrl,
+    );
+  }
+
+  Future<ExtractionResult?> _analyzeWithGeminiModeC(
+      String transcript, String title, String videoUrl,
+      {CancellationToken? cancelToken}) async {
+    if (!await ensureInitialized()) return null;
+
+    final prompt =
+        '''Refine and structure this YouTube transcript into a high-quality study guide.
+VIDEO TITLE: $title
+
+TRANSCRIPT:
+$transcript
+
+TASK: 
+1. Fix broken sentences and OCR/speech-to-text glitches.
+2. Organize into logical section headings.
+3. EXTRACT all educational facts, definitions, and formulas.
+4. Maintain an academic, exam-focused tone.
+
+OUTPUT FORMAT (JSON):
+{
+  "title": "Professional title",
+  "content": "Structured Markdown guide..."
+}''';
+
+    final response = await generateWithRetry(
+      prompt,
+      customModel: proModel,
+      cancelToken: cancelToken,
+    );
+
+    final data = safeJsonDecode(extractJson(response));
+    final content = data['content']?.toString() ?? '';
+    if (content.isEmpty) return null;
+
+    return ExtractionResult(
+      text: content,
+      suggestedTitle: data['title']?.toString() ?? title,
+      sourceUrl: videoUrl,
+    );
   }
 
   /// Validate that the URL is a valid YouTube URL.
@@ -244,14 +245,16 @@ OUTPUT FORMAT (JSON):
       if (uri.path.contains('/shorts/')) {
         final segments = uri.pathSegments;
         final index = segments.indexOf('shorts');
-        if (index != -1 && index + 1 < segments.length)
+        if (index != -1 && index + 1 < segments.length) {
           return segments[index + 1];
+        }
       }
       if (uri.path.contains('/live/')) {
         final segments = uri.pathSegments;
         final index = segments.indexOf('live');
-        if (index != -1 && index + 1 < segments.length)
+        if (index != -1 && index + 1 < segments.length) {
           return segments[index + 1];
+        }
       }
       return null;
     } catch (_) {

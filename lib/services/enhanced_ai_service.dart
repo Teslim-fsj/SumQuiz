@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
+
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
-import 'package:google_generative_ai/google_generative_ai.dart';
+
 import 'dart:developer' as developer;
 
 import 'package:sumquiz/models/local_flashcard_set.dart';
@@ -182,164 +182,21 @@ class EnhancedAIService {
     await _checkUsageLimits(userId);
     try {
       cancelToken?.throwIfCancelled();
-      if (bytes.isEmpty)
+      if (bytes.isEmpty) {
         return Result.error(EnhancedAIServiceException('File data is empty.',
             code: 'EMPTY_FILE'));
+      }
 
-      final config = GenerationConfig(
-        responseMimeType: 'application/json',
-        responseSchema: Schema.object(
-          properties: {
-            'title':
-                Schema.string(description: 'Suggested title for this content'),
-            'content':
-                Schema.string(description: 'All extracted text from the file'),
-          },
-          requiredProperties: ['title', 'content'],
-        ),
-      );
-
-      final contentTypePrompt = _getPromptForContentType(mimeType);
-      final prompt = '''$contentTypePrompt
-      
-${customPrompt ?? 'Extract all educational content from this file for study purposes.'}
-
-OUTPUT FORMAT (JSON):
-{
-  "title": "Suggested title for this content",
-  "content": "All extracted text..."
-}''';
-
-      final parts = [
-        TextPart(prompt),
-        DataPart(mimeType, bytes),
-      ];
-
-      final result = await _generatorService.generateMultimodal(parts,
-          customModel: _generatorService.visionModel,
-          generationConfig: config,
-          cancelToken: cancelToken);
-      final jsonStr = _generatorService.extractJson(result);
-      final dynamic decoded = json.decode(jsonStr);
-      final Map<String, dynamic> data =
-          decoded is Map<String, dynamic> ? decoded : {};
-
-      return Result.ok(ExtractionResult(
-        text: data['content']?.toString() ?? result,
-        suggestedTitle: data['title']?.toString() ?? 'Extracted Content',
-      ));
+      // ── HARDENING: STOP SENDING BYTES TO AI ──
+      // This path is now only used as a fallback or for models that strictly require text.
+      // We return an error or a message asking to use local extraction.
+      return Result.error(EnhancedAIServiceException(
+          'Multimodal upload disabled for stability. Please use local extraction.'));
     } catch (e, stack) {
-      developer.log('Multimodal Analysis failed',
+      developer.log('Analysis failed',
           name: 'EnhancedAIService', error: e, stackTrace: stack);
       return Result.error(
           EnhancedAIServiceException('Analysis failed: $e', originalError: e));
-    }
-  }
-
-  Future<String> extractTextFromImage(Uint8List bytes,
-      {required String userId, CancellationToken? cancelToken}) async {
-    await _checkUsageLimits(userId);
-    try {
-      final parts = [
-        TextPart(
-            'Transcribe all text from this image exactly as it appears. Include all text content, maintaining original formatting where possible.'),
-        DataPart('image/jpeg', bytes),
-      ];
-
-      final result = await _generatorService.generateMultimodal(parts,
-          customModel: _generatorService.visionModel, cancelToken: cancelToken);
-      return result;
-    } catch (e) {
-      throw EnhancedAIServiceException('Failed to extract text from image: $e',
-          code: 'EXTRACTION_FAILED');
-    }
-  }
-
-  String _getPromptForContentType(String mimeType) {
-    if (mimeType.contains('pdf')) {
-      return '''Extract ALL educational content from this PDF document for study purposes.
-
-INSTRUCTIONS:
-1. EXTRACT (not summarize) all text content including:
-   - Main body text and paragraphs
-   - Headers, titles, and section headings
-   - Lists, tables, and structured data
-   - Definitions, formulas, examples
-   - Code snippets if present
-
-2. ORGANIZE the output with:
-   - Clear section headings
-   - Preserved structure and hierarchy
-   - Bullet points for lists
-
-OUTPUT: Clean, organized content ready for studying.''';
-    } else if (mimeType.startsWith('image/')) {
-      return '''Analyze this image and extract ALL text and educational content.
-
-INSTRUCTIONS:
-1. Transcribe all visible text exactly as it appears
-2. Describe any diagrams, charts, or visual information
-3. Explain any educational content shown
-4. Organize the output clearly
-
-OUTPUT: All text and relevant information from the image.''';
-    } else if (mimeType.startsWith('audio/')) {
-      return '''Transcribe and summarize this audio content for study purposes.
-
-INSTRUCTIONS:
-1. Transcribe all spoken content
-2. Identify key educational points
-3. Note any important facts, definitions, or examples
-4. Organize by topic if multiple subjects are covered
-
-OUTPUT: Complete transcription with key educational content highlighted.''';
-    } else if (mimeType.startsWith('video/')) {
-      return '''Analyze this video and extract ALL educational content.
-      
-INSTRUCTIONS:
-1. Transcribe all spoken content
-2. Describe visual content (slides, diagrams, demonstrations)
-3. Note timestamps for key sections: [MM:SS]
-4. Extract all facts, concepts, examples covered
-5. Organize by topic
-6. Use logical headings and bullet points
-
-OUTPUT: Complete educational content from the video, organized for study material generation.''';
-    } else if (mimeType.contains('presentation') ||
-        mimeType.contains('powerpoint') ||
-        mimeType.contains('slides')) {
-      return '''Analyze these presentation slides and extract ALL educational content.
-      
-INSTRUCTIONS:
-1. Extract text from every slide
-2. Identify the main topic of each slide
-3. Preserve the hierarchy (titles, subtitles, body text)
-4. Describe any diagrams, charts, or tables if they contain educational data
-5. Connect related slides into cohesive sections
-
-OUTPUT: Structured educational content extracted from all slides.''';
-    } else if (mimeType.contains('officedocument') ||
-        mimeType.contains('msword') ||
-        mimeType.contains('wordprocessingml')) {
-      return '''Extract ALL educational content from this document for study purposes.
-      
-INSTRUCTIONS:
-1. Transcribe all text body, including headers and subheaders
-2. Maintain the document's structure and formatting
-3. Extract all definitions, formulas, facts, and examples
-4. Organize the output clearly for learning
-
-OUTPUT: Clean, organized content ready for studying.''';
-    } else {
-      return '''Extract and describe all educational content from this file. 
-      
-INSTRUCTIONS:
-1. Identify the core subject matter
-2. Extract all relevant facts, definitions, and concepts
-3. Structure the output logically using headings and bullet points
-4. Ensure the output is suitable for generating quizzes and summaries
-
-OUTPUT: Structured knowledge extracted from the file.''';
     }
   }
 
@@ -480,9 +337,16 @@ OUTPUT: Structured knowledge extracted from the file.''';
       final summaryData = data['summary'];
       final summaryText =
           summaryData is Map ? summaryData['content']?.toString() ?? '' : '';
-      final summaryTags = summaryData is Map && summaryData['tags'] is List
-          ? (summaryData['tags'] as List).map((e) => e.toString()).toList()
-          : <String>[];
+
+      final List<String> summaryTags = [];
+      if (summaryData is Map) {
+        final rawTags = summaryData['tags'];
+        if (rawTags is List) {
+          for (final e in rawTags) {
+            summaryTags.add(e.toString());
+          }
+        }
+      }
 
       final summary = LocalSummary(
         id: const Uuid().v4(),
@@ -502,9 +366,14 @@ OUTPUT: Structured knowledge extracted from the file.''';
       if (quizData is List) {
         for (final q in quizData) {
           if (q is Map) {
-            final options = q['options'] is List
-                ? (q['options'] as List).map((e) => e.toString()).toList()
-                : <String>[];
+            final rawOptions = q['options'];
+            final List<String> options = [];
+            if (rawOptions is List) {
+              for (final o in rawOptions) {
+                options.add(o.toString());
+              }
+            }
+
             final correctIndex =
                 int.tryParse(q['correctIndex']?.toString() ?? '0') ?? 0;
             final correctAnswer =

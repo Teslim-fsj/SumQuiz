@@ -5,7 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, TargetPlatform;
+    show defaultTargetPlatform, TargetPlatform, kIsWeb;
 import 'package:sumquiz/models/user_model.dart';
 
 /// IAP Service for handling Play Store purchases
@@ -29,10 +29,18 @@ class IAPService {
   /// Initialize IAP service
   Future<void> initialize() async {
     try {
+      if (kIsWeb) {
+        developer.log(
+            'IAP is not applicable on Web. WebPaymentService should be used.',
+            name: 'IAPService');
+        return;
+      }
+
       // Check if IAP is available
       final isAvailable = await InAppPurchase.instance.isAvailable();
       if (!isAvailable) {
-        developer.log('IAP is not available on this device',
+        developer.log(
+            'IAP is not available on this device. This might be due to a lack of Store support or connection issues.',
             name: 'IAPService');
         return;
       }
@@ -47,8 +55,14 @@ class IAPService {
         },
       );
 
-      // Query product details
-      await _getProductDetails();
+      // Query product details in background but ensure it doesn't block forever
+      _getProductDetails().timeout(const Duration(seconds: 10)).then((details) {
+        developer.log('Pre-fetched product details: ${details.length}',
+            name: 'IAPService');
+      }).catchError((e) {
+        developer.log('Initial product detail query failed: $e',
+            name: 'IAPService');
+      });
 
       developer.log('IAP service initialized successfully', name: 'IAPService');
     } catch (e) {

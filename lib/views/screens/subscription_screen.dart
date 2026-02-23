@@ -44,17 +44,17 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       if (products.isEmpty && !kIsWeb) {
         products = [
           _FallbackProductDetails(
-            id: 'monthly_subscription',
+            id: 'sumquiz_pro_monthly',
             title: 'Monthly Pro',
             description: 'Standard monthly plan',
-            price: 'US\$9.99',
+            price: r'US$9.99',
             rawPrice: 9.99,
           ),
           _FallbackProductDetails(
-            id: 'yearly_subscription',
+            id: 'sumquiz_pro_yearly',
             title: 'Annual Pro',
             description: 'Best value annual plan',
-            price: 'US\$59.99',
+            price: r'US$59.99',
             rawPrice: 59.99,
           ),
         ];
@@ -70,7 +70,32 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         });
       }
     } catch (e) {
-      // Error handling is now managed by SubscriptionProvider
+      debugPrint('Error loading products: $e');
+      // If error occurs, still try to populate fallback products if on mobile
+      if (!kIsWeb && _products.isEmpty) {
+        final fallbacks = [
+          _FallbackProductDetails(
+            id: 'sumquiz_pro_monthly',
+            title: 'Monthly Pro',
+            description: 'Standard monthly plan',
+            price: r'US$9.99',
+            rawPrice: 9.99,
+          ),
+          _FallbackProductDetails(
+            id: 'sumquiz_pro_yearly',
+            title: 'Annual Pro',
+            description: 'Best value annual plan',
+            price: r'US$59.99',
+            rawPrice: 59.99,
+          ),
+        ];
+        if (mounted) {
+          setState(() {
+            _products = fallbacks;
+            _setDefaultSelection();
+          });
+        }
+      }
     }
   }
 
@@ -276,16 +301,30 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                             const SizedBox(height: 16),
 
                             // Services (IAPService/WebPaymentService) already filter to allowed plans
-                            if (_products.isEmpty)
+                            if (_products.isEmpty &&
+                                !subscriptionProvider.isLoading)
                               Center(
                                 child: Padding(
                                   padding: const EdgeInsets.all(32.0),
-                                  child: Text(
-                                    'Unable to load subscription plans. Please check your internet connection or try again later.',
-                                    textAlign: TextAlign.center,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        'Unable to load subscription plans. This might be due to a connection issue or Google Play Store availability.',
+                                        textAlign: TextAlign.center,
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                          color: theme
+                                              .colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      TextButton.icon(
+                                        onPressed: _loadProducts,
+                                        icon: const Icon(Icons.refresh),
+                                        label:
+                                            const Text('Retry Loading Plans'),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),

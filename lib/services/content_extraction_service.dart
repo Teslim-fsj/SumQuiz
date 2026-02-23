@@ -42,6 +42,9 @@ enum UrlContentType {
 class ContentExtractionService {
   final EnhancedAIService _enhancedAiService;
 
+  /// Internal flag to test local extraction alone without AI calls (Stability test)
+  static bool localOnlyTest = false;
+
   ContentExtractionService(this._enhancedAiService);
 
   /// Validates input based on type to prevent crashes from invalid inputs
@@ -178,6 +181,11 @@ class ContentExtractionService {
         final url = input as String;
         final urlType = _detectUrlType(url);
 
+        if (localOnlyTest) {
+          return ExtractionResult(
+              text: 'Local extraction test only', suggestedTitle: 'Test');
+        }
+
         switch (urlType) {
           case UrlContentType.youtube:
             onProgress
@@ -255,6 +263,12 @@ class ContentExtractionService {
           rawText = ''; // Fallback to AI
         }
 
+        if (localOnlyTest) {
+          return ExtractionResult(
+              text: rawText.isNotEmpty ? rawText : 'Local extraction test',
+              suggestedTitle: 'Test Document');
+        }
+
         if (rawText.trim().isEmpty ||
             rawText.contains('[No text found in PDF.')) {
           onProgress?.call('Analyzing document complexity with AI...');
@@ -279,6 +293,12 @@ class ContentExtractionService {
           }
         }
 
+        if (localOnlyTest) {
+          return ExtractionResult(
+              text: rawText.isNotEmpty ? rawText : 'Local extraction test',
+              suggestedTitle: 'Test Image');
+        }
+
         if (rawText.isEmpty || rawText.contains('[No text found in image.')) {
           onProgress?.call('Analyzing image with AI Vision...');
           if (userId == null) throw Exception('User ID is required.');
@@ -293,6 +313,10 @@ class ContentExtractionService {
         suggestedTitle = 'Scanned Image';
         break;
       case 'audio':
+        if (localOnlyTest) {
+          return ExtractionResult(
+              text: 'Local extraction test', suggestedTitle: 'Test Audio');
+        }
         onProgress?.call('Transcribing audio with AI...');
         if (userId == null) throw Exception('User ID is required.');
         final result = await _enhancedAiService.analyzeContentFromBytes(
@@ -305,6 +329,10 @@ class ContentExtractionService {
         suggestedTitle = 'Audio Lesson';
         break;
       case 'video':
+        if (localOnlyTest) {
+          return ExtractionResult(
+              text: 'Local extraction test', suggestedTitle: 'Test Video');
+        }
         onProgress?.call('Analyzing video with AI...');
         if (userId == null) throw Exception('User ID is required.');
         final result = await _enhancedAiService.analyzeContentFromBytes(
@@ -332,6 +360,15 @@ class ContentExtractionService {
 
     developer.log('Extraction complete: $suggestedTitle',
         name: 'ContentExtractionService');
+
+    // Hard truncation for memory safety before returning to UI/AI
+    if (rawText.length > AIConfig.maxInputLength) {
+      developer.log(
+          'Extracted text truncated from ${rawText.length} to ${AIConfig.maxInputLength}',
+          name: 'ContentExtractionService');
+      rawText = rawText.substring(0, AIConfig.maxInputLength);
+    }
+
     return ExtractionResult(text: rawText, suggestedTitle: suggestedTitle);
   }
 

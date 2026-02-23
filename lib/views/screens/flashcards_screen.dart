@@ -1,6 +1,7 @@
 import 'dart:developer' as developer;
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -102,7 +103,8 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
     }
 
     if (!userModel.isPro) {
-      final canGenerate = await usageService.canPerformAction(userModel.uid, 'flashcards');
+      final canGenerate =
+          await usageService.canPerformAction(userModel.uid, 'flashcards');
       if (!canGenerate) {
         if (mounted) {
           showDialog(
@@ -149,25 +151,11 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
       }
 
       final content = await _localDbService.getFolderContents(folderId);
-      final flashcardSetId =
-          content.firstWhere((c) => c.contentType == 'flashcardSet').contentId;
-      final flashcardSet =
-          await _localDbService.getFlashcardSet(flashcardSetId);
 
-      if (flashcardSet != null && flashcardSet.flashcards.isNotEmpty) {
+      if (content.isNotEmpty) {
         if (mounted) {
-          setState(() {
-            _flashcards = flashcardSet.flashcards
-                .map((f) =>
-                    Flashcard(id: f.id, question: f.question, answer: f.answer))
-                .toList();
-            _state = FlashcardState.review;
-          });
-          developer.log(
-              '${_flashcards.length} flashcards generated successfully.',
-              name: 'flashcards.generation');
-          developer.log('First flashcard: ${_flashcards.first.question}',
-              name: 'flashcards.debug');
+          // Navigate to the results screen
+          context.go('/library/results-view/$folderId');
         }
       } else {
         throw Exception('AI service returned an empty list of flashcards.');

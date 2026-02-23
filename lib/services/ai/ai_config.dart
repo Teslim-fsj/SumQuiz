@@ -24,9 +24,13 @@ class AIConfig {
   // Master extraction timeout — wraps the entire extraction operation
   static const int masterExtractionTimeoutSeconds = 200;
 
+  // YouTube Multimodal threshold (duration < 10 mins)
+  static const int youtubeMultimodalThresholdSeconds = 600;
+
   // Input/output limits
-  static const int maxInputLength = 30000;
-  static const int maxPdfSize = 15 * 1024 * 1024; // 15MB
+  static const int maxInputLength = 15000;
+  static const int maxPdfSize =
+      10 * 1024 * 1024; // 10MB limit for local processing
   static const int maxOutputTokens = 8192;
 
   // Model parameters

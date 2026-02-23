@@ -124,18 +124,13 @@ class SummaryScreenState extends State<SummaryScreen> {
       );
 
       final content = await _localDbService.getFolderContents(folderId);
-      final summaryId =
-          content.firstWhere((c) => c.contentType == 'summary').contentId;
-      final summary = await _localDbService.getSummary(summaryId);
 
-      if (summary != null) {
-        if (!userModel.isPro) await usageService.recordAction(userModel.uid, 'summaries');
-        setState(() {
-          _summaryTitle = summary.title;
-          _summaryContent = summary.content;
-          _summaryTags = summary.tags;
-          _state = ScreenState.success;
-        });
+      if (content.isNotEmpty) {
+        if (!userModel.isPro)
+          await usageService.recordAction(userModel.uid, 'summaries');
+        if (!mounted) return;
+        // Navigate to the results screen
+        context.go('/library/results-view/$folderId');
       } else {
         throw Exception('Failed to retrieve the generated summary.');
       }
@@ -349,14 +344,14 @@ class SummaryScreenState extends State<SummaryScreen> {
       final user = context.read<UserModel?>();
       if (user == null || _summaryContent.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('No summary content available to generate quiz.')));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('No summary content available to generate quiz.')));
         }
         return;
       }
 
       if (!mounted) return;
-      
+
       // Navigate to quiz creation with summary content
       context.push('/create', extra: {
         'initialText': _summaryContent,
