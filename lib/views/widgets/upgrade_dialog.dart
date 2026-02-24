@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 class UpgradeDialog extends StatelessWidget {
@@ -40,7 +41,11 @@ class UpgradeDialog extends StatelessWidget {
         ElevatedButton(
           onPressed: () {
             Navigator.of(context).pop();
-            context.push('/settings/subscription');
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (context.mounted) {
+                context.push('/settings/subscription');
+              }
+            });
           },
           child: const Text('Upgrade Now'),
         ),

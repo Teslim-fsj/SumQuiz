@@ -1608,30 +1608,55 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   Future<void> _processExtraction(String type, dynamic input,
       {String? mimeType}) async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final userId = authService.currentUser?.uid;
-    if (userId == null) return;
-
-    final extractionService =
-        Provider.of<ContentExtractionService>(context, listen: false);
-    final progressNotifier =
-        ValueNotifier<String>('Initializing extraction...');
-
-    final cancelToken = CancellationToken();
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => ExtractionProgressDialog(
-        messageNotifier: progressNotifier,
-        onCancel: () {
-          cancelToken.cancel();
-          Navigator.pop(context);
-        },
-      ),
-    );
-
     try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      if (authService == null) {
+        if (mounted) {
+          _showError(
+              'Authentication service not available. Please restart the app.');
+        }
+        return;
+      }
+
+      final userId = authService.currentUser?.uid;
+      if (userId == null) {
+        if (mounted) {
+          _showError('User not authenticated. Please log in.');
+        }
+        return;
+      }
+
+      final extractionService =
+          Provider.of<ContentExtractionService>(context, listen: false);
+      if (extractionService == null) {
+        if (mounted) {
+          _showError('Content extraction service not available.');
+        }
+        return;
+      }
+
+      final progressNotifier =
+          ValueNotifier<String>('Initializing extraction...');
+
+      final cancelToken = CancellationToken();
+
+      // Check if dialog can be shown before attempting to show it
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => ExtractionProgressDialog(
+          messageNotifier: progressNotifier,
+          onCancel: () {
+            cancelToken.cancel();
+            if (mounted) {
+              Navigator.pop(context);
+            }
+          },
+        ),
+      );
+
       final result = await extractionService.extractContent(
         type: type,
         input: input,
@@ -1648,18 +1673,41 @@ class _ReviewScreenState extends State<ReviewScreen> {
         if (type == 'pdf' || type == 'image' || type == 'audio') {
           final usageService =
               Provider.of<UsageService>(context, listen: false);
-          await usageService.recordAction(userId, 'upload');
+          if (usageService != null) {
+            await usageService.recordAction(userId, 'upload');
+          }
         }
 
-        context.push('/create/extraction-view', extra: result);
+        // Check if the result is valid before navigating
+        if (result != null &&
+            result.text != null &&
+            result.text.trim().isNotEmpty) {
+          context.push('/create/extraction-view', extra: result);
+        } else {
+          _showError(
+              'No content was extracted. Please try with different content.');
+        }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('Error in _processExtraction: $e');
+      debugPrint('Stack trace: $stackTrace');
+
+      // Ensure dialog is dismissed even if an error occurs
+      try {
+        if (mounted) {
+          Navigator.pop(context);
+        }
+      } catch (dismissError) {
+        // Dialog might already be dismissed, ignore this error
+      }
+
       if (mounted) {
-        Navigator.pop(context);
         String errorMessage = 'Extraction failed. ';
         if (e.toString().contains('NOT_FOUND') ||
             e.toString().contains('404')) {
           errorMessage += 'The AI model could not be reached.';
+        } else if (e.toString().contains('API')) {
+          errorMessage += 'API configuration error. Check your API key.';
         } else {
           errorMessage += e.toString();
         }

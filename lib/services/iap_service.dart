@@ -82,9 +82,14 @@ class IAPService {
             name: 'IAPService');
       }
 
+      if (response.productDetails.isEmpty) {
+        developer.log('No product details returned from store',
+            name: 'IAPService');
+      }
+
       return response.productDetails;
     } catch (e) {
-      developer.log('Failed to get product details',
+      developer.log('Failed to get product details: $e',
           name: 'IAPService', error: e);
       return [];
     }

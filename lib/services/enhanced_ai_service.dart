@@ -33,7 +33,25 @@ class EnhancedAIService {
   final WebAIService _webService = WebAIService();
   final GeneratorAIService _generatorService = GeneratorAIService();
 
-  EnhancedAIService({required IAPService iapService});
+  EnhancedAIService({required IAPService iapService}) {
+    // Initialize services immediately
+    _initializeServices();
+  }
+
+  void _initializeServices() {
+    // Services are already initialized in their constructors
+    // but we can trigger initialization here if needed
+  }
+
+  /// Ensures all AI services are properly initialized
+  Future<void> initialize() async {
+    // Wait for all AI services to initialize
+    await Future.wait([
+      _youtubeService.ensureInitialized(),
+      _webService.ensureInitialized(),
+      _generatorService.ensureInitialized(),
+    ]);
+  }
 
   Future<bool> isServiceHealthy() async {
     return await _generatorService.isServiceHealthy();
@@ -187,11 +205,11 @@ class EnhancedAIService {
             code: 'EMPTY_FILE'));
       }
 
-      // ── HARDENING: STOP SENDING BYTES TO AI ──
-      // This path is now only used as a fallback or for models that strictly require text.
-      // We return an error or a message asking to use local extraction.
+      // Process content based on MIME type
+      // For now, we'll return an error to indicate that this functionality
+      // needs to be implemented properly with proper AI model handling
       return Result.error(EnhancedAIServiceException(
-          'Multimodal upload disabled for stability. Please use local extraction.'));
+          'File processing is not supported in this mode. Please use local extraction methods.'));
     } catch (e, stack) {
       developer.log('Analysis failed',
           name: 'EnhancedAIService', error: e, stackTrace: stack);
@@ -209,6 +227,9 @@ class EnhancedAIService {
     required void Function(String message) onProgress,
     CancellationToken? cancelToken,
   }) async {
+    // Ensure all services are initialized
+    await initialize();
+
     onProgress('Creating folder...');
     cancelToken?.throwIfCancelled();
     final folderId = const Uuid().v4();
@@ -234,6 +255,13 @@ class EnhancedAIService {
             'Generating ${outputType.capitalize()} (${completed + 1}/$total)...');
 
         try {
+          // Check if text is valid before processing
+          if (text.trim().isEmpty) {
+            throw EnhancedAIServiceException(
+                'No content provided. Please provide text to generate content.',
+                code: 'NO_CONTENT_PROVIDED');
+          }
+
           switch (outputType) {
             case 'summary':
               final summary = await _generatorService.generateSummary(text,

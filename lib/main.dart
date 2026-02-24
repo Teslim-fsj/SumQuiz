@@ -173,8 +173,14 @@ class _MyAppState extends State<MyApp> {
               SubscriptionProvider(iapService),
         ),
         ProxyProvider<IAPService, EnhancedAIService>(
-          update: (context, iapService, previous) =>
-              EnhancedAIService(iapService: iapService),
+          update: (context, iapService, previous) {
+            final service = EnhancedAIService(iapService: iapService);
+            // Initialize the service asynchronously
+            service.initialize().catchError((e) {
+              debugPrint('Error initializing EnhancedAIService: $e');
+            });
+            return service;
+          },
         ),
         ProxyProvider<EnhancedAIService, ContentExtractionService>(
           update: (context, enhancedAIService, previous) =>

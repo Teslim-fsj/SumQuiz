@@ -46,6 +46,33 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
     super.initState();
     final rawText = widget.result?.text ?? '';
 
+    // Check if the extraction result is valid before proceeding
+    if (widget.result == null || (widget.result!.text.trim().isEmpty)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'No content was extracted. Please try again with a different source.',
+              ),
+              duration: Duration(seconds: 4),
+              backgroundColor: Colors.red,
+            ),
+          );
+          // Navigate back after showing the snackbar
+          Future.delayed(const Duration(seconds: 4), () {
+            if (mounted && context.canPop()) {
+              context.pop();
+            }
+          });
+        }
+      });
+      // Initialize with empty text to prevent crashes
+      _textController = TextEditingController(text: '');
+      _titleController = TextEditingController(text: 'Untitled Creation');
+      return; // Early return to avoid further processing
+    }
+
     // Heuristic normalization:
     // If text appears to be "one word per line" (many short lines), join them.
     String normalizedText = rawText.trim();
@@ -79,25 +106,6 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
     _titleController = TextEditingController(
         text: widget.result?.suggestedTitle ?? 'Untitled Creation');
     _selectedOutputs.add(OutputType.summary); // Select Summary by default
-
-    // Guard against null or empty extraction results
-    if (widget.result == null || (widget.result!.text.trim().isEmpty)) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'No content was extracted. Please try again with a different source.',
-              ),
-              duration: Duration(seconds: 4),
-            ),
-          );
-          if (context.canPop()) {
-            context.pop();
-          }
-        }
-      });
-    }
   }
 
   @override
@@ -235,8 +243,29 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
         context.go('/library/results-view/$folderId');
       }
     } on EnhancedAIServiceException catch (e) {
+      debugPrint('EnhancedAIServiceException: ${e.message}');
+      debugPrint('Error code: ${e.code}');
+
       if (mounted) {
-        _showError('AI Processing Error: ${e.message}');
+        String errorMsg = 'AI Processing Error: ${e.message}';
+
+        // Check for specific error types
+        if (e.message.contains('API') || e.message.contains('key')) {
+          errorMsg =
+              'API configuration error. Please check your API key in the .env file.';
+        } else if (e.message.contains('disabled') ||
+            e.message.contains('stability')) {
+          errorMsg =
+              'File processing is temporarily disabled. Try pasting text directly.';
+        } else if (e.message.contains('NOT_FOUND')) {
+          errorMsg = 'AI model not found. Please check your API configuration.';
+        } else if (e.message.contains('No content') ||
+            e.message.contains('empty')) {
+          errorMsg =
+              'No content was provided. Please check the text and try again.';
+        }
+
+        _showError(errorMsg);
       }
     } catch (e, stackTrace) {
       // Log the actual error for debugging
@@ -252,8 +281,23 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
             e.toString().contains('network')) {
           errorMsg =
               'Network error. Please check your internet connection and try again.';
+        } else if (e.toString().contains('API') ||
+            e.toString().contains('key')) {
+          errorMsg =
+              'API configuration error. Please check your API key in the .env file.';
+        } else if (e.toString().contains('No content') ||
+            e.toString().contains('empty')) {
+          errorMsg =
+              'No content was provided. Please check the text and try again.';
         } else {
-          errorMsg = 'Failed to generate content: ${e.toString()}';
+          // Provide more user-friendly error message
+          if (e is TypeError) {
+            errorMsg =
+                'Content processing error. Please try again with different content.';
+          } else {
+            errorMsg =
+                'Failed to generate content: ${e.toString().split(':').first}';
+          }
         }
         _showError(errorMsg);
       }

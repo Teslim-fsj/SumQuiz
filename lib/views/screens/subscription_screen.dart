@@ -37,11 +37,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         final iapService = context.read<IAPService?>();
         if (iapService != null) {
           products = await iapService.getAvailableProducts();
+        } else {
+          debugPrint('IAP Service is null, unable to load products');
         }
       }
 
       // If still empty on mobile, provide fallback informational products
       if (products.isEmpty && !kIsWeb) {
+        debugPrint(
+            'Using fallback product details as IAP products could not be loaded');
         products = [
           _FallbackProductDetails(
             id: 'sumquiz_pro_monthly',
@@ -72,7 +76,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     } catch (e) {
       debugPrint('Error loading products: $e');
       // If error occurs, still try to populate fallback products if on mobile
-      if (!kIsWeb && _products.isEmpty) {
+      if (!kIsWeb) {
         final fallbacks = [
           _FallbackProductDetails(
             id: 'sumquiz_pro_monthly',
@@ -116,6 +120,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         },
       );
     }
+  }
+
+  Future<void> _refreshProducts() async {
+    // Show loading indicator
+    if (mounted) {
+      setState(() {
+        // Keep existing products visible while refreshing
+      });
+    }
+
+    // Reload products
+    await _loadProducts();
   }
 
   Future<void> _buyProduct() async {

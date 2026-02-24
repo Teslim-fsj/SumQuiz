@@ -162,14 +162,19 @@ class _CreateContentScreenState extends State<CreateContentScreen>
     }
 
     if (!canProceed) {
-      showDialog(
-        context: context,
-        builder: (_) => UpgradeDialog(
-          featureName: feature,
-          // We can't easily pass custom messages to UpgradeDialog unless we modify it,
-          // but just showing it is better than blocking everything.
-        ),
-      );
+      // Ensure the dialog is shown only if the context is still valid
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (_) => UpgradeDialog(
+              featureName: feature,
+              // We can't easily pass custom messages to UpgradeDialog unless we modify it,
+              // but just showing it is better than blocking everything.
+            ),
+          );
+        }
+      });
       return false;
     }
 
@@ -513,11 +518,23 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           await UsageService().recordAction(user.uid, 'upload');
         }
 
-        SchedulerBinding.instance.addPostFrameCallback((_) {
+        // Check if extractionResult is valid before navigation
+        if (extractionResult != null &&
+            extractionResult.text != null &&
+            extractionResult.text.trim().isNotEmpty) {
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              context.push('/create/extraction-view', extra: extractionResult);
+            }
+          });
+        } else {
           if (mounted) {
-            context.push('/create/extraction-view', extra: extractionResult);
+            setState(() {
+              _errorMessage =
+                  'No content was extracted. Please try with different content.';
+            });
           }
-        });
+        }
       }
     } on CancelledException {
       // User cancelled — dismiss dialog quietly
@@ -526,7 +543,10 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           navigator.pop();
         } catch (_) {}
       }
-    } on Exception catch (e) {
+    } on Exception catch (e, stackTrace) {
+      debugPrint('Error in _processContentExtraction: $e');
+      debugPrint('Stack trace: $stackTrace');
+
       if (!cancelToken.isCancelled && mounted) {
         // Safely close dialog
         try {
@@ -535,9 +555,12 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           // Dialog already closed or context invalid, ignore
         }
 
-        setState(() {
-          _errorMessage = _getUserFriendlyError(e);
-        });
+        // Check if the state is still mounted before setting state
+        if (mounted) {
+          setState(() {
+            _errorMessage = _getUserFriendlyError(e);
+          });
+        }
       }
     }
   }
@@ -957,11 +980,15 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                           final user =
                               Provider.of<UserModel?>(context, listen: false);
                           if (value > 10 && (user == null || !user.isPro)) {
-                            showDialog(
-                              context: context,
-                              builder: (_) => const UpgradeDialog(
-                                  featureName: 'High Card Volume'),
-                            );
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (context.mounted) {
+                                showDialog(
+                                  context: context,
+                                  builder: (_) => const UpgradeDialog(
+                                      featureName: 'High Card Volume'),
+                                );
+                              }
+                            });
                             // Snap back to limit
                             setState(() => _topicCardCount = 10);
                             return;

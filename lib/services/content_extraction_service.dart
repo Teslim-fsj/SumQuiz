@@ -194,17 +194,35 @@ class ContentExtractionService {
               throw Exception('User ID is required for YouTube analysis.');
             }
             cancelToken?.throwIfCancelled();
-            final result = await _enhancedAiService.analyzeYouTubeVideo(
-              url,
-              userId: userId,
-              cancelToken: cancelToken,
-            );
-            if (result is Ok<ExtractionResult>) {
-              return result.value;
-            } else if (result is ResultError<ExtractionResult>) {
-              throw result.error;
-            } else {
-              throw Exception('YouTube extraction returned unexpected result.');
+            try {
+              final result = await _enhancedAiService.analyzeYouTubeVideo(
+                url,
+                userId: userId,
+                cancelToken: cancelToken,
+              );
+              if (result is Ok<ExtractionResult>) {
+                return result.value;
+              } else if (result is ResultError<ExtractionResult>) {
+                // Handle the error but don't crash
+                String errorMessage = result.error is EnhancedAIServiceException
+                    ? (result.error as EnhancedAIServiceException).message
+                    : result.error.toString();
+                onProgress
+                    ?.call('Error processing YouTube video: $errorMessage');
+                return ExtractionResult(
+                  text: '[Error processing YouTube video: $errorMessage]',
+                  suggestedTitle: 'YouTube Content',
+                );
+              } else {
+                throw Exception(
+                    'YouTube extraction returned unexpected result.');
+              }
+            } catch (e) {
+              onProgress?.call('Failed to process YouTube video: $e');
+              return ExtractionResult(
+                text: '[Failed to process YouTube video: $e]',
+                suggestedTitle: 'YouTube Content',
+              );
             }
 
           case UrlContentType.document:
@@ -216,19 +234,35 @@ class ContentExtractionService {
               throw Exception('User ID is required for file URL analysis.');
             }
             cancelToken?.throwIfCancelled();
-            final mimeType = _getMimeType(url);
-            final result = await _enhancedAiService.analyzeContentFromUrl(
-              url: url,
-              mimeType: mimeType,
-              userId: userId,
-              cancelToken: cancelToken,
-            );
-            if (result is Ok<ExtractionResult>) {
-              return result.value;
-            } else if (result is ResultError<ExtractionResult>) {
-              throw result.error;
-            } else {
-              throw Exception('File analysis returned unexpected result.');
+            try {
+              final mimeType = _getMimeType(url);
+              final result = await _enhancedAiService.analyzeContentFromUrl(
+                url: url,
+                mimeType: mimeType,
+                userId: userId,
+                cancelToken: cancelToken,
+              );
+              if (result is Ok<ExtractionResult>) {
+                return result.value;
+              } else if (result is ResultError<ExtractionResult>) {
+                // Handle the error but don't crash
+                String errorMessage = result.error is EnhancedAIServiceException
+                    ? (result.error as EnhancedAIServiceException).message
+                    : result.error.toString();
+                onProgress?.call('Error processing file: $errorMessage');
+                return ExtractionResult(
+                  text: '[Error processing file: $errorMessage]',
+                  suggestedTitle: 'File Content',
+                );
+              } else {
+                throw Exception('File analysis returned unexpected result.');
+              }
+            } catch (e) {
+              onProgress?.call('Failed to process file: $e');
+              return ExtractionResult(
+                text: '[Failed to process file: $e]',
+                suggestedTitle: 'File Content',
+              );
             }
 
           case UrlContentType.webpage:
@@ -237,17 +271,34 @@ class ContentExtractionService {
               throw Exception('User ID is required for webpage extraction.');
             }
             cancelToken?.throwIfCancelled();
-            final result = await _enhancedAiService.extractWebpageContent(
-              url: url,
-              userId: userId,
-              cancelToken: cancelToken,
-            );
-            if (result is Ok<ExtractionResult>) {
-              return result.value;
-            } else if (result is ResultError<ExtractionResult>) {
-              throw result.error;
-            } else {
-              throw Exception('Webpage extraction returned unexpected result.');
+            try {
+              final result = await _enhancedAiService.extractWebpageContent(
+                url: url,
+                userId: userId,
+                cancelToken: cancelToken,
+              );
+              if (result is Ok<ExtractionResult>) {
+                return result.value;
+              } else if (result is ResultError<ExtractionResult>) {
+                // Handle the error but don't crash
+                String errorMessage = result.error is EnhancedAIServiceException
+                    ? (result.error as EnhancedAIServiceException).message
+                    : result.error.toString();
+                onProgress?.call('Error extracting webpage: $errorMessage');
+                return ExtractionResult(
+                  text: '[Error extracting webpage: $errorMessage]',
+                  suggestedTitle: 'Web Content',
+                );
+              } else {
+                throw Exception(
+                    'Webpage extraction returned unexpected result.');
+              }
+            } catch (e) {
+              onProgress?.call('Failed to extract webpage: $e');
+              return ExtractionResult(
+                text: '[Failed to extract webpage: $e]',
+                suggestedTitle: 'Web Content',
+              );
             }
         }
       case 'pdf':
@@ -271,15 +322,23 @@ class ContentExtractionService {
 
         if (rawText.trim().isEmpty ||
             rawText.contains('[No text found in PDF.')) {
-          onProgress?.call('Analyzing document complexity with AI...');
-          if (userId == null) throw Exception('User ID is required.');
-          final result = await _enhancedAiService.analyzeContentFromBytes(
-            bytes: input,
-            mimeType: mimeType ?? 'application/pdf',
-            userId: userId,
-            cancelToken: cancelToken,
-          );
-          if (result is Ok<ExtractionResult>) return result.value;
+          // Instead of trying AI analysis which is disabled, return what we have
+          // If no text was extracted locally, return an appropriate message
+          if (rawText.trim().isEmpty ||
+              rawText.contains('[No text found in PDF.')) {
+            onProgress?.call('No text found in PDF. Try a different document.');
+            return ExtractionResult(
+              text:
+                  '[No text found in PDF. The PDF might contain only images or scanned content that cannot be extracted.]',
+              suggestedTitle: 'No Extractable Content',
+            );
+          } else {
+            // We have some text, return it
+            return ExtractionResult(
+              text: rawText,
+              suggestedTitle: 'Document Content',
+            );
+          }
         }
         suggestedTitle = 'Document Content';
         break;
@@ -300,15 +359,22 @@ class ContentExtractionService {
         }
 
         if (rawText.isEmpty || rawText.contains('[No text found in image.')) {
-          onProgress?.call('Analyzing image with AI Vision...');
-          if (userId == null) throw Exception('User ID is required.');
-          final result = await _enhancedAiService.analyzeContentFromBytes(
-            bytes: input,
-            mimeType: mimeType ?? 'image/jpeg',
-            userId: userId,
-            cancelToken: cancelToken,
-          );
-          if (result is Ok<ExtractionResult>) return result.value;
+          // Instead of trying AI analysis which is disabled, return what we have
+          // If no text was extracted locally, return an appropriate message
+          if (rawText.isEmpty || rawText.contains('[No text found in image.')) {
+            onProgress?.call('No text found in image. Try a different image.');
+            return ExtractionResult(
+              text:
+                  '[No text found in image. The image might not contain readable text.]',
+              suggestedTitle: 'No Extractable Content',
+            );
+          } else {
+            // We have some text, return it
+            return ExtractionResult(
+              text: rawText,
+              suggestedTitle: 'Image Content',
+            );
+          }
         }
         suggestedTitle = 'Scanned Image';
         break;
@@ -317,33 +383,27 @@ class ContentExtractionService {
           return ExtractionResult(
               text: 'Local extraction test', suggestedTitle: 'Test Audio');
         }
-        onProgress?.call('Transcribing audio with AI...');
-        if (userId == null) throw Exception('User ID is required.');
-        final result = await _enhancedAiService.analyzeContentFromBytes(
-          bytes: input,
-          mimeType: mimeType ?? 'audio/mpeg',
-          userId: userId,
-          cancelToken: cancelToken,
+        // Since AI analysis is disabled, we need to handle audio differently
+        onProgress?.call(
+            'Audio processing requires AI transcription. Try pasting text instead.');
+        return ExtractionResult(
+          text:
+              '[Audio content cannot be processed without AI transcription. Try uploading a text-based document instead.]',
+          suggestedTitle: 'Audio Content',
         );
-        if (result is Ok<ExtractionResult>) return result.value;
-        suggestedTitle = 'Audio Lesson';
-        break;
       case 'video':
         if (localOnlyTest) {
           return ExtractionResult(
               text: 'Local extraction test', suggestedTitle: 'Test Video');
         }
-        onProgress?.call('Analyzing video with AI...');
-        if (userId == null) throw Exception('User ID is required.');
-        final result = await _enhancedAiService.analyzeContentFromBytes(
-          bytes: input,
-          mimeType: mimeType ?? 'video/mp4',
-          userId: userId,
-          cancelToken: cancelToken,
+        // Since AI analysis is disabled, we need to handle video differently
+        onProgress?.call(
+            'Video processing requires AI analysis. Try pasting text instead.');
+        return ExtractionResult(
+          text:
+              '[Video content cannot be processed without AI analysis. Try uploading a text-based document instead.]',
+          suggestedTitle: 'Video Content',
         );
-        if (result is Ok<ExtractionResult>) return result.value;
-        suggestedTitle = 'Video Lesson';
-        break;
       default:
         throw Exception('Unknown content type: $type');
     }
