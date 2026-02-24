@@ -212,8 +212,20 @@ GoRouter createAppRouter(AuthService authService) {
                     parentNavigatorKey:
                         _rootNavigatorKey, // Show without nav bar
                     builder: (context, state) {
-                      final summary = state.extra as LocalSummary?;
-                      return SummaryScreen(summary: summary);
+                      try {
+                        final summary = state.extra is LocalSummary
+                            ? state.extra as LocalSummary?
+                            : null;
+                        return SummaryScreen(summary: summary);
+                      } catch (e) {
+                        debugPrint('Error in summary route: $e');
+                        return Scaffold(
+                          appBar: AppBar(title: Text('Error')),
+                          body: Center(
+                              child: Text(
+                                  'Failed to load summary. Please try again.')),
+                        );
+                      }
                     },
                   ),
                   GoRoute(
@@ -221,8 +233,20 @@ GoRouter createAppRouter(AuthService authService) {
                     parentNavigatorKey:
                         _rootNavigatorKey, // Show without nav bar
                     builder: (context, state) {
-                      final quiz = state.extra as LocalQuiz?;
-                      return QuizScreen(quiz: quiz);
+                      try {
+                        final quiz = state.extra is LocalQuiz
+                            ? state.extra as LocalQuiz?
+                            : null;
+                        return QuizScreen(quiz: quiz);
+                      } catch (e) {
+                        debugPrint('Error in quiz route: $e');
+                        return Scaffold(
+                          appBar: AppBar(title: Text('Error')),
+                          body: Center(
+                              child: Text(
+                                  'Failed to load quiz. Please try again.')),
+                        );
+                      }
                     },
                   ),
                   GoRoute(
@@ -230,19 +254,51 @@ GoRouter createAppRouter(AuthService authService) {
                     parentNavigatorKey:
                         _rootNavigatorKey, // Show without nav bar
                     builder: (context, state) {
-                      final set = state.extra as FlashcardSet?;
-                      return FlashcardsScreen(flashcardSet: set);
+                      try {
+                        final set = state.extra is FlashcardSet
+                            ? state.extra as FlashcardSet?
+                            : null;
+                        return FlashcardsScreen(flashcardSet: set);
+                      } catch (e) {
+                        debugPrint('Error in flashcards route: $e');
+                        return Scaffold(
+                          appBar: AppBar(title: Text('Error')),
+                          body: Center(
+                              child: Text(
+                                  'Failed to load flashcards. Please try again.')),
+                        );
+                      }
                     },
                   ),
                   GoRoute(
                     path: 'results-view/:folderId',
                     parentNavigatorKey: _rootNavigatorKey,
-                    builder: (context, state) => ResponsiveView(
-                      mobile: ResultsViewScreen(
-                          folderId: state.pathParameters['folderId']!),
-                      desktop: ResultsViewScreenWeb(
-                          folderId: state.pathParameters['folderId']!),
-                    ),
+                    builder: (context, state) {
+                      try {
+                        final folderId = state.pathParameters['folderId'];
+                        if (folderId == null || folderId.isEmpty) {
+                          debugPrint('Missing folderId in results-view route');
+                          return Scaffold(
+                            appBar: AppBar(title: Text('Error')),
+                            body: Center(
+                                child: Text(
+                                    'Missing content identifier. Please try again.')),
+                          );
+                        }
+                        return ResponsiveView(
+                          mobile: ResultsViewScreen(folderId: folderId),
+                          desktop: ResultsViewScreenWeb(folderId: folderId),
+                        );
+                      } catch (e) {
+                        debugPrint('Error in results-view route: $e');
+                        return Scaffold(
+                          appBar: AppBar(title: Text('Error')),
+                          body: Center(
+                              child: Text(
+                                  'Failed to load results. Please try again.')),
+                        );
+                      }
+                    },
                   ),
                 ],
               ),
@@ -263,12 +319,26 @@ GoRouter createAppRouter(AuthService authService) {
                     GoRoute(
                       path: 'extraction-view',
                       parentNavigatorKey: _rootNavigatorKey,
-                      builder: (context, state) => ResponsiveView(
-                        mobile: ExtractionViewScreen(
-                            result: state.extra as ExtractionResult?),
-                        desktop: ExtractionViewScreenWeb(
-                            result: state.extra as ExtractionResult?),
-                      ),
+                      builder: (context, state) {
+                        try {
+                          final result = state.extra is ExtractionResult
+                              ? state.extra as ExtractionResult?
+                              : null;
+                          return ResponsiveView(
+                            mobile: ExtractionViewScreen(result: result),
+                            desktop: ExtractionViewScreenWeb(result: result),
+                          );
+                        } catch (e) {
+                          debugPrint('Error in extraction-view route: $e');
+                          // Return a default screen with error message
+                          return Scaffold(
+                            appBar: AppBar(title: Text('Error')),
+                            body: Center(
+                                child: Text(
+                                    'Failed to load content. Please try again.')),
+                          );
+                        }
+                      },
                     ),
                     GoRoute(
                       path: 'edit-content',
@@ -345,7 +415,8 @@ GoRouter createAppRouter(AuthService authService) {
       ),
       GoRoute(
         path: '/exam-creation',
-        builder: (context, state) => const ExamCreationScreen(), // Add exam creation route
+        builder: (context, state) =>
+            const ExamCreationScreen(), // Add exam creation route
       ),
     ],
   );

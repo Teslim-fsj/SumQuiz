@@ -44,12 +44,24 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
   @override
   void initState() {
     super.initState();
+    debugPrint('ExtractionViewScreen.initState called');
+    debugPrint('Widget result: ${widget.result != null ? "exists" : "null"}');
+    if (widget.result != null) {
+      debugPrint('Result text length: ${widget.result!.text?.length}');
+      debugPrint(
+          'Result text preview: ${widget.result!.text?.substring(0, (widget.result!.text!.length > 50) ? 50 : widget.result!.text!.length)}...');
+      debugPrint('Suggested title: ${widget.result?.suggestedTitle}');
+    }
+
     final rawText = widget.result?.text ?? '';
 
     // Check if the extraction result is valid before proceeding
-    if (widget.result == null || (widget.result!.text.trim().isEmpty)) {
+    if (widget.result == null ||
+        (widget.result!.text?.trim().isEmpty ?? true)) {
+      debugPrint('Invalid extraction result detected');
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
+          debugPrint('Showing error snackbar and preparing to navigate back');
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
@@ -61,6 +73,7 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
           );
           // Navigate back after showing the snackbar
           Future.delayed(const Duration(seconds: 4), () {
+            debugPrint('Attempting to navigate back');
             if (mounted && context.canPop()) {
               context.pop();
             }
@@ -72,6 +85,8 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
       _titleController = TextEditingController(text: 'Untitled Creation');
       return; // Early return to avoid further processing
     }
+
+    debugPrint('Processing valid extraction result');
 
     // Heuristic normalization:
     // If text appears to be "one word per line" (many short lines), join them.
@@ -106,6 +121,8 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
     _titleController = TextEditingController(
         text: widget.result?.suggestedTitle ?? 'Untitled Creation');
     _selectedOutputs.add(OutputType.summary); // Select Summary by default
+
+    debugPrint('ExtractionViewScreen initState completed');
   }
 
   @override
@@ -131,10 +148,12 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
   /// Check if API key is properly configured before processing
   bool _isApiKeyConfigured() {
     try {
-      context.read<EnhancedAIService>();
+      final service = context.read<EnhancedAIService>();
+      debugPrint('API key check: EnhancedAIService accessed successfully');
       // If we can access the service without error, the API key is configured
       return true;
     } catch (e) {
+      debugPrint('API key check failed: $e');
       return false;
     }
   }
@@ -186,39 +205,73 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
       final currentUser = authService.currentUser;
 
       if (currentUser == null) {
-        throw Exception('User is not logged in');
+        debugPrint('User is not logged in');
+        if (mounted) {
+          _showError('User is not logged in. Please sign in to continue.');
+        }
+        return;
       }
 
       final userId = currentUser.uid;
+      debugPrint('Current user ID: $userId');
 
       final requestedOutputs = _selectedOutputs.map((e) => e.name).toList();
+      debugPrint('Requested outputs: $requestedOutputs');
 
       // Add validation for requested outputs
       if (requestedOutputs.isEmpty) {
-        throw Exception('No output types selected');
+        debugPrint('No output types selected');
+        if (mounted) {
+          _showError('Please select at least one output type to generate.');
+        }
+        return;
       }
 
       _cancelToken = CancellationToken();
 
-      final folderId = await aiService.generateAndStoreOutputs(
-        text: _textController.text,
-        title: _titleController.text.isNotEmpty
-            ? _titleController.text
-            : 'Untitled Creation',
-        requestedOutputs: requestedOutputs,
-        userId: userId,
-        localDb: localDb,
-        onProgress: (message) {
-          if (mounted) {
-            setState(() => _loadingMessage = message);
-          }
-        },
-        cancelToken: _cancelToken,
-      );
+      String? folderId;
+      try {
+        folderId = await aiService.generateAndStoreOutputs(
+          text: _textController.text,
+          title: _titleController.text.isNotEmpty
+              ? _titleController.text
+              : 'Untitled Creation',
+          requestedOutputs: requestedOutputs,
+          userId: userId,
+          localDb: localDb,
+          onProgress: (message) {
+            if (mounted) {
+              setState(() => _loadingMessage = message);
+            }
+          },
+          cancelToken: _cancelToken,
+        );
+      } catch (e, stack) {
+        debugPrint('Error generating content: $e');
+        debugPrint('Stack trace: $stack');
+        if (mounted) {
+          _showError('Error generating content: $e');
+        }
+        return;
+      }
+
+      // Check if folderId was generated successfully
+      if (folderId == null) {
+        debugPrint('Failed to generate folder ID');
+        if (mounted) {
+          _showError('Failed to save generated content. Please try again.');
+        }
+        return;
+      }
 
       // Record usage (Deck Generation)
       if (user != null) {
-        await UsageService().recordDeckGeneration(user.uid);
+        try {
+          await UsageService().recordDeckGeneration(user.uid);
+        } catch (e) {
+          debugPrint('Error recording deck generation: $e');
+          // Don't fail the operation if usage recording fails
+        }
       }
       if (!mounted) return;
 
@@ -232,15 +285,24 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
                 ? _titleController.text
                 : 'Untitled Creation',
           );
-        } catch (e) {
+        } catch (e, stack) {
           // Don't block navigation if notification scheduling fails
           debugPrint('Failed to schedule notifications: $e');
+          debugPrint('Notification error stack: $stack');
         }
       }
 
       if (mounted) {
+        debugPrint('Navigation to results-view with folderId: $folderId');
         // Navigate to the results screen, which shows what was just created
-        context.go('/library/results-view/$folderId');
+        try {
+          context.go('/library/results-view/$folderId');
+        } catch (e, stack) {
+          debugPrint('Navigation error: $e');
+          debugPrint('Navigation error stack: $stack');
+          // Show error but don't crash
+          _showError('Navigation failed: $e');
+        }
       }
     } on EnhancedAIServiceException catch (e) {
       debugPrint('EnhancedAIServiceException: ${e.message}');

@@ -1608,9 +1608,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   Future<void> _processExtraction(String type, dynamic input,
       {String? mimeType}) async {
+    debugPrint('Starting _processExtraction with type: $type');
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       if (authService == null) {
+        debugPrint('Authentication service is null');
         if (mounted) {
           _showError(
               'Authentication service not available. Please restart the app.');
@@ -1620,6 +1622,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
       final userId = authService.currentUser?.uid;
       if (userId == null) {
+        debugPrint('User is not authenticated');
         if (mounted) {
           _showError('User not authenticated. Please log in.');
         }
@@ -1629,11 +1632,14 @@ class _ReviewScreenState extends State<ReviewScreen> {
       final extractionService =
           Provider.of<ContentExtractionService>(context, listen: false);
       if (extractionService == null) {
+        debugPrint('Content extraction service is null');
         if (mounted) {
           _showError('Content extraction service not available.');
         }
         return;
       }
+
+      debugPrint('Starting extraction with type: $type, userId: $userId');
 
       final progressNotifier =
           ValueNotifier<String>('Initializing extraction...');
@@ -1641,33 +1647,65 @@ class _ReviewScreenState extends State<ReviewScreen> {
       final cancelToken = CancellationToken();
 
       // Check if dialog can be shown before attempting to show it
-      if (!mounted) return;
+      if (!mounted) {
+        debugPrint('_processExtraction: Context not mounted, exiting');
+        return;
+      }
 
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => ExtractionProgressDialog(
-          messageNotifier: progressNotifier,
-          onCancel: () {
-            cancelToken.cancel();
-            if (mounted) {
-              Navigator.pop(context);
-            }
+      // Flag to track if dialog was shown
+      bool dialogShown = false;
+
+      try {
+        debugPrint('Showing extraction progress dialog');
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) {
+            dialogShown = true;
+            debugPrint('Dialog builder called, dialogShown set to true');
+            return ExtractionProgressDialog(
+              messageNotifier: progressNotifier,
+              onCancel: () {
+                debugPrint('Dialog cancel pressed');
+                cancelToken.cancel();
+                if (mounted) {
+                  Navigator.pop(context);
+                }
+              },
+            );
           },
-        ),
-      );
+        );
 
-      final result = await extractionService.extractContent(
-        type: type,
-        input: input,
-        userId: userId,
-        mimeType: mimeType,
-        onProgress: (m) => progressNotifier.value = m,
-        cancelToken: cancelToken,
-      );
+        debugPrint('Calling extractionService.extractContent');
+        final result = await extractionService.extractContent(
+          type: type,
+          input: input,
+          userId: userId,
+          mimeType: mimeType,
+          onProgress: (m) {
+            debugPrint('Progress update: $m');
+            progressNotifier.value = m;
+          },
+          cancelToken: cancelToken,
+        );
 
-      if (mounted) {
-        Navigator.pop(context); // Close dialog
+        debugPrint(
+            'Extraction completed, result: ${result?.text?.length} chars');
+
+        // Dismiss dialog if it was shown and context is still valid
+        if (dialogShown && mounted) {
+          debugPrint('Attempting to dismiss dialog');
+          try {
+            Navigator.pop(context);
+            debugPrint('Dialog dismissed successfully');
+          } catch (e) {
+            debugPrint('Error dismissing dialog: $e');
+            // Dialog already dismissed, ignore
+          }
+        } else {
+          debugPrint(
+              'Dialog not dismissed - dialogShown: $dialogShown, mounted: ${mounted}');
+        }
 
         // Record upload if successful and it's a file type
         if (type == 'pdf' || type == 'image' || type == 'audio') {
@@ -1675,6 +1713,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
               Provider.of<UsageService>(context, listen: false);
           if (usageService != null) {
             await usageService.recordAction(userId, 'upload');
+            debugPrint('Upload recorded');
           }
         }
 
@@ -1682,11 +1721,35 @@ class _ReviewScreenState extends State<ReviewScreen> {
         if (result != null &&
             result.text != null &&
             result.text.trim().isNotEmpty) {
-          context.push('/create/extraction-view', extra: result);
+          debugPrint('Valid result received, preparing navigation');
+          // Use post-frame callback to ensure safe navigation
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              debugPrint('Navigating to extraction-view with result');
+              context.push('/create/extraction-view', extra: result);
+            } else {
+              debugPrint('Context not mounted during navigation attempt');
+            }
+          });
         } else {
-          _showError(
-              'No content was extracted. Please try with different content.');
+          debugPrint('No content extracted');
+          if (mounted) {
+            _showError(
+                'No content was extracted. Please try with different content.');
+          }
         }
+      } catch (dialogError) {
+        debugPrint('Error in dialog/extract section: $dialogError');
+        // If dialog was shown, try to dismiss it
+        if (dialogShown && mounted) {
+          try {
+            Navigator.pop(context);
+          } catch (e) {
+            debugPrint('Error dismissing dialog in catch: $e');
+            // Dialog already dismissed, ignore
+          }
+        }
+        rethrow; // Re-throw to be caught by outer catch
       }
     } catch (e, stackTrace) {
       debugPrint('Error in _processExtraction: $e');
@@ -1695,9 +1758,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
       // Ensure dialog is dismissed even if an error occurs
       try {
         if (mounted) {
-          Navigator.pop(context);
+          Navigator.of(context).pop(); // Dismiss dialog
+          debugPrint('Dialog dismissed in error catch');
         }
       } catch (dismissError) {
+        debugPrint('Error dismissing dialog in error catch: $dismissError');
         // Dialog might already be dismissed, ignore this error
       }
 

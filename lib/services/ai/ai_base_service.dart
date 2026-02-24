@@ -97,13 +97,24 @@ abstract class AIBaseService {
   }
 
   Future<bool> ensureInitialized([int timeoutSeconds = 15]) async {
-    if (_initialized) return true;
+    developer.log('ensureInitialized called, _initialized: $_initialized',
+        name: 'AIBaseService');
+    if (_initialized) {
+      developer.log('Service already initialized', name: 'AIBaseService');
+      return true;
+    }
 
     final stopwatch = Stopwatch()..start();
     while (!_initialized && stopwatch.elapsed.inSeconds < timeoutSeconds) {
-      if (_initializationError != null) return false;
+      if (_initializationError != null) {
+        developer.log('Initialization error: $_initializationError',
+            name: 'AIBaseService');
+        return false;
+      }
       await Future.delayed(const Duration(milliseconds: 100));
     }
+    developer.log('Initialization complete, _initialized: $_initialized',
+        name: 'AIBaseService');
     return _initialized;
   }
 
@@ -164,6 +175,7 @@ abstract class AIBaseService {
       {GenerativeModel? customModel,
       GenerationConfig? generationConfig,
       CancellationToken? cancelToken}) async {
+    developer.log('generateMultimodal called', name: 'AIBaseService');
     if (!await ensureInitialized()) {
       throw AIServiceException('AI Service not ready: $_initializationError',
           code: 'SERVICE_NOT_READY');
@@ -179,9 +191,12 @@ abstract class AIBaseService {
 
     var targetModel = customModel ?? _model;
     if (targetModel == null) {
+      developer.log('Target model is null', name: 'AIBaseService');
       throw AIServiceException('Model not available',
           code: 'MODEL_NOT_AVAILABLE');
     }
+
+    developer.log('Using target model', name: 'AIBaseService');
 
     // If custom config is provided, we need to re-wrap the model with it
     // Note: GenerativeModel is immutable, but we can use provide custom config per request in newer SDKs
@@ -205,10 +220,15 @@ abstract class AIBaseService {
           throw AIServiceException('Empty or null response from AI',
               code: 'EMPTY_RESPONSE');
         }
+        developer.log('Successfully generated response', name: 'AIBaseService');
         return text.trim();
       } catch (e) {
         attempt++;
-        if (attempt >= AIConfig.maxRetries) rethrow;
+        if (attempt >= AIConfig.maxRetries) {
+          developer.log('Max retries exceeded for generation',
+              name: 'AIBaseService', error: e);
+          rethrow;
+        }
 
         final baseDelay = AIConfig.initialRetryDelayMs * pow(2, attempt - 1);
         final jitter = Random().nextInt(1000);

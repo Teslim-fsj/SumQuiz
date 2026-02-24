@@ -452,6 +452,9 @@ class _CreateContentScreenState extends State<CreateContentScreen>
   Future<void> _processContentExtraction(
       String type, dynamic input, UserModel user,
       {String? mimeType}) async {
+    debugPrint(
+        'CreateContentScreen._processContentExtraction called with type: $type');
+
     // Create a new cancellation token for this extraction operation
     _cancelToken = CancellationToken();
     final cancelToken = _cancelToken!;
@@ -468,10 +471,12 @@ class _CreateContentScreenState extends State<CreateContentScreen>
 
     // Show loading dialog
     if (mounted) {
+      debugPrint('Showing extraction progress dialog');
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) {
+          debugPrint('Dialog builder called in create content screen');
           return PopScope(
             canPop: false,
             onPopInvokedWithResult: (didPop, result) {
@@ -487,6 +492,8 @@ class _CreateContentScreenState extends State<CreateContentScreen>
     }
 
     try {
+      debugPrint(
+          'Calling extractionService.extractContent from create content screen');
       final ExtractionResult extractionResult =
           await extractionService.extractContent(
         type: type,
@@ -501,11 +508,16 @@ class _CreateContentScreenState extends State<CreateContentScreen>
         },
       );
 
+      debugPrint(
+          'Extraction completed with ${extractionResult?.text?.length} chars');
+
       if (!cancelToken.isCancelled && mounted) {
         // Safely close dialog
         try {
           navigator.pop();
+          debugPrint('Dialog dismissed successfully in create content screen');
         } catch (e) {
+          debugPrint('Error dismissing dialog: $e');
           // Dialog already closed or context invalid, ignore
         }
 
@@ -522,12 +534,19 @@ class _CreateContentScreenState extends State<CreateContentScreen>
         if (extractionResult != null &&
             extractionResult.text != null &&
             extractionResult.text.trim().isNotEmpty) {
+          debugPrint('Valid result, preparing navigation to extraction-view');
           SchedulerBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
+              debugPrint(
+                  'Navigating to extraction-view from create content screen');
               context.push('/create/extraction-view', extra: extractionResult);
+            } else {
+              debugPrint(
+                  'Context not mounted during navigation in create content screen');
             }
           });
         } else {
+          debugPrint('No content extracted in create content screen');
           if (mounted) {
             setState(() {
               _errorMessage =
@@ -537,6 +556,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
         }
       }
     } on CancelledException {
+      debugPrint('Extraction cancelled in create content screen');
       // User cancelled — dismiss dialog quietly
       if (mounted) {
         try {
@@ -551,7 +571,9 @@ class _CreateContentScreenState extends State<CreateContentScreen>
         // Safely close dialog
         try {
           navigator.pop();
+          debugPrint('Dialog dismissed in error catch');
         } catch (e) {
+          debugPrint('Error dismissing dialog in error catch: $e');
           // Dialog already closed or context invalid, ignore
         }
 

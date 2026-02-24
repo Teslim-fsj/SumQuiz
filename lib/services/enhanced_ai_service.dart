@@ -45,12 +45,16 @@ class EnhancedAIService {
 
   /// Ensures all AI services are properly initialized
   Future<void> initialize() async {
+    developer.log('EnhancedAIService.initialize called',
+        name: 'EnhancedAIService');
     // Wait for all AI services to initialize
     await Future.wait([
       _youtubeService.ensureInitialized(),
       _webService.ensureInitialized(),
       _generatorService.ensureInitialized(),
     ]);
+    developer.log('EnhancedAIService.initialize completed',
+        name: 'EnhancedAIService');
   }
 
   Future<bool> isServiceHealthy() async {
@@ -58,14 +62,26 @@ class EnhancedAIService {
   }
 
   Future<void> _checkUsageLimits(String userId) async {
-    // Unify with dashboard usage logic
-    final usageService = usage.UsageService();
-    final canProceed = await usageService.canGenerateDeck(userId);
+    developer.log('_checkUsageLimits called with userId: $userId',
+        name: 'EnhancedAIService');
+    try {
+      // Unify with dashboard usage logic
+      final usageService = usage.UsageService();
+      final canProceed = await usageService.canGenerateDeck(userId);
 
-    if (!canProceed) {
-      throw EnhancedAIServiceException(
-          'Daily generation limit reached. Upgrade to Pro for unlimited access.',
-          code: 'USAGE_LIMIT_REACHED');
+      if (!canProceed) {
+        developer.log('Usage limit reached for user: $userId',
+            name: 'EnhancedAIService');
+        throw EnhancedAIServiceException(
+            'Daily generation limit reached. Upgrade to Pro for unlimited access.',
+            code: 'USAGE_LIMIT_REACHED');
+      }
+      developer.log('Usage limits check passed for user: $userId',
+          name: 'EnhancedAIService');
+    } catch (e, stack) {
+      developer.log('Error checking usage limits',
+          name: 'EnhancedAIService', error: e, stackTrace: stack);
+      throw EnhancedAIServiceException('Error checking usage limits: $e');
     }
   }
 
@@ -160,33 +176,50 @@ class EnhancedAIService {
     required String userId,
     CancellationToken? cancelToken,
   }) async {
-    await _checkUsageLimits(userId);
+    developer.log(
+        'analyzeContentFromUrl called with URL: $url, mimeType: $mimeType',
+        name: 'EnhancedAIService');
     try {
-      cancelToken?.throwIfCancelled();
-      final response =
-          await http.get(Uri.parse(url)).timeout(const Duration(seconds: 60));
+      await _checkUsageLimits(userId);
+      try {
+        cancelToken?.throwIfCancelled();
+        final response =
+            await http.get(Uri.parse(url)).timeout(const Duration(seconds: 60));
 
-      cancelToken?.throwIfCancelled();
+        cancelToken?.throwIfCancelled();
 
-      if (response.statusCode != 200) {
+        if (response.statusCode != 200) {
+          developer.log(
+              'Failed to download file. Status: ${response.statusCode}',
+              name: 'EnhancedAIService');
+          return Result.error(EnhancedAIServiceException(
+              'Failed to download file. Status: ${response.statusCode}'));
+        }
+        return analyzeContentFromBytes(
+          bytes: response.bodyBytes,
+          mimeType: mimeType,
+          userId: userId,
+          customPrompt: customPrompt,
+          cancelToken: cancelToken,
+        );
+      } catch (e, stack) {
+        if (e is CancelledException) {
+          developer.log('Content analysis cancelled by user',
+              name: 'EnhancedAIService');
+          return Result.error(EnhancedAIServiceException(
+              'Extraction cancelled by user.',
+              code: 'CANCELLED'));
+        }
+        developer.log('Error in analyzeContentFromUrl',
+            name: 'EnhancedAIService', error: e, stackTrace: stack);
         return Result.error(EnhancedAIServiceException(
-            'Failed to download file. Status: ${response.statusCode}'));
+            'Failed to analyze content from URL: $e'));
       }
-      return analyzeContentFromBytes(
-        bytes: response.bodyBytes,
-        mimeType: mimeType,
-        userId: userId,
-        customPrompt: customPrompt,
-        cancelToken: cancelToken,
-      );
-    } catch (e) {
-      if (e is CancelledException) {
-        return Result.error(EnhancedAIServiceException(
-            'Extraction cancelled by user.',
-            code: 'CANCELLED'));
-      }
+    } catch (e, stack) {
+      developer.log('Critical error in analyzeContentFromUrl',
+          name: 'EnhancedAIService', error: e, stackTrace: stack);
       return Result.error(
-          EnhancedAIServiceException('Failed to analyze content from URL: $e'));
+          EnhancedAIServiceException('Critical error analyzing content: $e'));
     }
   }
 
@@ -197,24 +230,38 @@ class EnhancedAIService {
     required String userId,
     CancellationToken? cancelToken,
   }) async {
-    await _checkUsageLimits(userId);
+    developer.log(
+        'analyzeContentFromBytes called with mimeType: $mimeType, bytes length: ${bytes.length}',
+        name: 'EnhancedAIService');
     try {
-      cancelToken?.throwIfCancelled();
-      if (bytes.isEmpty) {
-        return Result.error(EnhancedAIServiceException('File data is empty.',
-            code: 'EMPTY_FILE'));
-      }
+      await _checkUsageLimits(userId);
+      try {
+        cancelToken?.throwIfCancelled();
+        if (bytes.isEmpty) {
+          developer.log('File data is empty', name: 'EnhancedAIService');
+          return Result.error(EnhancedAIServiceException('File data is empty.',
+              code: 'EMPTY_FILE'));
+        }
 
-      // Process content based on MIME type
-      // For now, we'll return an error to indicate that this functionality
-      // needs to be implemented properly with proper AI model handling
-      return Result.error(EnhancedAIServiceException(
-          'File processing is not supported in this mode. Please use local extraction methods.'));
+        // Process content based on MIME type
+        // For now, we'll return an error to indicate that this functionality
+        // needs to be implemented properly with proper AI model handling
+        developer.log('File processing is not supported in this mode',
+            name: 'EnhancedAIService');
+        return Result.error(EnhancedAIServiceException(
+            'File processing is not supported in this mode. Please use local extraction methods.'));
+      } catch (e, stack) {
+        developer.log('Analysis failed in inner try',
+            name: 'EnhancedAIService', error: e, stackTrace: stack);
+        return Result.error(EnhancedAIServiceException('Analysis failed: $e',
+            originalError: e));
+      }
     } catch (e, stack) {
-      developer.log('Analysis failed',
+      developer.log('Critical error in analyzeContentFromBytes',
           name: 'EnhancedAIService', error: e, stackTrace: stack);
-      return Result.error(
-          EnhancedAIServiceException('Analysis failed: $e', originalError: e));
+      return Result.error(EnhancedAIServiceException(
+          'Critical error analyzing content: $e',
+          originalError: e));
     }
   }
 
@@ -227,6 +274,12 @@ class EnhancedAIService {
     required void Function(String message) onProgress,
     CancellationToken? cancelToken,
   }) async {
+    developer.log(
+        'EnhancedAIService.generateAndStoreOutputs called with title: $title, userId: $userId, outputs: $requestedOutputs',
+        name: 'EnhancedAIService');
+    developer.log('Text length: ${text.length} chars',
+        name: 'EnhancedAIService');
+
     // Ensure all services are initialized
     await initialize();
 
@@ -257,10 +310,15 @@ class EnhancedAIService {
         try {
           // Check if text is valid before processing
           if (text.trim().isEmpty) {
+            developer.log('No content provided for generation',
+                name: 'EnhancedAIService');
             throw EnhancedAIServiceException(
                 'No content provided. Please provide text to generate content.',
                 code: 'NO_CONTENT_PROVIDED');
           }
+
+          developer.log('Starting generation of $outputType',
+              name: 'EnhancedAIService');
 
           switch (outputType) {
             case 'summary':
@@ -287,15 +345,17 @@ class EnhancedAIService {
 
           completed++;
           onProgress('${outputType.capitalize()} complete! ✓');
-        } catch (e) {
-          developer.log('Failed to generate $outputType',
-              name: 'EnhancedAIService', error: e);
+        } catch (e, stack) {
+          developer.log('Failed to generate $outputType: $e',
+              name: 'EnhancedAIService', error: e, stackTrace: stack);
           failures.add(outputType);
           onProgress('${outputType.capitalize()} failed - continuing...');
         }
       }
 
       if (completed == 0) {
+        developer.log('All generation failed, cleaning up folder',
+            name: 'EnhancedAIService');
         await localDb.deleteFolder(folderId);
         throw EnhancedAIServiceException(
             'Failed to generate any content. Please try again.',
@@ -311,6 +371,10 @@ class EnhancedAIService {
 
       // Trigger sync in background
       SyncService(localDb).syncAllData();
+
+      developer.log(
+          'Generation completed successfully, returning folderId: $folderId',
+          name: 'EnhancedAIService');
 
       return folderId;
     } catch (e, stack) {
