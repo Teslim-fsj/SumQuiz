@@ -321,16 +321,20 @@ GoRouter createAppRouter(AuthService authService) {
                       parentNavigatorKey: _rootNavigatorKey,
                       builder: (context, state) {
                         try {
-                          final result = state.extra is ExtractionResult
-                              ? state.extra as ExtractionResult?
-                              : null;
+                          // Safely extract ExtractionResult from extra with proper null checking
+                          final ExtractionResult? result;
+                          if (state.extra != null &&
+                              state.extra is ExtractionResult) {
+                            result = state.extra as ExtractionResult;
+                          } else {
+                            result = null;
+                          }
                           return ResponsiveView(
                             mobile: ExtractionViewScreen(result: result),
                             desktop: ExtractionViewScreenWeb(result: result),
                           );
                         } catch (e) {
                           debugPrint('Error in extraction-view route: $e');
-                          // Return a default screen with error message
                           return Scaffold(
                             appBar: AppBar(title: Text('Error')),
                             body: Center(

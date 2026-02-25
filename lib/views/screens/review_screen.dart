@@ -1611,14 +1611,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
     debugPrint('Starting _processExtraction with type: $type');
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-      if (authService == null) {
-        debugPrint('Authentication service is null');
-        if (mounted) {
-          _showError(
-              'Authentication service not available. Please restart the app.');
-        }
-        return;
-      }
 
       final userId = authService.currentUser?.uid;
       if (userId == null) {
@@ -1631,13 +1623,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
       final extractionService =
           Provider.of<ContentExtractionService>(context, listen: false);
-      if (extractionService == null) {
-        debugPrint('Content extraction service is null');
-        if (mounted) {
-          _showError('Content extraction service not available.');
-        }
-        return;
-      }
 
       debugPrint('Starting extraction with type: $type, userId: $userId');
 
@@ -1689,8 +1674,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
           cancelToken: cancelToken,
         );
 
-        debugPrint(
-            'Extraction completed, result: ${result?.text?.length} chars');
+        debugPrint('Extraction completed, result: ${result.text.length} chars');
 
         // Dismiss dialog if it was shown and context is still valid
         if (dialogShown && mounted) {
@@ -1704,33 +1688,38 @@ class _ReviewScreenState extends State<ReviewScreen> {
           }
         } else {
           debugPrint(
-              'Dialog not dismissed - dialogShown: $dialogShown, mounted: ${mounted}');
+              'Dialog not dismissed - dialogShown: $dialogShown, mounted: $mounted');
         }
 
         // Record upload if successful and it's a file type
         if (type == 'pdf' || type == 'image' || type == 'audio') {
           final usageService =
               Provider.of<UsageService>(context, listen: false);
-          if (usageService != null) {
-            await usageService.recordAction(userId, 'upload');
-            debugPrint('Upload recorded');
-          }
+          await usageService.recordAction(userId, 'upload');
+          debugPrint('Upload recorded');
         }
 
         // Check if the result is valid before navigating
-        if (result != null &&
-            result.text != null &&
-            result.text.trim().isNotEmpty) {
+        if (result.text != null &&
+            result.text.trim().isNotEmpty &&
+            !result.text.contains('[Error:')) {
+          // Make sure it's not an error result
           debugPrint('Valid result received, preparing navigation');
-          // Use post-frame callback to ensure safe navigation
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              debugPrint('Navigating to extraction-view with result');
+          // Wait for any UI operations to settle before navigation
+          await Future.delayed(const Duration(milliseconds: 100));
+          if (mounted) {
+            debugPrint('Navigating to extraction-view with result');
+            // Navigate to the extraction view screen using the correct route
+            try {
               context.push('/create/extraction-view', extra: result);
-            } else {
-              debugPrint('Context not mounted during navigation attempt');
+            } catch (e) {
+              debugPrint('Navigation error in review screen: $e');
+              // Fallback navigation or error handling
+              if (mounted) {
+                _showError('Navigation failed: $e');
+              }
             }
-          });
+          }
         } else {
           debugPrint('No content extracted');
           if (mounted) {

@@ -509,49 +509,33 @@ class _CreateContentScreenState extends State<CreateContentScreen>
       );
 
       debugPrint(
-          'Extraction completed with ${extractionResult?.text?.length} chars');
+          'Extraction completed with ${extractionResult.text.length} chars');
 
       if (!cancelToken.isCancelled && mounted) {
-        // Safely close dialog
         try {
           navigator.pop();
-          debugPrint('Dialog dismissed successfully in create content screen');
         } catch (e) {
           debugPrint('Error dismissing dialog: $e');
-          // Dialog already closed or context invalid, ignore
         }
 
-        // Reset state and navigate AFTER the frame is done (post-frame callback)
-        // This prevents race conditions from dialog dismiss + push navigation
         _resetInputs();
 
-        // Record upload if successful
         if (type == 'pdf' || type == 'image' || type == 'audio') {
           await UsageService().recordAction(user.uid, 'upload');
         }
 
-        // Check if extractionResult is valid before navigation
         if (extractionResult != null &&
             extractionResult.text != null &&
             extractionResult.text.trim().isNotEmpty) {
-          debugPrint('Valid result, preparing navigation to extraction-view');
-          SchedulerBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              debugPrint(
-                  'Navigating to extraction-view from create content screen');
-              context.push('/create/extraction-view', extra: extractionResult);
-            } else {
-              debugPrint(
-                  'Context not mounted during navigation in create content screen');
-            }
-          });
-        } else {
-          debugPrint('No content extracted in create content screen');
+          // Wait for dialog dismissal to fully settle
+          await Future.delayed(const Duration(milliseconds: 100));
           if (mounted) {
-            setState(() {
-              _errorMessage =
-                  'No content was extracted. Please try with different content.';
-            });
+            context.push('/create/extraction-view', extra: extractionResult);
+          }
+        } else {
+          if (mounted) {
+            setState(() => _errorMessage =
+                'No content was extracted. Please try with different content.');
           }
         }
       }
