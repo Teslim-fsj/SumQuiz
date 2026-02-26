@@ -525,8 +525,8 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           await UsageService().recordAction(user.uid, 'upload');
         }
 
-        if (extractionResult.text != null &&
-            extractionResult.text.trim().isNotEmpty) {
+        if (extractionResult.text.trim().isNotEmpty &&
+            !extractionResult.text.startsWith('[Error:')) {
           // Wait for dialog dismissal to fully settle
           await Future.delayed(const Duration(milliseconds: 100));
           if (mounted) {

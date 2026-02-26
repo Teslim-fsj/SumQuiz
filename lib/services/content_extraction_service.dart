@@ -196,7 +196,7 @@ class ContentExtractionService {
           developer.log('Processing link: $url',
               name: 'ContentExtractionService');
 
-          if (url == null || url.isEmpty) {
+          if (url.isEmpty) {
             developer.log('Invalid URL provided',
                 name: 'ContentExtractionService');
             return ExtractionResult(
@@ -238,20 +238,15 @@ class ContentExtractionService {
                           : result.error.toString();
                   onProgress
                       ?.call('Error processing YouTube video: $errorMessage');
-                  return ExtractionResult(
-                    text: '[Error processing YouTube video: $errorMessage]',
-                    suggestedTitle: 'YouTube Content',
-                  );
+                  throw Exception(
+                      'Error processing YouTube video: $errorMessage');
                 } else {
                   throw Exception(
                       'YouTube extraction returned unexpected result.');
                 }
               } catch (e) {
                 onProgress?.call('Failed to process YouTube video: $e');
-                return ExtractionResult(
-                  text: '[Failed to process YouTube video: $e]',
-                  suggestedTitle: 'YouTube Content',
-                );
+                throw Exception('Failed to process YouTube video: $e');
               }
 
             case UrlContentType.document:
@@ -280,19 +275,13 @@ class ContentExtractionService {
                           ? (result.error as EnhancedAIServiceException).message
                           : result.error.toString();
                   onProgress?.call('Error processing file: $errorMessage');
-                  return ExtractionResult(
-                    text: '[Error processing file: $errorMessage]',
-                    suggestedTitle: 'File Content',
-                  );
+                  throw Exception('Error processing file: $errorMessage');
                 } else {
                   throw Exception('File analysis returned unexpected result.');
                 }
               } catch (e) {
                 onProgress?.call('Failed to process file: $e');
-                return ExtractionResult(
-                  text: '[Failed to process file: $e]',
-                  suggestedTitle: 'File Content',
-                );
+                throw Exception('Failed to process file: $e');
               }
 
             case UrlContentType.webpage:
@@ -316,20 +305,14 @@ class ContentExtractionService {
                           ? (result.error as EnhancedAIServiceException).message
                           : result.error.toString();
                   onProgress?.call('Error extracting webpage: $errorMessage');
-                  return ExtractionResult(
-                    text: '[Error extracting webpage: $errorMessage]',
-                    suggestedTitle: 'Web Content',
-                  );
+                  throw Exception('Error extracting webpage: $errorMessage');
                 } else {
                   throw Exception(
                       'Webpage extraction returned unexpected result.');
                 }
               } catch (e) {
                 onProgress?.call('Failed to extract webpage: $e');
-                return ExtractionResult(
-                  text: '[Failed to extract webpage: $e]',
-                  suggestedTitle: 'Web Content',
-                );
+                throw Exception('Failed to extract webpage: $e');
               }
           }
         case 'pdf':
@@ -338,25 +321,19 @@ class ContentExtractionService {
               name: 'ContentExtractionService');
           try {
             // Validate input is a Uint8List
-            if (input == null || !(input is Uint8List)) {
+            if (input == null || input is! Uint8List) {
               developer.log('Invalid PDF input type: ${input?.runtimeType}',
                   name: 'ContentExtractionService');
-              return ExtractionResult(
-                text:
-                    '[Error: Invalid PDF data provided. Please try with a valid PDF file.]',
-                suggestedTitle: 'Invalid PDF',
-              );
+              throw Exception(
+                  'Invalid PDF data provided. Please try with a valid PDF file.');
             }
 
-            final inputBytes = input as Uint8List;
+            final inputBytes = input;
             if (inputBytes.isEmpty) {
               developer.log('Empty PDF input',
                   name: 'ContentExtractionService');
-              return ExtractionResult(
-                text:
-                    '[Error: PDF file is empty. Please try with a valid PDF file.]',
-                suggestedTitle: 'Empty PDF',
-              );
+              throw Exception(
+                  'PDF file is empty. Please try with a valid PDF file.');
             }
 
             // Only attempt PDF parsing if it's actually a PDF
@@ -385,11 +362,8 @@ class ContentExtractionService {
                 rawText.contains('[No text found in PDF.')) {
               onProgress
                   ?.call('No text found in PDF. Try a different document.');
-              return ExtractionResult(
-                text:
-                    '[No text found in PDF. The PDF might contain only images or scanned content that cannot be extracted.]',
-                suggestedTitle: 'No Extractable Content',
-              );
+              throw Exception(
+                  'No text found in PDF. The PDF might contain only images or scanned content that cannot be extracted.');
             } else {
               // We have some text, return it
               return ExtractionResult(
@@ -404,25 +378,19 @@ class ContentExtractionService {
           developer.log('Processing image with mimeType: $mimeType',
               name: 'ContentExtractionService');
 
-          if (input == null || !(input is Uint8List)) {
+          if (input == null || input is! Uint8List) {
             developer.log('Invalid image input type: ${input?.runtimeType}',
                 name: 'ContentExtractionService');
-            return ExtractionResult(
-              text:
-                  '[Error: Invalid image data provided. Please try with a valid image file.]',
-              suggestedTitle: 'Invalid Image',
-            );
+            throw Exception(
+                'Invalid image data provided. Please try with a valid image file.');
           }
 
-          final inputBytes = input as Uint8List;
+          final inputBytes = input;
           if (inputBytes.isEmpty) {
             developer.log('Empty image input',
                 name: 'ContentExtractionService');
-            return ExtractionResult(
-              text:
-                  '[Error: Image file is empty. Please try with a valid image file.]',
-              suggestedTitle: 'Empty Image',
-            );
+            throw Exception(
+                'Image file is empty. Please try with a valid image file.');
           }
 
           if (!kIsWeb) {
@@ -455,11 +423,8 @@ class ContentExtractionService {
                 rawText.contains('[No text found in image.')) {
               onProgress
                   ?.call('No text found in image. Try a different image.');
-              return ExtractionResult(
-                text:
-                    '[No text found in image. The image might not contain readable text.]',
-                suggestedTitle: 'No Extractable Content',
-              );
+              throw Exception(
+                  'No text found in image. The image might not contain readable text.');
             } else {
               // We have some text, return it
               return ExtractionResult(
@@ -474,25 +439,19 @@ class ContentExtractionService {
           developer.log('Processing audio with mimeType: $mimeType',
               name: 'ContentExtractionService');
 
-          if (input == null || !(input is Uint8List)) {
+          if (input == null || input is! Uint8List) {
             developer.log('Invalid audio input type: ${input?.runtimeType}',
                 name: 'ContentExtractionService');
-            return ExtractionResult(
-              text:
-                  '[Error: Invalid audio data provided. Please try with a valid audio file.]',
-              suggestedTitle: 'Invalid Audio',
-            );
+            throw Exception(
+                'Invalid audio data provided. Please try with a valid audio file.');
           }
 
-          final inputBytes = input as Uint8List;
+          final inputBytes = input;
           if (inputBytes.isEmpty) {
             developer.log('Empty audio input',
                 name: 'ContentExtractionService');
-            return ExtractionResult(
-              text:
-                  '[Error: Audio file is empty. Please try with a valid audio file.]',
-              suggestedTitle: 'Empty Audio',
-            );
+            throw Exception(
+                'Audio file is empty. Please try with a valid audio file.');
           }
 
           if (localOnlyTest) {
@@ -502,34 +461,25 @@ class ContentExtractionService {
           // Since AI analysis is disabled, we need to handle audio differently
           onProgress?.call(
               'Audio processing requires AI transcription. Try pasting text instead.');
-          return ExtractionResult(
-            text:
-                '[Audio content cannot be processed without AI transcription. Try uploading a text-based document instead.]',
-            suggestedTitle: 'Audio Content',
-          );
+          throw Exception(
+              'Audio content cannot be processed without AI transcription. Try uploading a text-based document instead.');
         case 'video':
           developer.log('Processing video with mimeType: $mimeType',
               name: 'ContentExtractionService');
 
-          if (input == null || !(input is Uint8List)) {
+          if (input == null || input is! Uint8List) {
             developer.log('Invalid video input type: ${input?.runtimeType}',
                 name: 'ContentExtractionService');
-            return ExtractionResult(
-              text:
-                  '[Error: Invalid video data provided. Please try with a valid video file.]',
-              suggestedTitle: 'Invalid Video',
-            );
+            throw Exception(
+                'Invalid video data provided. Please try with a valid video file.');
           }
 
-          final inputBytes = input as Uint8List;
+          final inputBytes = input;
           if (inputBytes.isEmpty) {
             developer.log('Empty video input',
                 name: 'ContentExtractionService');
-            return ExtractionResult(
-              text:
-                  '[Error: Video file is empty. Please try with a valid video file.]',
-              suggestedTitle: 'Empty Video',
-            );
+            throw Exception(
+                'Video file is empty. Please try with a valid video file.');
           }
 
           if (localOnlyTest) {
@@ -539,11 +489,8 @@ class ContentExtractionService {
           // Since AI analysis is disabled, we need to handle video differently
           onProgress?.call(
               'Video processing requires AI analysis. Try pasting text instead.');
-          return ExtractionResult(
-            text:
-                '[Video content cannot be processed without AI analysis. Try uploading a text-based document instead.]',
-            suggestedTitle: 'Video Content',
-          );
+          throw Exception(
+              'Video content cannot be processed without AI analysis. Try uploading a text-based document instead.');
         default:
           throw Exception('Unknown content type: $type');
       }
