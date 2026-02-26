@@ -12,6 +12,7 @@ import 'package:sumquiz/services/content_extraction_service.dart';
 import 'package:sumquiz/services/enhanced_ai_service.dart';
 import 'package:sumquiz/services/local_database_service.dart';
 import 'package:sumquiz/services/usage_service.dart';
+import 'package:sumquiz/services/extraction_result_cache.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
 import 'package:sumquiz/views/screens/exam_creation_screen.dart';
 import 'package:sumquiz/views/widgets/extraction_progress_dialog.dart';
@@ -524,13 +525,16 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           await UsageService().recordAction(user.uid, 'upload');
         }
 
-        if (extractionResult != null &&
-            extractionResult.text != null &&
+        if (extractionResult.text != null &&
             extractionResult.text.trim().isNotEmpty) {
           // Wait for dialog dismissal to fully settle
           await Future.delayed(const Duration(milliseconds: 100));
           if (mounted) {
-            context.push('/create/extraction-view', extra: extractionResult);
+            ExtractionResultCache.set(extractionResult);
+            await Future.delayed(const Duration(milliseconds: 100));
+            if (mounted) {
+              context.push('/create/extraction-view');
+            }
           }
         } else {
           if (mounted) {

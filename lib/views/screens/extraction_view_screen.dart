@@ -44,47 +44,24 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
   @override
   void initState() {
     super.initState();
+
+    // Null check comes first, before any debugPrint statements that access widget.result!
+    if (widget.result == null || widget.result!.text.trim().isEmpty) {
+      _textController = TextEditingController(text: '');
+      _titleController = TextEditingController(text: 'Untitled Creation');
+      return;
+    }
+
     debugPrint('ExtractionViewScreen.initState called');
     debugPrint('Widget result: ${widget.result != null ? "exists" : "null"}');
     if (widget.result != null) {
-      debugPrint('Result text length: ${widget.result!.text?.length}');
+      debugPrint('Result text length: ${widget.result!.text.length}');
       debugPrint(
-          'Result text preview: ${widget.result!.text?.substring(0, (widget.result!.text!.length > 50) ? 50 : widget.result!.text!.length)}...');
+          'Result text preview: ${widget.result!.text.substring(0, (widget.result!.text.length > 50) ? 50 : widget.result!.text.length)}...');
       debugPrint('Suggested title: ${widget.result?.suggestedTitle}');
     }
 
     final rawText = widget.result?.text ?? '';
-
-    // Check if the extraction result is valid before proceeding
-    if (widget.result == null ||
-        (widget.result!.text?.trim().isEmpty ?? true)) {
-      debugPrint('Invalid extraction result detected');
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          debugPrint('Showing error snackbar and preparing to navigate back');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'No content was extracted. Please try again with a different source.',
-              ),
-              duration: Duration(seconds: 4),
-              backgroundColor: Colors.red,
-            ),
-          );
-          // Navigate back after showing the snackbar
-          Future.delayed(const Duration(seconds: 4), () {
-            debugPrint('Attempting to navigate back');
-            if (mounted && context.canPop()) {
-              context.pop();
-            }
-          });
-        }
-      });
-      // Initialize with empty text to prevent crashes
-      _textController = TextEditingController(text: '');
-      _titleController = TextEditingController(text: 'Untitled Creation');
-      return; // Early return to avoid further processing
-    }
 
     debugPrint('Processing valid extraction result');
 
@@ -251,15 +228,6 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
         debugPrint('Stack trace: $stack');
         if (mounted) {
           _showError('Error generating content: $e');
-        }
-        return;
-      }
-
-      // Check if folderId was generated successfully
-      if (folderId == null) {
-        debugPrint('Failed to generate folder ID');
-        if (mounted) {
-          _showError('Failed to save generated content. Please try again.');
         }
         return;
       }

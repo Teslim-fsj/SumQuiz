@@ -10,6 +10,7 @@ import 'package:sumquiz/models/local_summary.dart';
 import 'package:sumquiz/models/summary_model.dart';
 import 'package:sumquiz/models/extraction_result.dart';
 import 'package:sumquiz/services/auth_service.dart';
+import 'package:sumquiz/services/extraction_result_cache.dart';
 import 'package:sumquiz/views/screens/auth_screen.dart';
 import 'package:sumquiz/views/screens/library_screen.dart';
 import 'package:sumquiz/views/screens/progress_screen.dart';
@@ -320,28 +321,11 @@ GoRouter createAppRouter(AuthService authService) {
                       path: 'extraction-view',
                       parentNavigatorKey: _rootNavigatorKey,
                       builder: (context, state) {
-                        try {
-                          // Safely extract ExtractionResult from extra with proper null checking
-                          final ExtractionResult? result;
-                          if (state.extra != null &&
-                              state.extra is ExtractionResult) {
-                            result = state.extra as ExtractionResult;
-                          } else {
-                            result = null;
-                          }
-                          return ResponsiveView(
-                            mobile: ExtractionViewScreen(result: result),
-                            desktop: ExtractionViewScreenWeb(result: result),
-                          );
-                        } catch (e) {
-                          debugPrint('Error in extraction-view route: $e');
-                          return Scaffold(
-                            appBar: AppBar(title: Text('Error')),
-                            body: Center(
-                                child: Text(
-                                    'Failed to load content. Please try again.')),
-                          );
-                        }
+                        final result = ExtractionResultCache.consume();
+                        return ResponsiveView(
+                          mobile: ExtractionViewScreen(result: result),
+                          desktop: ExtractionViewScreenWeb(result: result),
+                        );
                       },
                     ),
                     GoRoute(

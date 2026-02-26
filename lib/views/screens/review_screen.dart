@@ -33,6 +33,7 @@ import '../widgets/extraction_progress_dialog.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import '../widgets/upgrade_dialog.dart';
+import '../../services/extraction_result_cache.dart';
 
 class ReviewScreen extends StatefulWidget {
   const ReviewScreen({super.key});
@@ -1700,9 +1701,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
         }
 
         // Check if the result is valid before navigating
-        if (result.text != null &&
-            result.text.trim().isNotEmpty &&
-            !result.text.contains('[Error:')) {
+        if (result.text.trim().isNotEmpty && !result.text.contains('[Error:')) {
           // Make sure it's not an error result
           debugPrint('Valid result received, preparing navigation');
           // Wait for any UI operations to settle before navigation
@@ -1711,7 +1710,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
             debugPrint('Navigating to extraction-view with result');
             // Navigate to the extraction view screen using the correct route
             try {
-              context.push('/create/extraction-view', extra: result);
+              ExtractionResultCache.set(result);
+              await Future.delayed(const Duration(milliseconds: 100));
+              if (mounted) {
+                context.push('/create/extraction-view');
+              }
             } catch (e) {
               debugPrint('Navigation error in review screen: $e');
               // Fallback navigation or error handling
