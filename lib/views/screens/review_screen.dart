@@ -34,6 +34,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import '../widgets/upgrade_dialog.dart';
 import '../../services/extraction_result_cache.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 class ReviewScreen extends StatefulWidget {
   const ReviewScreen({super.key});
@@ -1713,6 +1714,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
               ExtractionResultCache.set(result);
               await Future.delayed(const Duration(milliseconds: 100));
               if (mounted) {
+                await FirebaseCrashlytics.instance.log(
+                    'Navigating to extraction-view. Text length: ${result.text.length}');
                 context.push('/create/extraction-view');
               }
             } catch (e) {

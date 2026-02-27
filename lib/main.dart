@@ -37,29 +37,22 @@ import 'package:sumquiz/services/error_reporting_service.dart';
 import 'package:sumquiz/services/notification_integration.dart';
 import 'package:sumquiz/widgets/notification_navigator.dart';
 import 'package:sumquiz/theme/web_theme.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
 
-  // Global error handling
-  FlutterError.onError = (FlutterErrorDetails details) async {
-    final errorReportingService = ErrorReportingService();
-    await errorReportingService.reportError(
-        details.exception, details.stack ?? StackTrace.current,
-        context: 'Flutter Framework Error');
-  };
-
-  PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
-    final errorReportingService = ErrorReportingService();
-    errorReportingService.reportError(error, stack,
-        context: 'Unhandled Async Error');
-    return true;
-  };
-
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
 
   try {
     await LocalDatabaseService().init();

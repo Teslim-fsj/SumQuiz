@@ -17,6 +17,7 @@ import 'package:sumquiz/utils/cancellation_token.dart';
 import 'package:sumquiz/views/screens/exam_creation_screen.dart';
 import 'package:sumquiz/views/widgets/extraction_progress_dialog.dart';
 import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 class InputValidator {
   static bool isValidUrl(String url) {
@@ -533,6 +534,8 @@ class _CreateContentScreenState extends State<CreateContentScreen>
             ExtractionResultCache.set(extractionResult);
             await Future.delayed(const Duration(milliseconds: 100));
             if (mounted) {
+              await FirebaseCrashlytics.instance.log(
+                  'Navigating to extraction-view. Type: $type. Text length: ${extractionResult.text.length}');
               context.push('/create/extraction-view');
             }
           }

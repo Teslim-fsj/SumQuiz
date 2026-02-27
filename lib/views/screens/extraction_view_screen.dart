@@ -12,6 +12,7 @@ import 'package:sumquiz/services/auth_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sumquiz/models/extraction_result.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 class ExtractionViewScreen extends StatefulWidget {
   final ExtractionResult? result;
@@ -45,61 +46,67 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
   void initState() {
     super.initState();
 
-    // Null check comes first, before any debugPrint statements that access widget.result!
-    if (widget.result == null || widget.result!.text.trim().isEmpty) {
-      _textController = TextEditingController(text: '');
-      _titleController = TextEditingController(text: 'Untitled Creation');
-      return;
-    }
-
-    debugPrint('ExtractionViewScreen.initState called');
-    debugPrint('Widget result: ${widget.result != null ? "exists" : "null"}');
-    if (widget.result != null) {
-      debugPrint('Result text length: ${widget.result!.text.length}');
-      debugPrint(
-          'Result text preview: ${widget.result!.text.substring(0, (widget.result!.text.length > 50) ? 50 : widget.result!.text.length)}...');
-      debugPrint('Suggested title: ${widget.result?.suggestedTitle}');
-    }
-
-    final rawText = widget.result?.text ?? '';
-
-    debugPrint('Processing valid extraction result');
-
-    // Heuristic normalization:
-    // If text appears to be "one word per line" (many short lines), join them.
-    String normalizedText = rawText.trim();
-
-    // Count lines and average line length
-    final lines = normalizedText.split('\n');
-    if (lines.length > 10) {
-      double totalLength = 0;
-      for (var l in lines) {
-        totalLength += l.trim().length;
+    try {
+      // Null check comes first, before any debugPrint statements that access widget.result!
+      if (widget.result == null || widget.result!.text.trim().isEmpty) {
+        _textController = TextEditingController(text: '');
+        _titleController = TextEditingController(text: 'Untitled Creation');
+        return;
       }
-      double avgLength = totalLength / lines.length;
 
-      // If average line length is very short (< 20 chars), it's likely broken layout
-      if (avgLength < 20) {
-        // Join lines with space, but preserve double newlines (paragraphs)
-        normalizedText = normalizedText
-            .replaceAll(RegExp(r'(?<!\n)\n(?!\n)'), ' ') // Join single newlines
-            .replaceAll(RegExp(r' +'), ' ') // Normalize spaces
-            .replaceAll(
-                RegExp(r'\n{3,}'), '\n\n'); // Normalize paragraph breaks
+      debugPrint('ExtractionViewScreen.initState called');
+      debugPrint('Widget result: ${widget.result != null ? "exists" : "null"}');
+      if (widget.result != null) {
+        debugPrint('Result text length: ${widget.result!.text.length}');
+        debugPrint(
+            'Result text preview: ${widget.result!.text.substring(0, (widget.result!.text.length > 50) ? 50 : widget.result!.text.length)}...');
+        debugPrint('Suggested title: ${widget.result?.suggestedTitle}');
+      }
+
+      final rawText = widget.result?.text ?? '';
+
+      debugPrint('Processing valid extraction result');
+
+      // Heuristic normalization:
+      // If text appears to be "one word per line" (many short lines), join them.
+      String normalizedText = rawText.trim();
+
+      // Count lines and average line length
+      final lines = normalizedText.split('\n');
+      if (lines.length > 10) {
+        double totalLength = 0;
+        for (var l in lines) {
+          totalLength += l.trim().length;
+        }
+        double avgLength = totalLength / lines.length;
+
+        // If average line length is very short (< 20 chars), it's likely broken layout
+        if (avgLength < 20) {
+          // Join lines with space, but preserve double newlines (paragraphs)
+          normalizedText = normalizedText
+              .replaceAll(
+                  RegExp(r'(?<!\n)\n(?!\n)'), ' ') // Join single newlines
+              .replaceAll(RegExp(r' +'), ' ') // Normalize spaces
+              .replaceAll(
+                  RegExp(r'\n{3,}'), '\n\n'); // Normalize paragraph breaks
+        } else {
+          // Just normalize excessive spacing
+          normalizedText = normalizedText.replaceAll(RegExp(r'\n{3,}'), '\n\n');
+        }
       } else {
-        // Just normalize excessive spacing
         normalizedText = normalizedText.replaceAll(RegExp(r'\n{3,}'), '\n\n');
       }
-    } else {
-      normalizedText = normalizedText.replaceAll(RegExp(r'\n{3,}'), '\n\n');
+
+      _textController = TextEditingController(text: normalizedText);
+      _titleController = TextEditingController(
+          text: widget.result?.suggestedTitle ?? 'Untitled Creation');
+      _selectedOutputs.add(OutputType.summary); // Select Summary by default
+
+      debugPrint('ExtractionViewScreen initState completed');
+    } catch (e, stack) {
+      FirebaseCrashlytics.instance.recordError(e, stack, fatal: true);
+      rethrow;
     }
-
-    _textController = TextEditingController(text: normalizedText);
-    _titleController = TextEditingController(
-        text: widget.result?.suggestedTitle ?? 'Untitled Creation');
-    _selectedOutputs.add(OutputType.summary); // Select Summary by default
-
-    debugPrint('ExtractionViewScreen initState completed');
   }
 
   @override
