@@ -1702,7 +1702,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
         }
 
         // Check if the result is valid before navigating
-        if (result.text.trim().isNotEmpty && !result.text.contains('[Error:')) {
+        if (result.text.trim().isNotEmpty && !result.text.startsWith('[')) {
           // Make sure it's not an error result
           debugPrint('Valid result received, preparing navigation');
           // Wait for any UI operations to settle before navigation

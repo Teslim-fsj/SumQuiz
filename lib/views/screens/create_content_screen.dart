@@ -527,7 +527,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
         }
 
         if (extractionResult.text.trim().isNotEmpty &&
-            !extractionResult.text.startsWith('[Error:')) {
+            !extractionResult.text.startsWith('[')) {
           // Wait for dialog dismissal to fully settle
           await Future.delayed(const Duration(milliseconds: 100));
           if (mounted) {

@@ -48,9 +48,24 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
 
     try {
       // Null check comes first, before any debugPrint statements that access widget.result!
-      if (widget.result == null || widget.result!.text.trim().isEmpty) {
+      if (widget.result == null ||
+          widget.result!.text.trim().isEmpty ||
+          widget.result!.text.startsWith('[')) {
         _textController = TextEditingController(text: '');
         _titleController = TextEditingController(text: 'Untitled Creation');
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                    'Could not extract content. Please try a different source.'),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 3),
+              ),
+            );
+            if (context.canPop()) context.pop();
+          }
+        });
         return;
       }
 
@@ -130,11 +145,16 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
   }
 
   /// Check if API key is properly configured before processing
-  bool _isApiKeyConfigured() {
+  Future<bool> _isApiKeyConfigured() async {
     try {
       final service = context.read<EnhancedAIService>();
       debugPrint('API key check: EnhancedAIService accessed successfully');
-      // If we can access the service without error, the API key is configured
+      // Test the service health
+      final isHealthy = await service.isServiceHealthy();
+      if (!isHealthy) {
+        debugPrint('AI service is not healthy');
+        return false;
+      }
       return true;
     } catch (e) {
       debugPrint('API key check failed: $e');
@@ -144,7 +164,7 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
 
   Future<void> _handleGenerate() async {
     // Check if API key is configured
-    if (!_isApiKeyConfigured()) {
+    if (!await _isApiKeyConfigured()) {
       _showError(
           '🔑 API key is not configured. Please set up your API key in the .env file.');
       return;
@@ -234,7 +254,8 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
         debugPrint('Error generating content: $e');
         debugPrint('Stack trace: $stack');
         if (mounted) {
-          _showError('Error generating content: $e');
+          _showError(
+              'Error generating content: ${e.toString().split(':').first}');
         }
         return;
       }
