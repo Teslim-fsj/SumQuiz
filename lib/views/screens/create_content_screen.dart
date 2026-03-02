@@ -155,8 +155,8 @@ class _CreateContentScreenState extends State<CreateContentScreen>
 
     bool canProceed = true;
 
-    if (actionType == 'upload') {
-      canProceed = false; // Strictly Pro for uploads
+    if (actionType == 'upload' || feature == 'Tutor Exam') {
+      canProceed = false; // Strictly Pro for uploads and Tutor Exams
     } else {
       // Daily generation limits are handled in AI services or during processing
       // but we can block here if we know they are over.

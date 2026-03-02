@@ -3,12 +3,14 @@ import 'package:flutter/foundation.dart'
     show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:sumquiz/models/editable_content.dart';
 import 'package:sumquiz/models/flashcard_set.dart';
 import 'package:sumquiz/models/local_quiz.dart';
 import 'package:sumquiz/models/local_summary.dart';
 import 'package:sumquiz/models/summary_model.dart';
 import 'package:sumquiz/models/extraction_result.dart';
+import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/services/auth_service.dart';
 import 'package:sumquiz/services/extraction_result_cache.dart';
 import 'package:sumquiz/views/screens/auth_screen.dart';

@@ -12,6 +12,8 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:sumquiz/services/content_extraction_service.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
+import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
+import 'package:go_router/go_router.dart';
 
 class ExamCreationScreen extends StatefulWidget {
   const ExamCreationScreen({super.key});
@@ -51,6 +53,65 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final user = Provider.of<UserModel?>(context, listen: false);
+
+    // Check if user has Pro access
+    if (user != null && !user.isPro) {
+      // Show upgrade dialog if user is not Pro
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (_) => const UpgradeDialog(
+              featureName: 'Tutor Exam',
+            ),
+          );
+        }
+      });
+
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Create New Exam'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.lock,
+                size: 80,
+                color: Colors.grey,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Tutor Exam feature requires Pro subscription',
+                style: theme.textTheme.headlineSmall,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Upgrade to access advanced exam creation tools',
+                style: theme.textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  context.push('/settings/subscription');
+                },
+                child: const Text('Upgrade to Pro'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
