@@ -126,8 +126,9 @@ class SummaryScreenState extends State<SummaryScreen> {
       final content = await _localDbService.getFolderContents(folderId);
 
       if (content.isNotEmpty) {
-        if (!userModel.isPro)
+        if (!userModel.isPro) {
           await usageService.recordAction(userModel.uid, 'summaries');
+        }
         if (!mounted) return;
         // Navigate to the results screen
         context.go('/library/results-view/$folderId');

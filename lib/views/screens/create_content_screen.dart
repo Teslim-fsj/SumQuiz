@@ -515,7 +515,9 @@ class _CreateContentScreenState extends State<CreateContentScreen>
 
       if (!cancelToken.isCancelled && mounted) {
         try {
-          navigator.pop();
+          if (navigator.canPop()) {
+            navigator.pop();
+          }
         } catch (e) {
           debugPrint('Error dismissing dialog: $e');
         }
@@ -561,8 +563,10 @@ class _CreateContentScreenState extends State<CreateContentScreen>
       if (!cancelToken.isCancelled && mounted) {
         // Safely close dialog
         try {
-          navigator.pop();
-          debugPrint('Dialog dismissed in error catch');
+          if (navigator.canPop()) {
+            navigator.pop();
+            debugPrint('Dialog dismissed in error catch');
+          }
         } catch (e) {
           debugPrint('Error dismissing dialog in error catch: $e');
           // Dialog already closed or context invalid, ignore

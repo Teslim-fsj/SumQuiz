@@ -1682,8 +1682,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
         if (dialogShown && mounted) {
           debugPrint('Attempting to dismiss dialog');
           try {
-            Navigator.pop(context);
-            debugPrint('Dialog dismissed successfully');
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+              debugPrint('Dialog dismissed successfully');
+            }
           } catch (e) {
             debugPrint('Error dismissing dialog: $e');
             // Dialog already dismissed, ignore
@@ -1738,7 +1740,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
         // If dialog was shown, try to dismiss it
         if (dialogShown && mounted) {
           try {
-            Navigator.pop(context);
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
           } catch (e) {
             debugPrint('Error dismissing dialog in catch: $e');
             // Dialog already dismissed, ignore
@@ -1752,7 +1756,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
       // Ensure dialog is dismissed even if an error occurs
       try {
-        if (mounted) {
+        if (mounted && Navigator.of(context).canPop()) {
           Navigator.of(context).pop(); // Dismiss dialog
           debugPrint('Dialog dismissed in error catch');
         }

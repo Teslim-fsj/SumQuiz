@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:sumquiz/models/local_summary.dart';
 import 'package:sumquiz/models/local_quiz.dart';

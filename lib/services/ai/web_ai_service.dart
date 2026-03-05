@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:html/parser.dart' as html_parser;
@@ -234,8 +233,9 @@ OUTPUT FORMAT (JSON):
     final twitterTitle = document
         .querySelector('meta[name="twitter:title"]')
         ?.attributes['content'];
-    if (twitterTitle != null && twitterTitle.isNotEmpty)
+    if (twitterTitle != null && twitterTitle.isNotEmpty) {
       return twitterTitle.trim();
+    }
 
     // Try H1 heading
     final h1 = document.querySelector('h1')?.text;
