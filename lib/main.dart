@@ -33,7 +33,6 @@ import 'package:sumquiz/services/content_extraction_service.dart';
 import 'package:sumquiz/services/spaced_repetition_service.dart';
 import 'package:sumquiz/services/mission_service.dart';
 import 'package:sumquiz/services/time_sync_service.dart';
-import 'package:sumquiz/services/error_reporting_service.dart';
 import 'package:sumquiz/services/notification_integration.dart';
 import 'package:sumquiz/widgets/notification_navigator.dart';
 import 'package:sumquiz/theme/web_theme.dart';
@@ -82,6 +81,39 @@ void main() async {
   }).catchError((e) {
     debugPrint('Startup time sync failed: $e');
   });
+
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return Scaffold(
+      backgroundColor: Colors.red,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              const Text(
+                'CRASH DETAILS',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                details.exceptionAsString(),
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                details.stack.toString(),
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  };
 
   runApp(MyApp(
       authService: authService, notificationService: notificationService));
