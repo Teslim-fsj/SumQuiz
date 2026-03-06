@@ -48,6 +48,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             'Using fallback product details as IAP products could not be loaded');
         products = [
           _FallbackProductDetails(
+            id: 'sumquiz_pro_weekly',
+            title: 'Weekly Pro',
+            description: 'Standard weekly plan',
+            price: r'US$2.99',
+            rawPrice: 2.99,
+          ),
+          _FallbackProductDetails(
             id: 'sumquiz_pro_monthly',
             title: 'Monthly Pro',
             description: 'Standard monthly plan',
@@ -78,6 +85,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       // If error occurs, still try to populate fallback products if on mobile
       if (!kIsWeb) {
         final fallbacks = [
+          _FallbackProductDetails(
+            id: 'sumquiz_pro_weekly',
+            title: 'Weekly Pro',
+            description: 'Standard weekly plan',
+            price: r'US$2.99',
+            rawPrice: 2.99,
+          ),
           _FallbackProductDetails(
             id: 'sumquiz_pro_monthly',
             title: 'Monthly Pro',

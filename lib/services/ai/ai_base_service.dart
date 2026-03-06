@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:async';
 import 'dart:math';
 import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:developer' as developer;
 import 'ai_config.dart';
 import '../../utils/cancellation_token.dart';
@@ -49,10 +48,7 @@ abstract class AIBaseService {
   Future<void> _initializeModelsAsync() async {
     try {
       // API Key hardcoded for production/GitHub builds as requested by user
-      const String hardcodedApiKey = 'AIzaSyDWEUCZ9lfq7yspgl6fMt84jIUOAN9mItI';
-      final envKey = dotenv.env['API_KEY'];
-      final apiKey =
-          (envKey != null && envKey.isNotEmpty) ? envKey : hardcodedApiKey;
+      const String apiKey = 'AIzaSyDWEUCZ9lfq7yspgl6fMt84jIUOAN9mItI';
 
       if (apiKey.isEmpty) {
         _initializationError = 'API key is not configured.';

@@ -140,28 +140,33 @@ class YouTubeAIService extends AIBaseService {
       {CancellationToken? cancelToken}) async {
     if (!await ensureInitialized()) return null;
 
-    final prompt = '''Analyze this video: $videoUrl
-TASK: Use your native YouTube indexing and multimodal understanding (Browse Tool) to watch and listen to the video content from this URL. 
+    final prompt = '''You are a YouTube educational content specialist. 
+Your goal is to extract ALL informational, educational, and factual content from this video.
 
-Provide a detailed summary in 3 sections:
-1. OVERVIEW: Professional overview of the main subject.
-2. KEY TIMESTAMPS: List 5-10 important events/topics with precise MM:SS.
-3. EXTRACTED INSIGHTS: Deep bullet points of instructional content, quotes, and visual slide details.
+VIDEO URL: $videoUrl
 
-OUTPUT FORMAT (JSON):
+INSTRUCTIONS:
+1. Provide a clear, descriptive suggested title.
+2. EXTRACT all key facts, concepts, definitions, and explanations.
+3. Organize into logical sections with markdown headers.
+4. REMOVE intros, outros, ads, and sponsorship segments.
+5. If the video is a lecture or tutorial, preserve the logical flow of information.
+
+Output MUST be valid JSON:
 {
-  "title": "Topic-focused study title",
-  "content": "Detailed instructional text..."
+  "title": "Clean suggested title",
+  "text": "The extracted content..."
 }''';
 
     final response = await generateWithRetry(
       prompt,
-      customModel: youtubeModel,
+      customModel: proModel, // Use pro for better video understanding
       cancelToken: cancelToken,
     );
 
     final data = safeJsonDecode(extractJson(response));
-    final content = data['content']?.toString() ?? '';
+    final content =
+        data['text']?.toString() ?? ''; // Changed from 'content' to 'text'
     if (content.isEmpty) return null;
 
     return ExtractionResult(

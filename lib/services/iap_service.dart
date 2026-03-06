@@ -12,11 +12,13 @@ import 'package:sumquiz/models/user_model.dart';
 /// Direct Play Store integration for subscription management
 class IAPService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static const String _proWeeklyId = 'sumquiz_pro_weekly';
   static const String _proMonthlyId = 'sumquiz_pro_monthly';
   static const String _proYearlyId = 'sumquiz_pro_yearly';
 
   late StreamSubscription<List<PurchaseDetails>> _subscription;
   final Set<String> _productIds = {
+    _proWeeklyId,
     _proMonthlyId,
     _proYearlyId,
   };
@@ -135,7 +137,9 @@ class IAPService {
       // Determine subscription details
       DateTime? expiryDate;
       final now = DateTime.now();
-      if (purchaseDetails.productID == _proMonthlyId) {
+      if (purchaseDetails.productID == _proWeeklyId) {
+        expiryDate = now.add(const Duration(days: 7));
+      } else if (purchaseDetails.productID == _proMonthlyId) {
         expiryDate = now.add(const Duration(days: 30));
       } else if (purchaseDetails.productID == _proYearlyId) {
         expiryDate = now.add(const Duration(days: 365));

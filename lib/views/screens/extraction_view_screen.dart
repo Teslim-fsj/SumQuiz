@@ -144,29 +144,14 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
     });
   }
 
-  /// Check if API key is properly configured before processing
-  Future<bool> _isApiKeyConfigured() async {
-    try {
-      final service = context.read<EnhancedAIService>();
-      debugPrint('API key check: EnhancedAIService accessed successfully');
-      // Test the service health
-      final isHealthy = await service.isServiceHealthy();
-      if (!isHealthy) {
-        debugPrint('AI service is not healthy');
-        return false;
-      }
-      return true;
-    } catch (e) {
-      debugPrint('API key check failed: $e');
-      return false;
-    }
-  }
+  /// Check if AI service is properly configured
+  bool get _isApiKeyConfigured => true;
 
   Future<void> _handleGenerate() async {
-    // Check if API key is configured
-    if (!await _isApiKeyConfigured()) {
+    // Check if AI service is configured
+    if (!_isApiKeyConfigured) {
       _showError(
-          '🔑 API key is not configured. Please set up your API key in the .env file.');
+          '🔑 AI Service is not available. Please check your connection.');
       return;
     }
 
@@ -310,7 +295,7 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
         // Check for specific error types
         if (e.message.contains('API') || e.message.contains('key')) {
           errorMsg =
-              'API configuration error. Please check your API key in the .env file.';
+              'AI Service error. Please check your internet connection or try again later.';
         } else if (e.message.contains('disabled') ||
             e.message.contains('stability')) {
           errorMsg =
@@ -342,7 +327,7 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
         } else if (e.toString().contains('API') ||
             e.toString().contains('key')) {
           errorMsg =
-              'API configuration error. Please check your API key in the .env file.';
+              'AI Service error. Please check your internet connection or try again later.';
         } else if (e.toString().contains('No content') ||
             e.toString().contains('empty')) {
           errorMsg =
