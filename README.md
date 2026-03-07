@@ -1,29 +1,39 @@
-# SumQuiz
+# SumQuiz 🚀
 
-An AI-powered study tool for creating summaries, quizzes, and flashcards.
+**Summarize. Quiz. Master.**
 
-## Features
+SumQuiz is an AI-powered educational ecosystem designed to maximize learning efficiency. By leveraging the latest **Gemini 3.1** technology, SumQuiz transforms massive amounts of information into bite-sized, actionable study materials.
 
-- Generate summaries from text or PDF documents using AI
-- Create multiple-choice quizzes from your content
-- Generate flashcards for effective memorization
-- Save and organize your study materials
-- Track your learning progress
-- Sync across devices with Firebase
+---
 
-## Getting Started
+## ✨ Key Features
 
-1. Clone the repository
-2. Run `flutter pub get` to install dependencies
-3. Set up Firebase for your project
-4. Add your Firebase configuration files
-5. Run `flutter run` to start the application
+-   **⚡ Gemini 3.1 Powered**: 1,000,000 character context window for analyzing entire textbooks.
+-   **📹 YouTube Intelligence**: Extract value from videos via audio analysis or transcript refinement.
+-   **📑 Smart Extraction**: High-fidelity PDF and Webpage content extraction.
+-   **🧠 Study Tools**: Automatically generate structured Summaries, Quizzes, and Flashcards.
+-   **🔄 Cloud Sync**: Seamless transition between Web and Mobile with offline-first support.
+-   **📊 SRS Support**: Built-in Spaced Repetition System for long-term retention.
 
-## Requirements
+---
 
-- Flutter 3.0 or higher
-- Firebase project with Authentication and Firestore enabled
+## 🛠️ Getting Started
 
-## Contributing
+For consumers:
+1. Download the app from the Play Store or App Store.
+2. Sign in with Google.
+3. Upload your first PDF and start learning!
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+For developers:
+-   Check [TECHNICAL_DOCUMENTATION.md](file:///d:/sumquiz-/sumquiz-/TECHNICAL_DOCUMENTATION.md) for architecture details.
+-   Requires Flutter `>=3.5.0` and Firebase configuration.
+
+---
+
+## 🏆 Subscription Tiers
+
+-   **Free**: Access to all core tools with daily generation limits.
+-   **Pro**: Unlimited everything, Gemini 3.1 Pro reasoning, and priority support.
+
+---
+© 2026 SumQuiz Team.
