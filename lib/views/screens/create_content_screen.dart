@@ -716,18 +716,16 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                 method == 'image' ||
                 method == 'slides' ||
                 method == 'audio') {
-              // Check Pro for advanced inputs or limits
-              String featureName = '';
-              String actionType = 'upload';
-
-              if (method == 'link' ||
-                  method == 'pdf' ||
-                  method == 'image' ||
-                  method == 'slides' ||
-                  method == 'audio') {
-                // All non-text sources are strictly Pro-only
-                if (!_checkProAccess(featureName, actionType: 'upload')) return;
-              }
+              // All non-text sources are strictly Pro-only
+              final featureName = {
+                    'link': 'Link & URL Extraction',
+                    'pdf': 'Document Upload',
+                    'slides': 'Slides Upload',
+                    'image': 'Image Scan',
+                    'audio': 'Audio Analysis',
+                  }[method] ??
+                  'Pro Features';
+              if (!_checkProAccess(featureName, actionType: 'upload')) return;
             }
             setState(() => _selectedImportMethod = method);
           },

@@ -81,31 +81,53 @@ void main() async {
   });
 
   ErrorWidget.builder = (FlutterErrorDetails details) {
+    // Log to Crashlytics in release mode
+    if (!kDebugMode) {
+      FirebaseCrashlytics.instance.recordFlutterError(details);
+    }
     return Scaffold(
-      backgroundColor: Colors.red,
-      body: SingleChildScrollView(
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(32),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
+              const Icon(Icons.error_outline_rounded,
+                  size: 56, color: Color(0xFFE57373)),
+              const SizedBox(height: 16),
               const Text(
-                'CRASH DETAILS',
+                'Something went wrong',
+                textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
+                  color: Color(0xFF333333),
                 ),
               ),
-              const SizedBox(height: 16),
-              Text(
-                details.exceptionAsString(),
-                style: const TextStyle(color: Colors.white, fontSize: 14),
+              const SizedBox(height: 8),
+              const Text(
+                'Please go back and try again.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Color(0xFF666666)),
               ),
-              const SizedBox(height: 16),
-              Text(
-                details.stack.toString(),
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
-              ),
+              if (kDebugMode) ...[
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFEBEE),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: SingleChildScrollView(
+                    child: Text(
+                      details.exceptionAsString(),
+                      style: const TextStyle(
+                          color: Color(0xFFC62828), fontSize: 12),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
