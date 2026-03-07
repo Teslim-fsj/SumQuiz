@@ -2,11 +2,12 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import '../models/user_model.dart';
 import '../services/iap_service.dart';
 
 class SubscriptionProvider with ChangeNotifier {
-  final IAPService _iapService;
+  IAPService? _iapService;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   UserModel? _currentUser;
@@ -16,12 +17,27 @@ class SubscriptionProvider with ChangeNotifier {
     _initialize();
   }
 
+  /// Update the service reference (called by ProxyProvider)
+  void update(IAPService? iapService) {
+    if (iapService != null && iapService != _iapService) {
+      _iapService = iapService;
+      notifyListeners();
+    }
+  }
+
   // Subscription state
   bool _isLoading = false;
   bool _isSubscribed = false;
   DateTime? _subscriptionExpiry;
   String? _currentProduct;
   bool _isTrial = false;
+
+  // Products state
+  List<ProductDetails> _products = [];
+  List<ProductDetails> get products => _products;
+
+  // Track if we are already listening to auth changes
+  bool _isAuthListening = false;
 
   // Getters
   bool get isLoading => _isLoading;
@@ -36,6 +52,9 @@ class SubscriptionProvider with ChangeNotifier {
 
   // Initialize and listen to user changes
   void _initialize() {
+    if (_isAuthListening) return;
+    _isAuthListening = true;
+
     FirebaseAuth.instance.authStateChanges().listen((user) {
       if (user != null) {
         _listenToUser(user.uid);
@@ -84,14 +103,29 @@ class SubscriptionProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// Fetch available products from the store
+  Future<void> loadProducts() async {
+    if (_iapService == null) return;
+
+    _setLoading(true);
+    try {
+      _products = await _iapService!.getAvailableProducts();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading products in provider: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   // Purchase a product
   Future<bool> purchaseProduct(String productId) async {
-    if (_isLoading) return false;
+    if (_isLoading || _iapService == null) return false;
 
     _setLoading(true);
 
     try {
-      final success = await _iapService.purchaseProduct(productId);
+      final success = await _iapService!.purchaseProduct(productId);
 
       if (success) {
         // Wait a bit for the purchase to be processed and reflected in Firestore
@@ -112,12 +146,12 @@ class SubscriptionProvider with ChangeNotifier {
 
   // Restore purchases
   Future<void> restorePurchases() async {
-    if (_isLoading) return;
+    if (_isLoading || _iapService == null) return;
 
     _setLoading(true);
 
     try {
-      await _iapService.restorePurchases();
+      await _iapService!.restorePurchases();
       await Future.delayed(const Duration(seconds: 2));
       await _refreshUserData();
     } catch (e) {

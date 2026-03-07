@@ -356,20 +356,30 @@ class ContentExtractionService {
 
           if (rawText.trim().isEmpty ||
               rawText.contains('[No text found in PDF.')) {
-            // Instead of trying AI analysis which is disabled, return what we have
-            // If no text was extracted locally, return an appropriate message
+            // Fallback to AI analysis for scanned/image-based PDFs
+            onProgress?.call(
+                'Local extraction sparse. Using AI for deep analysis...');
+            try {
+              final result = await _enhancedAiService.analyzeContentFromBytes(
+                bytes: input,
+                mimeType: 'application/pdf',
+                userId: userId!,
+                cancelToken: cancelToken,
+              );
+              if (result is Ok<ExtractionResult>) {
+                return result.value;
+              }
+            } catch (e) {
+              developer.log('AI PDF fallback failed: $e',
+                  name: 'ContentExtractionService');
+            }
+
             if (rawText.trim().isEmpty ||
                 rawText.contains('[No text found in PDF.')) {
               onProgress
                   ?.call('No text found in PDF. Try a different document.');
               throw Exception(
                   'No text found in PDF. The PDF might contain only images or scanned content that cannot be extracted.');
-            } else {
-              // We have some text, return it
-              return ExtractionResult(
-                text: rawText,
-                suggestedTitle: 'Document Content',
-              );
             }
           }
           suggestedTitle = 'Document Content';
@@ -417,20 +427,30 @@ class ContentExtractionService {
           }
 
           if (rawText.isEmpty || rawText.contains('[No text found in image.')) {
-            // Instead of trying AI analysis which is disabled, return what we have
-            // If no text was extracted locally, return an appropriate message
+            // Fallback to AI analysis for images
+            onProgress
+                ?.call('Local OCR sparse. Using AI for visual analysis...');
+            try {
+              final result = await _enhancedAiService.analyzeContentFromBytes(
+                bytes: input,
+                mimeType: mimeType ?? 'image/jpeg',
+                userId: userId!,
+                cancelToken: cancelToken,
+              );
+              if (result is Ok<ExtractionResult>) {
+                return result.value;
+              }
+            } catch (e) {
+              developer.log('AI Image fallback failed: $e',
+                  name: 'ContentExtractionService');
+            }
+
             if (rawText.isEmpty ||
                 rawText.contains('[No text found in image.')) {
               onProgress
                   ?.call('No text found in image. Try a different image.');
               throw Exception(
                   'No text found in image. The image might not contain readable text.');
-            } else {
-              // We have some text, return it
-              return ExtractionResult(
-                text: rawText,
-                suggestedTitle: 'Image Content',
-              );
             }
           }
           suggestedTitle = 'Scanned Image';

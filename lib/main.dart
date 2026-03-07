@@ -191,9 +191,11 @@ class _MyAppState extends State<MyApp> {
           },
           dispose: (_, service) => service?.dispose(),
         ),
-        ProxyProvider<IAPService, SubscriptionProvider>(
+        ChangeNotifierProxyProvider<IAPService?, SubscriptionProvider>(
+          create: (context) =>
+              SubscriptionProvider(context.read<IAPService?>()),
           update: (context, iapService, previous) =>
-              SubscriptionProvider(iapService),
+              previous!..update(iapService),
         ),
         ProxyProvider<IAPService, EnhancedAIService>(
           update: (context, iapService, previous) {

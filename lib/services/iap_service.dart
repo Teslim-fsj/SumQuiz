@@ -23,6 +23,9 @@ class IAPService {
     _proYearlyId,
   };
 
+  bool _isInitialized = false;
+  bool get isInitialized => _isInitialized;
+
   // Freemium limits
   static const int freeUploadsLifetime = 1;
   static const int freeFoldersMax = 2;
@@ -30,11 +33,14 @@ class IAPService {
 
   /// Initialize IAP service
   Future<void> initialize() async {
+    if (_isInitialized) return;
+
     try {
       if (kIsWeb) {
         developer.log(
             'IAP is not applicable on Web. WebPaymentService should be used.',
             name: 'IAPService');
+        _isInitialized = true; // Mark as done for Web logic
         return;
       }
 
@@ -66,6 +72,7 @@ class IAPService {
             name: 'IAPService');
       });
 
+      _isInitialized = true;
       developer.log('IAP service initialized successfully', name: 'IAPService');
     } catch (e) {
       developer.log('Failed to initialize IAP service',
@@ -170,6 +177,11 @@ class IAPService {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return false;
+
+      // Ensure initialized
+      if (!_isInitialized) {
+        await initialize();
+      }
 
       // Get product details
       final products = await _getProductDetails();
@@ -310,6 +322,9 @@ class IAPService {
 
   /// Get available products
   Future<List<ProductDetails>> getAvailableProducts() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
     return await _getProductDetails();
   }
 

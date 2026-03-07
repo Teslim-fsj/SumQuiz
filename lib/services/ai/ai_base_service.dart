@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:async';
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'dart:developer' as developer;
 import 'ai_config.dart';
@@ -114,21 +115,45 @@ abstract class AIBaseService {
   }
 
   Future<bool> isServiceHealthy() async {
+    developer.log('AI Health Check started...', name: 'AIBaseService');
     try {
-      if (!await ensureInitialized(10)) return false;
+      if (!await ensureInitialized(10)) {
+        developer.log(
+            'AI Health Check failed: Initialization timed out or failed.',
+            name: 'AIBaseService',
+            level: 1000);
+        return false;
+      }
+
+      if (_model == null) {
+        developer.log(
+            'AI Health Check failed: Primary model is null after initialization.',
+            name: 'AIBaseService',
+            level: 1000);
+        return false;
+      }
+
       // Simple health check message with more aggressive timeout
+      developer.log('Sending test prompt to model: ${AIConfig.primaryModel}',
+          name: 'AIBaseService');
       final response = await _model!.generateContent(
-          [Content.text('Say "ok"')]).timeout(const Duration(seconds: 5));
+          [Content.text('Say "ok"')]).timeout(const Duration(seconds: 10));
 
       final healthy =
           response.text != null && response.text!.toLowerCase().contains('ok');
+
       if (!healthy) {
-        developer.log('AI Health Check failed: Unexpected response',
-            name: 'AIBaseService');
+        developer.log(
+            'AI Health Check failed: Unexpected response: ${response.text}',
+            name: 'AIBaseService',
+            level: 1000);
+      } else {
+        developer.log('AI Health Check PASSED.', name: 'AIBaseService');
       }
       return healthy;
     } catch (e) {
-      developer.log('API health check failed: $e', name: 'AIBaseService');
+      developer.log('AI Health Check CRITICAL FAILURE: $e',
+          name: 'AIBaseService', error: e, level: 1000);
       return false;
     }
   }
@@ -164,6 +189,28 @@ abstract class AIBaseService {
         customModel: customModel,
         generationConfig: generationConfig,
         cancelToken: cancelToken);
+  }
+
+  /// New method to handle multimodal data (e.g., images, PDFs, audio)
+  Future<String> generateWithData(
+    String prompt,
+    Uint8List data,
+    String mimeType, {
+    GenerativeModel? customModel,
+    GenerationConfig? generationConfig,
+    CancellationToken? cancelToken,
+  }) async {
+    developer.log('generateWithData called with mimeType: $mimeType',
+        name: 'AIBaseService');
+    return generateMultimodal(
+      [
+        TextPart(_sanitizeInput(prompt)),
+        DataPart(mimeType, data),
+      ],
+      customModel: customModel,
+      generationConfig: generationConfig,
+      cancelToken: cancelToken,
+    );
   }
 
   Future<String> generateMultimodal(List<Part> parts,
@@ -212,9 +259,18 @@ abstract class AIBaseService {
 
         final text = response.text;
         if (text == null || text.trim().isEmpty) {
+          developer.log('Empty or null response from AI',
+              name: 'AIBaseService', level: 1000);
           throw AIServiceException('Empty or null response from AI',
               code: 'EMPTY_RESPONSE');
         }
+
+        // --- NEW LOGGING ---
+        developer.log(
+            'RAW AI RESPONSE (first 200 chars): ${text.length > 200 ? text.substring(0, 200) : text}',
+            name: 'AIBaseService');
+        // -------------------
+
         developer.log('Successfully generated response', name: 'AIBaseService');
         return text.trim();
       } catch (e) {
@@ -231,6 +287,16 @@ abstract class AIBaseService {
           baseDelay.toInt() + jitter,
           AIConfig.maxRetryDelayMs,
         ).toInt();
+
+        final errorMessage = e.toString().toLowerCase();
+        if (errorMessage.contains('403') ||
+            errorMessage.contains('permission_denied') ||
+            errorMessage.contains('api_key_invalid')) {
+          developer.log(
+              'CRITICAL: API Key appears to be invalid or restricted (403 Forbidden).',
+              name: 'AIBaseService',
+              level: 1000);
+        }
 
         developer.log('AI Retry attempt $attempt in ${delay}ms',
             name: 'AIBaseService', error: e);

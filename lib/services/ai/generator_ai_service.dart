@@ -5,7 +5,9 @@ import 'package:sumquiz/models/local_flashcard_set.dart';
 import 'package:sumquiz/models/local_quiz_question.dart';
 import 'package:sumquiz/models/local_flashcard.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
+import 'package:uuid/uuid.dart';
 import 'ai_base_service.dart';
+import 'ai_config.dart';
 import 'dart:developer' as developer;
 
 class GeneratorAIService extends AIBaseService {
@@ -54,6 +56,17 @@ Text: $text''';
       final jsonStr = extractJson(response);
       final data = safeJsonDecode(jsonStr);
 
+      if (data['content'] == null || data['content'].toString().isEmpty) {
+        developer.log(
+            'CRITICAL: AI response missing "content" field! JSON: $jsonStr',
+            name: 'GeneratorAIService',
+            level: 1000);
+      }
+      if (data['title'] == null || data['title'].toString().isEmpty) {
+        developer.log('WARNING: AI response missing "title" field.',
+            name: 'GeneratorAIService', level: 500);
+      }
+
       final List<String> tags = [];
       final rawTags = data['tags'];
       if (rawTags is List) {
@@ -63,7 +76,7 @@ Text: $text''';
       }
 
       return LocalSummary(
-        id: '', // To be set by caller
+        id: const Uuid().v4(),
         userId: userId ?? '',
         title: data['title']?.toString() ?? 'Study Guide',
         content: data['content']?.toString() ?? '',
@@ -137,6 +150,8 @@ Text: $text''';
       final questionsData = data['questions'];
       final List<LocalQuizQuestion> questions = [];
       if (questionsData is List) {
+        developer.log('Processing ${questionsData.length} questions from AI',
+            name: 'GeneratorAIService');
         for (final q in questionsData) {
           if (q is Map) {
             final List<String> options = [];
@@ -158,7 +173,7 @@ Text: $text''';
       }
 
       return LocalQuiz(
-        id: '',
+        id: const Uuid().v4(),
         userId: userId ?? '',
         title: data['title']?.toString() ?? 'Quick Quiz',
         questions: questions,
@@ -222,6 +237,8 @@ Text: $text''';
       final flashcardsData = data['flashcards'];
       final List<LocalFlashcard> flashcards = [];
       if (flashcardsData is List) {
+        developer.log('Processing ${flashcardsData.length} flashcards from AI',
+            name: 'GeneratorAIService');
         for (final f in flashcardsData) {
           if (f is Map) {
             flashcards.add(LocalFlashcard(
@@ -233,7 +250,7 @@ Text: $text''';
       }
 
       return LocalFlashcardSet(
-        id: '',
+        id: const Uuid().v4(),
         userId: userId ?? '',
         title: data['title']?.toString() ?? 'Flashcards',
         flashcards: flashcards,
@@ -277,11 +294,20 @@ Return ONLY valid JSON:
 
 Text: $rawText''';
     try {
-      final response =
-          await generateWithRetry(prompt, cancelToken: cancelToken);
-      final jsonStr = extractJson(response);
-      final data = safeJsonDecode(jsonStr);
-      return data['cleanedText']?.toString() ?? response;
+      final response = await generateWithRetry(
+        prompt,
+        cancelToken: cancelToken,
+        generationConfig: AIConfig.extractionGenerationConfig,
+      );
+      // Since responseMimeType is text/plain, the response may be raw text or contain JSON blocks.
+      // We try to extract JSON first, but if it's just text, we return it.
+      try {
+        final jsonStr = extractJson(response);
+        final data = safeJsonDecode(jsonStr);
+        return data['cleanedText']?.toString() ?? response;
+      } catch (e) {
+        return response.trim();
+      }
     } catch (e) {
       developer.log('RefineContent error',
           name: 'GeneratorAIService', error: e);
@@ -447,7 +473,7 @@ Text: $rawText''';
     }
 
     return LocalQuiz(
-      id: '',
+      id: const Uuid().v4(),
       userId: userId ?? '',
       title: title,
       questions: questions,

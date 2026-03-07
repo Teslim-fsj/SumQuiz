@@ -13,6 +13,7 @@ import 'package:sumquiz/services/usage_service.dart' as usage;
 import 'package:sumquiz/services/local_database_service.dart';
 import 'package:sumquiz/models/extraction_result.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
+import 'ai/ai_config.dart';
 
 import 'ai/youtube_ai_service.dart';
 import 'ai/web_ai_service.dart';
@@ -250,11 +251,13 @@ class EnhancedAIService {
                 ? 'Accurately transcribe and extract all educational content from this audio file.'
                 : 'Extract all educational and informational content from this file.');
 
-        // For now, we use the text-based generation with a prompt describing the action
-        // In a full implementation, we'd pass the actual bytes to Gemini Multimodal
-        final response = await _generatorService.generateWithRetry(
+        // Pass actual bytes to Gemini using the new generateWithData method
+        final response = await _generatorService.generateWithData(
           prompt,
+          bytes,
+          mimeType,
           cancelToken: cancelToken,
+          generationConfig: AIConfig.extractionGenerationConfig,
         );
 
         return Result.ok(ExtractionResult(
@@ -335,18 +338,27 @@ class EnhancedAIService {
             case 'summary':
               final summary = await _generatorService.generateSummary(text,
                   userId: userId, cancelToken: cancelToken);
+              if (summary.id.isEmpty) {
+                summary.id = const Uuid().v4();
+              }
               await localDb.saveSummary(summary, folderId);
               break;
 
             case 'quiz':
               final quiz = await _generatorService.generateQuiz(text,
                   userId: userId, cancelToken: cancelToken);
+              if (quiz.id.isEmpty) {
+                quiz.id = const Uuid().v4();
+              }
               await localDb.saveQuiz(quiz, folderId);
               break;
 
             case 'flashcards':
               final set = await _generatorService.generateFlashcards(text,
                   userId: userId, cancelToken: cancelToken);
+              if (set.id.isEmpty) {
+                set.id = const Uuid().v4();
+              }
               await localDb.saveFlashcardSet(set, folderId);
               for (final card in set.flashcards) {
                 await srsService.scheduleReview(card.id, userId);

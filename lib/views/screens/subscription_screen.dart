@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sumquiz/services/iap_service.dart';
 import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/services/web_payment_service.dart';
 import 'package:sumquiz/providers/subscription_provider.dart';
@@ -26,93 +25,61 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Future<void> _loadProducts() async {
-    try {
-      List<ProductDetails> products = [];
+    final subscriptionProvider =
+        Provider.of<SubscriptionProvider>(context, listen: false);
 
-      if (kIsWeb) {
-        // Web Flow
-        products = await WebPaymentService().getAvailableProducts();
-      } else {
-        // Mobile Flow
-        final iapService = context.read<IAPService?>();
-        if (iapService != null) {
-          products = await iapService.getAvailableProducts();
-        } else {
-          debugPrint('IAP Service is null, unable to load products');
-        }
-      }
-
-      // If still empty on mobile, provide fallback informational products
-      if (products.isEmpty && !kIsWeb) {
-        debugPrint(
-            'Using fallback product details as IAP products could not be loaded');
-        products = [
-          _FallbackProductDetails(
-            id: 'sumquiz_pro_weekly',
-            title: 'Weekly Pro',
-            description: 'Standard weekly plan',
-            price: r'US$2.99',
-            rawPrice: 2.99,
-          ),
-          _FallbackProductDetails(
-            id: 'sumquiz_pro_monthly',
-            title: 'Monthly Pro',
-            description: 'Standard monthly plan',
-            price: r'US$9.99',
-            rawPrice: 9.99,
-          ),
-          _FallbackProductDetails(
-            id: 'sumquiz_pro_yearly',
-            title: 'Annual Pro',
-            description: 'Best value annual plan',
-            price: r'US$59.99',
-            rawPrice: 59.99,
-          ),
-        ];
-      }
-
-      // Sort: Monthly < Yearly
-      products.sort((a, b) => a.rawPrice.compareTo(b.rawPrice));
-
-      if (mounted) {
-        setState(() {
-          _products = products;
-          _setDefaultSelection();
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading products: $e');
-      // If error occurs, still try to populate fallback products if on mobile
-      if (!kIsWeb) {
-        final fallbacks = [
-          _FallbackProductDetails(
-            id: 'sumquiz_pro_weekly',
-            title: 'Weekly Pro',
-            description: 'Standard weekly plan',
-            price: r'US$2.99',
-            rawPrice: 2.99,
-          ),
-          _FallbackProductDetails(
-            id: 'sumquiz_pro_monthly',
-            title: 'Monthly Pro',
-            description: 'Standard monthly plan',
-            price: r'US$9.99',
-            rawPrice: 9.99,
-          ),
-          _FallbackProductDetails(
-            id: 'sumquiz_pro_yearly',
-            title: 'Annual Pro',
-            description: 'Best value annual plan',
-            price: r'US$59.99',
-            rawPrice: 59.99,
-          ),
-        ];
+    if (kIsWeb) {
+      // Web Flow still uses WebPaymentService directly or we could move it to provider too
+      try {
+        final products = await WebPaymentService().getAvailableProducts();
         if (mounted) {
           setState(() {
-            _products = fallbacks;
+            _products = products;
             _setDefaultSelection();
           });
         }
+      } catch (e) {
+        debugPrint('Error loading web products: $e');
+      }
+    } else {
+      // Mobile Flow - use provider
+      await subscriptionProvider.loadProducts();
+      if (mounted) {
+        setState(() {
+          _products = subscriptionProvider.products;
+
+          // If still empty on mobile, provide fallback informational products
+          if (_products.isEmpty) {
+            debugPrint(
+                'Using fallback product details as IAP products could not be loaded');
+            _products = [
+              _FallbackProductDetails(
+                id: 'sumquiz_pro_weekly',
+                title: 'Weekly Pro',
+                description: 'Standard weekly plan',
+                price: r'US$2.99',
+                rawPrice: 2.99,
+              ),
+              _FallbackProductDetails(
+                id: 'sumquiz_pro_monthly',
+                title: 'Monthly Pro',
+                description: 'Standard monthly plan',
+                price: r'US$9.99',
+                rawPrice: 9.99,
+              ),
+              _FallbackProductDetails(
+                id: 'sumquiz_pro_yearly',
+                title: 'Annual Pro',
+                description: 'Best value annual plan',
+                price: r'US$59.99',
+                rawPrice: 59.99,
+              ),
+            ];
+          }
+
+          _products.sort((a, b) => a.rawPrice.compareTo(b.rawPrice));
+          _setDefaultSelection();
+        });
       }
     }
   }
@@ -137,14 +104,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Future<void> _refreshProducts() async {
-    // Show loading indicator
-    if (mounted) {
-      setState(() {
-        // Keep existing products visible while refreshing
-      });
-    }
-
-    // Reload products
     await _loadProducts();
   }
 

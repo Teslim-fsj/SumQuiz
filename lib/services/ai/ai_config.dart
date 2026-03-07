@@ -2,13 +2,11 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 
 class AIConfig {
   // Stable 2026 Model Names
-  static const String primaryModel = 'gemini-3-flash-preview';
-  static const String proModel = 'gemini-3.1-pro-preview';
-  static const String fallbackModel = 'gemini-3-flash-preview';
-  static const String visionModel =
-      'gemini-3-flash-preview'; // High-speed vision
-  static const String youtubeModel =
-      'gemini-3.1-pro-preview'; // Deep multimodal video analysis
+  static const String primaryModel = 'gemini-1.5-flash';
+  static const String proModel = 'gemini-1.5-pro';
+  static const String fallbackModel = 'gemini-1.5-flash';
+  static const String visionModel = 'gemini-1.5-flash';
+  static const String youtubeModel = 'gemini-1.5-pro';
 
   // Retry configuration with exponential backoff
   static const int maxRetries = 5;
@@ -18,7 +16,7 @@ class AIConfig {
 
   // YouTube/video-specific timeouts
   static const int youtubeTimeoutSeconds = 180;
-  static const int transcriptTimeoutSeconds = 30;
+  static const int transcriptTimeoutSeconds = 45;
   static const int webpageTimeoutSeconds = 30;
 
   // Master extraction timeout — wraps the entire extraction operation
@@ -28,10 +26,9 @@ class AIConfig {
   static const int youtubeMultimodalThresholdSeconds = 600;
 
   // Input/output limits
-  static const int maxInputLength = 15000;
-  static const int maxPdfSize =
-      10 * 1024 * 1024; // 10MB limit for local processing
-  static const int maxOutputTokens = 8192;
+  static const int maxInputLength = 100000; // Increased from 15k for large PDFs
+  static const int maxPdfSize = 20 * 1024 * 1024; // 20MB limit
+  static const int maxOutputTokens = 16384; // Increased from 8k
 
   // Model parameters
   static const double defaultTemperature = 0.3;
@@ -40,8 +37,14 @@ class AIConfig {
 
   static GenerationConfig get defaultGenerationConfig => GenerationConfig(
         temperature: defaultTemperature,
-        maxOutputTokens: maxOutputTokens,
+        maxOutputTokens: 8192,
         responseMimeType: 'application/json',
+      );
+
+  static GenerationConfig get extractionGenerationConfig => GenerationConfig(
+        temperature: 0.1, // Low temperature for high accuracy
+        maxOutputTokens: maxOutputTokens,
+        responseMimeType: 'text/plain',
       );
 
   static GenerationConfig get proGenerationConfig => GenerationConfig(
