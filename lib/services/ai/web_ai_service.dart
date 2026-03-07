@@ -209,7 +209,7 @@ OUTPUT FORMAT (JSON):
     if (mainContent == null) return '';
 
     // Extract text
-    String text = mainContent.text ?? '';
+    String text = mainContent.text;
 
     // Clean up whitespace and formatting
     text = text

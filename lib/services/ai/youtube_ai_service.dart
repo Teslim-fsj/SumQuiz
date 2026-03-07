@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
+import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:sumquiz/models/extraction_result.dart';
 import 'package:sumquiz/services/enhanced_ai_service.dart';
@@ -8,22 +9,7 @@ import 'ai_base_service.dart';
 import 'ai_config.dart';
 import 'dart:developer' as developer;
 
-/// YouTube content extraction service with a 3-tier fallback strategy:
-///
-/// 1. **Tier 1 — Native Gemini Video Analysis**: Send the YouTube URL directly
-///    to Gemini's multimodal model. It natively "watches" the video via its
-///    URL context / Browse Tool capability (Gemini 2.5+).
-///
-/// 2. **Tier 2 — Transcript Extraction + AI Refinement**: Fall back to
-///    `youtube_explode_dart` to grab closed captions, then pass raw transcript
-///    through Gemini for cleaning and structuring.
-///
-/// 3. **Tier 3 — Graceful Error**: Return a clear, user-friendly error.
 class YouTubeAIService extends AIBaseService {
-  /// Analyze a YouTube video URL and extract educational content.
-  ///
-  /// Uses a 3-tier fallback strategy for maximum reliability.
-  /// Pass an optional [cancelToken] to support user-initiated cancellation.
   Future<Result<ExtractionResult>> analyzeVideo(
     String videoUrl, {
     CancellationToken? cancelToken,
@@ -50,7 +36,6 @@ class YouTubeAIService extends AIBaseService {
       final isShort =
           duration.inSeconds < AIConfig.youtubeMultimodalThresholdSeconds;
 
-      // ── MODE A: Native Multimodal (< 10 min) ──
       if (isShort) {
         developer.log(
             'Mode A: Short video (${duration.inSeconds}s). Fetching audio for multimodal analysis...',
@@ -58,7 +43,6 @@ class YouTubeAIService extends AIBaseService {
         try {
           cancelToken?.throwIfCancelled();
 
-          // Get audio stream
           final manifest = await yt.videos.streamsClient.getManifest(videoId);
           final audioStreamInfo = manifest.audioOnly.withHighestBitrate();
           final stream = yt.videos.streamsClient.get(audioStreamInfo);
@@ -81,15 +65,12 @@ class YouTubeAIService extends AIBaseService {
           if (result != null && result.text.trim().length >= 100) {
             return Result.ok(result);
           }
-          developer.log('Mode A sparse, falling to Mode B/C.',
-              name: 'YouTubeAIService');
         } catch (e) {
           developer.log('Mode A failed: $e. Falling to Mode B/C.',
               name: 'YouTubeAIService');
         }
       }
 
-      // ── MODE B/C: Transcript Pipeline (> 10 min or Mode A fail) ──
       developer.log('Using Transcript Pipeline (Mode B/C)...',
           name: 'YouTubeAIService');
       cancelToken?.throwIfCancelled();
@@ -101,12 +82,10 @@ class YouTubeAIService extends AIBaseService {
             code: 'NO_CAPTIONS'));
       }
 
-      // Hard truncation for stability before AI refinement
       final cappedTranscript = transcriptData.length > AIConfig.maxInputLength
           ? transcriptData.substring(0, AIConfig.maxInputLength)
           : transcriptData;
 
-      // Mode C: Transcript refinement
       final refinedResult = await _analyzeWithGeminiModeC(
           cappedTranscript, video.title, videoUrl,
           cancelToken: cancelToken);
@@ -115,7 +94,6 @@ class YouTubeAIService extends AIBaseService {
         return Result.ok(refinedResult);
       }
 
-      // Mode B: Fallback to raw transcript if AI refinement fails
       return Result.ok(ExtractionResult(
         text: cappedTranscript,
         suggestedTitle: video.title,
@@ -124,22 +102,6 @@ class YouTubeAIService extends AIBaseService {
     } on CancelledException {
       return Result.error(
           EnhancedAIServiceException('Cancelled by user.', code: 'CANCELLED'));
-    } on VideoUnavailableException catch (e) {
-      developer.log('YouTube video unavailable: $e', name: 'YouTubeAIService');
-      return Result.error(EnhancedAIServiceException(
-          'This video is unavailable (it might be private, deleted, or age-restricted).',
-          code: 'VIDEO_UNAVAILABLE'));
-    } on VideoRequiresPurchaseException catch (e) {
-      developer.log('YouTube video requires purchase: $e',
-          name: 'YouTubeAIService');
-      return Result.error(EnhancedAIServiceException(
-          'This video requires purchase or is premium-only.',
-          code: 'VIDEO_RESTRICTED'));
-    } on YoutubeExplodeException catch (e) {
-      developer.log('YouTube general error: $e', name: 'YouTubeAIService');
-      return Result.error(EnhancedAIServiceException(
-          'YouTube extraction failed. This video might be restricted or region-locked.',
-          code: 'VIDEO_RESTRICTED'));
     } catch (e) {
       developer.log('YouTube analysis failed: $e',
           name: 'YouTubeAIService', error: e);
@@ -157,42 +119,30 @@ class YouTubeAIService extends AIBaseService {
           .getManifest(videoId)
           .timeout(Duration(seconds: AIConfig.transcriptTimeoutSeconds));
 
-      if (manifest.tracks.isEmpty) {
-        developer.log('No caption tracks found for $videoId',
-            name: 'YouTubeAIService');
-        return null;
-      }
+      if (manifest.tracks.isEmpty) return null;
 
-      // 1. Try to find English (non-auto)
       ClosedCaptionTrackInfo? trackInfo;
       try {
         trackInfo = manifest.tracks.firstWhere(
             (t) => t.language.code.startsWith('en') && !t.isAutoGenerated);
       } catch (_) {
-        // 2. Fallback to any non-auto
         try {
           trackInfo = manifest.tracks.firstWhere((t) => !t.isAutoGenerated);
         } catch (_) {
-          // 3. Fallback to English auto-generated
           try {
             trackInfo = manifest.tracks
                 .firstWhere((t) => t.language.code.startsWith('en'));
           } catch (_) {
-            // 4. Just take whatever is first
             trackInfo = manifest.tracks.first;
           }
         }
       }
 
-      developer.log(
-          'Fetching track: ${trackInfo.language.name} (Auto: ${trackInfo.isAutoGenerated})',
-          name: 'YouTubeAIService');
       final captions = await yt.videos.closedCaptions
           .get(trackInfo)
           .timeout(Duration(seconds: AIConfig.transcriptTimeoutSeconds));
       return captions.captions.map((c) => c.text).join(' ');
     } catch (e) {
-      developer.log('Transcript fetch error: $e', name: 'YouTubeAIService');
       return null;
     }
   }
@@ -205,39 +155,40 @@ class YouTubeAIService extends AIBaseService {
   }) async {
     if (!await ensureInitialized()) return null;
 
-    final prompt = '''You are a YouTube educational content specialist. 
-Your goal is to extract ALL informational, educational, and factual content from this video.
-
-VIDEO URL: $videoUrl
-
-INSTRUCTIONS:
-1. Provide a clear, descriptive suggested title.
-2. EXTRACT all key facts, concepts, definitions, and explanations.
-3. Organize into logical sections with markdown headers.
-4. REMOVE intros, outros, ads, and sponsorship segments.
-5. If the video is a lecture or tutorial, preserve the logical flow of information.
-
-Output MUST be valid JSON:
-{
-  "title": "Clean suggested title",
-  "text": "The extracted content..."
-}''';
+    final prompt = '''Extract educational content from this video.
+    URL: $videoUrl
+    
+    REQUIREMENTS:
+    - suggestedTitle: Descriptive and clean.
+    - text: Comprehensive extracted facts and concepts in Markdown.
+    - Remove all non-educational filler (ads, intros, etc.).''';
 
     final response = await generateWithData(
       prompt,
       audioData,
       mimeType,
-      customModel: proModel, // Use pro for better audio/video understanding
+      customModel: extractorModel,
       cancelToken: cancelToken,
+      generationConfig: GenerationConfig(
+        responseMimeType: 'application/json',
+        responseSchema: Schema.object(
+          properties: {
+            'suggestedTitle': Schema.string(),
+            'text': Schema.string(),
+          },
+          requiredProperties: ['suggestedTitle', 'text'],
+        ),
+      ),
     );
 
-    final data = safeJsonDecode(extractJson(response));
+    final jsonStr = extractJson(response);
+    final data = safeJsonDecode(jsonStr);
     final content = data['text']?.toString() ?? '';
     if (content.isEmpty) return null;
 
     return ExtractionResult(
       text: content,
-      suggestedTitle: data['title']?.toString() ?? 'YouTube Analysis',
+      suggestedTitle: data['suggestedTitle']?.toString() ?? 'YouTube Analysis',
       sourceUrl: videoUrl,
     );
   }
@@ -248,42 +199,43 @@ Output MUST be valid JSON:
     if (!await ensureInitialized()) return null;
 
     final prompt =
-        '''Refine and structure this YouTube transcript into a high-quality study guide.
-VIDEO TITLE: $title
-
-TRANSCRIPT:
-$transcript
-
-TASK: 
-1. Fix broken sentences and OCR/speech-to-text glitches.
-2. Organize into logical section headings.
-3. EXTRACT all educational facts, definitions, and formulas.
-4. Maintain an academic, exam-focused tone.
-
-OUTPUT FORMAT (JSON):
-{
-  "title": "Professional title",
-  "content": "Structured Markdown guide..."
-}''';
+        '''Refine this YouTube transcript into a high-quality study guide.
+    VIDEO TITLE: $title
+    TRANSCRIPT: $transcript
+    
+    REQUIREMENTS:
+    - suggestedTitle: Professional and clear.
+    - content: Structured Markdown guide with facts, definitions, and formulas.
+    - Tone: Academic and exam-focused.''';
 
     final response = await generateWithRetry(
       prompt,
-      customModel: proModel,
+      customModel: extractorModel,
       cancelToken: cancelToken,
+      generationConfig: GenerationConfig(
+        responseMimeType: 'application/json',
+        responseSchema: Schema.object(
+          properties: {
+            'suggestedTitle': Schema.string(),
+            'content': Schema.string(),
+          },
+          requiredProperties: ['suggestedTitle', 'content'],
+        ),
+      ),
     );
 
-    final data = safeJsonDecode(extractJson(response));
+    final jsonStr = extractJson(response);
+    final data = safeJsonDecode(jsonStr);
     final content = data['content']?.toString() ?? '';
     if (content.isEmpty) return null;
 
     return ExtractionResult(
       text: content,
-      suggestedTitle: data['title']?.toString() ?? title,
+      suggestedTitle: data['suggestedTitle']?.toString() ?? title,
       sourceUrl: videoUrl,
     );
   }
 
-  /// Validate that the URL is a valid YouTube URL.
   bool _isValidYouTubeUrl(String url) {
     try {
       final uri = Uri.parse(url);
@@ -303,7 +255,6 @@ OUTPUT FORMAT (JSON):
     }
   }
 
-  /// Extract the video ID from a YouTube URL.
   String? _extractVideoId(String url) {
     try {
       final uri = Uri.parse(url);
@@ -332,8 +283,4 @@ OUTPUT FORMAT (JSON):
       return null;
     }
   }
-
-  // Note: No more instance-level YoutubeExplode — it's created per-call in
-  // _extractViaTranscript and closed in its finally block. This avoids
-  // resource leaks if dispose() is never called.
 }

@@ -38,6 +38,8 @@ abstract class AIBaseService {
   GenerativeModel? _fallbackModel;
   GenerativeModel? _visionModel;
   GenerativeModel? _youtubeModel;
+  GenerativeModel? _educatorModel;
+  GenerativeModel? _extractorModel;
 
   bool _initialized = false;
   String? _initializationError;
@@ -84,6 +86,21 @@ abstract class AIBaseService {
         model: AIConfig.youtubeModel,
         apiKey: apiKey,
         generationConfig: AIConfig.proGenerationConfig,
+        systemInstruction: AIConfig.educatorSystemInstruction,
+      );
+
+      _educatorModel = GenerativeModel(
+        model: AIConfig.primaryModel,
+        apiKey: apiKey,
+        generationConfig: AIConfig.defaultGenerationConfig,
+        systemInstruction: AIConfig.educatorSystemInstruction,
+      );
+
+      _extractorModel = GenerativeModel(
+        model: AIConfig.primaryModel,
+        apiKey: apiKey,
+        generationConfig: AIConfig.defaultGenerationConfig,
+        systemInstruction: AIConfig.extractorSystemInstruction,
       );
 
       _initialized = true;
@@ -180,6 +197,8 @@ abstract class AIBaseService {
   GenerativeModel get fallbackModel => _fallbackModel!;
   GenerativeModel get visionModel => _visionModel!;
   GenerativeModel get youtubeModel => _youtubeModel!;
+  GenerativeModel get educatorModel => _educatorModel!;
+  GenerativeModel get extractorModel => _extractorModel!;
 
   Future<String> generateWithRetry(String prompt,
       {GenerativeModel? customModel,

@@ -7,7 +7,7 @@ import 'package:sumquiz/models/local_flashcard.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
 import 'package:uuid/uuid.dart';
 import 'ai_base_service.dart';
-import 'ai_config.dart';
+
 import 'dart:developer' as developer;
 
 class GeneratorAIService extends AIBaseService {
@@ -50,7 +50,9 @@ Text: $text''';
 
     try {
       final response = await generateWithRetry(prompt,
-          generationConfig: config, cancelToken: cancelToken);
+          customModel: educatorModel,
+          generationConfig: config,
+          cancelToken: cancelToken);
       developer.log('AI Response received for summary',
           name: 'GeneratorAIService');
       final jsonStr = extractJson(response);
@@ -61,10 +63,6 @@ Text: $text''';
             'CRITICAL: AI response missing "content" field! JSON: $jsonStr',
             name: 'GeneratorAIService',
             level: 1000);
-      }
-      if (data['title'] == null || data['title'].toString().isEmpty) {
-        developer.log('WARNING: AI response missing "title" field.',
-            name: 'GeneratorAIService', level: 500);
       }
 
       final List<String> tags = [];
@@ -139,7 +137,7 @@ Text: $text''';
 
     try {
       final response = await generateWithRetry(prompt,
-          customModel: proModel,
+          customModel: educatorModel,
           generationConfig: config,
           cancelToken: cancelToken);
       developer.log('AI Response received for quiz',
@@ -150,8 +148,6 @@ Text: $text''';
       final questionsData = data['questions'];
       final List<LocalQuizQuestion> questions = [];
       if (questionsData is List) {
-        developer.log('Processing ${questionsData.length} questions from AI',
-            name: 'GeneratorAIService');
         for (final q in questionsData) {
           if (q is Map) {
             final List<String> options = [];
@@ -226,7 +222,7 @@ Text: $text''';
 
     try {
       final response = await generateWithRetry(prompt,
-          customModel: proModel,
+          customModel: educatorModel,
           generationConfig: config,
           cancelToken: cancelToken);
       developer.log('AI Response received for flashcards',
@@ -237,8 +233,6 @@ Text: $text''';
       final flashcardsData = data['flashcards'];
       final List<LocalFlashcard> flashcards = [];
       if (flashcardsData is List) {
-        developer.log('Processing ${flashcardsData.length} flashcards from AI',
-            name: 'GeneratorAIService');
         for (final f in flashcardsData) {
           if (f is Map) {
             flashcards.add(LocalFlashcard(
@@ -268,46 +262,35 @@ Text: $text''';
     developer.log('Refining content for text length: ${rawText.length}',
         name: 'GeneratorAIService');
     final prompt =
-        '''You are an expert content extractor preparing raw text for exam studying.
+        '''EXTRACT and CLEAN the core factual content from the text below.
+    
+    CRITICAL: 
+    - REMOVE: Advertisements, promotional content, menus, intros/outros, and tangents.
+    - FIX: OCR errors, broken sentences, and formatting issues.
+    - PRESERVE: ALL factual information, definitions, examples, formulas, and procedures verbatim.
+    - ORGANIZE: Use markdown headers for logical flow.
 
-CRITICAL: Your task is to EXTRACT and CLEAN the content, NOT to summarize or condense it.
+    Text: $rawText''';
 
-WHAT TO DO:
-1. REMOVE completely:
-   - Advertisements, promotional content, menus, headers, footers
-   - "Like and subscribe" calls, sponsor messages
-   - Unrelated tangents or boilerplate text
-2. FIX and CLEAN:
-   - Broken sentences, formatting issues, OCR errors
-3. ORGANIZE:
-   - Structure content into logical sections with clear headers
-4. PRESERVE (keep everything):
-   - ALL factual information, data points, statistics
-   - ALL key concepts, definitions, and explanations
-   - ALL examples, case studies, formulas, equations
-   - ALL step-by-step procedures
-
-Return ONLY valid JSON:
-{
-  "cleanedText": "The extracted, cleaned, and organized content..."
-}
-
-Text: $rawText''';
     try {
       final response = await generateWithRetry(
         prompt,
+        customModel: extractorModel,
         cancelToken: cancelToken,
-        generationConfig: AIConfig.extractionGenerationConfig,
+        generationConfig: GenerationConfig(
+          responseMimeType: 'application/json',
+          responseSchema: Schema.object(
+            properties: {
+              'cleanedText': Schema.string(
+                  description: 'The extracted and cleaned content'),
+            },
+            requiredProperties: ['cleanedText'],
+          ),
+        ),
       );
-      // Since responseMimeType is text/plain, the response may be raw text or contain JSON blocks.
-      // We try to extract JSON first, but if it's just text, we return it.
-      try {
-        final jsonStr = extractJson(response);
-        final data = safeJsonDecode(jsonStr);
-        return data['cleanedText']?.toString() ?? response;
-      } catch (e) {
-        return response.trim();
-      }
+      final jsonBlock = extractJson(response);
+      final data = safeJsonDecode(jsonBlock);
+      return data['cleanedText']?.toString() ?? response;
     } catch (e) {
       developer.log('RefineContent error',
           name: 'GeneratorAIService', error: e);
@@ -333,46 +316,75 @@ Text: $rawText''';
         'Target audience: Intermediate learners. Balance theory with practical examples.'
     };
 
-    final prompt =
-        '''You are an expert educator creating comprehensive study materials.
+    final prompt = '''Create comprehensive study materials for the topic.
     TOPIC: $topic
     LEVEL: $depthInstruction
 
     GENERATE:
     1. **TITLE**: Engaging title.
-    2. **SUMMARY**: 500-800 words, organized sections, bullet points.
-    3. **QUIZ**: 10 multiple-choice questions with 4 options and correctIndex (0-3).
+    2. **SUMMARY**: Structured sections with bullet points.
+    3. **QUIZ**: 10 mcqs with 4 options, correctAnswer (exact string), and explanation.
     4. **FLASHCARDS**: $cardCount question-answer pairs.
 
-    Return ONLY valid JSON format:
-    {
-      "title": "Title",
-      "summary": {
-        "content": "...",
-        "tags": ["tag1", "tag2"]
-      },
-      "quiz": [
-        {
-          "question": "...",
-          "options": ["A", "B", "C", "D"],
-          "correctIndex": 0,
-          "explanation": "..."
-        }
-      ],
-      "flashcards": [
-        {"question": "...", "answer": "..."}
-      ]
-    }''';
+    Text: $topic''';
 
-    final response = await generateWithRetry(prompt,
-        customModel: proModel, cancelToken: cancelToken);
-    final jsonStr = extractJson(response);
-    final data = safeJsonDecode(jsonStr);
-    if (data.containsKey('title')) {
-      return data;
+    try {
+      final response = await generateWithRetry(prompt,
+          customModel: educatorModel,
+          cancelToken: cancelToken,
+          generationConfig: GenerationConfig(
+            responseMimeType: 'application/json',
+            responseSchema: Schema.object(
+              properties: {
+                'title': Schema.string(),
+                'summary': Schema.object(
+                  properties: {
+                    'content': Schema.string(),
+                    'tags': Schema.array(items: Schema.string()),
+                  },
+                  requiredProperties: ['content', 'tags'],
+                ),
+                'quiz': Schema.array(
+                  items: Schema.object(
+                    properties: {
+                      'question': Schema.string(),
+                      'options': Schema.array(items: Schema.string()),
+                      'correctAnswer': Schema.string(),
+                      'explanation': Schema.string(),
+                    },
+                    requiredProperties: [
+                      'question',
+                      'options',
+                      'correctAnswer',
+                      'explanation'
+                    ],
+                  ),
+                ),
+                'flashcards': Schema.array(
+                  items: Schema.object(
+                    properties: {
+                      'question': Schema.string(),
+                      'answer': Schema.string(),
+                    },
+                    requiredProperties: ['question', 'answer'],
+                  ),
+                ),
+              },
+              requiredProperties: ['title', 'summary', 'quiz', 'flashcards'],
+            ),
+          ));
+      final jsonStr = extractJson(response);
+      final data = safeJsonDecode(jsonStr);
+      if (data.containsKey('title')) {
+        return data;
+      }
+      throw AIServiceException('Malformed AI response for topic generation',
+          code: 'MALFORMED_RESPONSE');
+    } catch (e) {
+      developer.log('Topic generation failed',
+          name: 'GeneratorAIService', error: e);
+      rethrow;
     }
-    throw AIServiceException('Malformed AI response for topic generation',
-        code: 'MALFORMED_RESPONSE');
   }
 
   Future<LocalQuiz> generateExam({
@@ -432,16 +444,16 @@ Text: $rawText''';
 
     REQUIREMENTS:
     1. Distribute questions across the allowed types fairly.
-    2. Ensure questions align with the $level academic standard.
+    2. Ensure questions align with the academic standard for $level.
     3. Multiple Choice must have EXACTLY 4 options.
     4. True/False must have EXACTLY 2 options (True, False).
-    5. Theory/Short Answer should provide a detailed marking guide in the "correctAnswer" field.
-    6. Ensure high academic rigor and clarity.
+    5. Theory/Short Answer should provide marking guidance in "correctAnswer".
+    6. Maintain high academic rigor.
 
     Source: $text''';
 
     final response = await generateWithRetry(prompt,
-        customModel: proModel,
+        customModel: educatorModel,
         generationConfig: config,
         cancelToken: cancelToken);
     developer.log('AI Response received for exam generation',
