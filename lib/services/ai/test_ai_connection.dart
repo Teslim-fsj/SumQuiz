@@ -1,11 +1,12 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:sumquiz/services/ai/ai_config.dart';
 import 'dart:io';
 
 void main() async {
-  print('--- AI Connection Diagnostic ---');
+  print('--- AI Connection Diagnostic (2026 Edition) ---');
 
   const String apiKey = 'AIzaSyDWEUCZ9lfq7yspgl6fMt84jIUOAN9mItI';
-  const String modelName = 'gemini-1.5-flash';
+  final String modelName = AIConfig.primaryModel;
 
   if (apiKey.isEmpty || apiKey.startsWith('YOUR_API_KEY')) {
     print('ERROR: API Key is not set or is a placeholder.');

@@ -12,24 +12,25 @@ class AIConfig {
   static const int transcriptTimeoutSeconds = 45;
   static const int webpageTimeoutSeconds = 30;
 
-  // Stable 2026 Model Names
-  static const String primaryModel = 'gemini-2.0-flash';
-  static const String proModel = 'gemini-1.5-pro';
-  static const String fallbackModel = 'gemini-1.5-flash';
-  static const String visionModel = 'gemini-2.0-flash';
-  static const String youtubeModel = 'gemini-2.0-flash';
+  // Gemini 3.1 Series (Verified 2026 Models)
+  static const String primaryModel = 'gemini-3.1-flash-lite-preview';
+  static const String proModel = 'gemini-3.1-pro-preview';
+  static const String fallbackModel = 'gemini-2.5-flash';
+  static const String visionModel = 'gemini-3.1-pro-preview';
+  static const String youtubeModel = 'gemini-3.1-pro-preview';
 
   // Master extraction timeout — wraps the entire extraction operation
-  static const int masterExtractionTimeoutSeconds = 200;
+  static const int masterExtractionTimeoutSeconds = 300;
 
-  // YouTube Multimodal threshold (duration < 10 mins)
-  static const int youtubeMultimodalThresholdSeconds = 600;
+  // YouTube Multimodal threshold (duration < 15 mins for Gemini 3.1)
+  static const int youtubeMultimodalThresholdSeconds = 900;
 
-  // Input/output limits
+  // Input/output limits (Gemini 3.1 Expanded Context)
   static const int maxInputLength =
-      200000; // Increased from 100k for Gemini 2.0
-  static const int maxPdfSize = 20 * 1024 * 1024; // 20MB limit
-  static const int maxOutputTokens = 16384; // Increased from 8k
+      1000000; // 1M characters/tokens for full document analysis
+  static const int maxPdfSize = 50 * 1024 * 1024; // 50MB limit
+  static const int maxOutputTokens =
+      32768; // Increased for long-form generation
 
   // Model parameters
   static const double defaultTemperature = 0.3;
