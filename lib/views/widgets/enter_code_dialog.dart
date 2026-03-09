@@ -53,7 +53,7 @@ class _EnterCodeDialogState extends State<EnterCodeDialog> {
       // Navigate to public deck screen to import
       if (mounted) {
         Navigator.of(context).pop(); // Close dialog
-        context.push('/deck/${deck.id}');
+        context.push('/deck?id=${deck.id}');
       }
     } catch (e) {
       if (mounted) {
