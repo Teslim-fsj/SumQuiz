@@ -14,6 +14,7 @@ SumQuiz is an AI-powered educational ecosystem designed to maximize learning eff
 -   **🧠 Study Tools**: Automatically generate structured Summaries, Quizzes, and Flashcards.
 -   **🔄 Cloud Sync**: Seamless transition between Web and Mobile with offline-first support.
 -   **📊 SRS Support**: Built-in Spaced Repetition System for long-term retention.
+-   **🚀 Firebase Hosting**: Automated CI/CD deployment for the web version.
 
 ---
 
