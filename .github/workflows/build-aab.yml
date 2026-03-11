@@ -4,8 +4,14 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main        # 🔁 Auto-trigger on push to main
-      - master      # adjust to your branch name
+      - main
+      - master
+
+permissions:
+  contents: write                          # ✅ Required for pushing tags & commits
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # ✅ Fixes Node.js 20 deprecation warning
 
 jobs:
   build:
@@ -28,7 +34,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-          cache: true                        # ✅ Caches Flutter SDK
+          cache: true
 
       # 4️⃣ Cache pub dependencies
       - name: Cache pub packages
@@ -52,11 +58,10 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}-
 
-      # 6️⃣ Auto-bump version (reads last tag, increments patch)
+      # 6️⃣ Auto-bump version
       - name: Auto bump version
         id: version
         run: |
-          # Get latest tag, default to 1.0.0 if none exists
           LAST_TAG=$(git tag --sort=-v:refname | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+' | head -n1)
           if [ -z "$LAST_TAG" ]; then
             LAST_TAG="v1.0.0"
@@ -70,17 +75,13 @@ jobs:
           NEW_PATCH=$((PATCH + 1))
           NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
           NEW_TAG="v$NEW_VERSION"
-
-          # Compute build number from total commit count
           BUILD_NUMBER=$(git rev-list --count HEAD)
 
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
-
           echo "📦 Version: $NEW_VERSION ($BUILD_NUMBER) — bumped from $LAST_TAG"
 
-          # Update pubspec.yaml version
           sed -i "s/^version: .*/version: $NEW_VERSION+$BUILD_NUMBER/" pubspec.yaml
 
       # 7️⃣ Inject secrets into .env
@@ -120,6 +121,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add pubspec.yaml
-          git commit -m "chore: bump version to ${{ steps.version.outputs.new_version }}" || echo "No changes to commit"
+          git diff --staged --quiet || git commit -m "chore: bump version to ${{ steps.version.outputs.new_version }} [skip ci]"
           git tag ${{ steps.version.outputs.new_tag }}
-          git push origin HEAD --tags
+          git push origin HEAD:${{ github.ref_name }} --tags
