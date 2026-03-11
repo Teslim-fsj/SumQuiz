@@ -17,6 +17,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
         
+      - name: Run code generation
+        run: dart run build_runner build --delete-conflicting-outputs
+        
       - name: Build Web
         run: flutter build web --release --base-href /
         
