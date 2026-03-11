@@ -128,8 +128,8 @@ class _LibraryViewState extends State<_LibraryView>
   @override
   void initState() {
     super.initState();
-    _mainTabController = TabController(length: 5, vsync: this);
-    _folderTabController = TabController(length: 4, vsync: this);
+    _mainTabController = TabController(length: 6, vsync: this);
+    _folderTabController = TabController(length: 5, vsync: this);
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text.toLowerCase();
@@ -182,6 +182,7 @@ class _LibraryViewState extends State<_LibraryView>
                           viewModel.allSummaries$, theme, viewModel),
                       _buildContentList(
                           viewModel.allQuizzes$, theme, viewModel),
+                      _buildContentList(viewModel.allExams$, theme, viewModel),
                       _buildContentList(
                           viewModel.allFlashcards$, theme, viewModel),
                     ],
@@ -201,6 +202,10 @@ class _LibraryViewState extends State<_LibraryView>
                           viewModel),
                       _buildContentList(
                           viewModel.getFolderQuizzesStream(selectedFolder.id),
+                          theme,
+                          viewModel),
+                      _buildContentList(
+                          viewModel.getFolderExamsStream(selectedFolder.id),
                           theme,
                           viewModel),
                       _buildContentList(
@@ -304,12 +309,14 @@ class _LibraryViewState extends State<_LibraryView>
               Tab(text: 'All'),
               Tab(text: 'Summaries'),
               Tab(text: 'Quizzes'),
+              Tab(text: 'Exams'),
               Tab(text: 'Flashcards')
             ]
           : const [
               Tab(text: 'All'),
               Tab(text: 'Summaries'),
               Tab(text: 'Quizzes'),
+              Tab(text: 'Exams'),
               Tab(text: 'Flashcards')
             ],
       indicator: BoxDecoration(
@@ -465,6 +472,10 @@ class _LibraryViewState extends State<_LibraryView>
       case LibraryItemType.flashcards:
         icon = Icons.style_outlined;
         iconColor = Colors.orangeAccent;
+        break;
+      case LibraryItemType.exam:
+        icon = Icons.assignment_outlined;
+        iconColor = Colors.purpleAccent;
         break;
     }
 
@@ -717,12 +728,15 @@ class _LibraryViewState extends State<_LibraryView>
         case LibraryItemType.flashcards:
           contentData = await viewModel.localDb.getFlashcardSet(item.id);
           break;
+        case LibraryItemType.exam:
+          contentData = await viewModel.localDb.getQuiz(item.id);
+          break;
       }
 
       if (!mounted) return;
 
       if (contentData == null) {
-        if (mounted) {
+        if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Error: Could not load content.')),
           );
@@ -755,13 +769,16 @@ class _LibraryViewState extends State<_LibraryView>
             ),
           );
           break;
+        case LibraryItemType.exam:
+          screen = QuizScreen(quiz: contentData);
+          break;
       }
 
-      if (mounted) {
+      if (context.mounted) {
         Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
       }
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('An error occurred: $e')),
         );
@@ -788,12 +805,15 @@ class _LibraryViewState extends State<_LibraryView>
         case LibraryItemType.flashcards:
           contentData = await viewModel.localDb.getFlashcardSet(item.id);
           break;
+        case LibraryItemType.exam:
+          contentData = await viewModel.localDb.getQuiz(item.id);
+          break;
       }
 
       if (!mounted) return;
 
       if (contentData == null) {
-        if (mounted) {
+        if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
                 content: Text('Error: Could not load content for editing.')),
@@ -850,6 +870,23 @@ class _LibraryViewState extends State<_LibraryView>
             timestamp: fs.Timestamp.fromDate(flashcardSet.timestamp),
           );
           break;
+        case LibraryItemType.exam:
+          final quiz = contentData as LocalQuiz;
+          final quizQuestions = quiz.questions
+              .map((q) => QuizQuestion(
+                    question: q.question,
+                    options: q.options,
+                    correctAnswer: q.correctAnswer,
+                  ))
+              .toList();
+          editableContent = EditableContent(
+            id: quiz.id,
+            type: 'quiz',
+            title: quiz.title,
+            questions: quizQuestions,
+            timestamp: fs.Timestamp.fromDate(quiz.timestamp),
+          );
+          break;
       }
 
       Widget editScreen;
@@ -863,13 +900,16 @@ class _LibraryViewState extends State<_LibraryView>
         case LibraryItemType.flashcards:
           editScreen = EditFlashcardsScreen(content: editableContent);
           break;
+        case LibraryItemType.exam:
+          editScreen = EditQuizScreen(content: editableContent);
+          break;
       }
 
-      if (mounted) {
+      if (context.mounted) {
         Navigator.push(context, MaterialPageRoute(builder: (_) => editScreen));
       }
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('An error occurred: $e')),
         );

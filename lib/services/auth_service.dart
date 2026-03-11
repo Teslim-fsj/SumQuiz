@@ -171,6 +171,10 @@ class AuthService {
                   error: e);
             }
           }
+
+          // 🎭 Flag for role-selection onboarding dialog
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('is_new_user', true);
         } else {
           developer.log('Existing user signed in with Google: ${user.uid}');
         }
@@ -313,6 +317,10 @@ class AuthService {
                 error: e);
           }
         }
+
+        // 🎭 Flag for role-selection onboarding dialog
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('is_new_user', true);
       }
     } on FirebaseAuthException catch (e, s) {
       developer.log('Error signing up', error: e, stackTrace: s);

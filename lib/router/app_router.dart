@@ -45,6 +45,7 @@ import 'package:sumquiz/views/screens/exam_creation_screen.dart';
 import 'package:sumquiz/views/screens/web/review_screen_web.dart';
 import 'package:sumquiz/views/screens/web/extraction_view_screen_web.dart';
 import 'package:sumquiz/views/screens/public_deck_screen.dart';
+import 'package:sumquiz/views/screens/web/exam_creation_screen_web.dart';
 
 // GoRouterRefreshStream class
 class GoRouterRefreshStream extends ChangeNotifier {
@@ -402,8 +403,10 @@ GoRouter createAppRouter(AuthService authService) {
       ),
       GoRoute(
         path: '/exam-creation',
-        builder: (context, state) =>
-            const ExamCreationScreen(), // Add exam creation route
+        builder: (context, state) => const ResponsiveView(
+          mobile: ExamCreationScreen(),
+          desktop: ExamCreationScreenWeb(),
+        ),
       ),
     ],
   );

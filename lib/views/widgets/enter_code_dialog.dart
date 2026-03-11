@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sumquiz/services/firestore_service.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 class EnterCodeDialog extends StatefulWidget {
   const EnterCodeDialog({super.key});
@@ -21,11 +22,35 @@ class _EnterCodeDialogState extends State<EnterCodeDialog> {
     super.dispose();
   }
 
-  Future<void> _redeemCode() async {
-    final code = _codeController.text.trim().toUpperCase();
+  String? _extractCodeFromLink(String data) {
+    if (data.length == 6) return data.toUpperCase();
+
+    // Handle sumquiz.app/s/CODE or https://sumquiz.app/s/CODE
+    final uri = Uri.tryParse(data);
+    if (uri != null &&
+        (uri.host == 'sumquiz.app' || data.contains('sumquiz.app/s/'))) {
+      final pathSegments = uri.pathSegments;
+      if (pathSegments.length >= 2 &&
+          pathSegments[pathSegments.length - 2] == 's') {
+        return pathSegments.last.toUpperCase();
+      }
+      // Fallback for simple formats
+      final parts = data.split('/s/');
+      if (parts.length > 1) {
+        final codeCandidate = parts.last.split('?').first;
+        if (codeCandidate.length == 6) return codeCandidate.toUpperCase();
+      }
+    }
+    return null;
+  }
+
+  Future<void> _redeemCode([String? providedCode]) async {
+    final code = (providedCode ?? _codeController.text).trim().toUpperCase();
 
     if (code.isEmpty) {
-      setState(() => _errorMessage = 'Please enter a code');
+      if (providedCode == null) {
+        setState(() => _errorMessage = 'Please enter a code');
+      }
       return;
     }
 
@@ -63,6 +88,66 @@ class _EnterCodeDialogState extends State<EnterCodeDialog> {
         });
       }
     }
+  }
+
+  void _showScanner() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Scan Exam Paper',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            const Text('Frame the QR code on the paper'),
+            const SizedBox(height: 24),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: MobileScanner(
+                  onDetect: (capture) {
+                    final List<Barcode> barcodes = capture.barcodes;
+                    for (final barcode in barcodes) {
+                      final data = barcode.rawValue;
+                      if (data != null) {
+                        final extracted = _extractCodeFromLink(data);
+                        if (extracted != null) {
+                          Navigator.pop(context); // Close scanner
+                          _redeemCode(extracted);
+                          return;
+                        }
+                      }
+                    }
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -143,6 +228,22 @@ class _EnterCodeDialogState extends State<EnterCodeDialog> {
             ),
 
             const SizedBox(height: 24),
+
+            // Scan QR Button
+            OutlinedButton.icon(
+              onPressed: _showScanner,
+              icon: const Icon(Icons.camera_alt_outlined),
+              label: const Text('Scan QR Code'),
+              style: OutlinedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
 
             // Redeem Button
             SizedBox(

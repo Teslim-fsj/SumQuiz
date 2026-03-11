@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sumquiz/theme/web_theme.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/local_database_service.dart';
@@ -24,6 +25,7 @@ import '../../widgets/web/review_list_card.dart';
 import '../../widgets/web/focus_timer_card.dart';
 import '../../widgets/web/daily_goal_card.dart';
 import '../../widgets/web/interactive_preview_card.dart';
+import '../../widgets/web/role_selection_dialog.dart';
 
 class ReviewScreenWeb extends StatefulWidget {
   const ReviewScreenWeb({super.key});
@@ -51,6 +53,29 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
   int _correctCount = 0;
   final Stopwatch _stopwatch = Stopwatch();
   Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkNewUser();
+    });
+  }
+
+  Future<void> _checkNewUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isNew = prefs.getBool('is_new_user') ?? false;
+    if (isNew && mounted) {
+      await prefs.remove('is_new_user');
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => const RoleSelectionDialog(),
+        );
+      }
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -96,12 +121,12 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
       final progressService = ProgressService();
       final avgAccuracy = await progressService.getAverageAccuracy(userId);
       final totalTimeSpent = await progressService.getTotalTimeSpent(userId);
-      
+
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
           .get();
-      
+
       int dailyGoal = 60;
       int timeSpentToday = 0;
       String lastQuestion = "What is the 'event loop' in JavaScript?";
@@ -110,7 +135,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
         final userData = userDoc.data();
         dailyGoal = userData?['dailyGoal'] as int? ?? 60;
       }
-      
+
       timeSpentToday = (totalTimeSpent / 60).round();
 
       final sets = await localDb.getAllFlashcardSets(userId);
@@ -235,8 +260,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
     }
 
     setState(() {
-      _isStudying =
-          false;
+      _isStudying = false;
     });
 
     _showCompletionDialog();
@@ -270,7 +294,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
 
   void _showMissionDetails(BuildContext context) {
     if (_dailyMission == null) return;
-    
+
     showModalBottomSheet(
       context: context,
       builder: (context) => Container(
@@ -331,12 +355,15 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: Text(_dailyMission?.isCompleted == true ? 'Mission Completed' : 'Start Mission'),
+              child: Text(_dailyMission?.isCompleted == true
+                  ? 'Mission Completed'
+                  : 'Start Mission'),
             ),
           ],
         ),
@@ -411,16 +438,13 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                                         streakDays:
                                             user?.missionCompletionStreak ?? 0),
                                     const SizedBox(height: 24),
-                                    AccuracyCard(
-                                        accuracy: _accuracy),
+                                    AccuracyCard(accuracy: _accuracy),
                                   ],
                                 ),
                               ),
                             ],
                           ),
-
                           const SizedBox(height: 24),
-
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -443,9 +467,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                               ),
                             ],
                           ),
-
                           const SizedBox(height: 24),
-
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -459,10 +481,12 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                                 child: InteractivePreviewCard(
                                   question: _previewQuestion,
                                   onClipPressed: () {
-                                    Clipboard.setData(ClipboardData(text: _previewQuestion));
+                                    Clipboard.setData(
+                                        ClipboardData(text: _previewQuestion));
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text('Question copied to clipboard!'),
+                                        content: Text(
+                                            'Question copied to clipboard!'),
                                         backgroundColor: WebColors.success,
                                       ),
                                     );
@@ -524,7 +548,6 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
               ),
             ),
           ),
-
           Column(
             children: [
               Container(
@@ -617,15 +640,11 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                   ],
                 ),
               ),
-
               const Spacer(),
-
               Center(
                 child: _build3DFlashcard(),
               ),
-
               const Spacer(),
-
               Container(
                 padding: const EdgeInsets.all(32),
                 child: _isFlipped
@@ -800,9 +819,8 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
         color: isDue ? Colors.amber[50] : Colors.blue[50],
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-            color: isDue
-                ? Colors.amber.withAlpha(77)
-                : Colors.blue.withAlpha(77)),
+            color:
+                isDue ? Colors.amber.withAlpha(77) : Colors.blue.withAlpha(77)),
       ),
       child: Row(
         children: [

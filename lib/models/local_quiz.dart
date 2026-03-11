@@ -38,6 +38,9 @@ class LocalQuiz extends HiveObject {
   @HiveField(10)
   late int timeSpent; // In seconds
 
+  @HiveField(11)
+  late bool isExam;
+
   LocalQuiz({
     required this.id,
     required this.title,
@@ -50,6 +53,7 @@ class LocalQuiz extends HiveObject {
     this.publicDeckId,
     this.creatorName,
     this.timeSpent = 0,
+    this.isExam = false,
   }) : scores = scores ?? [];
 
   double? get score => scores.isNotEmpty ? scores.last : null;
@@ -66,5 +70,6 @@ class LocalQuiz extends HiveObject {
     publicDeckId = null;
     creatorName = null;
     timeSpent = 0;
+    isExam = false;
   }
 }

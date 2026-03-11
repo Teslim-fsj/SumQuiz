@@ -389,7 +389,7 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
           shaderCallback: (bounds) =>
               WebColors.HeroGradient.createShader(bounds),
           child: Text(
-            'Tutor AI Creator',
+            'AI Content Lab',
             style: GoogleFonts.outfit(
               fontSize: 56,
               fontWeight: FontWeight.w800,
@@ -417,44 +417,57 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
 
   Widget _buildMainCard() {
     return Container(
-      width: 1100,
-      height: 850,
+      width: 1200,
+      height: 800,
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: Theme.of(context).dividerColor, width: 1.5),
+        border: Border.all(
+            color: Theme.of(context).dividerColor.withOpacity(0.5), width: 1.5),
         boxShadow: WebColors.cardShadow,
       ),
-      child: Column(
+      child: Row(
         children: [
-          _buildCustomTabBar(),
+          // Sidebar
+          _buildSidebar(),
+
+          // Main Content Area
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 40),
-              child: TabBarView(
-                controller: _tabController,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _buildTopicInput(),
-                  _buildTextInput(),
-                  _buildLinkInput(),
-                  _buildFileUpload('pdf'),
-                  _buildFileUpload('slides'),
-                  _buildFileUpload('image'),
-                  _buildFileUpload('audio'),
-                  _buildFileUpload('video'),
-                  _buildExamInput(),
-                ],
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(48, 0, 48, 48),
             child: Column(
               children: [
-                if (_errorMessage.isNotEmpty) _buildErrorBanner(),
-                const SizedBox(height: 24),
-                _isLoading ? _buildLoadingState() : _buildGenerateButton(),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 60, vertical: 40),
+                    child: TabBarView(
+                      controller: _tabController,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: [
+                        _buildTopicInput(),
+                        _buildTextInput(),
+                        _buildLinkInput(),
+                        _buildFileUpload('pdf'),
+                        _buildFileUpload('slides'),
+                        _buildFileUpload('image'),
+                        _buildFileUpload('audio'),
+                        _buildFileUpload('video'),
+                        _buildExamInput(),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(60, 0, 60, 48),
+                  child: Column(
+                    children: [
+                      if (_errorMessage.isNotEmpty) _buildErrorBanner(),
+                      const SizedBox(height: 24),
+                      _isLoading
+                          ? _buildLoadingState()
+                          : _buildGenerateButton(),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -468,33 +481,83 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
         );
   }
 
-  Widget _buildCustomTabBar() {
+  Widget _buildSidebar() {
     return Container(
-      padding: const EdgeInsets.all(6),
+      width: 280,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: TabBar(
-        controller: _tabController,
-        indicator: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
+        color: Theme.of(context).colorScheme.surface.withOpacity(0.4),
+        border: Border(
+          right: BorderSide(
+              color: Theme.of(context).dividerColor.withOpacity(0.5)),
         ),
-        indicatorSize: TabBarIndicatorSize.tab,
-        labelColor: Theme.of(context).colorScheme.primary,
-        unselectedLabelColor: Theme.of(context).textTheme.bodySmall?.color,
-        labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-        dividerColor: Colors.transparent,
-        onTap: (index) {
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(32),
+            child: Text(
+              'Select Source',
+              style: GoogleFonts.outfit(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: WebColors.textPrimary,
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: [
+                _buildSidebarCategory('QUICK START'),
+                _buildSidebarItem(0, Icons.lightbulb_outline, 'Topic'),
+                _buildSidebarItem(1, Icons.edit_note_rounded, 'Text'),
+                const SizedBox(height: 24),
+                _buildSidebarCategory('DOCUMENTS'),
+                _buildSidebarItem(3, Icons.picture_as_pdf_rounded, 'PDF'),
+                _buildSidebarItem(4, Icons.slideshow_rounded, 'Slides'),
+                _buildSidebarItem(5, Icons.image_outlined, 'Image'),
+                const SizedBox(height: 24),
+                _buildSidebarCategory('DIGITAL & MEDIA'),
+                _buildSidebarItem(2, Icons.link_rounded, 'Web Link'),
+                _buildSidebarItem(6, Icons.mic_none_rounded, 'Audio'),
+                _buildSidebarItem(7, Icons.videocam_outlined, 'Video'),
+                const SizedBox(height: 24),
+                _buildSidebarCategory('SPECIALIZED'),
+                _buildSidebarItem(8, Icons.school_outlined, 'Exam Paper'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSidebarCategory(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, bottom: 12, top: 8),
+      child: Text(
+        title,
+        style: GoogleFonts.outfit(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 1.2,
+          color: WebColors.textSecondary.withOpacity(0.6),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSidebarItem(int index, IconData icon, String label) {
+    final isSelected = _tabController.index == index;
+    final isProFeature = label != 'Text' && label != 'Topic';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: InkWell(
+        onTap: () {
           _resetInputs();
+          _tabController.animateTo(index);
           setState(() {
             _selectedInputType = [
               'topic',
@@ -509,50 +572,63 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
             ][index];
           });
         },
-        tabs: [
-          _buildTabItem(Icons.lightbulb, 'Topic'),
-          _buildTabItem(Icons.edit_note, 'Text'),
-          _buildTabItem(Icons.link, 'Web'),
-          _buildTabItem(Icons.picture_as_pdf, 'PDF'),
-          _buildTabItem(Icons.slideshow, 'Slides'),
-          _buildTabItem(Icons.image, 'Image'),
-          _buildTabItem(Icons.mic, 'Audio'),
-          _buildTabItem(Icons.videocam, 'Video'),
-          _buildTabItem(Icons.school, 'Exam'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTabItem(IconData icon, String label) {
-    final isProFeature = label != 'Text' && label != 'Topic';
-    return Tab(
-      height: 50,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 20),
-          const SizedBox(width: 8),
-          Text(label),
-          if (isProFeature) ...[
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-              decoration: BoxDecoration(
-                color: WebColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? WebColors.primary.withOpacity(0.08)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: isSelected ? WebColors.primary : WebColors.textSecondary,
               ),
-              child: Text(
-                'PRO',
-                style: GoogleFonts.outfit(
-                  fontSize: 8,
-                  fontWeight: FontWeight.w900,
-                  color: WebColors.primary,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  style: GoogleFonts.outfit(
+                    fontSize: 14,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color: isSelected
+                        ? WebColors.primary
+                        : WebColors.textPrimary.withOpacity(0.8),
+                  ),
                 ),
               ),
-            ),
-          ],
-        ],
+              if (isProFeature)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? WebColors.primary.withOpacity(0.15)
+                        : WebColors.primary.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(6),
+                    border: isSelected
+                        ? Border.all(
+                            color: WebColors.primary.withOpacity(0.2),
+                            width: 0.5)
+                        : null,
+                  ),
+                  child: Text(
+                    'PRO',
+                    style: GoogleFonts.outfit(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      color: WebColors.primary,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -563,68 +639,90 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
 
   Widget _buildTopicInput() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        const SizedBox(height: 20),
         ShaderMask(
           shaderCallback: (bounds) =>
               WebColors.HeroGradient.createShader(bounds),
           child: const Icon(Icons.auto_awesome_rounded,
-              size: 64, color: Colors.white),
-        ),
-        const SizedBox(height: 24),
+              size: 80, color: Colors.white),
+        )
+            .animate()
+            .scale(delay: 200.ms, duration: 400.ms, curve: Curves.easeOutBack),
+        const SizedBox(height: 32),
         Text(
           'Master Any Topic',
           style: GoogleFonts.outfit(
-            fontSize: 28,
+            fontSize: 32,
             fontWeight: FontWeight.w800,
             color: WebColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         Text(
-          'Tell us what you want to learn, and AI will build a complete study deck for you.',
+          'Tell us what you want to learn, and AI will build\na complete study deck for you in seconds.',
           style: GoogleFonts.outfit(
-            fontSize: 16,
-            color:
-                Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+            fontSize: 18,
+            color: WebColors.textSecondary,
+            height: 1.5,
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 48),
+        const SizedBox(height: 60),
         Container(
-          constraints: const BoxConstraints(maxWidth: 800),
+          constraints: const BoxConstraints(maxWidth: 700),
           child: Column(
             children: [
               TextField(
                 controller: _topicController,
+                textAlign: TextAlign.center,
                 style: GoogleFonts.outfit(
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                  fontSize: 20,
+                  color: WebColors.textPrimary,
+                  fontSize: 24,
                   fontWeight: FontWeight.w600,
                 ),
                 decoration: InputDecoration(
-                  hintText:
-                      'e.g., "History of the Renaissance", "React Hooks basics"...',
-                  prefixIcon: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24),
-                    child: Icon(Icons.search_rounded, size: 28),
+                  hintText: 'e.g., "Quantum Physics", "Modern Art History"...',
+                  hintStyle: GoogleFonts.outfit(
+                    color: WebColors.textTertiary,
+                    fontSize: 18,
                   ),
+                  prefixIcon: null,
                   contentPadding:
-                      const EdgeInsets.symmetric(vertical: 24, horizontal: 32),
+                      const EdgeInsets.symmetric(vertical: 32, horizontal: 40),
+                  filled: true,
+                  fillColor: WebColors.backgroundAlt.withOpacity(0.5),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide(
+                        color: Theme.of(context).dividerColor.withOpacity(0.5)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide(
+                        color: Theme.of(context).dividerColor.withOpacity(0.5)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide:
+                        const BorderSide(color: WebColors.primary, width: 2),
+                  ),
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 48),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     flex: 3,
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         _buildSectionHeader('SELECT DIFFICULTY'),
                         const SizedBox(height: 16),
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             _buildWebDepthChip('Beginner', 'beginner'),
                             const SizedBox(width: 12),
@@ -640,7 +738,7 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
                   Expanded(
                     flex: 2,
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         _buildSectionHeader(
                             'DECK SIZE: ${_topicCardCount.toInt()} CARDS'),
@@ -818,37 +916,54 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
   }
 
   Widget _buildTextInput() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Theme.of(context).dividerColor),
-        boxShadow: WebColors.subtleShadow,
-      ),
-      child: TextField(
-        controller: _textController,
-        maxLines: null,
-        expands: true,
-        textAlignVertical: TextAlignVertical.top,
-        style: GoogleFonts.outfit(
-          color: Theme.of(context).textTheme.bodyLarge?.color,
-          fontSize: 17,
-          height: 1.6,
+    return Column(
+      children: [
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: WebColors.backgroundAlt.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                  color: Theme.of(context).dividerColor.withOpacity(0.5)),
+            ),
+            child: TextField(
+              controller: _textController,
+              maxLines: null,
+              expands: true,
+              textAlignVertical: TextAlignVertical.top,
+              style: GoogleFonts.outfit(
+                color: WebColors.textPrimary,
+                fontSize: 18,
+                height: 1.6,
+              ),
+              decoration: InputDecoration(
+                hintText:
+                    'Paste your lecture notes, articles, or any textual content here...',
+                hintStyle: GoogleFonts.outfit(
+                    color: WebColors.textTertiary, fontSize: 18),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding: const EdgeInsets.all(40),
+              ),
+              onChanged: (_) {
+                setState(() => _selectedInputType = 'text');
+              },
+            ),
+          ),
         ),
-        decoration: InputDecoration(
-          hintText:
-              'Paste any text content here to summarize and generate study materials...',
-          hintStyle: GoogleFonts.outfit(color: WebColors.textTertiary),
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          fillColor: Colors.transparent,
-          contentPadding: const EdgeInsets.all(40),
+        const SizedBox(height: 24),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildSupportedChip(Icons.text_fields_rounded, 'Any Text'),
+            const SizedBox(width: 16),
+            _buildSupportedChip(Icons.copy_rounded, 'Lecture Notes'),
+            const SizedBox(width: 16),
+            _buildSupportedChip(Icons.article_rounded, 'Articles'),
+          ],
         ),
-        onChanged: (_) {
-          setState(() => _selectedInputType = 'text');
-        },
-      ),
+      ],
     );
   }
 
@@ -857,47 +972,62 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: WebColors.primary.withOpacity(0.1),
+            color: WebColors.primary.withOpacity(0.05),
             shape: BoxShape.circle,
+            border:
+                Border.all(color: WebColors.primary.withOpacity(0.1), width: 2),
           ),
-          child: Icon(Icons.link_rounded, size: 48, color: WebColors.primary),
-        ),
-        const SizedBox(height: 24),
+          child: Icon(Icons.public_rounded, size: 60, color: WebColors.primary),
+        ).animate().scale(delay: 100.ms, duration: 400.ms),
+        const SizedBox(height: 32),
         Text(
-          'Summarize Webpage',
+          'Knowledge from the Web',
           style: GoogleFonts.outfit(
             fontSize: 28,
             fontWeight: FontWeight.w800,
-            color: Theme.of(context).textTheme.headlineMedium?.color,
+            color: WebColors.textPrimary,
           ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Paste any URL to summarize the page into\nflashcards and study guides.',
+          style: GoogleFonts.outfit(
+            fontSize: 18,
+            color: WebColors.textSecondary,
+            height: 1.5,
+          ),
+          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 48),
         Container(
-          constraints: const BoxConstraints(maxWidth: 800),
+          constraints: const BoxConstraints(maxWidth: 600),
           child: TextField(
             controller: _linkController,
+            textAlign: TextAlign.center,
             style: GoogleFonts.outfit(
-              color: Theme.of(context).textTheme.bodyLarge?.color,
+              color: WebColors.primary,
               fontSize: 20,
               fontWeight: FontWeight.w600,
             ),
             decoration: InputDecoration(
-              hintText: 'https://example.com/article...',
+              hintText: 'https://example.com/article',
               hintStyle: GoogleFonts.outfit(color: WebColors.textTertiary),
-              prefixIcon: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24),
-                child: Icon(Icons.language_rounded,
-                    size: 28, color: WebColors.primary),
-              ),
+              filled: true,
+              fillColor: WebColors.backgroundAlt.withOpacity(0.5),
+              prefixIcon: const Icon(Icons.link_rounded),
               contentPadding:
                   const EdgeInsets.symmetric(vertical: 24, horizontal: 32),
-              filled: true,
-              fillColor: WebColors.backgroundAlt,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide(
+                    color: Theme.of(context).dividerColor.withOpacity(0.5)),
+              ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(20),
-                borderSide: const BorderSide(color: WebColors.border),
+                borderSide: BorderSide(
+                    color: Theme.of(context).dividerColor.withOpacity(0.5)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(20),
@@ -905,7 +1035,7 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
                     const BorderSide(color: WebColors.primary, width: 2),
               ),
             ),
-            onChanged: (_) {
+            onChanged: (value) {
               setState(() => _selectedInputType = 'link');
             },
           ),
@@ -960,128 +1090,164 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
       children: [
         GestureDetector(
           onTap: () => _pickFile(type),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 80),
-            decoration: BoxDecoration(
-              color: WebColors.backgroundAlt,
-              borderRadius: BorderRadius.circular(32),
-              border: Border.all(
-                style: BorderStyle.solid,
+          child: CustomPaint(
+            painter: DashedRectPainter(
+              color: WebColors.primary.withOpacity(0.3),
+              strokeWidth: 2,
+              gap: 8,
+            ),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 100),
+              decoration: BoxDecoration(
+                color: WebColors.primary.withOpacity(0.02),
+                borderRadius: BorderRadius.circular(32),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: WebColors.subtleShadow,
+                    ),
+                    child: Icon(
+                      _getFileUploadIcon(type),
+                      size: 64,
+                      color: WebColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  Text(
+                    _getFileUploadTitle(type),
+                    style: GoogleFonts.outfit(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: WebColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    _getFileUploadSubtitle(type),
+                    style: GoogleFonts.outfit(
+                      fontSize: 18,
+                      color: WebColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: WebColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                    child: Text(
+                      'Browse Files',
+                      style: GoogleFonts.outfit(
+                        color: WebColors.primary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: WebColors.subtleShadow,
-                  ),
-                  child: Icon(
-                    _getFileUploadIcon(type),
-                    size: 64,
-                    color: WebColors.primary,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                Text(
-                  _getFileUploadTitle(type),
-                  style: GoogleFonts.outfit(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: WebColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  _getFileUploadSubtitle(type),
-                  style: GoogleFonts.outfit(
-                    fontSize: 16,
-                    color: WebColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ).animate(onPlay: (c) => c.repeat(reverse: true)).shimmer(
-                duration: 3.seconds,
-                color: Colors.white.withOpacity(0.5),
-              ),
+          ),
         ),
       ],
-    );
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0);
   }
 
   Widget _buildFilePreview() {
     return Center(
       child: Container(
         width: 600,
-        padding: const EdgeInsets.all(48),
+        padding: const EdgeInsets.all(60),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: WebColors.border),
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(40),
+          border: Border.all(
+              color: Theme.of(context).dividerColor.withOpacity(0.5)),
           boxShadow: WebColors.cardShadow,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
                 color: const Color(0xFFF0FDF4),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
-                Icons.check_circle_rounded,
+                Icons.task_alt_rounded,
                 color: Color(0xFF22C55E),
-                size: 48,
+                size: 64,
               ),
             ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
-            const SizedBox(height: 32),
+            const SizedBox(height: 40),
             Text(
-              'READY TO PROCESS',
+              'FILE SELECTED',
               style: GoogleFonts.outfit(
                 fontSize: 14,
                 fontWeight: FontWeight.w800,
-                color: WebColors.primary,
-                letterSpacing: 2,
+                color: const Color(0xFF22C55E),
+                letterSpacing: 2.5,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
             Text(
               _fileName!,
               textAlign: TextAlign.center,
               style: GoogleFonts.outfit(
-                fontSize: 22,
+                fontSize: 26,
                 fontWeight: FontWeight.w700,
                 color: WebColors.textPrimary,
+                height: 1.2,
               ),
             ),
-            const SizedBox(height: 32),
-            OutlinedButton.icon(
+            const SizedBox(height: 8),
+            Text(
+              'Ready for AI analysis',
+              style: GoogleFonts.outfit(
+                fontSize: 16,
+                color: WebColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 48),
+            TextButton.icon(
               onPressed: () {
                 setState(() {
                   _fileName = null;
                   _fileBytes = null;
                 });
               },
-              icon: Icon(Icons.delete_outline, color: Colors.red[400]),
+              icon: Icon(Icons.delete_sweep_rounded,
+                  color: Colors.red[400], size: 20),
               label: Text(
-                'Remove File',
-                style: TextStyle(color: Colors.red[400]),
+                'Remove and select another',
+                style: GoogleFonts.outfit(
+                  color: Colors.red[400],
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
               ),
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Colors.red.shade100),
+              style: TextButton.styleFrom(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                backgroundColor:
+                    (Colors.red[50] ?? Colors.red).withOpacity(0.5),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
             ),
           ],
         ),
       ),
-    );
+    ).animate().fadeIn().scale(begin: const Offset(0.9, 0.9));
   }
 
   Widget _buildErrorBanner() {
@@ -1111,16 +1277,20 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
 
   Widget _buildGenerateButton() {
     return Container(
+      width: 400,
+      height: 72,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [WebColors.primary, const Color(0xFF8B5CF6)],
+        gradient: const LinearGradient(
+          colors: [WebColors.primary, Color(0xFF7C3AED), Color(0xFFC026D3)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: WebColors.primary.withOpacity(0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+            color: WebColors.primary.withOpacity(0.4),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
@@ -1129,60 +1299,94 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 24),
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.auto_awesome, color: Colors.white, size: 24),
-            const SizedBox(width: 12),
-            const Text(
-              'Generate Study Material',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
+            const Icon(Icons.auto_awesome_rounded,
+                color: Colors.white, size: 28),
+            const SizedBox(width: 16),
+            Text(
+              'Generate Study Deck',
+              style: GoogleFonts.outfit(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
                 color: Colors.white,
+                letterSpacing: 0.5,
               ),
             ),
           ],
         ),
-      )
-          .animate(onPlay: (controller) => controller.repeat(reverse: true))
-          .shimmer(duration: 2000.ms, color: Colors.white.withOpacity(0.2)),
-    );
+      ),
+    )
+        .animate(onPlay: (c) => c.repeat(reverse: true))
+        .shimmer(duration: 2.seconds, color: Colors.white.withOpacity(0.3))
+        .scale(
+            begin: const Offset(1, 1),
+            end: const Offset(1.02, 1.02),
+            duration: 1500.ms,
+            curve: Curves.easeInOut);
   }
 
   Widget _buildLoadingState() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        SizedBox(
-          width: 60,
-          height: 60,
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(WebColors.primary),
-            strokeWidth: 4,
-          ),
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: WebColors.primary.withOpacity(0.1),
+              ),
+            )
+                .animate(onPlay: (c) => c.repeat())
+                .scale(
+                  begin: const Offset(1, 1),
+                  end: const Offset(1.5, 1.5),
+                  duration: 1.seconds,
+                  curve: Curves.easeOut,
+                )
+                .fadeOut(duration: 1.seconds),
+            Container(
+              width: 70,
+              height: 70,
+              padding: const EdgeInsets.all(4),
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(WebColors.primary),
+                strokeWidth: 5,
+                strokeCap: StrokeCap.round,
+              ),
+            ),
+            const Icon(Icons.auto_awesome_rounded,
+                color: WebColors.primary, size: 32),
+          ],
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 48),
         Text(
-          _extractionProgress,
+          _extractionProgress.toUpperCase(),
           textAlign: TextAlign.center,
           style: GoogleFonts.outfit(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
+            fontSize: 24,
+            fontWeight: FontWeight.w900,
             color: WebColors.textPrimary,
+            letterSpacing: 2,
           ),
-        ),
+        ).animate().fadeIn().slideY(begin: 0.2, end: 0),
         const SizedBox(height: 12),
         Text(
-          'AI is processing your content...',
+          'Our AI is analyzing and structuring your knowledge...',
           style: GoogleFonts.outfit(
+            fontSize: 16,
             color: WebColors.textSecondary,
+            fontWeight: FontWeight.w500,
           ),
-        ),
+        ).animate(delay: 200.ms).fadeIn(),
       ],
     );
   }
@@ -1244,21 +1448,44 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
 
   Widget _buildExamInput() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         ShaderMask(
           shaderCallback: (bounds) =>
               WebColors.HeroGradient.createShader(bounds),
           child:
-              const Icon(Icons.school_rounded, size: 64, color: Colors.white),
-        ),
-        const SizedBox(height: 24),
+              const Icon(Icons.school_rounded, size: 80, color: Colors.white),
+        ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
+        const SizedBox(height: 32),
         Text(
-          'AI Tutor Exam',
+          'Tutoring Exam Lab',
           style: GoogleFonts.outfit(
-            fontSize: 28,
+            fontSize: 32,
             fontWeight: FontWeight.w800,
             color: WebColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Upload existing exam papers to generate practice\ntests, solutions, and intelligent tutoring guides.',
+          style: GoogleFonts.outfit(
+            fontSize: 18,
+            color: WebColors.textSecondary,
+            height: 1.5,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 60),
+        OutlinedButton.icon(
+          onPressed: () => _pickFile('exam'),
+          icon: const Icon(Icons.upload_file_rounded),
+          label: const Text('Select Exam Paper'),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            textStyle:
+                GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w700),
           ),
         ),
       ],

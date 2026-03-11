@@ -638,6 +638,15 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
           typeName = 'FLASHCARDS';
           badge = '${item.itemCount ?? 0} Cards';
           break;
+        case LibraryItemType.exam:
+          icon = Icons.assignment_outlined;
+          bgColor = Colors.purple.withAlpha(26);
+          textColor = Colors.purple;
+          typeName = 'EXAM';
+          badge = item.score != null
+              ? 'Score: ${(item.score! * 100).round()}%'
+              : '${item.itemCount ?? 0} Questions';
+          break;
       }
 
       return _LibraryCardData(
@@ -681,6 +690,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
         return 'Practice quiz with ${item.itemCount ?? 0} questions to test your knowledge.';
       case LibraryItemType.flashcards:
         return 'Study deck with ${item.itemCount ?? 0} flashcards for spaced repetition.';
+      case LibraryItemType.exam:
+        return 'Formal exam paper with ${item.itemCount ?? 0} questions.';
     }
   }
 
@@ -883,6 +894,9 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
         case LibraryItemType.flashcards:
           contentData = await viewModel.localDb.getFlashcardSet(item.id);
           break;
+        case LibraryItemType.exam:
+          contentData = await viewModel.localDb.getQuiz(item.id);
+          break;
       }
 
       if (!mounted) return;
@@ -916,6 +930,9 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
             timestamp: Timestamp.fromDate(localSet.timestamp),
           );
           context.push('/library/flashcards', extra: flashcardSet);
+          break;
+        case LibraryItemType.exam:
+          context.push('/library/quiz', extra: contentData);
           break;
       }
     } catch (e) {

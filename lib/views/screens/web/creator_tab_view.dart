@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:sumquiz/theme/web_theme.dart';
 
 class CreatorTabView extends StatelessWidget {
@@ -81,19 +82,14 @@ class CreatorTabView extends StatelessWidget {
                       ),
                     ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.2),
                     const SizedBox(height: 24),
-                    ShaderMask(
-                      shaderCallback: (bounds) => const LinearGradient(
-                        colors: [Color(0xFF4F46E5), Color(0xFF9333EA)],
-                      ).createShader(bounds),
-                      child: Text(
-                        'Elevate Your Teaching with AI',
-                        style: TextStyle(
-                          fontSize: 60,
-                          fontWeight: FontWeight.w800,
-                          height: 1.1,
-                          letterSpacing: -1,
-                          color: Colors.white,
-                        ),
+                    Text(
+                      'The AI-Powered Teaching Assistant',
+                      style: TextStyle(
+                        fontSize: 60,
+                        fontWeight: FontWeight.w800,
+                        height: 1.1,
+                        letterSpacing: -1,
+                        color: WebColors.primary,
                       ),
                     )
                         .animate()
@@ -101,7 +97,7 @@ class CreatorTabView extends StatelessWidget {
                         .slideX(begin: -0.2),
                     const SizedBox(height: 24),
                     Text(
-                      'Create professional exams and share interactive study decks — all generated automatically from your own materials.',
+                      'Automate exam creation, generate professional study materials, and empower your students with interactive learning — from your own curriculum.',
                       style: TextStyle(
                         fontSize: 20,
                         color: WebColors.textSecondary,
@@ -118,16 +114,22 @@ class CreatorTabView extends StatelessWidget {
                       children: [
                         _buildPrimaryButton(context, 'Start Creating Now',
                             () => context.go('/create')),
-                        _buildSecondaryButton(context, 'View My Tools',
-                            () => context.go('/dashboard')),
+                        _buildSecondaryButton(
+                            context,
+                            'Get mobile version',
+                            () => launchUrl(Uri.parse(
+                                'https://play.google.com/store/apps/details?id=com.sumquiz.app'))),
                       ],
                     ).animate().fadeIn(delay: 600.ms, duration: 600.ms),
                     const SizedBox(height: 40),
                     Row(
                       children: [
-                        _buildTrustBadge(Icons.auto_graph, 'Unlimited Exams'),
-                        _buildTrustBadge(Icons.share, 'Easy Sharing'),
-                        _buildTrustBadge(Icons.analytics, 'Student Stats'),
+                        _buildTrustBadge(
+                            Icons.timer_outlined, 'Save Hours Weekly'),
+                        _buildTrustBadge(
+                            Icons.verified_outlined, 'Curriculum Aligned'),
+                        _buildTrustBadge(
+                            Icons.auto_awesome_outlined, 'Pro-Level Exports'),
                       ],
                     ).animate().fadeIn(delay: 800.ms),
                   ],
@@ -251,14 +253,13 @@ class CreatorTabView extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildStatItem(
-                  '1,000+', 'Verified Educators', Icons.school),
+              _buildStatItem('1,000+', 'Verified Educators', Icons.school),
               _buildDivider(),
               _buildStatItem('50,000+', 'Exams Generated', Icons.assignment),
               _buildDivider(),
-              _buildStatItem('99%', 'AI Accuracy', Icons.auto_awesome),
+              _buildStatItem('100%', 'Ownership', Icons.lock_outline),
               _buildDivider(),
-              _buildStatItem('100%', 'Ownership', Icons.lock),
+              _buildStatItem('99%', 'AI Precision', Icons.auto_awesome),
             ],
           ),
         ),
@@ -336,7 +337,7 @@ class CreatorTabView extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Create and earn in 3 easy steps',
+                'Professional materials in 3 easy steps',
                 style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.w800,
@@ -444,7 +445,7 @@ class CreatorTabView extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                'CREATOR TOOLS',
+                'EDUCATOR TOOLS',
                 style: TextStyle(
                   color: WebColors.primary,
                   fontWeight: FontWeight.w700,
@@ -454,7 +455,7 @@ class CreatorTabView extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Everything you need to succeed',
+                'Professional tools for teaching excellence',
                 style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.w800,
@@ -577,7 +578,7 @@ class CreatorTabView extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                'CREATOR SUCCESS',
+                'EDUCATOR SUCCESS',
                 style: TextStyle(
                   color: WebColors.primary,
                   fontWeight: FontWeight.w700,
@@ -587,7 +588,7 @@ class CreatorTabView extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Hear from our top creators',
+                'Hear from verified educators',
                 style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.w800,
@@ -603,28 +604,28 @@ class CreatorTabView extends StatelessWidget {
                 crossAxisSpacing: 24,
                 childAspectRatio: 1.4,
                 children: [
-                  _buildCreatorTestimonial(
+                  _buildEducatorTestimonial(
                     'I save over 10 hours a week on exam preparation. The AI-generated questions are remarkably accurate.',
                     'Dr. David Chen',
                     'University Physics Professor',
                     '10+ hrs',
                     'Saved per week',
                   ),
-                  _buildCreatorTestimonial(
+                  _buildEducatorTestimonial(
                     'The interactive study decks have significantly improved my students\' engagement and test scores.',
                     'Sarah Williams',
                     'High School Biology Teacher',
                     '95%',
                     'Student Engagement',
                   ),
-                  _buildCreatorTestimonial(
+                  _buildEducatorTestimonial(
                     'Being able to export clean PDFs with marking schemes has transformed how I handle midterms.',
                     'Prof. Michael Roberts',
                     'Mathematics Department Head',
                     '15 min',
                     'To create full exams',
                   ),
-                  _buildCreatorTestimonial(
+                  _buildEducatorTestimonial(
                     'I love how I can turn my lecture slides directly into a study hub for my class in seconds.',
                     'Emma Thompson',
                     'History & Arts Tutor',
@@ -640,7 +641,7 @@ class CreatorTabView extends StatelessWidget {
     );
   }
 
-  Widget _buildCreatorTestimonial(
+  Widget _buildEducatorTestimonial(
       String quote, String name, String role, String stat, String statLabel) {
     return Container(
       padding: const EdgeInsets.all(24),
@@ -719,7 +720,7 @@ class CreatorTabView extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(Icons.attach_money, color: WebColors.primary, size: 20),
+                Icon(Icons.trending_up, color: WebColors.primary, size: 20),
                 const SizedBox(width: 8),
                 Text(
                   stat,
@@ -755,7 +756,7 @@ class CreatorTabView extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                'CREATOR FAQ',
+                'EDUCATOR FAQ',
                 style: TextStyle(
                   color: WebColors.primary,
                   fontWeight: FontWeight.w700,
@@ -850,40 +851,39 @@ class CreatorTabView extends StatelessWidget {
                   colors: [Colors.white, Colors.white],
                 ).createShader(bounds),
                 child: Text(
-                  'Ready to Start Earning?',
+                  'Ready to Transform Your Teaching?',
                   style: TextStyle(
                     fontSize: 48,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w900,
                     color: Colors.white,
-                    height: 1.2,
+                    height: 1.1,
                   ),
-                  textAlign: TextAlign.center,
                 ),
               ),
               const SizedBox(height: 24),
               Text(
-                'Join our community of creators and start monetizing your knowledge today. No experience required.',
+                'Join our community of educators and start enhancing your classroom today. No technical experience required.',
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 20,
                   color: Colors.white.withOpacity(0.9),
                   height: 1.6,
                 ),
-                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              Wrap(
+                spacing: 16,
+                runSpacing: 16,
                 children: [
-                  _buildPrimaryButton(
-                      context, 'Become a Creator', () => context.go('/create')),
-                  const SizedBox(width: 16),
-                  _buildSecondaryButton(context, 'View Creator Hub',
+                  _buildPrimaryButton(context, 'Join Educator Program',
+                      () => context.go('/auth')),
+                  _buildSecondaryButton(context, 'View Educator Hub',
                       () => context.go('/dashboard')),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 40),
               Text(
-                'Free to join • No upfront costs • Start earning immediately',
+                'Free to use • Pro features available • Join thousands of tutors',
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.7),
                   fontSize: 14,
@@ -927,7 +927,7 @@ class CreatorTabView extends StatelessWidget {
                           ),
                           const SizedBox(width: 12),
                           Text(
-                            'SumQuiz Creator',
+                            'SumQuiz Educator',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 20,
@@ -938,7 +938,7 @@ class CreatorTabView extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Empowering creators to monetize knowledge.',
+                        'Empowering educators through AI-assisted teaching.',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.7),
                           fontSize: 14,
@@ -948,24 +948,24 @@ class CreatorTabView extends StatelessWidget {
                   ),
                   Row(
                     children: [
-                      _buildFooterColumn('For Creators', [
-                        'Creator Dashboard',
-                        'Earnings Calculator',
+                      _buildFooterColumn('For Educators', [
+                        'Educator Dashboard',
+                        'Time Savings Calculator',
                         'Content Guidelines',
-                        'Creator Community',
+                        'Educator Community',
                       ]),
                       const SizedBox(width: 60),
                       _buildFooterColumn('Resources', [
-                        'Creator Handbook',
+                        'Educator Handbook',
                         'Best Practices',
                         'Marketing Tips',
                         'Success Stories',
                       ]),
                       const SizedBox(width: 60),
                       _buildFooterColumn('Support', [
-                        'Creator Support',
+                        'Educator Support',
                         'Technical Help',
-                        'Payment Issues',
+                        'Subscription Support',
                         'Content Review',
                       ]),
                     ],
@@ -982,7 +982,7 @@ class CreatorTabView extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '© 2024 SumQuiz Creator Program. All rights reserved.',
+                    '© 2024 SumQuiz Educator Hub. All rights reserved.',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.7),
                       fontSize: 14,

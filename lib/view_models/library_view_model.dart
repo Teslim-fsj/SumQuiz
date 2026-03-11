@@ -26,6 +26,7 @@ class LibraryViewModel with ChangeNotifier {
   late Stream<List<LibraryItem>> allItems$;
   late Stream<List<LibraryItem>> allSummaries$;
   late Stream<List<LibraryItem>> allQuizzes$;
+  late Stream<List<LibraryItem>> allExams$;
   late Stream<List<LibraryItem>> allFlashcards$;
   late Stream<List<Folder>> allFolders$;
 
@@ -51,9 +52,19 @@ class LibraryViewModel with ChangeNotifier {
             (summaries) => summaries.map(LibraryItem.fromLocalSummary).toList())
         .shareReplay(maxSize: 1);
 
-    final allQuizzesFromDb$ = localDb
+    final allQuizzesAndExamsFromDb$ = localDb
         .watchAllQuizzes(userId)
         .map((quizzes) => quizzes.map(LibraryItem.fromLocalQuiz).toList())
+        .shareReplay(maxSize: 1);
+
+    final allQuizzesFromDb$ = allQuizzesAndExamsFromDb$
+        .map((items) =>
+            items.where((i) => i.type == LibraryItemType.quiz).toList())
+        .shareReplay(maxSize: 1);
+
+    final allExamsFromDb$ = allQuizzesAndExamsFromDb$
+        .map((items) =>
+            items.where((i) => i.type == LibraryItemType.exam).toList())
         .shareReplay(maxSize: 1);
 
     final allFlashcardsFromDb$ = localDb
@@ -67,6 +78,7 @@ class LibraryViewModel with ChangeNotifier {
     // This prevents the endless loading issue caused by folder filtering interference
     allSummaries$ = allSummariesFromDb$;
     allQuizzes$ = allQuizzesFromDb$;
+    allExams$ = allExamsFromDb$;
     allFlashcards$ = allFlashcardsFromDb$;
 
     // Combine all items without folder filtering
@@ -74,7 +86,7 @@ class LibraryViewModel with ChangeNotifier {
     final allItemsCombined$ = Rx.combineLatest3<List<LibraryItem>,
             List<LibraryItem>, List<LibraryItem>, List<LibraryItem>>(
         allSummariesFromDb$,
-        allQuizzesFromDb$,
+        allQuizzesAndExamsFromDb$,
         allFlashcardsFromDb$,
         (summaries, quizzes, flashcards) =>
             [...summaries, ...quizzes, ...flashcards]).shareReplay(maxSize: 1);
@@ -122,7 +134,18 @@ class LibraryViewModel with ChangeNotifier {
     return localDb.watchContentIdsInFolder(folderId).switchMap((contentIds) {
       return localDb.watchAllQuizzes(userId).map((quizzes) {
         return quizzes
-            .where((quiz) => contentIds.contains(quiz.id))
+            .where((quiz) => contentIds.contains(quiz.id) && !quiz.isExam)
+            .map(LibraryItem.fromLocalQuiz)
+            .toList();
+      });
+    });
+  }
+
+  Stream<List<LibraryItem>> getFolderExamsStream(String folderId) {
+    return localDb.watchContentIdsInFolder(folderId).switchMap((contentIds) {
+      return localDb.watchAllQuizzes(userId).map((quizzes) {
+        return quizzes
+            .where((quiz) => contentIds.contains(quiz.id) && quiz.isExam)
             .map(LibraryItem.fromLocalQuiz)
             .toList();
       });
@@ -171,6 +194,9 @@ class LibraryViewModel with ChangeNotifier {
           break;
         case LibraryItemType.flashcards:
           await localDb.deleteFlashcardSet(item.id);
+          break;
+        case LibraryItemType.exam:
+          // TODO: handle exam deletion if needed
           break;
       }
       await firestoreService.deleteItem(userId, item);

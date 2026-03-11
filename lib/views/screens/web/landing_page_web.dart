@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sumquiz/views/widgets/web/beta_access_dialog.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:sumquiz/views/widgets/web/get_mobile_app_dialog.dart';
 import 'package:sumquiz/theme/web_theme.dart';
 import 'package:sumquiz/views/screens/web/creator_tab_view.dart';
 
@@ -217,7 +218,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
                             dividerColor: Colors.transparent,
                             tabs: const [
                               Tab(text: 'Student'),
-                              Tab(text: 'Teacher'),
+                              Tab(text: 'Educator'),
                             ],
                           ),
                         ),
@@ -321,15 +322,16 @@ class _LandingPageWebState extends State<LandingPageWeb>
                     ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.2),
                     const SizedBox(height: 24),
                     Text(
-                      'Master Anything with AI-Powered Learning',
+                      'Master Your Exams with AI-Powered Study Tools',
                       style: TextStyle(
                         fontSize: 60,
                         fontWeight: FontWeight.w800,
                         height: 1.1,
                         letterSpacing: -1,
-                        foreground: Paint()..shader = WebColors.HeroGradient.createShader(
-                          Rect.fromLTWH(0, 0, 1200, 100),
-                        ),
+                        foreground: Paint()
+                          ..shader = WebColors.HeroGradient.createShader(
+                            Rect.fromLTWH(0, 0, 1200, 100),
+                          ),
                       ),
                     )
                         .animate()
@@ -337,7 +339,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
                         .slideX(begin: -0.2),
                     const SizedBox(height: 24),
                     Text(
-                      'Transform any content into interactive flashcards, quizzes, and summaries. Retain knowledge 3x longer with spaced repetition and daily missions.',
+                      'Automate your study sessions. Turn any lecture or textbook into interactive flashcards, quizzes, and summaries to ace your next exam.',
                       style: TextStyle(
                         fontSize: 20,
                         color: Colors.white.withOpacity(0.9),
@@ -356,8 +358,9 @@ class _LandingPageWebState extends State<LandingPageWeb>
                             () => context.go('/auth')),
                         _buildSecondaryButton(
                             context,
-                            'Get Mobile App Early Access',
-                            _showBetaAccessDialog),
+                            'Get mobile version',
+                            () => launchUrl(Uri.parse(
+                                'https://play.google.com/store/apps/details?id=com.sumquiz.app'))),
                       ],
                     ).animate().fadeIn(delay: 600.ms, duration: 600.ms),
                     const SizedBox(height: 40),
@@ -1103,8 +1106,11 @@ class _LandingPageWebState extends State<LandingPageWeb>
                   _buildPrimaryButton(
                       context, 'Start Free Trial', () => context.go('/auth')),
                   const SizedBox(width: 16),
-                  _buildSecondaryButton(context, 'Get Mobile App Early Access',
-                      _showBetaAccessDialog),
+                  _buildSecondaryButton(
+                      context,
+                      'Get mobile version',
+                      () => launchUrl(Uri.parse(
+                          'https://play.google.com/store/apps/details?id=com.sumquiz.app'))),
                 ],
               ),
               const SizedBox(height: 24),
@@ -1267,13 +1273,6 @@ class _LandingPageWebState extends State<LandingPageWeb>
               ),
             )),
       ],
-    );
-  }
-
-  void _showBetaAccessDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => const BetaAccessDialog(),
     );
   }
 }

@@ -14,6 +14,9 @@ import 'package:sumquiz/services/content_extraction_service.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
 import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sumquiz/services/firestore_service.dart';
+import 'package:sumquiz/models/public_deck.dart';
+import 'package:sumquiz/utils/share_code_generator.dart';
 
 class ExamCreationScreen extends StatefulWidget {
   const ExamCreationScreen({super.key});
@@ -582,7 +585,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
                     'Editable before export.',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -604,7 +607,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
         border: Border.all(color: theme.dividerColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -863,8 +866,8 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
       }
     } catch (e, stackTrace) {
       // Log the actual error and stack trace for debugging
-      print('Error generating exam: $e');
-      print('Stack trace: $stackTrace');
+      debugPrint('Error generating exam: $e');
+      debugPrint('Stack trace: $stackTrace');
 
       if (mounted) {
         setState(() {
@@ -1388,6 +1391,33 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
   bool _isProcessing = false;
   String _processingMessage = '';
 
+  // New Header & Marks Info
+  final _schoolNameController = TextEditingController();
+  int _marksA = 1;
+  int _marksB = 5;
+  int _marksC = 10;
+
+  @override
+  void dispose() {
+    _schoolNameController.dispose();
+    super.dispose();
+  }
+
+  int get _totalMarks {
+    int total = 0;
+    for (var q in widget.questions) {
+      if (q.questionType == 'Multiple Choice' ||
+          q.questionType == 'True/False') {
+        total += _marksA;
+      } else if (q.questionType == 'Short Answer') {
+        total += _marksB;
+      } else {
+        total += _marksC;
+      }
+    }
+    return total;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -1419,68 +1449,136 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Export Exam',
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
+                    'Professional structure for printable exams.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                   const SizedBox(height: 24),
 
-                  // Export options
-                  CheckboxListTile(
-                    title: const Text('PDF (Printable)'),
-                    value: true,
-                    onChanged:
-                        null, // Always checked since it's the main export option
-                    secondary: const Icon(Icons.picture_as_pdf),
+                  // 1. Header Information
+                  _buildSectionCard(
+                    title: 'Exam Header',
+                    child: Column(
+                      children: [
+                        TextField(
+                          controller: _schoolNameController,
+                          decoration: const InputDecoration(
+                            labelText: 'School Name',
+                            hintText: 'e.g. Greenhill International Academy',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.school),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
 
-                  CheckboxListTile(
-                    title: const Text('Include answer sheet'),
-                    value: _includeAnswerSheet,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        _includeAnswerSheet = value!;
-                      });
-                    },
+                  // 2. Marks Allocation
+                  _buildSectionCard(
+                    title: 'Marks Allocation',
+                    child: Column(
+                      children: [
+                        _buildMarkInput(
+                          'Section A (MCQ / T&F)',
+                          _marksA,
+                          (val) => setState(() => _marksA = val),
+                        ),
+                        const Divider(),
+                        _buildMarkInput(
+                          'Section B (Short Answer)',
+                          _marksB,
+                          (val) => setState(() => _marksB = val),
+                        ),
+                        const Divider(),
+                        _buildMarkInput(
+                          'Section C (Theory / Essay)',
+                          _marksC,
+                          (val) => setState(() => _marksC = val),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'TOTAL MARKS:',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.onPrimaryContainer,
+                                ),
+                              ),
+                              Text(
+                                '$_totalMarks',
+                                style: theme.textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
 
-                  CheckboxListTile(
-                    title: const Text('Include marking scheme'),
-                    value: _includeMarkingScheme,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        _includeMarkingScheme = value!;
-                      });
-                    },
+                  // 3. Document Settings
+                  _buildSectionCard(
+                    title: 'Document Settings',
+                    child: Column(
+                      children: [
+                        SwitchListTile(
+                          title: const Text('Include answer sheet'),
+                          subtitle:
+                              const Text('Separate page with correct options'),
+                          value: _includeAnswerSheet,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              _includeAnswerSheet = value!;
+                            });
+                          },
+                        ),
+                        SwitchListTile(
+                          title: const Text('Include marking scheme'),
+                          subtitle:
+                              const Text('Detailed explanations for answers'),
+                          value: _includeMarkingScheme,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              _includeMarkingScheme = value!;
+                            });
+                          },
+                        ),
+                        SwitchListTile(
+                          title: const Text('Randomize question order'),
+                          value: _randomizeQuestionOrder,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              _randomizeQuestionOrder = value!;
+                            });
+                          },
+                        ),
+                        SwitchListTile(
+                          title: const Text('Randomize options'),
+                          value: _randomizeOptions,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              _randomizeOptions = value!;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 16),
 
-                  CheckboxListTile(
-                    title: const Text('Randomize question order'),
-                    value: _randomizeQuestionOrder,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        _randomizeQuestionOrder = value!;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  CheckboxListTile(
-                    title: const Text('Randomize options'),
-                    value: _randomizeOptions,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        _randomizeOptions = value!;
-                      });
-                    },
-                  ),
-
-                  const Spacer(),
+                  const SizedBox(height: 32),
 
                   // Download PDF button
                   SizedBox(
@@ -1503,28 +1601,136 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
                       ),
                     ),
                   ),
+
+                  const SizedBox(height: 32),
                 ],
               ),
             ),
     );
   }
 
+  Widget _buildMarkInput(String label, int value, Function(int) onChanged) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Text(label,
+                style: const TextStyle(fontWeight: FontWeight.w500)),
+          ),
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.remove_circle_outline),
+                onPressed: value > 0 ? () => onChanged(value - 1) : null,
+              ),
+              Text('$value',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 16)),
+              IconButton(
+                icon: const Icon(Icons.add_circle_outline),
+                onPressed: () => onChanged(value + 1),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionCard({required String title, required Widget child}) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: theme.dividerColor),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _downloadPdf() async {
     setState(() {
       _isProcessing = true;
-      _processingMessage = 'Generating PDF...';
+      _processingMessage = 'Generating Professional Exam Paper...';
     });
 
     try {
-      final doc = pw.Document();
+      final user = Provider.of<UserModel?>(context, listen: false);
+      String? shareCode;
 
-      // Filter and Shuffle Questions
-      var processedQuestions = List<LocalQuizQuestion>.from(widget.questions);
-      if (_randomizeQuestionOrder) {
-        processedQuestions.shuffle();
+      if (user != null) {
+        shareCode = ShareCodeGenerator.generate();
+        final publicDeckId = const Uuid().v4();
+
+        final publicDeck = PublicDeck(
+          id: publicDeckId,
+          creatorId: user.uid,
+          creatorName: user.displayName,
+          title: widget.subject,
+          description:
+              "Practice Exam for ${widget.subject} ${widget.classLevel}",
+          shareCode: shareCode,
+          summaryData: {},
+          quizData: {
+            'questions': widget.questions.map((q) => q.toMap()).toList(),
+          },
+          flashcardData: {},
+          publishedAt: DateTime.now(),
+        );
+
+        await FirestoreService().publishDeck(publicDeck);
       }
-      if (_randomizeOptions) {
-        processedQuestions = processedQuestions.map((q) {
+
+      final doc = pw.Document();
+      final schoolName = _schoolNameController.text.trim().isEmpty
+          ? 'SUMQUIZ ACADEMY'
+          : _schoolNameController.text.trim().toUpperCase();
+
+      // 1. Group and Process Questions
+      var allQuestions = List<LocalQuizQuestion>.from(widget.questions);
+
+      if (_randomizeQuestionOrder) {
+        allQuestions.shuffle();
+      }
+
+      final sectionA = allQuestions
+          .where((q) =>
+              q.questionType == 'Multiple Choice' ||
+              q.questionType == 'True/False')
+          .toList();
+      final sectionB =
+          allQuestions.where((q) => q.questionType == 'Short Answer').toList();
+      final sectionC = allQuestions
+          .where((q) =>
+              q.questionType == 'Theory' ||
+              q.questionType == 'Essay' ||
+              (!['Multiple Choice', 'True/False', 'Short Answer']
+                  .contains(q.questionType)))
+          .toList();
+
+      // Helper for shuffling options if enabled
+      List<LocalQuizQuestion> processOptions(List<LocalQuizQuestion> list) {
+        if (!_randomizeOptions) return list;
+        return list.map((q) {
           if (q.questionType == 'Multiple Choice') {
             final opts = List<String>.from(q.options)..shuffle();
             return LocalQuizQuestion(
@@ -1539,128 +1745,294 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
         }).toList();
       }
 
-      // 1. Exam Paper
+      final questionsA = processOptions(sectionA);
+      final questionsB = processOptions(sectionB);
+      final questionsC = processOptions(sectionC);
+
+      // 2. Build Main Exam Paper
       doc.addPage(
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4,
-          build: (pw.Context context) {
-            return [
-              pw.Header(
-                  level: 0,
-                  child: pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.center,
-                      children: [
-                        pw.Text(widget.examTitle,
-                            style: pw.TextStyle(
-                                fontSize: 24, fontWeight: pw.FontWeight.bold)),
-                        pw.SizedBox(height: 8),
-                        pw.Text('${widget.subject} - ${widget.classLevel}',
-                            style: const pw.TextStyle(fontSize: 16)),
-                        pw.Text('Duration: ${widget.duration} mins',
-                            style: const pw.TextStyle(fontSize: 14)),
-                        pw.Divider(),
-                      ])),
-              ...List.generate(processedQuestions.length, (index) {
-                final q = processedQuestions[index];
-                return pw.Container(
-                  margin: const pw.EdgeInsets.only(bottom: 16),
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text('${index + 1}. ${q.question}',
-                          style: pw.TextStyle(
-                              fontWeight: pw.FontWeight.bold, fontSize: 12)),
-                      if (q.questionType == 'Multiple Choice' ||
-                          q.questionType == 'True/False')
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.only(left: 16, top: 4),
-                          child: pw.Column(
+          margin: const pw.EdgeInsets.all(40),
+          header: (pw.Context context) {
+            return pw.Column(children: [
+              pw.Center(
+                child: pw.Text(schoolName,
+                    style: pw.TextStyle(
+                        fontSize: 22, fontWeight: pw.FontWeight.bold)),
+              ),
+              pw.SizedBox(height: 15),
+              pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Expanded(
+                        child: pw.Column(
                             crossAxisAlignment: pw.CrossAxisAlignment.start,
-                            children: q.options.asMap().entries.map((entry) {
-                              final char = String.fromCharCode(65 + entry.key);
-                              return pw.Text('$char. ${entry.value}');
-                            }).toList(),
+                            children: [
+                          pw.Text('SUBJECT: ${widget.subject.toUpperCase()}',
+                              style: pw.TextStyle(
+                                  fontWeight: pw.FontWeight.bold,
+                                  fontSize: 11)),
+                          pw.SizedBox(height: 8),
+                          pw.Text('CLASS: ${widget.classLevel.toUpperCase()}',
+                              style: pw.TextStyle(
+                                  fontWeight: pw.FontWeight.bold,
+                                  fontSize: 11)),
+                          pw.SizedBox(height: 8),
+                          pw.Text('DATE: ____________________',
+                              style: pw.TextStyle(
+                                  fontWeight: pw.FontWeight.bold,
+                                  fontSize: 11)),
+                          pw.SizedBox(height: 8),
+                          pw.Text('TIME ALLOWED: ${widget.duration} MINUTES',
+                              style: pw.TextStyle(
+                                  fontWeight: pw.FontWeight.bold,
+                                  fontSize: 11)),
+                          pw.SizedBox(height: 15),
+                          pw.Text(
+                              'STUDENT NAME: __________________________________________',
+                              style: pw.TextStyle(
+                                  fontWeight: pw.FontWeight.bold,
+                                  fontSize: 11)),
+                        ])),
+                    if (shareCode != null)
+                      pw.Container(
+                          padding: const pw.EdgeInsets.all(10),
+                          decoration: pw.BoxDecoration(
+                            border: pw.Border.all(color: PdfColors.grey300),
+                            borderRadius: const pw.BorderRadius.all(
+                                pw.Radius.circular(8)),
                           ),
-                        ),
-                      if (q.questionType == 'Theory' ||
-                          q.questionType == 'Short Answer')
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.only(top: 8),
-                          child: pw.Container(
-                              height: 40,
-                              width: double.infinity,
-                              decoration: const pw.BoxDecoration(
-                                  border: pw.Border(bottom: pw.BorderSide()))),
-                        ),
-                    ],
+                          child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.center,
+                              children: [
+                                pw.Text('Practice & Review:',
+                                    style: pw.TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: pw.FontWeight.bold)),
+                                pw.SizedBox(height: 4),
+                                pw.Text('sumquiz.app/s/$shareCode',
+                                    style: const pw.TextStyle(
+                                        fontSize: 10,
+                                        color: PdfColors.blue800)),
+                                pw.SizedBox(height: 6),
+                                pw.Container(
+                                  height: 60,
+                                  width: 60,
+                                  child: pw.BarcodeWidget(
+                                    color: PdfColors.black,
+                                    barcode: pw.Barcode.qrCode(),
+                                    data: "https://sumquiz.app/s/$shareCode",
+                                  ),
+                                ),
+                              ]))
+                  ]),
+              pw.SizedBox(height: 20),
+              pw.Container(
+                  padding: const pw.EdgeInsets.all(8),
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(width: 1),
                   ),
-                );
-              })
-            ];
+                  child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('INSTRUCTIONS:',
+                            style: pw.TextStyle(
+                                fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                        pw.Text('1. Answer all questions.',
+                            style: const pw.TextStyle(fontSize: 9)),
+                        if (questionsA.isNotEmpty)
+                          pw.Text(
+                              '2. Section A carries $_marksA mark${_marksA > 1 ? 's' : ''} each.',
+                              style: const pw.TextStyle(fontSize: 9)),
+                        if (questionsB.isNotEmpty)
+                          pw.Text(
+                              '${questionsA.isNotEmpty ? '3' : '2'}. Section B carries $_marksB marks each.',
+                              style: const pw.TextStyle(fontSize: 9)),
+                        if (questionsC.isNotEmpty)
+                          pw.Text(
+                              '${(questionsA.isNotEmpty ? 1 : 0) + (questionsB.isNotEmpty ? 1 : 0) + 1 + 1}. Section C carries $_marksC marks each.',
+                              style: const pw.TextStyle(fontSize: 9)),
+                      ])),
+              pw.SizedBox(height: 20),
+            ]);
+          },
+          build: (pw.Context context) {
+            final List<pw.Widget> content = [];
+            int globalIndex = 0;
+
+            // SECTION A
+            if (questionsA.isNotEmpty) {
+              content.add(_sectionTitle(
+                  'SECTION A – OBJECTIVE (${questionsA.length * _marksA} MARKS)'));
+              content.addAll(questionsA.map((q) {
+                globalIndex++;
+                return _buildPdfQuestion(globalIndex, q);
+              }));
+              content.add(pw.SizedBox(height: 20));
+            }
+
+            // SECTION B
+            if (questionsB.isNotEmpty) {
+              content.add(_sectionTitle(
+                  'SECTION B – SHORT ANSWER (${questionsB.length * _marksB} MARKS)'));
+              content.addAll(questionsB.map((q) {
+                globalIndex++;
+                return _buildPdfQuestion(globalIndex, q);
+              }));
+              content.add(pw.SizedBox(height: 20));
+            }
+
+            // SECTION C
+            if (questionsC.isNotEmpty) {
+              content.add(_sectionTitle(
+                  'SECTION C – THEORY (${questionsC.length * _marksC} MARKS)'));
+              content.addAll(questionsC.map((q) {
+                globalIndex++;
+                return _buildPdfQuestion(globalIndex, q);
+              }));
+            }
+
+            return content;
           },
         ),
       );
 
-      // 2. Answer Sheet / Marking Scheme (New Page)
-      if (_includeAnswerSheet || _includeMarkingScheme) {
+      // 3. Answer Key (Separate Page)
+      if (_includeAnswerSheet) {
         doc.addPage(pw.MultiPage(
             pageFormat: PdfPageFormat.a4,
             build: (pw.Context context) {
               return [
-                pw.Header(
-                    level: 0,
-                    child: pw.Text('ANSWER KEY & MARKING SCHEME',
+                pw.Center(
+                    child: pw.Text('ANSWER SHEET',
                         style: pw.TextStyle(
                             fontSize: 20, fontWeight: pw.FontWeight.bold))),
-                pw.SizedBox(height: 16),
-                ...List.generate(processedQuestions.length, (index) {
-                  final q = processedQuestions[index];
+                pw.SizedBox(height: 20),
+                pw.Wrap(
+                  spacing: 40,
+                  runSpacing: 10,
+                  children: allQuestions.asMap().entries.map((entry) {
+                    final index = entry.key + 1;
+                    final q = entry.value;
+                    return pw.Container(
+                      width: 80,
+                      child: pw.Text('$index. ${q.correctAnswer}',
+                          style: const pw.TextStyle(fontSize: 12)),
+                    );
+                  }).toList(),
+                ),
+              ];
+            }));
+      }
+
+      // 4. Marking Scheme (Separate Page)
+      if (_includeMarkingScheme) {
+        doc.addPage(pw.MultiPage(
+            pageFormat: PdfPageFormat.a4,
+            build: (pw.Context context) {
+              return [
+                pw.Center(
+                    child: pw.Text('MARKING SCHEME & EXPLANATIONS',
+                        style: pw.TextStyle(
+                            fontSize: 20, fontWeight: pw.FontWeight.bold))),
+                pw.SizedBox(height: 20),
+                ...allQuestions.asMap().entries.map((entry) {
+                  final index = entry.key + 1;
+                  final q = entry.value;
                   return pw.Container(
-                      margin: const pw.EdgeInsets.only(bottom: 8),
-                      child: pw.Row(
+                      margin: const pw.EdgeInsets.only(bottom: 12),
+                      child: pw.Column(
                           crossAxisAlignment: pw.CrossAxisAlignment.start,
                           children: [
-                            pw.SizedBox(
-                                width: 30,
-                                child: pw.Text('${index + 1}.',
-                                    style: pw.TextStyle(
-                                        fontWeight: pw.FontWeight.bold))),
-                            pw.Expanded(
-                                child: pw.Column(
-                              crossAxisAlignment: pw.CrossAxisAlignment.start,
-                              children: [
-                                pw.Text(
-                                    'Ans: ${q.correctAnswer == 'True' || q.correctAnswer == 'False' ? q.correctAnswer : q.correctAnswer}'),
-                                if (_includeMarkingScheme &&
-                                    q.explanation != null &&
-                                    q.explanation!.isNotEmpty)
-                                  pw.Text('Explanation: ${q.explanation}',
-                                      style: pw.TextStyle(
-                                          fontStyle: pw.FontStyle.italic,
-                                          color: PdfColors.grey700,
-                                          fontSize: 10)),
-                              ],
-                            ))
+                            pw.Text('$index. ${q.question}',
+                                style: pw.TextStyle(
+                                    fontWeight: pw.FontWeight.bold,
+                                    fontSize: 10)),
+                            pw.Text('Answer: ${q.correctAnswer}',
+                                style: pw.TextStyle(
+                                    color: PdfColors.green, fontSize: 10)),
+                            if (q.explanation != null &&
+                                q.explanation!.isNotEmpty)
+                              pw.Text('Explanation: ${q.explanation}',
+                                  style: pw.TextStyle(
+                                      fontSize: 9,
+                                      fontStyle: pw.FontStyle.italic,
+                                      color: PdfColors.grey700)),
+                            pw.Divider(thickness: 0.5),
                           ]));
-                })
+                }),
               ];
             }));
       }
 
       await Printing.layoutPdf(
         onLayout: (PdfPageFormat format) async => doc.save(),
-        name: '${widget.examTitle}.pdf',
+        name: '${widget.examTitle.replaceAll(' ', '_')}_Exam_Paper.pdf',
       );
 
-      if (mounted) {
-        setState(() => _isProcessing = false);
-      }
+      if (mounted) setState(() => _isProcessing = false);
     } catch (e) {
+      debugPrint('PDF Export Error: $e');
       if (mounted) {
         setState(() => _isProcessing = false);
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Error exporting PDF: $e')));
       }
     }
+  }
+
+  pw.Widget _sectionTitle(String title) {
+    return pw.Container(
+      margin: const pw.EdgeInsets.symmetric(vertical: 10),
+      padding: const pw.EdgeInsets.all(5),
+      decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+      width: double.infinity,
+      child: pw.Text(title,
+          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12)),
+    );
+  }
+
+  pw.Widget _buildPdfQuestion(int index, LocalQuizQuestion q) {
+    return pw.Container(
+      margin: const pw.EdgeInsets.only(bottom: 15),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text('$index. ${q.question}',
+              style:
+                  pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
+          if (q.questionType == 'Multiple Choice' ||
+              q.questionType == 'True/False')
+            pw.Padding(
+              padding: const pw.EdgeInsets.only(left: 15, top: 5),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: q.options.asMap().entries.map((entry) {
+                  final char = String.fromCharCode(65 + entry.key);
+                  return pw.Text('$char. ${entry.value}',
+                      style: const pw.TextStyle(fontSize: 10));
+                }).toList(),
+              ),
+            )
+          else
+            pw.Padding(
+              padding: const pw.EdgeInsets.only(top: 10),
+              child: pw.Container(
+                height: q.questionType == 'Theory' || q.questionType == 'Essay'
+                    ? 100
+                    : 40,
+                width: double.infinity,
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(width: 0.5, color: PdfColors.grey400),
+                  borderRadius:
+                      const pw.BorderRadius.all(pw.Radius.circular(4)),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }

@@ -19,7 +19,6 @@ class LibraryShareHelper {
       final db = LocalDatabaseService();
 
       // Fetch the actual content
-      dynamic content;
       Map<String, dynamic> summaryData = {};
       Map<String, dynamic> quizData = {};
       Map<String, dynamic> flashcardData = {};
@@ -50,6 +49,9 @@ class LibraryShareHelper {
                   flashcardSet.flashcards.map((f) => f.toMap()).toList(),
             };
           }
+          break;
+        case LibraryItemType.exam:
+          // TODO: handle sharing exams if needed
           break;
       }
 

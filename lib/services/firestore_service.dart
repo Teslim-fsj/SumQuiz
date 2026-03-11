@@ -369,6 +369,14 @@ class FirestoreService {
             .doc(item.id)
             .get();
         return FlashcardSet.fromFirestore(doc);
+      case LibraryItemType.exam:
+        doc = await _db
+            .collection('users')
+            .doc(userId)
+            .collection('quizzes') // Exams are stored as quizzes
+            .doc(item.id)
+            .get();
+        return Quiz.fromFirestore(doc);
     }
   }
 
@@ -382,6 +390,9 @@ class FirestoreService {
         break;
       case LibraryItemType.flashcards:
         await deleteFlashcardSet(userId, item.id);
+        break;
+      case LibraryItemType.exam:
+        await deleteQuiz(userId, item.id);
         break;
     }
   }

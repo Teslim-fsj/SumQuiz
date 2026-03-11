@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/services/web_payment_service.dart';
 import 'package:sumquiz/providers/subscription_provider.dart';
+import 'package:sumquiz/views/widgets/web/get_mobile_app_dialog.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -115,39 +116,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     bool success;
 
     if (kIsWeb) {
-      // Web Payment Flow with Links
-
-      final user = context.read<UserModel?>();
-      if (user == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Please log in to make a purchase'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
-
-      final result = await WebPaymentService().processWebPurchase(
-        context: context,
-        product: _selectedProduct!,
-        user: user,
-      );
-
+      // Redirect to mobile for subscription
       if (mounted) {
-        if (!result.success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result.errorMessage ?? 'Payment failed'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        // If success, the link is opened in a new tab, so we don't need to do anything here.
-        // Optionally show a "Confirming..." dialog if we were listening for webhooks.
+        showDialog(
+          context: context,
+          builder: (context) => const GetMobileAppDialog(
+            title: 'Subscribe on Mobile',
+            description:
+                'To ensure a secure and seamless experience, please subscribe directly through our mobile app. Your Pro benefits will sync across all platforms.',
+          ),
+        );
       }
+      return;
     } else {
       // Mobile Payment Flow
       success =

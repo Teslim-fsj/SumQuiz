@@ -120,23 +120,20 @@ class UserService {
   Future<void> upgradeToPro(String userId, {Duration? duration}) async {
     final expiryDate = duration != null ? DateTime.now().add(duration) : null;
 
-    // If upgrading to Lifetime, expiryDate could be set to distant future or handled by logic
-    // For now we'll just set it. Null might imply Lifetime in some logic, or we need a specific flag.
-    // UserModel uses expiry date check for 'isPro'.
-
     final Map<String, dynamic> updateData = {
       'subscriptionExpiry':
           expiryDate != null ? Timestamp.fromDate(expiryDate) : null,
-      // Ensure we might want a field like 'isLifetime' if duration is null/infinite
     };
-
-    // If lifetime (no duration passed, or special handling)
-    // Let's assume for this specific implementation, if duration is NULL it is NOT lifetime, but just "indefinite" or handled elsewhere.
-    // But typically payments have specific durations.
-    // Let's just update the expiry.
 
     await _db.collection('users').doc(userId).update(updateData);
     developer.log('User $userId upgraded to Pro until $expiryDate',
+        name: 'UserService');
+  }
+
+  /// Update the user's role (student or creator/teacher)
+  Future<void> updateRole(String userId, UserRole role) async {
+    await _db.collection('users').doc(userId).update({'role': role.name});
+    developer.log('User $userId role updated to ${role.name}',
         name: 'UserService');
   }
 }

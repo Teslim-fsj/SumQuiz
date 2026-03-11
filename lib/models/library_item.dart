@@ -7,7 +7,7 @@ import 'package:sumquiz/models/local_summary.dart';
 import 'package:sumquiz/models/local_quiz.dart';
 import 'package:sumquiz/models/local_flashcard_set.dart';
 
-enum LibraryItemType { summary, quiz, flashcards }
+enum LibraryItemType { summary, quiz, flashcards, exam }
 
 class LibraryItem {
   final String id;
@@ -80,7 +80,7 @@ class LibraryItem {
     return LibraryItem(
       id: quiz.id,
       title: quiz.title,
-      type: LibraryItemType.quiz,
+      type: quiz.isExam ? LibraryItemType.exam : LibraryItemType.quiz,
       timestamp: Timestamp.fromDate(quiz.timestamp),
       creatorName: quiz.creatorName,
       itemCount: quiz.questions.length,

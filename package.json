@@ -1,0 +1,11 @@
+{
+    "name": "sumquiz-web",
+    "version": "1.0.0",
+    "description": "SumQuiz Web - AI-powered study companion",
+    "scripts": {
+        "build": "sh scripts/vercel-build.sh"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}
