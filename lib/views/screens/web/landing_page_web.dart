@@ -146,11 +146,14 @@ class _LandingPageWebState extends State<LandingPageWeb>
                           ),
                         ],
                       ),
-                      child: Image.asset(
-                        'assets/images/sumquiz_logo.png',
-                        width: 24,
-                        height: 24,
-                        fit: BoxFit.contain,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset(
+                          'assets/images/sumquiz_logo.png',
+                          width: 32,
+                          height: 32,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -185,37 +188,41 @@ class _LandingPageWebState extends State<LandingPageWeb>
                         ],
                         // Tab switcher
                         Container(
-                          padding: const EdgeInsets.all(6),
+                          width: 240,
+                          padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: WebColors.backgroundAlt,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
+                            color: const Color(0xFFF1F5F9), // Slate 100
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                                color: const Color(0xFFE2E8F0)), // Slate 200
                           ),
                           child: TabBar(
                             controller: _tabController,
-                            isScrollable: true,
+                            indicatorSize: TabBarIndicatorSize.tab,
+                            dividerColor: Colors.transparent,
                             indicator: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(10),
                               boxShadow: [
                                 BoxShadow(
-                                  color: WebColors.primary.withOpacity(0.2),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
+                                  color: Colors.black.withOpacity(0.08),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
                                 ),
                               ],
                             ),
                             labelColor: WebColors.primary,
-                            unselectedLabelColor: WebColors.textSecondary,
-                            labelStyle:
-                                const TextStyle(fontWeight: FontWeight.w600),
-                            dividerColor: Colors.transparent,
+                            unselectedLabelColor:
+                                const Color(0xFF64748B), // Slate 500
+                            labelStyle: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                              letterSpacing: 0.2,
+                            ),
+                            unselectedLabelStyle: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
                             tabs: const [
                               Tab(text: 'Student'),
                               Tab(text: 'Educator'),
@@ -327,11 +334,8 @@ class _LandingPageWebState extends State<LandingPageWeb>
                         fontSize: 60,
                         fontWeight: FontWeight.w800,
                         height: 1.1,
-                        letterSpacing: -1,
-                        foreground: Paint()
-                          ..shader = WebColors.HeroGradient.createShader(
-                            Rect.fromLTWH(0, 0, 1200, 100),
-                          ),
+                        letterSpacing: -1.0,
+                        color: Colors.white,
                       ),
                     )
                         .animate()
