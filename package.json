@@ -3,7 +3,8 @@
     "version": "1.0.0",
     "description": "SumQuiz Web - AI-powered study companion",
     "scripts": {
-        "build": "sh scripts/vercel-build.sh"
+        "build": "sh scripts/vercel-build.sh",
+        "deploy:web": "flutter build web --release && firebase deploy --only hosting"
     },
     "engines": {
         "node": ">=18.0.0"
