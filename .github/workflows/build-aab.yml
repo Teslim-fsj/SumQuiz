@@ -2,46 +2,124 @@ name: Build Flutter AAB
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main        # 🔁 Auto-trigger on push to main
+      - master      # adjust to your branch name
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repo
+      # 1️⃣ Checkout repo (full history needed for tag-based version bumping)
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      # 2️⃣ Set up Flutter
+      # 2️⃣ Set up Java (required for Android builds)
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # 3️⃣ Set up Flutter
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          cache: true                        # ✅ Caches Flutter SDK
 
-      # 3️⃣ Inject secrets into .env
+      # 4️⃣ Cache pub dependencies
+      - name: Cache pub packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            pub-${{ runner.os }}-
+
+      # 5️⃣ Cache Gradle
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      # 6️⃣ Auto-bump version (reads last tag, increments patch)
+      - name: Auto bump version
+        id: version
+        run: |
+          # Get latest tag, default to 1.0.0 if none exists
+          LAST_TAG=$(git tag --sort=-v:refname | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+' | head -n1)
+          if [ -z "$LAST_TAG" ]; then
+            LAST_TAG="v1.0.0"
+          fi
+
+          VERSION=${LAST_TAG#v}
+          MAJOR=$(echo $VERSION | cut -d. -f1)
+          MINOR=$(echo $VERSION | cut -d. -f2)
+          PATCH=$(echo $VERSION | cut -d. -f3)
+
+          NEW_PATCH=$((PATCH + 1))
+          NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+          NEW_TAG="v$NEW_VERSION"
+
+          # Compute build number from total commit count
+          BUILD_NUMBER=$(git rev-list --count HEAD)
+
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+
+          echo "📦 Version: $NEW_VERSION ($BUILD_NUMBER) — bumped from $LAST_TAG"
+
+          # Update pubspec.yaml version
+          sed -i "s/^version: .*/version: $NEW_VERSION+$BUILD_NUMBER/" pubspec.yaml
+
+      # 7️⃣ Inject secrets into .env
       - name: Create .env file
         run: |
           echo "API_KEY=${{ secrets.API_KEY }}" > .env
 
-      # 4️⃣ Install dependencies
+      # 8️⃣ Install dependencies
       - name: Install Flutter dependencies
         run: flutter pub get
 
-      # 5️⃣ Generate Hive adapters
+      # 9️⃣ Generate Hive adapters
       - name: Generate Hive Adapters
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
-      # 6️⃣ Generate app launcher icon & splash
+      # 🔟 Generate app launcher icon & splash
       - name: Generate Launcher Icon & Splash
         run: |
           dart run flutter_launcher_icons:main
           dart run flutter_native_splash:create
 
-      # 7️⃣ Build release app bundle
+      # 1️⃣1️⃣ Build release app bundle
       - name: Build app bundle
         run: flutter build appbundle --release
 
-      # 8️⃣ Upload AAB as artifact
+      # 1️⃣2️⃣ Upload AAB as artifact
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: app-release
+          name: app-release-${{ steps.version.outputs.new_version }}
           path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      # 1️⃣3️⃣ Tag the new version in Git
+      - name: Create Git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pubspec.yaml
+          git commit -m "chore: bump version to ${{ steps.version.outputs.new_version }}" || echo "No changes to commit"
+          git tag ${{ steps.version.outputs.new_tag }}
+          git push origin HEAD --tags
