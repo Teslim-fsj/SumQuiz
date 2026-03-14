@@ -37,7 +37,8 @@ class UserModel {
   final bool _isTrialUser; // Private - use isTrial getter
   final bool isCreatorPro;
   final String? currentProduct; // Selected subscription product ID
-  final String? subscriptionType; // e.g. 'monthly', 'yearly', 'lifetime' - for manual management
+  final String?
+      subscriptionType; // e.g. 'monthly', 'yearly', 'lifetime' - for manual management
 
   // Referral
   final String? referralCode;

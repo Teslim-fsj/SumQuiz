@@ -164,6 +164,15 @@ class SpacedRepetitionService {
         .toList();
   }
 
+  /// Alias for getDueFlashcardIds used by web frontend
+  Future<List<String>> getDueItems(String userId) => getDueFlashcardIds(userId);
+
+  /// Update progress for a specific flashcard from the web frontend
+  Future<void> updateFlashcardProgress(
+      String userId, String setId, String flashcardId, bool knewIt) {
+    return updateReview(flashcardId, knewIt);
+  }
+
   Future<List<LocalFlashcard>> getDueFlashcards(
       String userId, List<LocalFlashcard> allFlashcards) async {
     final dueItemIds = await getDueFlashcardIds(userId);

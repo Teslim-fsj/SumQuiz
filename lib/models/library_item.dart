@@ -19,6 +19,7 @@ class LibraryItem {
   final int? itemCount; // e.g., number of flashcards
   final double? score; // e.g., quiz score
   final String? description;
+  final String? userId;
 
   LibraryItem({
     required this.id,
@@ -30,6 +31,7 @@ class LibraryItem {
     this.itemCount,
     this.score,
     this.description,
+    this.userId,
   });
 
   factory LibraryItem.fromSummary(Summary summary) {
@@ -40,6 +42,7 @@ class LibraryItem {
       timestamp: summary.timestamp,
       isReadOnly: false,
       description: summary.description,
+      userId: summary.userId,
     );
   }
 
@@ -47,10 +50,11 @@ class LibraryItem {
     return LibraryItem(
       id: quiz.id,
       title: quiz.title,
-      type: LibraryItemType.quiz,
+      type: quiz.isExam ? LibraryItemType.exam : LibraryItemType.quiz,
       timestamp: quiz.timestamp,
       isReadOnly: false,
       itemCount: quiz.questions.length,
+      userId: quiz.userId, // Added userId
     );
   }
 
@@ -62,6 +66,7 @@ class LibraryItem {
       timestamp: flashcardSet.timestamp,
       isReadOnly: false,
       itemCount: flashcardSet.flashcards.length,
+      userId: flashcardSet.userId,
     );
   }
 
@@ -73,6 +78,7 @@ class LibraryItem {
       timestamp: Timestamp.fromDate(summary.timestamp),
       creatorName: summary.creatorName,
       description: summary.description,
+      userId: summary.userId,
     );
   }
 
@@ -85,6 +91,7 @@ class LibraryItem {
       creatorName: quiz.creatorName,
       itemCount: quiz.questions.length,
       score: quiz.score,
+      userId: quiz.userId,
     );
   }
 
@@ -96,6 +103,7 @@ class LibraryItem {
       timestamp: Timestamp.fromDate(flashcardSet.timestamp),
       creatorName: flashcardSet.creatorName,
       itemCount: flashcardSet.flashcards.length,
+      userId: flashcardSet.userId,
     );
   }
 

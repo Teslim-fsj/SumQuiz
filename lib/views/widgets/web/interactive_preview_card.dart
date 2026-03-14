@@ -6,11 +6,13 @@ import 'package:flutter_animate/flutter_animate.dart';
 class InteractivePreviewCard extends StatelessWidget {
   final String question;
   final VoidCallback? onClipPressed;
-  
+  final VoidCallback? onStartSession; // Add this
+
   const InteractivePreviewCard({
     super.key,
     required this.question,
     this.onClipPressed,
+    this.onStartSession,
   });
 
   @override
@@ -57,9 +59,9 @@ class InteractivePreviewCard extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Question content
           Container(
             width: double.infinity,
@@ -79,22 +81,14 @@ class InteractivePreviewCard extends StatelessWidget {
               ),
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Action button
           Align(
             alignment: Alignment.centerRight,
             child: TextButton.icon(
-              onPressed: () {
-                // Navigate to quiz or study session
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Starting interactive session...'),
-                    backgroundColor: WebColors.primary,
-                  ),
-                );
-              },
+              onPressed: onStartSession, // Use here
               icon: const Icon(Icons.play_arrow_rounded, size: 20),
               label: const Text('Start Session'),
               style: TextButton.styleFrom(

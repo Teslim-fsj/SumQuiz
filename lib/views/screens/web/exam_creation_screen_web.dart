@@ -454,13 +454,15 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
       body: Stack(
         children: [
           _buildBackground(),
-          SafeArea(
-            child: Row(
-              children: [
-                _buildLeftPane(),
-                const VerticalDivider(width: 1),
-                Expanded(child: _buildRightPane()),
-              ],
+          Positioned.fill(
+            child: SafeArea(
+              child: Row(
+                children: [
+                  _buildLeftPane(),
+                  const VerticalDivider(width: 1),
+                  Expanded(child: _buildRightPane()),
+                ],
+              ),
             ),
           ),
           if (_isGeneratingQuestions || _isProcessingSource)

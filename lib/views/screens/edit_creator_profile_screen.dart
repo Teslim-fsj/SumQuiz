@@ -5,15 +5,15 @@ import 'package:sumquiz/services/firestore_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 
-class EditCreatorProfileScreen extends StatefulWidget {
-  const EditCreatorProfileScreen({super.key});
+class EditTeacherProfileScreen extends StatefulWidget {
+  const EditTeacherProfileScreen({super.key});
 
   @override
-  State<EditCreatorProfileScreen> createState() =>
-      _EditCreatorProfileScreenState();
+  State<EditTeacherProfileScreen> createState() =>
+      _EditTeacherProfileScreenState();
 }
 
-class _EditCreatorProfileScreenState extends State<EditCreatorProfileScreen> {
+class _EditTeacherProfileScreenState extends State<EditTeacherProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _bioController;
@@ -76,7 +76,7 @@ class _EditCreatorProfileScreenState extends State<EditCreatorProfileScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Creator Profile'),
+        title: const Text('Edit Teacher Profile'),
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),
@@ -92,9 +92,9 @@ class _EditCreatorProfileScreenState extends State<EditCreatorProfileScreen> {
                 width: double.infinity,
                 margin: const EdgeInsets.only(bottom: 24),
                 child: OutlinedButton.icon(
-                  onPressed: () => context.push('/creator_dashboard'),
+                  onPressed: () => context.go('/'),
                   icon: const Icon(Icons.dashboard),
-                  label: const Text('View Creator Dashboard'),
+                  label: const Text('View Teacher Dashboard'),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.all(16),
                   ),

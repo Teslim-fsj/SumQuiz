@@ -113,7 +113,7 @@ class CreatorTabView extends StatelessWidget {
                       runSpacing: 16,
                       children: [
                         _buildPrimaryButton(context, 'Start Creating Now',
-                            () => context.go('/create')),
+                            () => context.go('/auth')),
                         _buildSecondaryButton(
                             context,
                             'Get mobile version',
@@ -878,7 +878,7 @@ class CreatorTabView extends StatelessWidget {
                   _buildPrimaryButton(context, 'Join Educator Program',
                       () => context.go('/auth')),
                   _buildSecondaryButton(context, 'View Educator Hub',
-                      () => context.go('/dashboard')),
+                      () => context.go('/creator_dashboard')),
                 ],
               ),
               const SizedBox(height: 40),

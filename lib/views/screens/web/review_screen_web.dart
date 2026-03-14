@@ -14,6 +14,7 @@ import '../../../services/local_database_service.dart';
 import '../../../services/spaced_repetition_service.dart';
 import '../../../services/progress_service.dart';
 import '../../../models/flashcard.dart';
+import '../../../models/local_flashcard_set.dart';
 import '../../../models/user_model.dart';
 import '../../../models/daily_mission.dart';
 import '../../../services/mission_service.dart';
@@ -54,6 +55,8 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
   final Stopwatch _stopwatch = Stopwatch();
   Timer? _timer;
 
+  List<LocalFlashcardSet> _dueFlashcardSets = []; // Updated type
+
   @override
   void initState() {
     super.initState();
@@ -80,7 +83,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _loadMission();
+    _loadDashboardData();
   }
 
   @override
@@ -90,7 +93,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
     super.dispose();
   }
 
-  Future<void> _loadMission() async {
+  Future<void> _loadDashboardData() async {
     if (!mounted) return;
 
     final authService = Provider.of<AuthService>(context, listen: false);
@@ -122,6 +125,11 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
       final avgAccuracy = await progressService.getAverageAccuracy(userId);
       final totalTimeSpent = await progressService.getTotalTimeSpent(userId);
 
+      // Fetch actual due items
+      final allSets = await localDb.getAllFlashcardSets(userId);
+      final dueIds = await srsService.getDueItems(userId);
+      _dueFlashcardSets = allSets.where((s) => dueIds.contains(s.id)).toList();
+
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
@@ -138,9 +146,8 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
 
       timeSpentToday = (totalTimeSpent / 60).round();
 
-      final sets = await localDb.getAllFlashcardSets(userId);
-      if (sets.isNotEmpty && sets.first.flashcards.isNotEmpty) {
-        lastQuestion = sets.first.flashcards.first.question;
+      if (allSets.isNotEmpty && allSets.first.flashcards.isNotEmpty) {
+        lastQuestion = allSets.first.flashcards.first.question;
       }
 
       if (mounted) {
@@ -216,8 +223,28 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
       _startStudySession();
     } catch (e) {
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Failed to start mission: $e")));
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _startSetReview(LocalFlashcardSet set) async {
+    setState(() => _isLoading = true);
+    try {
+      _studyCards = set.flashcards
+          .map((c) => Flashcard(
+                id: c.id,
+                question: c.question,
+                answer: c.answer,
+              ))
+          .toList();
+      _startStudySession();
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("Failed to start: $e")));
+            .showSnackBar(SnackBar(content: Text('Failed to load set: $e')));
         setState(() => _isLoading = false);
       }
     }
@@ -242,21 +269,35 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
     _stopwatch.stop();
     _timer?.cancel();
 
-    if (_dailyMission != null && !_dailyMission!.isCompleted) {
-      final userId =
-          Provider.of<AuthService>(context, listen: false).currentUser?.uid;
-      if (userId != null) {
-        final missionService =
-            Provider.of<MissionService>(context, listen: false);
-        double score =
-            _studyCards.isEmpty ? 0 : _correctCount / _studyCards.length;
-        await missionService.completeMission(userId, _dailyMission!, score);
+    final userId =
+        Provider.of<AuthService>(context, listen: false).currentUser?.uid;
+    if (userId != null) {
+      final missionService =
+          Provider.of<MissionService>(context, listen: false);
+      final userService = UserService();
 
-        final userService = UserService();
+      // Update completion stats
+      double accuracy =
+          _studyCards.isEmpty ? 0 : _correctCount / _studyCards.length;
+      int timeSpentSeconds = _stopwatch.elapsed.inSeconds;
+
+      // Wrap in try-catch to ensure we return to dashboard even if analytics fail
+      try {
+        if (_dailyMission != null && !_dailyMission!.isCompleted) {
+          await missionService.completeMission(
+              userId, _dailyMission!, accuracy);
+        }
         await userService.incrementItemsCompleted(userId);
 
-        await _loadMission();
+        // Save time spent
+        final progressService = ProgressService();
+        // Ideally we'd have a specific method to log a single session
+        // For now we'll rely on global fetch in _loadDashboardData
+      } catch (e) {
+        debugPrint('Analytics error: $e');
       }
+
+      await _loadDashboardData();
     }
 
     setState(() {
@@ -270,22 +311,32 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Session Complete!'),
+        title: Text('Session Complete!',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Image.asset('assets/images/web/success_illustration.png',
-                height: 100),
+                height: 120),
             const SizedBox(height: 16),
-            Text(
-                'You got $_correctCount out of ${_studyCards.length} correct!'),
-            Text('Time: ${_formatDuration(_stopwatch.elapsed)}'),
+            Text('You got $_correctCount out of ${_studyCards.length} correct!',
+                style: GoogleFonts.outfit(
+                    fontSize: 18, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            Text('Time: ${_formatDuration(_stopwatch.elapsed)}',
+                style: GoogleFonts.outfit(color: WebColors.textSecondary)),
           ],
         ),
         actions: [
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Awesome!'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: WebColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Great!'),
           ),
         ],
       ),
@@ -297,8 +348,13 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
 
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,63 +363,63 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Mission Details',
+                  'Daily Mission',
                   style: GoogleFonts.outfit(
                     fontSize: 24,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     color: WebColors.textPrimary,
                   ),
                 ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.close),
+                  style: IconButton.styleFrom(
+                      backgroundColor: WebColors.backgroundAlt),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             Text(
               _dailyMission!.title,
               style: GoogleFonts.outfit(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: Theme.of(context).textTheme.titleLarge?.color,
+                color: WebColors.primary,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Text(
-              'Complete ${_dailyMission!.flashcardIds.length} quiz sets today to hit your XP target.',
+              'Complete the curated quiz sets for today to earn extra XP and maintain your streak.',
               style: GoogleFonts.outfit(
                 fontSize: 16,
                 color: WebColors.textSecondary,
+                height: 1.5,
               ),
             ),
-            const SizedBox(height: 24),
-            Text(
-              'Progress: ${_dailyMission!.isCompleted ? _dailyMission!.flashcardIds.length : 0}/${_dailyMission!.flashcardIds.length} sets',
-              style: GoogleFonts.outfit(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: WebColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _fetchAndStartMission();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _fetchAndStartMission();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: WebColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: Text(
+                  _dailyMission?.isCompleted == true
+                      ? 'Mission Completed'
+                      : 'Start Mission',
+                  style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.w700, fontSize: 16),
                 ),
               ),
-              child: Text(_dailyMission?.isCompleted == true
-                  ? 'Mission Completed'
-                  : 'Start Mission'),
             ),
           ],
         ),
@@ -452,9 +508,11 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                                 flex: 2,
                                 child: ReviewListCard(
                                   dueCount: _dueCount,
+                                  dueItems: _dueFlashcardSets,
                                   onReviewAll: () {
                                     context.push('/spaced-repetition');
                                   },
+                                  onReviewItem: _startSetReview,
                                 ),
                               ),
                               const SizedBox(width: 24),
@@ -490,6 +548,27 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                                         backgroundColor: WebColors.success,
                                       ),
                                     );
+                                  },
+                                  onStartSession: () async {
+                                    // Start session with first set if available
+                                    final localDb =
+                                        Provider.of<LocalDatabaseService>(
+                                            context,
+                                            listen: false);
+                                    final authService =
+                                        Provider.of<AuthService>(context,
+                                            listen: false);
+                                    final sets =
+                                        await localDb.getAllFlashcardSets(
+                                            authService.currentUser?.uid ?? '');
+                                    if (sets.isNotEmpty) {
+                                      _startSetReview(sets.first);
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(const SnackBar(
+                                              content: Text(
+                                                  'No study sets found. Create one first!')));
+                                    }
                                   },
                                 ),
                               ),

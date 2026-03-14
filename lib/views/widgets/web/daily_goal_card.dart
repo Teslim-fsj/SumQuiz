@@ -6,7 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 class DailyGoalCard extends StatelessWidget {
   final int goalMinutes; // Daily goal in minutes
   final int timeSpentMinutes; // Time spent today in minutes
-  
+
   const DailyGoalCard({
     super.key,
     required this.goalMinutes,
@@ -17,8 +17,9 @@ class DailyGoalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final progress = goalMinutes > 0 ? timeSpentMinutes / goalMinutes : 0.0;
     final clampedProgress = progress.clamp(0.0, 1.0);
-    final remainingMinutes = (goalMinutes - timeSpentMinutes).clamp(0, goalMinutes);
-    
+    final remainingMinutes =
+        (goalMinutes - timeSpentMinutes).clamp(0, goalMinutes);
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -52,7 +53,7 @@ class DailyGoalCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          
+
           // Progress bar
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
@@ -65,9 +66,9 @@ class DailyGoalCard extends StatelessWidget {
               minHeight: 12,
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Stats row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -102,8 +103,8 @@ class DailyGoalCard extends StatelessWidget {
                       text: 'M LEFT',
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        color: clampedProgress >= 1.0 
-                            ? WebColors.success 
+                        color: clampedProgress >= 1.0
+                            ? WebColors.success
                             : WebColors.textPrimary,
                       ),
                     ),

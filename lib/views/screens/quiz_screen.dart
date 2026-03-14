@@ -615,6 +615,7 @@ class _QuizScreenState extends State<QuizScreen> {
     return QuizView(
       title: _titleController.text,
       questions: _questions,
+      aiService: _aiService,
       showSaveButton: false,
       onFinish: () {
         setState(() {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../../models/user_model.dart';
 
 class ScaffoldWithNavBar extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
@@ -16,6 +18,8 @@ class ScaffoldWithNavBar extends StatelessWidget {
     }
 
     final theme = Theme.of(context);
+    final user = Provider.of<UserModel?>(context);
+    final isTeacher = user?.role == UserRole.creator;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -24,29 +28,37 @@ class ScaffoldWithNavBar extends StatelessWidget {
           return Scaffold(
             body: navigationShell,
             bottomNavigationBar: BottomNavigationBar(
-              items: const <BottomNavigationBarItem>[
+              items: <BottomNavigationBarItem>[
                 BottomNavigationBarItem(
-                    icon: Icon(Icons.home_outlined),
-                    activeIcon: Icon(Icons.home),
-                    label: 'Home'),
+                    icon: Icon(isTeacher ? Icons.dashboard_outlined : Icons.home_outlined),
+                    activeIcon: Icon(isTeacher ? Icons.dashboard : Icons.home),
+                    label: isTeacher ? 'Dashboard' : 'Home'),
                 BottomNavigationBarItem(
-                    icon: Icon(Icons.book_outlined),
-                    activeIcon: Icon(Icons.book),
-                    label: 'Library'),
+                    icon: Icon(isTeacher ? Icons.assignment_outlined : Icons.book_outlined),
+                    activeIcon: Icon(isTeacher ? Icons.assignment : Icons.book),
+                    label: isTeacher ? 'Exams' : 'Library'),
                 BottomNavigationBarItem(
-                    icon: Icon(Icons.add_circle_outline),
-                    activeIcon: Icon(Icons.add_circle),
+                    icon: const Icon(Icons.add_circle_outline),
+                    activeIcon: const Icon(Icons.add_circle),
                     label: 'Create'),
                 BottomNavigationBarItem(
-                    icon: Icon(Icons.show_chart_outlined),
-                    activeIcon: Icon(Icons.show_chart),
-                    label: 'Progress'),
+                    icon: Icon(isTeacher ? Icons.analytics_outlined : Icons.show_chart_outlined),
+                    activeIcon: Icon(isTeacher ? Icons.analytics : Icons.show_chart),
+                    label: isTeacher ? 'Analytics' : 'Progress'),
+                BottomNavigationBarItem(
+                    icon: const Icon(Icons.person_outline),
+                    activeIcon: const Icon(Icons.person),
+                    label: 'Profile'),
+                BottomNavigationBarItem(
+                    icon: const Icon(Icons.settings_outlined),
+                    activeIcon: const Icon(Icons.settings),
+                    label: 'Settings'),
               ],
               currentIndex: navigationShell.currentIndex,
               onTap: onTap,
               type: BottomNavigationBarType.fixed,
               selectedItemColor: theme.colorScheme.primary,
-              unselectedItemColor: theme.colorScheme.onSurface.withOpacity(0.6),
+              unselectedItemColor: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           );
         } else {
@@ -59,7 +71,7 @@ class ScaffoldWithNavBar extends StatelessWidget {
                   onDestinationSelected: onTap,
                   labelType: NavigationRailLabelType.all,
                   backgroundColor: Colors.white,
-                  indicatorColor: theme.colorScheme.primary.withOpacity(0.1),
+                   indicatorColor: theme.colorScheme.primary.withValues(alpha: 0.1),
                   selectedIconTheme:
                       IconThemeData(color: theme.colorScheme.primary),
                   unselectedIconTheme:
@@ -74,23 +86,31 @@ class ScaffoldWithNavBar extends StatelessWidget {
                       fontSize: 12),
                   useIndicator: true,
                   // indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // Optional custom shape
-                  destinations: const <NavigationRailDestination>[
+                  destinations: <NavigationRailDestination>[
                     NavigationRailDestination(
-                        icon: Icon(Icons.home_outlined),
-                        selectedIcon: Icon(Icons.home),
-                        label: Text('Home')),
+                        icon: Icon(isTeacher ? Icons.dashboard_outlined : Icons.home_outlined),
+                        selectedIcon: Icon(isTeacher ? Icons.dashboard : Icons.home),
+                        label: Text(isTeacher ? 'Dashboard' : 'Home')),
                     NavigationRailDestination(
-                        icon: Icon(Icons.book_outlined),
-                        selectedIcon: Icon(Icons.book),
-                        label: Text('Library')),
+                        icon: Icon(isTeacher ? Icons.assignment_outlined : Icons.book_outlined),
+                        selectedIcon: Icon(isTeacher ? Icons.assignment : Icons.book),
+                        label: Text(isTeacher ? 'Exams' : 'Library')),
                     NavigationRailDestination(
-                        icon: Icon(Icons.add_circle_outline),
-                        selectedIcon: Icon(Icons.add_circle),
-                        label: Text('Create')),
+                        icon: const Icon(Icons.add_circle_outline),
+                        selectedIcon: const Icon(Icons.add_circle),
+                        label: const Text('Create')),
                     NavigationRailDestination(
-                        icon: Icon(Icons.show_chart_outlined),
-                        selectedIcon: Icon(Icons.show_chart),
-                        label: Text('Progress')),
+                        icon: Icon(isTeacher ? Icons.analytics_outlined : Icons.show_chart_outlined),
+                        selectedIcon: Icon(isTeacher ? Icons.analytics : Icons.show_chart),
+                        label: Text(isTeacher ? 'Analytics' : 'Progress')),
+                    NavigationRailDestination(
+                        icon: const Icon(Icons.person_outline),
+                        selectedIcon: const Icon(Icons.person),
+                        label: const Text('Profile')),
+                    NavigationRailDestination(
+                        icon: const Icon(Icons.settings_outlined),
+                        selectedIcon: const Icon(Icons.settings),
+                        label: const Text('Settings')),
                   ],
                 ),
                 const VerticalDivider(thickness: 1, width: 1),

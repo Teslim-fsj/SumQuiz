@@ -1,7 +1,6 @@
 import 'dart:ui';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'dart:math' as math;
 import 'package:file_picker/file_picker.dart';
-import 'package:sumquiz/theme/web_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -21,6 +20,8 @@ import 'package:sumquiz/views/screens/exam_creation_screen.dart';
 import 'package:sumquiz/views/widgets/extraction_progress_dialog.dart';
 import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:sumquiz/theme/web_theme.dart'; // Reuse premium colors
 
 class InputValidator {
   static bool isValidUrl(String url) {
@@ -402,51 +403,6 @@ class _CreateContentScreenState extends State<CreateContentScreen>
     }
   }
 
-  Future<void> _processTopicGeneration(UserModel user) async {
-    final topic = _topicController.text.trim();
-    if (topic.isEmpty) {
-      setState(() => _errorMessage = 'Please enter a topic to learn about.');
-      setState(() => _isLoading = false);
-      return;
-    }
-
-    // Create token for topic generation too
-    _cancelToken = CancellationToken();
-    final cancelToken = _cancelToken!;
-
-    try {
-      final aiService = Provider.of<EnhancedAIService>(context, listen: false);
-      final localDb = Provider.of<LocalDatabaseService>(context, listen: false);
-      final usageService = UsageService();
-
-      await usageService.recordDeckGeneration(user.uid);
-
-      final folderId = await aiService.generateFromTopic(
-        topic: topic,
-        userId: user.uid,
-        localDb: localDb,
-        depth: _topicDepth,
-        cardCount: _topicCardCount.toInt(),
-      );
-
-      if (!cancelToken.isCancelled && mounted) {
-        _resetInputs();
-        SchedulerBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            context.push('/library/results-view/$folderId');
-          }
-        });
-      }
-    } catch (e) {
-      if (!cancelToken.isCancelled && mounted) {
-        setState(
-            () => _errorMessage = e.toString().replaceFirst('Exception: ', ''));
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
   Future<void> _processAndNavigate() async {
     // Check if API key is configured
     if (!_isApiKeyConfigured()) {
@@ -702,6 +658,58 @@ class _CreateContentScreenState extends State<CreateContentScreen>
     }
   }
 
+  Future<void> _processTopicGeneration(UserModel user) async {
+    final topic = _topicController.text.trim();
+    if (topic.isEmpty) {
+      setState(() => _errorMessage = 'Please enter a topic to learn about.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _currentOperation = 'Discovery Phase...';
+    });
+
+    _cancelToken = CancellationToken();
+    final cancelToken = _cancelToken!;
+
+    try {
+      final aiService = Provider.of<EnhancedAIService>(context, listen: false);
+      final localDb = Provider.of<LocalDatabaseService>(context, listen: false);
+      final usageService = UsageService();
+
+      await usageService.recordDeckGeneration(user.uid);
+
+      final folderId = await aiService.generateFromTopic(
+        topic: topic,
+        userId: user.uid,
+        localDb: localDb,
+        depth: _topicDepth,
+        cardCount: _topicCardCount.toInt(),
+      );
+
+      if (!cancelToken.isCancelled && mounted) {
+        _resetInputs();
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            context.push('/library/results-view/$folderId');
+          }
+        });
+      }
+    } catch (e) {
+      if (!cancelToken.isCancelled && mounted) {
+        setState(() {
+          _errorMessage = _getUserFriendlyError(e);
+          _isLoading = false;
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -763,7 +771,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF6366F1).withOpacity(0.08),
+                color: const Color(0xFF6366F1).withValues(alpha: 0.08),
               ),
             ),
           )
@@ -777,7 +785,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
               height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFEC4899).withOpacity(0.05),
+                color: const Color(0xFFEC4899).withValues(alpha: 0.05),
               ),
             ),
           )
@@ -798,7 +806,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
             icon: const Icon(Icons.arrow_back_ios_new_rounded,
                 color: Colors.white, size: 20),
             style: IconButton.styleFrom(
-              backgroundColor: Colors.white.withOpacity(0.05),
+              backgroundColor: Colors.white.withValues(alpha: 0.05),
               padding: const EdgeInsets.all(12),
             ),
           ),
@@ -816,12 +824,11 @@ class _CreateContentScreenState extends State<CreateContentScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-            colors: [Color(0xFFFACC15), Color(0xFFF59E0B)]),
+        gradient: WebColors.PremiumGradient,
         borderRadius: BorderRadius.circular(100),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFACC15).withOpacity(0.3),
+            color: const Color(0xFFFACC15).withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -868,9 +875,8 @@ class _CreateContentScreenState extends State<CreateContentScreen>
             fontSize: 46,
             fontWeight: FontWeight.w900,
             foreground: Paint()
-              ..shader = const LinearGradient(
-                      colors: [Color(0xFF6366F1), Color(0xFFEC4899)])
-                  .createShader(const Rect.fromLTWH(0, 0, 300, 70)),
+              ..shader = WebColors.HeroGradient.createShader(
+                  const Rect.fromLTWH(0, 0, 300, 70)),
             letterSpacing: -1.5,
             height: 1.1,
           ),
@@ -880,7 +886,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           'Transform any source into interactive study material with AI.',
           style: GoogleFonts.outfit(
             fontSize: 17,
-            color: Colors.white.withOpacity(0.6),
+            color: Colors.white.withValues(alpha: 0.6),
             height: 1.5,
           ),
         ),
@@ -920,13 +926,13 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? color.withOpacity(0.12)
-                        : Colors.white.withOpacity(0.04),
+                        ? color.withValues(alpha: 0.12)
+                        : Colors.white.withValues(alpha: 0.04),
                     borderRadius: BorderRadius.circular(28),
                     border: Border.all(
                       color: isSelected
-                          ? color.withOpacity(0.6)
-                          : Colors.white.withOpacity(0.1),
+                          ? color.withValues(alpha: 0.6)
+                          : Colors.white.withValues(alpha: 0.1),
                       width: isSelected ? 2 : 1,
                     ),
                   ),
@@ -936,7 +942,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                         width: 56,
                         height: 56,
                         decoration: BoxDecoration(
-                          color: color.withOpacity(0.15),
+                          color: color.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(18),
                         ),
                         child: Icon(pillar['icon'], color: color, size: 30),
@@ -958,7 +964,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                               pillar['subtitle'],
                               style: GoogleFonts.outfit(
                                 fontSize: 14,
-                                color: Colors.white.withOpacity(0.5),
+                                color: Colors.white.withValues(alpha: 0.5),
                               ),
                             ),
                           ],
@@ -971,7 +977,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                           Icons.keyboard_arrow_down_rounded,
                           color: isSelected
                               ? color
-                              : Colors.white.withOpacity(0.3),
+                              : Colors.white.withValues(alpha: 0.3),
                           size: 28,
                         ),
                       ),
@@ -1023,18 +1029,18 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                   decoration: BoxDecoration(
                     color: isMethodSelected
                         ? color
-                        : Colors.white.withOpacity(0.06),
+                        : Colors.white.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isMethodSelected
                           ? color
-                          : Colors.white.withOpacity(0.12),
+                          : Colors.white.withValues(alpha: 0.12),
                       width: 1.5,
                     ),
                     boxShadow: isMethodSelected
                         ? [
                             BoxShadow(
-                                color: color.withOpacity(0.4),
+                                color: color.withValues(alpha: 0.4),
                                 blurRadius: 15,
                                 offset: const Offset(0, 6))
                           ]
@@ -1045,7 +1051,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                       Icon(method['icon'],
                           color: isMethodSelected
                               ? Colors.white
-                              : Colors.white.withOpacity(0.7),
+                              : Colors.white.withValues(alpha: 0.7),
                           size: 24),
                       const SizedBox(height: 10),
                       Text(
@@ -1057,7 +1063,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                               : FontWeight.w600,
                           color: isMethodSelected
                               ? Colors.white
-                              : Colors.white.withOpacity(0.7),
+                              : Colors.white.withValues(alpha: 0.7),
                         ),
                       ),
                     ],
@@ -1100,12 +1106,12 @@ class _CreateContentScreenState extends State<CreateContentScreen>
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.08),
+            color: Colors.white.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: Colors.white.withOpacity(0.15)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 30,
               ),
             ],
@@ -1128,7 +1134,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                   IconButton(
                     onPressed: () => setState(() => _selectedImportMethod = ''),
                     icon: Icon(Icons.close_rounded,
-                        color: Colors.white.withOpacity(0.5)),
+                        color: Colors.white.withValues(alpha: 0.5)),
                   ),
                 ],
               ),
@@ -1148,7 +1154,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
       case 'text':
         return Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(16),
           ),
           child: TextField(
@@ -1159,7 +1165,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
               hintText:
                   'Paste your lecture notes, documents, or insights here...',
               hintStyle:
-                  TextStyle(color: Colors.white.withOpacity(0.2), fontSize: 15),
+                  TextStyle(color: Colors.white.withValues(alpha: 0.2), fontSize: 15),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.all(16),
             ),
@@ -1168,7 +1174,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
       case 'link':
         return Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(16),
           ),
           child: TextField(
@@ -1177,7 +1183,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                 color: Colors.white, fontWeight: FontWeight.bold),
             decoration: InputDecoration(
               hintText: 'https://youtube.com/watch?v=...',
-              hintStyle: TextStyle(color: Colors.white.withOpacity(0.2)),
+              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.2)),
               border: InputBorder.none,
               prefixIcon:
                   const Icon(Icons.link_rounded, color: Color(0xFF6366F1)),
@@ -1190,7 +1196,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           children: [
             Container(
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: TextField(
@@ -1202,7 +1208,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                     fontSize: 20),
                 decoration: InputDecoration(
                   hintText: 'Search any topic...',
-                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.2)),
+                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.2)),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.all(16),
                 ),
@@ -1243,13 +1249,13 @@ class _CreateContentScreenState extends State<CreateContentScreen>
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: hasFile
-              ? const Color(0xFF10B981).withOpacity(0.1)
-              : Colors.white.withOpacity(0.05),
+              ? const Color(0xFF10B981).withValues(alpha: 0.1)
+              : Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: hasFile
-                ? const Color(0xFF10B981).withOpacity(0.5)
-                : Colors.white.withOpacity(0.1),
+                ? const Color(0xFF10B981).withValues(alpha: 0.5)
+                : Colors.white.withValues(alpha: 0.1),
           ),
         ),
         child: Row(
@@ -1278,7 +1284,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                     Text(
                       'Maximum size: 15MB',
                       style: TextStyle(
-                          color: Colors.white.withOpacity(0.4), fontSize: 12),
+                          color: Colors.white.withValues(alpha: 0.4), fontSize: 12),
                     ),
                 ],
               ),
@@ -1301,10 +1307,10 @@ class _CreateContentScreenState extends State<CreateContentScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.white.withOpacity(0.06),
+            color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(100),
             border: Border.all(
-                color: Colors.white.withOpacity(isSelected ? 1 : 0.1)),
+                color: Colors.white.withValues(alpha: isSelected ? 1 : 0.1)),
           ),
           child: Center(
             child: Text(
@@ -1313,7 +1319,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
                 color:
-                    isSelected ? Colors.black : Colors.white.withOpacity(0.6),
+                    isSelected ? Colors.black : Colors.white.withValues(alpha: 0.6),
               ),
             ),
           ),
@@ -1337,16 +1343,13 @@ class _CreateContentScreenState extends State<CreateContentScreen>
         duration: const Duration(milliseconds: 300),
         height: 68,
         decoration: BoxDecoration(
-          gradient: isReady
-              ? const LinearGradient(
-                  colors: [Color(0xFF6366F1), Color(0xFFEC4899)])
-              : null,
-          color: isReady ? null : Colors.white.withOpacity(0.1),
+          gradient: isReady ? WebColors.HeroGradient : null,
+          color: isReady ? null : Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(22),
           boxShadow: isReady
               ? [
                   BoxShadow(
-                    color: const Color(0xFF6366F1).withOpacity(0.4),
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.4),
                     blurRadius: 25,
                     offset: const Offset(0, 10),
                   ),
@@ -1358,7 +1361,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.auto_awesome_rounded,
-                  color: isReady ? Colors.white : Colors.white.withOpacity(0.2),
+                  color: isReady ? Colors.white : Colors.white.withValues(alpha: 0.2),
                   size: 22),
               const SizedBox(width: 14),
               Text(
@@ -1366,7 +1369,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                 style: GoogleFonts.outfit(
                   fontSize: 17,
                   fontWeight: FontWeight.w900,
-                  color: isReady ? Colors.white : Colors.white.withOpacity(0.2),
+                  color: isReady ? Colors.white : Colors.white.withValues(alpha: 0.2),
                   letterSpacing: 2,
                 ),
               ),
@@ -1387,10 +1390,10 @@ class _CreateContentScreenState extends State<CreateContentScreen>
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFEF4444).withOpacity(0.95),
+          color: const Color(0xFFEF4444).withValues(alpha: 0.95),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 20),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 20),
           ],
         ),
         child: Row(
@@ -1422,7 +1425,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
   Widget _buildLoadingOverlay() {
     return Positioned.fill(
       child: Container(
-        color: Colors.black.withOpacity(0.85),
+        color: Colors.black.withValues(alpha: 0.85),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Center(
@@ -1457,7 +1460,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                       ? 'Harnessing neural networks'
                       : _currentOperation,
                   style: GoogleFonts.outfit(
-                    color: Colors.white.withOpacity(0.5),
+                    color: Colors.white.withValues(alpha: 0.5),
                     fontSize: 14,
                   ),
                 ),
@@ -1485,7 +1488,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
@@ -1537,9 +1540,9 @@ class _CreateContentScreenState extends State<CreateContentScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 24),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
           ),
           child: Column(
             children: [

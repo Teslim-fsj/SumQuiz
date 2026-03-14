@@ -18,6 +18,9 @@ import '../../../services/local_database_service.dart';
 import '../../../models/local_summary.dart';
 import '../../../models/local_quiz_question.dart';
 import '../../../models/local_flashcard.dart';
+import '../../../services/auth_service.dart';
+import '../../../services/progress_service.dart';
+import '../../../services/spaced_repetition_service.dart';
 
 class ResultsViewScreenWeb extends StatefulWidget {
   final String folderId;
@@ -263,9 +266,9 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: WebColors.secondary.withOpacity(0.1),
+              color: WebColors.secondary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: WebColors.secondary.withOpacity(0.2)),
+              border: Border.all(color: WebColors.secondary.withValues(alpha: 0.2)),
             ),
             child: Row(
               children: [
@@ -291,7 +294,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: WebColors.primary.withOpacity(0.3),
+                  color: WebColors.primary.withValues(alpha: 0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -386,10 +389,10 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: WebColors.primaryLight.withOpacity(0.2),
+                      color: WebColors.primaryLight.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(16),
                       border:
-                          Border.all(color: WebColors.primary.withOpacity(0.2)),
+                          Border.all(color: WebColors.primary.withValues(alpha: 0.2)),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -429,7 +432,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
           duration: 200.ms,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
           decoration: BoxDecoration(
-            color: isSelected ? color.withOpacity(0.1) : Colors.transparent,
+            color: isSelected ? color.withValues(alpha: 0.1) : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected ? color : WebColors.border,
@@ -535,8 +538,19 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
       child: QuizView(
         title: _quiz!.title,
         questions: _quiz!.questions,
-        onAnswer: (isCorrect) {},
-        onFinish: () {},
+        onAnswer: (isCorrect) {
+          // Log progress in background
+          final auth = context.read<AuthService>();
+          if (auth.currentUser != null) {
+            ProgressService()
+                .logAccuracy(auth.currentUser!.uid, isCorrect ? 1.0 : 0.0);
+          }
+        },
+        onFinish: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Quiz completed! Progress saved.')),
+          );
+        },
       ),
     );
   }
@@ -556,12 +570,26 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
       padding: const EdgeInsets.all(40),
       child: Center(
         child: Container(
-          constraints: BoxConstraints(maxHeight: 700),
+          constraints: const BoxConstraints(maxHeight: 700),
           child: FlashcardsView(
             title: _flashcardSet!.title,
             flashcards: flashcards,
-            onReview: (index, knewIt) {},
-            onFinish: () {},
+            onReview: (index, knewIt) {
+              final auth = context.read<AuthService>();
+              if (auth.currentUser != null) {
+                final srs = SpacedRepetitionService(context
+                    .read<LocalDatabaseService>()
+                    .getSpacedRepetitionBox());
+                srs.updateFlashcardProgress(auth.currentUser!.uid,
+                    _flashcardSet!.id, flashcards[index].id, knewIt);
+              }
+            },
+            onFinish: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Flashcard session complete!')),
+              );
+              setState(() => _selectedTab = 0); // Back to summary
+            },
           ),
         ),
       ),

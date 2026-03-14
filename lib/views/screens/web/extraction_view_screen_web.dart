@@ -28,7 +28,11 @@ enum OutputType { summary, quiz, flashcards }
 class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
   late TextEditingController _textController;
   late TextEditingController _titleController;
-  final Set<OutputType> _selectedOutputs = {OutputType.summary};
+  final Set<OutputType> _selectedOutputs = {
+    OutputType.summary,
+    OutputType.quiz,
+    OutputType.flashcards
+  };
   bool _isLoading = false;
   String _loadingMessage = 'Generating...';
 
@@ -91,6 +95,9 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
     }
 
     final user = context.read<UserModel?>();
+    final aiService = context.read<EnhancedAIService>();
+    final localDb = context.read<LocalDatabaseService>();
+    final authService = context.read<AuthService>();
 
     if (user != null) {
       final usageService = UsageService();
@@ -110,9 +117,6 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
     });
 
     try {
-      final aiService = context.read<EnhancedAIService>();
-      final localDb = context.read<LocalDatabaseService>();
-      final authService = context.read<AuthService>();
       final currentUser = authService.currentUser;
 
       if (currentUser == null) {
@@ -156,7 +160,10 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
         }
       }
 
-      if (mounted) context.go('/library/results-view/$folderId');
+      if (mounted) {
+        context.pushNamed('results-view',
+            pathParameters: {'folderId': folderId});
+      }
     } catch (e) {
       if (mounted) _showError('Generation failed: $e');
     } finally {

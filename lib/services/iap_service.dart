@@ -27,7 +27,7 @@ class IAPService {
   bool get isInitialized => _isInitialized;
 
   // Freemium limits
-  static const int freeUploadsLifetime = 1;
+  static const int freeUploadsLifetime = 3;
   static const int freeFoldersMax = 2;
   static const int freeSrsCardsMax = 50;
 

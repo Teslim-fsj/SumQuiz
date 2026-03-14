@@ -34,7 +34,6 @@ class DailyMission extends HiveObject {
   @HiveField(9)
   String title;
 
-
   DailyMission({
     required this.id,
     required this.date,

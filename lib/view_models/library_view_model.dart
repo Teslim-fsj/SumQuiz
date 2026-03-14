@@ -28,6 +28,7 @@ class LibraryViewModel with ChangeNotifier {
   late Stream<List<LibraryItem>> allQuizzes$;
   late Stream<List<LibraryItem>> allExams$;
   late Stream<List<LibraryItem>> allFlashcards$;
+  late Stream<List<LibraryItem>> allRecentlyViewed$;
   late Stream<List<Folder>> allFolders$;
 
   LibraryViewModel({
@@ -94,6 +95,12 @@ class LibraryViewModel with ChangeNotifier {
     // Main allItems$ stream (used for "All" tab)
     // Simplified to just be the combined stream without folder filtering
     allItems$ = allItemsCombined$;
+
+    allRecentlyViewed$ = allItemsCombined$.map((items) {
+      final sorted = List<LibraryItem>.from(items);
+      sorted.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      return sorted.take(10).toList();
+    }).shareReplay(maxSize: 1);
   }
 
   // Helper methods for folder-specific content

@@ -127,9 +127,12 @@ class SyncService {
                     question: q.question,
                     options: q.options,
                     correctAnswer: q.correctAnswer,
+                    explanation: q.explanation,
+                    questionType: q.questionType,
                   ))
               .toList(),
           timestamp: Timestamp.fromDate(localQuiz.timestamp),
+          isExam: localQuiz.isExam,
         );
 
         await _firestore
@@ -165,10 +168,13 @@ class SyncService {
                     question: q.question,
                     options: q.options,
                     correctAnswer: q.correctAnswer,
+                    explanation: q.explanation,
+                    questionType: q.questionType,
                   ))
               .toList(),
           timestamp: quiz.timestamp.toDate(),
           isSynced: true,
+          isExam: quiz.isExam,
         );
         await _localDb.saveQuiz(newLocalQuiz);
       } else {
@@ -180,10 +186,13 @@ class SyncService {
                     question: q.question,
                     options: q.options,
                     correctAnswer: q.correctAnswer,
+                    explanation: q.explanation,
+                    questionType: q.questionType,
                   ))
               .toList();
           localQuiz.timestamp = firestoreQuiz.timestamp.toDate();
           localQuiz.isSynced = true;
+          localQuiz.isExam = firestoreQuiz.isExam;
           await _localDb.saveQuiz(localQuiz);
         }
       }

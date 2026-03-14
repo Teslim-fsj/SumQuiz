@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:ui';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +16,7 @@ import 'package:sumquiz/services/usage_service.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
 import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
 import 'package:sumquiz/models/extraction_result.dart';
+import 'package:sumquiz/services/extraction_result_cache.dart';
 import 'dart:math' as dart_math;
 
 class CreateContentScreenWeb extends StatefulWidget {
@@ -48,7 +50,7 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 9, vsync: this);
+    _tabController = TabController(length: 8, vsync: this);
   }
 
   @override
@@ -315,10 +317,6 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
             },
           );
           break;
-        case 'exam':
-          if (!_checkProAccess('Tutor Exam')) return;
-          context.push('/exam-creation');
-          return;
         default:
           throw Exception('Please provide some content first.');
       }
@@ -330,10 +328,11 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
       if (!cancelToken.isCancelled) {
         await usageService.recordDeckGeneration(user.uid);
         if (mounted) {
-          // Use post-frame callback for safe navigation on web too
+          // Use the cache to pass the result
+          ExtractionResultCache.set(extractionResult);
           SchedulerBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
-              context.push('/create/extraction-view', extra: extractionResult);
+              context.pushNamed('extraction-view');
             }
           });
         }
@@ -352,286 +351,507 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
 
   @override
   Widget build(BuildContext context) {
-    // Premium Design: Full screen animated background
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Theme.of(context).scaffoldBackgroundColor,
-              Theme.of(context).colorScheme.primary.withOpacity(0.05),
+      backgroundColor: WebColors.background,
+      body: Stack(
+        children: [
+          _buildDiscoveryBackground(),
+          Column(
+            children: [
+              _buildTopBar(),
+              Expanded(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1400),
+                    child: _buildCanvas(),
+                  ),
+                ),
+              ),
+              _buildBottomActionBar(),
             ],
           ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 40),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildHeader(),
-                const SizedBox(height: 40),
-                _buildMainCard(),
-              ],
-            ),
-          ),
-        ),
+          if (_isLoading) _buildLoadingOverlay(),
+        ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildDiscoveryBackground() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        color: WebColors.background,
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: -200,
+            right: -200,
+            child: Container(
+              width: 600,
+              height: 600,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    WebColors.primary.withOpacity(0.08),
+                    WebColors.primary.withOpacity(0),
+                  ],
+                ),
+              ),
+            ),
+          )
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .moveY(begin: 0, end: 100, duration: 10.seconds),
+          Positioned(
+            bottom: -150,
+            left: -150,
+            child: Container(
+              width: 500,
+              height: 500,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFFC026D3).withOpacity(0.05),
+                    const Color(0xFFC026D3).withOpacity(0),
+                  ],
+                ),
+              ),
+            ),
+          )
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .moveX(begin: 0, end: 150, duration: 15.seconds),
+          CustomPaint(
+            size: Size.infinite,
+            painter: GridPainter(WebColors.border.withOpacity(0.3)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Row(
+              children: [
+                const Icon(Icons.arrow_back_rounded,
+                    color: WebColors.textSecondary, size: 20),
+                const SizedBox(width: 12),
+                Text(
+                  'Back to Library',
+                  style: GoogleFonts.outfit(
+                    color: WebColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          Text(
+            'CREATION LAB',
+            style: GoogleFonts.outfit(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 3,
+              color: WebColors.textTertiary,
+            ),
+          ),
+          const Spacer(),
+          _buildProBadge(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProBadge() {
+    final user = Provider.of<UserModel?>(context);
+    if (user?.isPro ?? false) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: WebColors.primary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(100),
+          border: Border.all(color: WebColors.primary.withOpacity(0.2)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.verified_rounded,
+                color: WebColors.primary, size: 16),
+            const SizedBox(width: 8),
+            Text(
+              'PRO ACCOUNT',
+              style: GoogleFonts.outfit(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: WebColors.primary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return ElevatedButton.icon(
+      onPressed: () => context.push('/settings/subscription'),
+      icon: const Icon(Icons.auto_awesome_rounded, size: 16),
+      label: const Text('UPGRADE TO PRO'),
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        textStyle: GoogleFonts.outfit(
+            fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 1),
+      ),
+    );
+  }
+
+  Widget _buildCanvas() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildCanvasHeader(),
+        const SizedBox(height: 60),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 400),
+          transitionBuilder: (Widget child, Animation<double> animation) {
+            return FadeTransition(
+              opacity: animation,
+              child: ScaleTransition(
+                scale: Tween<double>(begin: 0.95, end: 1.0).animate(
+                  CurvedAnimation(
+                      parent: animation, curve: Curves.easeOutCubic),
+                ),
+                child: child,
+              ),
+            );
+          },
+          child: _selectedInputType == 'none'
+              ? _buildIntentGrid()
+              : _buildActiveWorkspace(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCanvasHeader() {
     return Column(
       children: [
         ShaderMask(
           shaderCallback: (bounds) =>
               WebColors.HeroGradient.createShader(bounds),
           child: Text(
-            'AI Content Lab',
+            _selectedInputType == 'none'
+                ? 'Ignite Your Knowledge'
+                : _getWorkspaceTitle(),
             style: GoogleFonts.outfit(
               fontSize: 56,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w900,
               color: Colors.white,
               letterSpacing: -2,
-              height: 1,
             ),
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
         Text(
-          'Transform any content into structured knowledge.\nSelect your source and let AI do the heavy lifting.',
-          textAlign: TextAlign.center,
+          _selectedInputType == 'none'
+              ? 'Choose a source and let AI craft your perfect study material.'
+              : _getWorkspaceSubtitle(),
           style: GoogleFonts.outfit(
             fontSize: 20,
-            color:
-                Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.7),
-            height: 1.5,
-            fontWeight: FontWeight.w400,
+            color: WebColors.textSecondary,
           ),
         ),
       ],
     ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1, end: 0);
   }
 
-  Widget _buildMainCard() {
-    return Container(
-      width: 1200,
-      height: 800,
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(
-            color: Theme.of(context).dividerColor.withOpacity(0.5), width: 1.5),
-        boxShadow: WebColors.cardShadow,
-      ),
-      child: Row(
-        children: [
-          // Sidebar
-          _buildSidebar(),
-
-          // Main Content Area
-          Expanded(
-            child: Column(
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 60, vertical: 40),
-                    child: TabBarView(
-                      controller: _tabController,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: [
-                        _buildTopicInput(),
-                        _buildTextInput(),
-                        _buildLinkInput(),
-                        _buildFileUpload('pdf'),
-                        _buildFileUpload('slides'),
-                        _buildFileUpload('image'),
-                        _buildFileUpload('audio'),
-                        _buildFileUpload('video'),
-                        _buildExamInput(),
-                      ],
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(60, 0, 60, 48),
-                  child: Column(
-                    children: [
-                      if (_errorMessage.isNotEmpty) _buildErrorBanner(),
-                      const SizedBox(height: 24),
-                      _isLoading
-                          ? _buildLoadingState()
-                          : _buildGenerateButton(),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ).animate().fadeIn(delay: 200.ms).scale(
-          begin: const Offset(0.98, 0.98),
-          end: const Offset(1, 1),
-          curve: Curves.easeOutCubic,
-          duration: 400.ms,
-        );
+  String _getWorkspaceTitle() {
+    switch (_selectedInputType) {
+      case 'topic':
+        return 'Topic Discovery';
+      case 'text':
+        return 'Text Alchemist';
+      case 'link':
+        return 'Web Intelligence';
+      case 'pdf':
+        return 'Document Lab';
+      case 'slides':
+        return 'Presentation Lab';
+      case 'image':
+        return 'Visual Scanner';
+      case 'audio':
+        return 'Audio Studio';
+      case 'video':
+        return 'Video Analysis';
+      case 'exam':
+        return 'Tutor Master';
+      default:
+        return 'Workspace';
+    }
   }
 
-  Widget _buildSidebar() {
-    return Container(
-      width: 280,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface.withOpacity(0.4),
-        border: Border(
-          right: BorderSide(
-              color: Theme.of(context).dividerColor.withOpacity(0.5)),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  String _getWorkspaceSubtitle() {
+    switch (_selectedInputType) {
+      case 'topic':
+        return 'Transform a simple idea into an expert deck.';
+      case 'text':
+        return 'Synthesize your notes into structured knowledge.';
+      case 'link':
+        return 'Extract wisdom from any corner of the web.';
+      default:
+        return 'Configure your source for AI processing.';
+    }
+  }
+
+  Widget _buildIntentGrid() {
+    return Wrap(
+      spacing: 24,
+      runSpacing: 24,
+      alignment: WrapAlignment.center,
+      children: [
+        _buildIntentCard(0, Icons.lightbulb_outline, 'TOPIC',
+            'Generate from an idea', 'topic'),
+        _buildIntentCard(1, Icons.edit_note_rounded, 'TEXT',
+            'Paste notes or articles', 'text'),
+        _buildIntentCard(
+            2, Icons.link_rounded, 'WEB', 'Analyze URLs & YouTube', 'link'),
+        _buildIntentCard(3, Icons.picture_as_pdf_rounded, 'PDF',
+            'Extract from documents', 'pdf'),
+        _buildIntentCard(4, Icons.slideshow_rounded, 'SLIDES',
+            'Convert presentations', 'slides'),
+        _buildIntentCard(5, Icons.image_outlined, 'IMAGE',
+            'Scan charts & captures', 'image'),
+        _buildIntentCard(
+            6, Icons.mic_none_rounded, 'AUDIO', 'Analyze recordings', 'audio'),
+        _buildIntentCard(
+            7, Icons.videocam_outlined, 'VIDEO', 'Watch & summarize', 'video'),
+      ],
+    );
+  }
+
+  Widget _buildIntentCard(
+      int index, IconData icon, String title, String subtitle, String type) {
+    return _buildGlassCard(
+      width: 260,
+      height: 200,
+      onTap: () {
+        setState(() {
+          _selectedInputType = type;
+          _tabController.animateTo(index);
+        });
+      },
+      child: Stack(
         children: [
           Padding(
             padding: const EdgeInsets.all(32),
-            child: Text(
-              'Select Source',
-              style: GoogleFonts.outfit(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: WebColors.textPrimary,
-              ),
-            ),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildSidebarCategory('QUICK START'),
-                _buildSidebarItem(0, Icons.lightbulb_outline, 'Topic'),
-                _buildSidebarItem(1, Icons.edit_note_rounded, 'Text'),
-                const SizedBox(height: 24),
-                _buildSidebarCategory('DOCUMENTS'),
-                _buildSidebarItem(3, Icons.picture_as_pdf_rounded, 'PDF'),
-                _buildSidebarItem(4, Icons.slideshow_rounded, 'Slides'),
-                _buildSidebarItem(5, Icons.image_outlined, 'Image'),
-                const SizedBox(height: 24),
-                _buildSidebarCategory('DIGITAL & MEDIA'),
-                _buildSidebarItem(2, Icons.link_rounded, 'Web Link'),
-                _buildSidebarItem(6, Icons.mic_none_rounded, 'Audio'),
-                _buildSidebarItem(7, Icons.videocam_outlined, 'Video'),
-                const SizedBox(height: 24),
-                _buildSidebarCategory('SPECIALIZED'),
-                _buildSidebarItem(8, Icons.school_outlined, 'Exam Paper'),
+                Icon(icon, color: WebColors.primary, size: 32),
+                const SizedBox(height: 20),
+                Text(
+                  title,
+                  style: GoogleFonts.outfit(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1,
+                    color: WebColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.outfit(
+                    fontSize: 14,
+                    color: WebColors.textSecondary,
+                  ),
+                ),
               ],
             ),
           ),
+          if (type != 'text' && type != 'topic')
+            Positioned(
+              top: 16,
+              right: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: WebColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'PRO',
+                  style: GoogleFonts.outfit(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                    color: WebColors.primary,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
-    );
+    )
+        .animate(delay: (index * 50).ms)
+        .fadeIn()
+        .scale(begin: const Offset(0.9, 0.9));
   }
 
-  Widget _buildSidebarCategory(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 16, bottom: 12, top: 8),
-      child: Text(
-        title,
-        style: GoogleFonts.outfit(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 1.2,
-          color: WebColors.textSecondary.withOpacity(0.6),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSidebarItem(int index, IconData icon, String label) {
-    final isSelected = _tabController.index == index;
-    final isProFeature = label != 'Text' && label != 'Topic';
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: InkWell(
-        onTap: () {
-          _resetInputs();
-          _tabController.animateTo(index);
-          setState(() {
-            _selectedInputType = [
-              'topic',
-              'text',
-              'link',
-              'pdf',
-              'slides',
-              'image',
-              'audio',
-              'video',
-              'exam'
-            ][index];
-          });
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? WebColors.primary.withOpacity(0.08)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
+  Widget _buildActiveWorkspace() {
+    return Column(
+      key: ValueKey(_selectedInputType),
+      children: [
+        _buildGlassCard(
+          width: 900,
+          padding: const EdgeInsets.all(40),
+          child: Column(
             children: [
-              Icon(
-                icon,
-                size: 20,
-                color: isSelected ? WebColors.primary : WebColors.textSecondary,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  label,
-                  style: GoogleFonts.outfit(
-                    fontSize: 14,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected
-                        ? WebColors.primary
-                        : WebColors.textPrimary.withOpacity(0.8),
-                  ),
-                ),
-              ),
-              if (isProFeature)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? WebColors.primary.withOpacity(0.15)
-                        : WebColors.primary.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(6),
-                    border: isSelected
-                        ? Border.all(
-                            color: WebColors.primary.withOpacity(0.2),
-                            width: 0.5)
-                        : null,
-                  ),
-                  child: Text(
-                    'PRO',
-                    style: GoogleFonts.outfit(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w800,
-                      color: WebColors.primary,
-                      letterSpacing: 0.5,
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () =>
+                        setState(() => _selectedInputType = 'none'),
+                    icon: const Icon(Icons.close_rounded),
+                    style: IconButton.styleFrom(
+                      backgroundColor: WebColors.backgroundAlt,
+                      padding: const EdgeInsets.all(12),
                     ),
                   ),
-                ),
+                  const Spacer(),
+                  _buildWorkspaceBadge(),
+                ],
+              ),
+              const SizedBox(height: 40),
+              if (_errorMessage.isNotEmpty) ...[
+                _buildErrorBanner(),
+                const SizedBox(height: 24),
+              ],
+              ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 300),
+                child: _buildWorkspaceContent(),
+              ),
             ],
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildWorkspaceBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: WebColors.primary.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(color: WebColors.primary.withOpacity(0.1)),
+      ),
+      child: Text(
+        _selectedInputType.toUpperCase(),
+        style: GoogleFonts.outfit(
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 1,
+          color: WebColors.primary,
+        ),
       ),
     );
   }
+
+  Widget _buildWorkspaceContent() {
+    switch (_selectedInputType) {
+      case 'topic':
+        return _buildTopicInput();
+      case 'text':
+        return _buildTextInput();
+      case 'link':
+        return _buildLinkInput();
+      case 'pdf':
+      case 'slides':
+      case 'image':
+      case 'audio':
+      case 'video':
+        return _buildFileUpload(_selectedInputType);
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  Widget _buildBottomActionBar() {
+    if (_selectedInputType == 'none' || _selectedInputType == 'exam')
+      return const SizedBox(height: 40);
+
+    return Container(
+      padding: const EdgeInsets.all(40),
+      child: _buildGenerateButton(),
+    ).animate().fadeIn().slideY(begin: 0.5, end: 0);
+  }
+
+  Widget _buildGlassCard({
+    double? width,
+    double? height,
+    EdgeInsetsGeometry? padding,
+    BorderRadius? borderRadius,
+    required Widget child,
+    VoidCallback? onTap,
+  }) {
+    final card = Container(
+      width: width,
+      height: height,
+      padding: padding,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.8),
+        borderRadius: borderRadius ?? BorderRadius.circular(32),
+        border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withOpacity(0.04),
+            blurRadius: 40,
+            offset: const Offset(0, 16),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: borderRadius ?? BorderRadius.circular(32),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: child,
+        ),
+      ),
+    );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: borderRadius ?? BorderRadius.circular(32),
+        child: card,
+      );
+    }
+    return card;
+  }
+
+  Widget _buildLoadingOverlay() {
+    return Positioned.fill(
+      child: Container(
+        color: WebColors.background.withOpacity(0.8),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Center(
+            child: _buildLoadingState(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Legacy sidebar methods removed.
 
   // ===========================================================
   // TOPIC-BASED LEARNING
@@ -901,7 +1121,7 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
         _resetInputs();
         SchedulerBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            context.push('/library/results-view/$folderId');
+            context.pushNamed('results-view', pathParameters: {'folderId': folderId});
           }
         });
       }
@@ -918,48 +1138,44 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
   Widget _buildTextInput() {
     return Column(
       children: [
-        Expanded(
-          child: Container(
-            decoration: BoxDecoration(
-              color: WebColors.backgroundAlt.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                  color: Theme.of(context).dividerColor.withOpacity(0.5)),
+        Container(
+          constraints: const BoxConstraints(minHeight: 400),
+          decoration: BoxDecoration(
+            color: WebColors.backgroundAlt.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: WebColors.border.withOpacity(0.5)),
+          ),
+          child: TextField(
+            controller: _textController,
+            maxLines: null,
+            style: GoogleFonts.outfit(
+              color: WebColors.textPrimary,
+              fontSize: 18,
+              height: 1.6,
             ),
-            child: TextField(
-              controller: _textController,
-              maxLines: null,
-              expands: true,
-              textAlignVertical: TextAlignVertical.top,
-              style: GoogleFonts.outfit(
-                color: WebColors.textPrimary,
-                fontSize: 18,
-                height: 1.6,
-              ),
-              decoration: InputDecoration(
-                hintText:
-                    'Paste your lecture notes, articles, or any textual content here...',
-                hintStyle: GoogleFonts.outfit(
-                    color: WebColors.textTertiary, fontSize: 18),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                contentPadding: const EdgeInsets.all(40),
-              ),
-              onChanged: (_) {
+            decoration: InputDecoration(
+              hintText:
+                  'Paste your lecture notes, articles, or any textual content here...',
+              hintStyle: GoogleFonts.outfit(
+                  color: WebColors.textTertiary, fontSize: 18),
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              contentPadding: const EdgeInsets.all(32),
+              filled: false,
+            ),
+            onChanged: (_) {
+              if (_selectedInputType != 'text')
                 setState(() => _selectedInputType = 'text');
-              },
-            ),
+            },
           ),
         ),
-        const SizedBox(height: 24),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        const SizedBox(height: 32),
+        Wrap(
+          spacing: 16,
           children: [
             _buildSupportedChip(Icons.text_fields_rounded, 'Any Text'),
-            const SizedBox(width: 16),
             _buildSupportedChip(Icons.copy_rounded, 'Lecture Notes'),
-            const SizedBox(width: 16),
             _buildSupportedChip(Icons.article_rounded, 'Articles'),
           ],
         ),
@@ -967,40 +1183,24 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
     );
   }
 
+
+
   Widget _buildLinkInput() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        const SizedBox(height: 40),
         Container(
-          padding: const EdgeInsets.all(32),
+          width: 80,
+          height: 80,
           decoration: BoxDecoration(
             color: WebColors.primary.withOpacity(0.05),
             shape: BoxShape.circle,
-            border:
-                Border.all(color: WebColors.primary.withOpacity(0.1), width: 2),
           ),
-          child: Icon(Icons.public_rounded, size: 60, color: WebColors.primary),
-        ).animate().scale(delay: 100.ms, duration: 400.ms),
+          child: const Icon(Icons.public_rounded,
+              size: 40, color: WebColors.primary),
+        ),
         const SizedBox(height: 32),
-        Text(
-          'Knowledge from the Web',
-          style: GoogleFonts.outfit(
-            fontSize: 28,
-            fontWeight: FontWeight.w800,
-            color: WebColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'Paste any URL to summarize the page into\nflashcards and study guides.',
-          style: GoogleFonts.outfit(
-            fontSize: 18,
-            color: WebColors.textSecondary,
-            height: 1.5,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 48),
         Container(
           constraints: const BoxConstraints(maxWidth: 600),
           child: TextField(
@@ -1008,7 +1208,7 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
             textAlign: TextAlign.center,
             style: GoogleFonts.outfit(
               color: WebColors.primary,
-              fontSize: 20,
+              fontSize: 22,
               fontWeight: FontWeight.w600,
             ),
             decoration: InputDecoration(
@@ -1021,13 +1221,11 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
                   const EdgeInsets.symmetric(vertical: 24, horizontal: 32),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(20),
-                borderSide: BorderSide(
-                    color: Theme.of(context).dividerColor.withOpacity(0.5)),
+                borderSide: BorderSide(color: WebColors.border),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(20),
-                borderSide: BorderSide(
-                    color: Theme.of(context).dividerColor.withOpacity(0.5)),
+                borderSide: BorderSide(color: WebColors.border),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(20),
@@ -1036,11 +1234,12 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
               ),
             ),
             onChanged: (value) {
-              setState(() => _selectedInputType = 'link');
+              if (_selectedInputType != 'link')
+                setState(() => _selectedInputType = 'link');
             },
           ),
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 40),
         Wrap(
           spacing: 16,
           runSpacing: 16,
@@ -1051,6 +1250,7 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
             _buildSupportedChip(Icons.web_rounded, 'Web Pages'),
           ],
         ),
+        const SizedBox(height: 40),
       ],
     );
   }
@@ -1442,55 +1642,29 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
     }
   }
 
-  // ===========================================================
-  // EXAM GENERATION
-  // ===========================================================
+}
 
-  Widget _buildExamInput() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        ShaderMask(
-          shaderCallback: (bounds) =>
-              WebColors.HeroGradient.createShader(bounds),
-          child:
-              const Icon(Icons.school_rounded, size: 80, color: Colors.white),
-        ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
-        const SizedBox(height: 32),
-        Text(
-          'Tutoring Exam Lab',
-          style: GoogleFonts.outfit(
-            fontSize: 32,
-            fontWeight: FontWeight.w800,
-            color: WebColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'Upload existing exam papers to generate practice\ntests, solutions, and intelligent tutoring guides.',
-          style: GoogleFonts.outfit(
-            fontSize: 18,
-            color: WebColors.textSecondary,
-            height: 1.5,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 60),
-        OutlinedButton.icon(
-          onPressed: () => _pickFile('exam'),
-          icon: const Icon(Icons.upload_file_rounded),
-          label: const Text('Select Exam Paper'),
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            textStyle:
-                GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w700),
-          ),
-        ),
-      ],
-    );
+class GridPainter extends CustomPainter {
+  final Color color;
+  GridPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1;
+
+    const spacing = 40.0;
+    for (double i = 0; i < size.width; i += spacing) {
+      canvas.drawLine(Offset(i, 0), Offset(i, size.height), paint);
+    }
+    for (double i = 0; i < size.height; i += spacing) {
+      canvas.drawLine(Offset(0, i), Offset(size.width, i), paint);
+    }
   }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
 
 // Simple dashed border painter

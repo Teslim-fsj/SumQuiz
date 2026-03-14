@@ -13,6 +13,7 @@ class PublicDeck {
   final int startedCount;
   final int completedCount;
   final DateTime publishedAt;
+  final bool isExam;
 
   PublicDeck({
     required this.id,
@@ -27,6 +28,7 @@ class PublicDeck {
     this.startedCount = 0,
     this.completedCount = 0,
     required this.publishedAt,
+    this.isExam = false,
   });
 
   factory PublicDeck.fromFirestore(DocumentSnapshot doc) {
@@ -45,6 +47,7 @@ class PublicDeck {
       completedCount: data['completedCount'] ?? 0,
       publishedAt:
           (data['publishedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      isExam: data['isExam'] ?? false,
     );
   }
 
@@ -57,10 +60,11 @@ class PublicDeck {
       'shareCode': shareCode,
       'summary': summaryData,
       'quiz': quizData,
-      'flashcards': flashcardData, // Add shareCode here
+      'flashcards': flashcardData,
       'startedCount': startedCount,
       'completedCount': completedCount,
       'publishedAt': Timestamp.fromDate(publishedAt),
+      'isExam': isExam,
     };
   }
 }

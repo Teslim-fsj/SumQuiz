@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../models/user_model.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -14,6 +16,7 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  UserRole? _selectedRole;
 
   @override
   void dispose() {
@@ -30,11 +33,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _finishOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('hasSeenOnboarding', true);
+    if (_selectedRole != null) {
+      await prefs.setString('intended_role', _selectedRole!.name);
+    }
     if (mounted) context.go('/auth');
   }
 
   void _navigateToNextPage() {
-    if (_currentPage < 2) {
+    if (_currentPage < 3) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 600),
         curve: Curves.easeInOutCubic,
@@ -83,6 +89,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 imagePath: 'assets/images/onboarding_rocket.svg',
                 theme: theme,
               ),
+              _buildRoleSelectionPage(theme),
             ],
           ),
 
@@ -106,31 +113,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           // Dots
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(3, (index) => _buildDot(index, theme)),
+            children: List.generate(4, (index) => _buildDot(index, theme)),
           ),
           const SizedBox(height: 32),
 
           // Button
           AnimatedContainer(
             duration: 300.ms,
-            width: _currentPage == 2 ? 300 : 80, // Morph width
+            width: _currentPage == 3 ? 300 : 80, // Morph width
             height: 64,
             child: ElevatedButton(
               onPressed:
-                  _currentPage == 2 ? _finishOnboarding : _navigateToNextPage,
+                  _currentPage == 3 
+                  ? (_selectedRole != null ? _finishOnboarding : null)
+                  : _navigateToNextPage,
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.colorScheme.primary,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(32)),
                 padding: EdgeInsets.zero,
                 elevation: 8,
-                shadowColor: theme.colorScheme.primary.withOpacity(0.4),
+                shadowColor: theme.colorScheme.primary.withValues(alpha: 0.4),
               ),
               child: AnimatedSwitcher(
                 duration: 200.ms,
-                child: _currentPage == 2
+                child: _currentPage == 3
                     ? Text(
-                        'Get Started',
+                        _selectedRole == null ? 'Select your role' : 'Get Started',
                         key: const ValueKey('text'),
                         style: theme.textTheme.titleMedium?.copyWith(
                             fontSize: 18,
@@ -147,7 +156,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
 
-          if (_currentPage == 2)
+          if (_currentPage == 3)
             Padding(
               padding: const EdgeInsets.only(top: 16),
               child: TextButton(
@@ -178,6 +187,141 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ? theme.colorScheme.primary
             : theme.disabledColor.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(4),
+      ),
+    );
+  }
+
+  Widget _buildRoleSelectionPage(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'How will you use SumQuiz?',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.outfit(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface,
+              height: 1.2,
+            ),
+          ).animate().fadeIn().slideY(begin: 0.2, end: 0),
+          const SizedBox(height: 16),
+          Text(
+            'We\'ll tailor your experience based on your role.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.outfit(
+              fontSize: 16,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
+          ).animate(delay: 100.ms).fadeIn(),
+          const SizedBox(height: 48),
+          _buildRoleCard(
+            role: UserRole.student,
+            title: 'I\'m a Student',
+            subtitle: 'I want to study and master subjects.',
+            icon: Icons.school_outlined,
+            theme: theme,
+          ).animate(delay: 200.ms).fadeIn().slideX(begin: -0.2, end: 0),
+          const SizedBox(height: 20),
+          _buildRoleCard(
+            role: UserRole.creator, // Creator is the teacher role
+            title: 'I\'m a Teacher',
+            subtitle: 'I want to create exams and track students.',
+            icon: Icons.assignment_ind_outlined,
+            theme: theme,
+          ).animate(delay: 300.ms).fadeIn().slideX(begin: 0.2, end: 0),
+          const SizedBox(height: 100),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRoleCard({
+    required UserRole role,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required ThemeData theme,
+  }) {
+    bool isSelected = _selectedRole == role;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedRole = role),
+      child: AnimatedContainer(
+        duration: 300.ms,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? theme.colorScheme.primary.withValues(alpha: 0.1)
+              : theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isSelected
+                ? theme.colorScheme.primary
+                : theme.colorScheme.outline.withValues(alpha: 0.5),
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  )
+                ]
+              : [],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.surfaceContainerHighest,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: isSelected
+                    ? theme.colorScheme.onPrimary
+                    : theme.colorScheme.onSurfaceVariant,
+                size: 32,
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.outfit(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              Icon(
+                Icons.check_circle,
+                color: theme.colorScheme.primary,
+              ).animate().scale(),
+          ],
+        ),
       ),
     );
   }

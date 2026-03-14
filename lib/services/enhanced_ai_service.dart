@@ -568,6 +568,20 @@ class EnhancedAIService {
           code: 'GENERATION_FAILED', originalError: e);
     }
   }
+
+  Future<Map<String, dynamic>> verifyEssayAnswer({
+    required String question,
+    required String studentAnswer,
+    required String referenceAnswer,
+    CancellationToken? cancelToken,
+  }) async {
+    return _generatorService.verifyEssayAnswer(
+      question: question,
+      studentAnswer: studentAnswer,
+      referenceAnswer: referenceAnswer,
+      cancelToken: cancelToken,
+    );
+  }
 }
 
 extension StringExtension on String {

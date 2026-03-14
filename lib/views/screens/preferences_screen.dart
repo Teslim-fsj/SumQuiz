@@ -153,7 +153,6 @@ class PreferencesScreen extends StatelessWidget {
                     _buildGlassSection(
                       theme: theme,
                       children: [
-
                         ListTile(
                           title: Text('Request Permissions',
                               style: theme.textTheme.bodyLarge?.copyWith(

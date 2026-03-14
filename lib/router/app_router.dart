@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart'
     show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/models/editable_content.dart';
 import 'package:sumquiz/models/flashcard_set.dart';
 import 'package:sumquiz/models/local_quiz.dart';
@@ -47,6 +49,27 @@ import 'package:sumquiz/views/screens/web/extraction_view_screen_web.dart';
 import 'package:sumquiz/views/screens/public_deck_screen.dart';
 import 'package:sumquiz/views/screens/web/exam_creation_screen_web.dart';
 
+// Role-Aware view helper
+class RoleAwareView extends StatelessWidget {
+  final Widget studentView;
+  final Widget creatorView;
+
+  const RoleAwareView({
+    super.key,
+    required this.studentView,
+    required this.creatorView,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final user = Provider.of<UserModel?>(context);
+    if (user?.role == UserRole.creator) {
+      return creatorView;
+    }
+    return studentView;
+  }
+}
+
 // GoRouterRefreshStream class
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
@@ -74,6 +97,10 @@ final _createShellNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'CreateShell');
 final _progressShellNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'ProgressShell');
+final _profileShellNavigatorKey =
+    GlobalKey<NavigatorState>(debugLabel: 'ProfileShell');
+final _settingsShellNavigatorKey =
+    GlobalKey<NavigatorState>(debugLabel: 'SettingsShell');
 
 GoRouter createAppRouter(AuthService authService) {
   return GoRouter(
@@ -143,36 +170,7 @@ GoRouter createAppRouter(AuthService authService) {
         path: '/auth',
         builder: (context, state) => const AuthScreen(),
       ),
-      GoRoute(
-        path: '/settings',
-        builder: (context, state) => const SettingsScreen(),
-        routes: [
-          GoRoute(
-            path: 'preferences',
-            builder: (context, state) => const PreferencesScreen(),
-          ),
-          GoRoute(
-            path: 'data-storage',
-            builder: (context, state) => const DataStorageScreen(),
-          ),
-          GoRoute(
-            path: 'privacy-about',
-            builder: (context, state) => const PrivacyAboutScreen(),
-          ),
-          GoRoute(
-            path: 'subscription',
-            builder: (context, state) => const SubscriptionScreen(),
-          ),
-          GoRoute(
-            path: 'account-profile',
-            builder: (context, state) => const AccountProfileScreen(),
-          ),
-          GoRoute(
-            path: 'referral',
-            builder: (context, state) => const ReferralScreen(),
-          ),
-        ],
-      ),
+      // Settings and Profile moved to main application shell branches
 
       // Main application shell with bottom navigation bar
       StatefulShellRoute.indexedStack(
@@ -187,9 +185,12 @@ GoRouter createAppRouter(AuthService authService) {
               GoRoute(
                 // Home Route (Responsive)
                 path: '/',
-                builder: (context, state) => const ResponsiveView(
-                  mobile: ReviewScreen(),
-                  desktop: ReviewScreenWeb(),
+                builder: (context, state) => const RoleAwareView(
+                  studentView: ResponsiveView(
+                    mobile: ReviewScreen(),
+                    desktop: ReviewScreenWeb(),
+                  ),
+                  creatorView: const TeacherDashboardScreen(),
                 ),
                 routes: [],
               ),
@@ -202,14 +203,21 @@ GoRouter createAppRouter(AuthService authService) {
             routes: <RouteBase>[
               GoRoute(
                 path: '/library',
-                builder: (context, state) => const ResponsiveView(
-                  mobile: LibraryScreen(),
-                  desktop: LibraryScreenWeb(),
+                builder: (context, state) => const RoleAwareView(
+                  studentView: ResponsiveView(
+                    mobile: LibraryScreen(),
+                    desktop: LibraryScreenWeb(),
+                  ),
+                  creatorView: ResponsiveView(
+                    mobile: ExamCreationScreen(),
+                    desktop: ExamCreationScreenWeb(),
+                  ),
                 ),
                 routes: [
                   // Sub-routes accessible from the Library tab
                   GoRoute(
                     path: 'summary',
+                    name: 'library-summary',
                     parentNavigatorKey:
                         _rootNavigatorKey, // Show without nav bar
                     builder: (context, state) {
@@ -231,6 +239,7 @@ GoRouter createAppRouter(AuthService authService) {
                   ),
                   GoRoute(
                     path: 'quiz',
+                    name: 'library-quiz',
                     parentNavigatorKey:
                         _rootNavigatorKey, // Show without nav bar
                     builder: (context, state) {
@@ -252,6 +261,7 @@ GoRouter createAppRouter(AuthService authService) {
                   ),
                   GoRoute(
                     path: 'flashcards',
+                    name: 'library-flashcards',
                     parentNavigatorKey:
                         _rootNavigatorKey, // Show without nav bar
                     builder: (context, state) {
@@ -271,9 +281,10 @@ GoRouter createAppRouter(AuthService authService) {
                       }
                     },
                   ),
-                  GoRoute(
-                    path: 'results-view/:folderId',
-                    parentNavigatorKey: _rootNavigatorKey,
+                    GoRoute(
+                      path: 'results-view/:folderId',
+                      name: 'results-view',
+                      parentNavigatorKey: _rootNavigatorKey,
                     builder: (context, state) {
                       try {
                         final folderId = state.pathParameters['folderId'];
@@ -319,6 +330,7 @@ GoRouter createAppRouter(AuthService authService) {
                   routes: [
                     GoRoute(
                       path: 'extraction-view',
+                      name: 'extraction-view',
                       parentNavigatorKey: _rootNavigatorKey,
                       builder: (context, state) {
                         final result = ExtractionResultCache.consume();
@@ -373,11 +385,65 @@ GoRouter createAppRouter(AuthService authService) {
             routes: <RouteBase>[
               GoRoute(
                   path: '/progress',
-                  builder: (context, state) => const ResponsiveView(
-                        mobile: ProgressScreen(),
-                        desktop: ProgressScreenWeb(),
-                      ),
+                builder: (context, state) => const RoleAwareView(
+                  studentView: ResponsiveView(
+                    mobile: ProgressScreen(),
+                    desktop: ProgressScreenWeb(),
+                  ),
+                  creatorView: ResponsiveView(
+                    mobile: LibraryScreen(), // Teachers see Library as "Assets" for now
+                    desktop: LibraryScreenWeb(),
+                  ),
+                ),
                   routes: []),
+            ],
+          ),
+
+          // Branch 5: Profile
+          StatefulShellBranch(
+            navigatorKey: _profileShellNavigatorKey,
+            routes: <RouteBase>[
+              GoRoute(
+                path: '/edit_profile',
+                builder: (context, state) => const EditTeacherProfileScreen(),
+              ),
+            ],
+          ),
+
+          // Branch 6: Settings
+          StatefulShellBranch(
+            navigatorKey: _settingsShellNavigatorKey,
+            routes: <RouteBase>[
+              GoRoute(
+                path: '/settings',
+                builder: (context, state) => const SettingsScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'preferences',
+                    builder: (context, state) => const PreferencesScreen(),
+                  ),
+                  GoRoute(
+                    path: 'data-storage',
+                    builder: (context, state) => const DataStorageScreen(),
+                  ),
+                  GoRoute(
+                    path: 'privacy-about',
+                    builder: (context, state) => const PrivacyAboutScreen(),
+                  ),
+                  GoRoute(
+                    path: 'subscription',
+                    builder: (context, state) => const SubscriptionScreen(),
+                  ),
+                  GoRoute(
+                    path: 'account-profile',
+                    builder: (context, state) => const AccountProfileScreen(),
+                  ),
+                  GoRoute(
+                    path: 'referral',
+                    builder: (context, state) => const ReferralScreen(),
+                  ),
+                ],
+              ),
             ],
           ),
         ],
@@ -394,12 +460,8 @@ GoRouter createAppRouter(AuthService authService) {
         },
       ),
       GoRoute(
-        path: '/edit_profile',
-        builder: (context, state) => const EditCreatorProfileScreen(),
-      ),
-      GoRoute(
         path: '/creator_dashboard',
-        builder: (context, state) => const CreatorDashboardScreen(),
+        builder: (context, state) => const TeacherDashboardScreen(),
       ),
       GoRoute(
         path: '/exam-creation',

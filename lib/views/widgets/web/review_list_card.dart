@@ -2,38 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sumquiz/theme/web_theme.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:sumquiz/models/local_flashcard_set.dart';
 
 class ReviewListCard extends StatelessWidget {
   final int dueCount;
+  final List<LocalFlashcardSet> dueItems;
   final VoidCallback onReviewAll;
+  final Function(LocalFlashcardSet) onReviewItem;
 
   const ReviewListCard({
     super.key,
     required this.dueCount,
+    required this.dueItems,
     required this.onReviewAll,
+    required this.onReviewItem,
   });
 
   @override
   Widget build(BuildContext context) {
     if (dueCount == 0) return const SizedBox();
 
-    final List<Map<String, dynamic>> mockItems = [
-      {
-        'title': 'JavaScript Closures',
-        'subtitle': 'Overdue by 2 days',
-        'icon': Icons.priority_high_rounded,
-        'color': WebColors.success.withOpacity(0.1), // Success color instead of hardcoded red
-        'accent': WebColors.success,
-      },
-      {
-        'title': 'CSS Flexbox Advanced',
-        'subtitle': 'Review now',
-        'icon': Icons.alarm_rounded,
-        // ignore: deprecated_member_use
-        'color': WebColors.accentOrange.withOpacity(0.1), // Orange color instead of hardcoded amber
-        'accent': WebColors.accentOrange,
-      },
-    ];
+    final displayItems = dueItems.take(2).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,58 +59,62 @@ class ReviewListCard extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Row(
-          children: mockItems.map((item) {
+          children: displayItems.map((item) {
             return Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(right: 16.0),
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: WebColors.border),
-                    boxShadow: WebColors.subtleShadow,
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: item['color'],
-                          borderRadius: BorderRadius.circular(12),
+                child: GestureDetector(
+                  onTap: () => onReviewItem(item),
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: WebColors.border),
+                      boxShadow: WebColors.subtleShadow,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: WebColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(Icons.style_rounded,
+                              color: WebColors.primary),
                         ),
-                        child: Icon(item['icon'], color: item['accent']),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item['title'],
-                              style: GoogleFonts.outfit(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                                color: WebColors.textPrimary,
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.title,
+                                style: GoogleFonts.outfit(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                  color: WebColors.textPrimary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              item['subtitle'],
-                              style: GoogleFonts.outfit(
-                                fontSize: 13,
-                                color: item['accent'],
-                                fontWeight: FontWeight.w500,
+                              const SizedBox(height: 4),
+                              Text(
+                                '${item.flashcards.length} cards due',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 13,
+                                  color: WebColors.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      Icon(Icons.chevron_right_rounded,
-                          color: WebColors.textTertiary),
-                    ],
+                        Icon(Icons.chevron_right_rounded,
+                            color: WebColors.textTertiary),
+                      ],
+                    ),
                   ),
                 ),
               ),

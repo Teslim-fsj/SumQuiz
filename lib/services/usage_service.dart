@@ -8,7 +8,7 @@ import 'package:sumquiz/services/local_database_service.dart';
 
 class UsageConfig {
   static const int freeDecksPerDay = 2; // Text/General daily limit
-  static const int freeUploadsLifetime = 1; // Lifetime upload limit for files
+  static const int freeUploadsLifetime = 3; // Lifetime upload limit for files
   static const int trialDecksPerDay = 3;
   static const int proDecksPerDay = 100;
 }

@@ -136,18 +136,38 @@ class AuthService {
         // Check and reset weekly uploads if needed
         await _userService.checkAndResetWeeklyUploads(user.uid);
 
-        // Use the SyncProvider to trigger the sync
-        await Provider.of<SyncProvider>(context, listen: false).syncData();
+        if (context.mounted) {
+          await Provider.of<SyncProvider>(context, listen: false).syncData();
+        }
 
-        final isNewUser = result.additionalUserInfo?.isNewUser ?? false;
-        if (isNewUser) {
+        // Check if user document exists in Firestore
+        final userDoc = await _firestoreService.db.collection('users').doc(user.uid).get();
+        final bool isNewToFirestore = !userDoc.exists;
+
+        if (isNewToFirestore) {
+          developer.log('New Firestore user signed in with Google: ${user.uid}');
           developer.log('New user signed in with Google: ${user.uid}');
+          final prefs = await SharedPreferences.getInstance();
+          final intendedRoleName = prefs.getString('intended_role');
+          UserRole role = UserRole.student;
+          if (intendedRoleName != null) {
+            role = UserRole.values.firstWhere(
+              (e) => e.name == intendedRoleName,
+              orElse: () => UserRole.student,
+            );
+            await prefs.remove('intended_role'); // Clean up
+          }
+
           UserModel newUser = UserModel(
             uid: user.uid,
             displayName: user.displayName ?? '',
             email: user.email ?? '',
+            role: role,
+            isTrial: true,
+            subscriptionExpiry: DateTime.now().add(const Duration(days: 3)),
           );
           await _firestoreService.saveUserData(newUser);
+          developer.log('Trial granted and user profile created for ${user.uid}');
 
           if (referralCode != null && referralCode.isNotEmpty) {
             try {
@@ -173,10 +193,9 @@ class AuthService {
           }
 
           // 🎭 Flag for role-selection onboarding dialog
-          final prefs = await SharedPreferences.getInstance();
           await prefs.setBool('is_new_user', true);
         } else {
-          developer.log('Existing user signed in with Google: ${user.uid}');
+          developer.log('Existing Firestore user signed in with Google: ${user.uid}');
         }
       }
     } on FirebaseAuthException catch (e, s) {
@@ -236,8 +255,9 @@ class AuthService {
       // Save authentication state for offline access
       if (result.user != null) {
         await _saveAuthState(result.user!);
-        // Use the SyncProvider to trigger the sync
-        await Provider.of<SyncProvider>(context, listen: false).syncData();
+        if (context.mounted) {
+          await Provider.of<SyncProvider>(context, listen: false).syncData();
+        }
       }
     } on FirebaseAuthException catch (e, s) {
       developer.log('Error signing in with email', error: e, stackTrace: s);
@@ -272,11 +292,24 @@ class AuthService {
         await user.updateDisplayName(fullName);
 
         // 3. Create User Document in Firestore
+        final prefs = await SharedPreferences.getInstance();
+        final intendedRoleName = prefs.getString('intended_role');
+        UserRole role = UserRole.student;
+        if (intendedRoleName != null) {
+          role = UserRole.values.firstWhere(
+            (e) => e.name == intendedRoleName,
+            orElse: () => UserRole.student,
+          );
+          await prefs.remove('intended_role'); // Clean up
+        }
+
         UserModel newUser = UserModel(
           uid: user.uid,
           displayName: fullName,
           email: email,
-          // Initialize other fields as needed
+          role: role,
+          isTrial: true,
+          subscriptionExpiry: DateTime.now().add(const Duration(days: 3)),
         );
         await _firestoreService.saveUserData(newUser);
 
@@ -319,7 +352,6 @@ class AuthService {
         }
 
         // 🎭 Flag for role-selection onboarding dialog
-        final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('is_new_user', true);
       }
     } on FirebaseAuthException catch (e, s) {

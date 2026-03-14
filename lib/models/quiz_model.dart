@@ -9,12 +9,15 @@ class Quiz {
   final List<QuizQuestion> questions;
   final Timestamp timestamp;
 
+  final bool isExam;
+
   Quiz({
     String? id,
     required this.userId,
     required this.title,
     required this.questions,
     Timestamp? timestamp,
+    this.isExam = false,
   })  : id = id ?? const Uuid().v4(),
         timestamp = timestamp ?? Timestamp.now();
 
@@ -24,6 +27,7 @@ class Quiz {
     String? title,
     List<QuizQuestion>? questions,
     Timestamp? timestamp,
+    bool? isExam,
   }) {
     return Quiz(
       id: id ?? this.id,
@@ -31,6 +35,7 @@ class Quiz {
       title: title ?? this.title,
       questions: questions ?? this.questions,
       timestamp: timestamp ?? this.timestamp,
+      isExam: isExam ?? this.isExam,
     );
   }
 
@@ -44,6 +49,7 @@ class Quiz {
           .map((q) => QuizQuestion.fromMap(q))
           .toList(),
       timestamp: data['timestamp'] ?? Timestamp.now(),
+      isExam: data['isExam'] ?? false,
     );
   }
 
@@ -54,6 +60,7 @@ class Quiz {
       questions: (map['questions'] as List<dynamic>? ?? [])
           .map((q) => QuizQuestion.fromMap(q))
           .toList(),
+      isExam: map['isExam'] ?? false,
     );
   }
 
@@ -63,6 +70,7 @@ class Quiz {
       'title': title,
       'questions': questions.map((q) => q.toFirestore()).toList(),
       'timestamp': timestamp,
+      'isExam': isExam,
     };
   }
 }

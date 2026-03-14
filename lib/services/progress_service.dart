@@ -176,4 +176,14 @@ class ProgressService {
     return List.generate(
         7, (index) => FlSpot(index.toDouble(), activity[index]));
   }
+
+  Future<void> logAccuracy(String userId, double accuracy) async {
+    try {
+      await _db.collection('users').doc(userId).update({
+        'itemsCompletedToday': FieldValue.increment(1),
+      });
+    } catch (e) {
+      debugPrint('Error logging accuracy: $e');
+    }
+  }
 }

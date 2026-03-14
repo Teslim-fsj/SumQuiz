@@ -12,8 +12,8 @@ class FocusTimerCard extends StatefulWidget {
 }
 
 class _FocusTimerCardState extends State<FocusTimerCard> {
-  static const int _defaultTime = 25 * 60; // 25 minutes
-  int _secondsRemaining = _defaultTime;
+  int _secondsRemaining = 25 * 60;
+  int _currentGoalSeconds = 25 * 60;
   Timer? _timer;
   bool _isRunning = false;
 
@@ -36,7 +36,9 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
         });
       } else {
         _stopTimer();
-        // Play sound or notification logic here ideally
+        if (mounted) {
+          _showCompletion();
+        }
       }
     });
   }
@@ -51,11 +53,87 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
   void _resetTimer() {
     _stopTimer();
     setState(() {
-      _secondsRemaining = _defaultTime;
+      _secondsRemaining = _currentGoalSeconds;
     });
   }
 
-  // Split logic for design "25 : 00"
+  void _showCompletion() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Focus Session Complete!',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        content: Text('Great job staying focused! Take a short break.',
+            style: GoogleFonts.outfit()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Dismiss'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSettings() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        int selectedMinutes = (_currentGoalSeconds / 60).round();
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text('Timer Settings',
+                  style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Set your focus duration:', style: GoogleFonts.outfit()),
+                  const SizedBox(height: 20),
+                  Slider(
+                    value: selectedMinutes.toDouble(),
+                    min: 5,
+                    max: 60,
+                    divisions: 11,
+                    activeColor: WebColors.accent,
+                    label: '$selectedMinutes min',
+                    onChanged: (val) {
+                      setDialogState(() => selectedMinutes = val.round());
+                    },
+                  ),
+                  Text('$selectedMinutes minutes',
+                      style: GoogleFonts.outfit(
+                          fontWeight: FontWeight.w600,
+                          color: WebColors.accent)),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _currentGoalSeconds = selectedMinutes * 60;
+                      _secondsRemaining = _currentGoalSeconds;
+                      _stopTimer();
+                    });
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: WebColors.accent,
+                      foregroundColor: Colors.white),
+                  child: const Text('Apply'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   String get _minutesStr =>
       (_secondsRemaining / 60).floor().toString().padLeft(2, '0');
   String get _secondsStr => (_secondsRemaining % 60).toString().padLeft(2, '0');
@@ -69,14 +147,14 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 250, // Fixed height to match design proportions roughly
+      height: 250,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         gradient: LinearGradient(
           colors: [
-            WebColors.accent, // Violet
-            WebColors.primary, // Primary indigo
+            WebColors.accent,
+            WebColors.primary,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -126,8 +204,8 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8.0, vertical: 10.0), // Optical alignment
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
                 child: Text(
                   ':',
                   style: GoogleFonts.outfit(
@@ -180,9 +258,7 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: IconButton(
-                  onPressed: () {
-                    // Settings logic placeholder
-                  },
+                  onPressed: _showSettings,
                   icon: const Icon(Icons.settings, color: Colors.white),
                   style: IconButton.styleFrom(
                     padding: const EdgeInsets.all(12),

@@ -6,12 +6,14 @@ class FlashcardSet {
   final String title;
   final List<Flashcard> flashcards;
   final Timestamp timestamp;
+  final String userId;
 
   FlashcardSet({
     this.id = '', // Make the ID optional with a default value
     required this.title,
     required this.flashcards,
     required this.timestamp,
+    this.userId = '',
   });
 
   FlashcardSet copyWith({
@@ -19,12 +21,14 @@ class FlashcardSet {
     String? title,
     List<Flashcard>? flashcards,
     Timestamp? timestamp,
+    String? userId,
   }) {
     return FlashcardSet(
       id: id ?? this.id,
       title: title ?? this.title,
       flashcards: flashcards ?? this.flashcards,
       timestamp: timestamp ?? this.timestamp,
+      userId: userId ?? this.userId,
     );
   }
 
@@ -37,6 +41,7 @@ class FlashcardSet {
           .map((flashcard) => Flashcard.fromMap(flashcard))
           .toList(),
       timestamp: data['timestamp'] ?? Timestamp.now(),
+      userId: data['userId'] ?? '',
     );
   }
 
@@ -46,6 +51,7 @@ class FlashcardSet {
       'flashcards':
           flashcards.map((flashcard) => flashcard.toFirestore()).toList(),
       'timestamp': timestamp,
+      'userId': userId,
     };
   }
 }

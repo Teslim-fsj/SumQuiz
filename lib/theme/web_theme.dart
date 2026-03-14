@@ -53,6 +53,12 @@ class WebColors {
     end: Alignment.bottomRight,
   );
 
+  static const LinearGradient PremiumGradient = LinearGradient(
+    colors: [Color(0xFFFACC15), Color(0xFFEAB308), Color(0xFFCA8A04)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
   static const LinearGradient SurfaceGradient = LinearGradient(
     colors: [Color(0xFFFFFFFF), Color(0xFFF9FAFB)],
     begin: Alignment.topCenter,

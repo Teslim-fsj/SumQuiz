@@ -6,15 +6,17 @@ import 'package:intl/intl.dart';
 import 'package:sumquiz/models/public_deck.dart';
 import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/services/firestore_service.dart';
+import 'package:sumquiz/theme/web_theme.dart';
+// Removed unnecessary import 'dart:ui'
 
-class CreatorDashboardScreen extends StatefulWidget {
-  const CreatorDashboardScreen({super.key});
+class TeacherDashboardScreen extends StatefulWidget {
+  const TeacherDashboardScreen({super.key});
 
   @override
-  State<CreatorDashboardScreen> createState() => _CreatorDashboardScreenState();
+  State<TeacherDashboardScreen> createState() => _TeacherDashboardScreenState();
 }
 
-class _CreatorDashboardScreenState extends State<CreatorDashboardScreen> {
+class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   bool _isLoading = true;
   List<PublicDeck> _decks = [];
 
@@ -40,45 +42,93 @@ class _CreatorDashboardScreenState extends State<CreatorDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     final user = context.watch<UserModel?>();
     final isPro = user?.isPro ?? false;
 
     return Scaffold(
+      backgroundColor: WebColors.background,
       appBar: AppBar(
-        title: const Text('Creator Dashboard'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          'Teacher Dashboard',
+          style: theme.textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: WebColors.textPrimary,
+          ),
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: isPro
-                ? () {
-                    setState(() => _isLoading = true);
-                    _loadDecks();
-                  }
-                : null,
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            decoration: BoxDecoration(
+              color: WebColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: WebColors.border),
+            ),
+            child: IconButton(
+              icon: Icon(Icons.refresh, color: WebColors.primary),
+              onPressed: isPro
+                  ? () {
+                      setState(() => _isLoading = true);
+                      _loadDecks();
+                    }
+                  : null,
+            ),
           )
         ],
       ),
       body: !isPro
           ? _buildProTeaser(theme)
           : _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(child: CircularProgressIndicator(color: WebColors.primary))
               : _decks.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.dashboard_outlined,
-                              size: 64, color: theme.disabledColor),
-                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: WebColors.primary.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.dashboard_outlined,
+                                size: 64, color: WebColors.primary),
+                          ).animate().scale(duration: 400.ms),
+                          const SizedBox(height: 24),
                           Text('No published decks yet.',
-                              style: theme.textTheme.titleLarge
-                                  ?.copyWith(color: theme.disabledColor)),
-                          const SizedBox(height: 8),
-                          ElevatedButton(
-                            onPressed: () => context.go('/library'),
-                            child: const Text('Go to Library to Publish'),
-                          )
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                color: WebColors.textPrimary,
+                                fontWeight: FontWeight.bold,
+                              )).animate().fadeIn(delay: 100.ms),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Share your knowledge by publishing a deck to the library.',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: WebColors.textSecondary,
+                            ),
+                          ).animate().fadeIn(delay: 200.ms),
+                          const SizedBox(height: 32),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ElevatedButton.icon(
+                                onPressed: () => context.go('/library'),
+                                icon: const Icon(Icons.library_books),
+                                label: const Text('Visit Library'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: WebColors.primary,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              ElevatedButton.icon(
+                                onPressed: () => context.go('/library'), // This route now maps to ExamCreation for teachers
+                                icon: const Icon(Icons.school_rounded),
+                                label: const Text('Create Your First Exam'),
+                              ),
+                            ],
+                          ).animate().fadeIn(delay: 300.ms)
                         ],
                       ),
                     )
@@ -89,85 +139,117 @@ class _CreatorDashboardScreenState extends State<CreatorDashboardScreen> {
                         itemCount: _decks.length,
                         itemBuilder: (context, index) {
                           final deck = _decks[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 16),
-                            clipBehavior: Clip.antiAlias,
-                            elevation: 2,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                side: BorderSide(
-                                    color: theme.dividerColor
-                                        .withValues(alpha: 0.1))),
-                            child: InkWell(
-                              onTap: () {
-                                // Future: Open detail view or analytics
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+                            decoration: BoxDecoration(
+                              color: WebColors.surface,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(color: WebColors.border),
+                              boxShadow: WebColors.cardShadow,
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(24),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () {
+                                    // Future: Open detail view or analytics
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(24),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Expanded(
-                                          child: Text(
-                                            deck.title,
-                                            style: theme.textTheme.titleMedium
-                                                ?.copyWith(
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                          ),
-                                        ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: theme
-                                                .colorScheme.primaryContainer,
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          child: Text(
-                                            deck.shareCode,
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: theme.colorScheme
-                                                  .onPrimaryContainer,
-                                              letterSpacing: 1.2,
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(12),
+                                              decoration: BoxDecoration(
+                                                color: WebColors.primary.withValues(alpha: 0.1),
+                                                borderRadius: BorderRadius.circular(16),
+                                              ),
+                                              child: Icon(Icons.auto_awesome_mosaic, color: WebColors.primary),
                                             ),
-                                          ),
+                                            const SizedBox(width: 16),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    deck.title,
+                                                    style: theme.textTheme.titleLarge?.copyWith(
+                                                      fontWeight: FontWeight.w800,
+                                                      color: WebColors.textPrimary,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    'Published on ${DateFormat.yMMMd().format(deck.publishedAt)}',
+                                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                                      color: WebColors.textSecondary,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                  horizontal: 16, vertical: 8),
+                                              decoration: BoxDecoration(
+                                                color: WebColors.backgroundAlt,
+                                                borderRadius: BorderRadius.circular(12),
+                                                border: Border.all(color: WebColors.border),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(Icons.share, size: 16, color: WebColors.textSecondary),
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    deck.shareCode,
+                                                    style: const TextStyle(
+                                                      fontWeight: FontWeight.w800,
+                                                      color: WebColors.primary,
+                                                      letterSpacing: 1.5,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 24),
+                                        const Divider(color: WebColors.border),
+                                        const SizedBox(height: 24),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            _buildMetric(
+                                              context,
+                                              Icons.play_circle_outline,
+                                              'Started',
+                                              deck.startedCount.toString(),
+                                              WebColors.blueInfo,
+                                            ),
+                                            _buildMetric(
+                                              context,
+                                              Icons.check_circle_outline,
+                                              'Completed',
+                                              deck.completedCount.toString(),
+                                              WebColors.success,
+                                            ),
+                                            _buildMetric(
+                                              context,
+                                              Icons.star_outline,
+                                              'Rating',
+                                              '4.8', // Mock data for premium feel
+                                              WebColors.accent,
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Published on ${DateFormat.yMMMd().format(deck.publishedAt)}',
-                                      style: theme.textTheme.bodySmall
-                                          ?.copyWith(
-                                              color: theme.disabledColor),
-                                    ),
-                                    const Divider(height: 24),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceAround,
-                                      children: [
-                                        _buildMetric(
-                                          context,
-                                          Icons.play_circle_outline,
-                                          'Started',
-                                          deck.startedCount.toString(),
-                                          Colors.blue,
-                                        ),
-                                        _buildMetric(
-                                          context,
-                                          Icons.check_circle_outline,
-                                          'Completed',
-                                          deck.completedCount.toString(),
-                                          Colors.green,
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -235,27 +317,43 @@ class _CreatorDashboardScreenState extends State<CreatorDashboardScreen> {
     ).animate().fadeIn().scale(delay: 200.ms);
   }
 
-  Widget _buildMetric(BuildContext context, IconData icon, String label,
-      String value, Color color) {
-    final theme = Theme.of(context);
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 28),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: color,
+  Widget _buildMetric(BuildContext context, IconData icon, String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: color, size: 24),
+              const SizedBox(width: 12),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  color: WebColors.textPrimary,
+                ),
+              ),
+            ],
           ),
-        ),
-        Text(
-          label,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.disabledColor,
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: WebColors.textSecondary,
+              letterSpacing: 1.0,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

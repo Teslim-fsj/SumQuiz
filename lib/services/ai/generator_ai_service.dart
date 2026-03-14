@@ -163,6 +163,7 @@ Text: $text''';
               options: options,
               correctAnswer: q['correctAnswer']?.toString() ?? '',
               explanation: q['explanation']?.toString(),
+              questionType: 'Multiple Choice',
             ));
           }
         }
@@ -447,7 +448,7 @@ Text: $text''';
     2. Ensure questions align with the academic standard for $level.
     3. Multiple Choice must have EXACTLY 4 options.
     4. True/False must have EXACTLY 2 options (True, False).
-    5. Theory/Short Answer should provide marking guidance in "correctAnswer".
+    5. Theory (Short Answer/Essay) should provide marking guidance in "correctAnswer".
     6. Maintain high academic rigor.
 
     Source: $text''';
@@ -479,6 +480,7 @@ Text: $text''';
             options: options,
             correctAnswer: q['correctAnswer']?.toString() ?? '',
             explanation: q['explanation']?.toString(),
+            questionType: q['type']?.toString(),
           ));
         }
       }
@@ -491,5 +493,62 @@ Text: $text''';
       questions: questions,
       timestamp: DateTime.now(),
     );
+  }
+
+  // --- VERIFICATION API ---
+
+  Future<Map<String, dynamic>> verifyEssayAnswer({
+    required String question,
+    required String studentAnswer,
+    required String referenceAnswer,
+    CancellationToken? cancelToken,
+  }) async {
+    developer.log('Verifying essay answer for question: $question',
+        name: 'GeneratorAIService');
+
+    final config = GenerationConfig(
+      responseMimeType: 'application/json',
+      responseSchema: Schema.object(
+        properties: {
+          'score': Schema.integer(description: 'Score from 0 to 100'),
+          'feedback': Schema.string(description: 'Detailed tutoring feedback'),
+          'isCorrect': Schema.boolean(
+              description: 'Whether the answer is fundamentally correct'),
+        },
+        requiredProperties: ['score', 'feedback', 'isCorrect'],
+      ),
+    );
+
+    final prompt = '''As an AI Tutor, verify the student's answer to this study question.
+    
+    QUESTION: $question
+    REFERENCE ANSWER / KEY POINTS: $referenceAnswer
+    STUDENT'S ANSWER: $studentAnswer
+    
+    TASK:
+    - Compare the student's answer with the reference answer.
+    - Provide a score from 0-100%.
+    - Provide constructive feedback (what was good, what was missing).
+    - Be encouraging but maintain academic standards.
+    - Set isCorrect to true if the score is 40% or higher.
+    ''';
+
+    try {
+      final response = await generateWithRetry(prompt,
+          customModel: educatorModel,
+          generationConfig: config,
+          cancelToken: cancelToken);
+
+      final jsonStr = extractJson(response);
+      return safeJsonDecode(jsonStr);
+    } catch (e, stack) {
+      developer.log('Essay verification failed',
+          name: 'GeneratorAIService', error: e, stackTrace: stack);
+      return {
+        'score': 0,
+        'feedback': 'Error during AI verification: $e',
+        'isCorrect': false,
+      };
+    }
   }
 }
