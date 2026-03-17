@@ -78,11 +78,11 @@ class ReviewListCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: WebColors.primary.withValues(alpha: 0.1),
+                            color: WebColors.pinkAccent.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Icon(Icons.style_rounded,
-                              color: WebColors.primary),
+                          child: const Icon(Icons.style_rounded,
+                              color: WebColors.pinkAccent),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -100,14 +100,14 @@ class ReviewListCard extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 4),
-                              Text(
-                                '${item.flashcards.length} cards due',
-                                style: GoogleFonts.outfit(
-                                  fontSize: 13,
-                                  color: WebColors.primary,
-                                  fontWeight: FontWeight.w500,
+                                Text(
+                                  '${item.flashcards.length} cards due',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 13,
+                                    color: WebColors.pinkAccent,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
-                              ),
                             ],
                           ),
                         ),

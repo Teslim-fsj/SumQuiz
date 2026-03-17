@@ -17,8 +17,12 @@ import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:sumquiz/models/local_flashcard_set.dart';
+import 'package:sumquiz/models/local_summary.dart';
+import 'package:sumquiz/models/local_quiz.dart';
+import 'package:sumquiz/models/local_flashcard.dart';
 import 'package:sumquiz/models/flashcard_set.dart';
 import 'package:sumquiz/models/flashcard.dart';
+import 'package:sumquiz/services/auth_service.dart';
 import 'package:sumquiz/views/widgets/enter_code_dialog.dart';
 
 class LibraryScreenWeb extends StatefulWidget {
@@ -228,7 +232,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
                               ? Theme.of(context)
                                   .colorScheme
                                   .primary
-                                  .withAlpha(26)
+                                  .withValues(alpha: 0.1)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -318,7 +322,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
         color: isSelected
-            ? Theme.of(context).colorScheme.primary.withAlpha(26)
+            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
       ),
@@ -475,8 +479,10 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
               icon: const Icon(Icons.qr_code_scanner, size: 18),
               label: const Text('Import'),
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    Theme.of(context).colorScheme.primary.withAlpha(26),
+                backgroundColor: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.1),
                 foregroundColor: Theme.of(context).colorScheme.primary,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -703,16 +709,16 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
       switch (item.type) {
         case LibraryItemType.summary:
           icon = Icons.article_outlined;
-          bgColor = Theme.of(context).colorScheme.primary.withAlpha(26);
-          textColor = Theme.of(context).colorScheme.primary;
+          bgColor = WebColors.secondary.withValues(alpha: 0.1);
+          textColor = WebColors.secondary;
           typeName = 'SUMMARY';
           badge =
               item.description != null ? 'Details available' : 'No description';
           break;
         case LibraryItemType.quiz:
           icon = Icons.quiz_outlined;
-          bgColor = Colors.green.withAlpha(26);
-          textColor = Colors.green;
+          bgColor = WebColors.accentOrange.withValues(alpha: 0.1);
+          textColor = WebColors.accentOrange;
           typeName = 'QUIZ';
           badge = item.score != null
               ? 'Score: ${(item.score! * 100).round()}%'
@@ -720,15 +726,15 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
           break;
         case LibraryItemType.flashcards:
           icon = Icons.style_outlined;
-          bgColor = Colors.orange.withAlpha(26);
-          textColor = Colors.orange;
+          bgColor = WebColors.pinkAccent.withValues(alpha: 0.1);
+          textColor = WebColors.pinkAccent;
           typeName = 'FLASHCARDS';
           badge = '${item.itemCount ?? 0} Cards';
           break;
         case LibraryItemType.exam:
           icon = Icons.assignment_outlined;
-          bgColor = Colors.purple.withAlpha(26);
-          textColor = Colors.purple;
+          bgColor = WebColors.purplePrimary.withValues(alpha: 0.1);
+          textColor = WebColors.purplePrimary;
           typeName = 'EXAM';
           badge = item.score != null
               ? 'Score: ${(item.score! * 100).round()}%'
@@ -838,7 +844,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: card.textColor.withAlpha(26),
+                                color: card.textColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(card.icon,
@@ -868,7 +874,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
-                                color: card.textColor.withAlpha(26),
+                                color: card.textColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
@@ -981,6 +987,79 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
         case LibraryItemType.exam:
           contentData = await viewModel.localDb.getQuiz(item.id);
           break;
+      }
+
+      if (contentData == null) {
+        // Fallback to Firestore for Web
+        final userId = context.read<AuthService>().currentUser?.uid;
+        if (userId != null) {
+          final firestoreService = FirestoreService();
+          try {
+            switch (item.type) {
+              case LibraryItemType.summary:
+                final fsDoc =
+                    await firestoreService.getSummary(userId, item.id);
+                if (fsDoc != null) {
+                  contentData = LocalSummary(
+                    id: fsDoc.id,
+                    title: fsDoc.title,
+                    content: fsDoc.content,
+                    timestamp: fsDoc.timestamp.toDate(),
+                    userId: userId,
+                  );
+                }
+                break;
+              case LibraryItemType.quiz:
+              case LibraryItemType.exam:
+                final fsDoc = await firestoreService.getQuiz(userId, item.id);
+                if (fsDoc != null) {
+                  contentData = LocalQuiz(
+                    id: fsDoc.id,
+                    title: fsDoc.title,
+                    timestamp: fsDoc.timestamp.toDate(),
+                    userId: userId,
+                    questions: fsDoc.questions
+                        .map((q) => q.toLocalQuizQuestion())
+                        .toList(),
+                  );
+                }
+                break;
+              case LibraryItemType.flashcards:
+                final fsDoc =
+                    await firestoreService.getFlashcardSet(userId, item.id);
+                if (fsDoc != null) {
+                  contentData = LocalFlashcardSet(
+                    id: fsDoc.id,
+                    title: fsDoc.title,
+                    timestamp: fsDoc.timestamp.toDate(),
+                    userId: userId,
+                    flashcards: fsDoc.flashcards
+                        .map((f) => LocalFlashcard(
+                              question: f.question,
+                              answer: f.answer,
+                            ))
+                        .toList(),
+                  );
+                }
+                break;
+            }
+          } catch (e) {
+            debugPrint('Firestore fallback error: $e');
+          }
+        }
+      }
+      if (!mounted) return;
+
+      if (contentData == null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Content not found. Please try again later.'),
+              backgroundColor: WebColors.error,
+            ),
+          );
+        }
+        return;
       }
 
       if (!mounted) return;

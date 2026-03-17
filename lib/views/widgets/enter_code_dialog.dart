@@ -25,10 +25,10 @@ class _EnterCodeDialogState extends State<EnterCodeDialog> {
   String? _extractCodeFromLink(String data) {
     if (data.length == 6) return data.toUpperCase();
 
-    // Handle sumquiz.app/s/CODE or https://sumquiz.app/s/CODE
+    // Handle sumquiz.xyz/s/CODE or https://sumquiz.xyz/s/CODE
     final uri = Uri.tryParse(data);
     if (uri != null &&
-        (uri.host == 'sumquiz.app' || data.contains('sumquiz.app/s/'))) {
+        (uri.host == 'sumquiz.xyz' || data.contains('sumquiz.xyz/s/'))) {
       final pathSegments = uri.pathSegments;
       if (pathSegments.length >= 2 &&
           pathSegments[pathSegments.length - 2] == 's') {

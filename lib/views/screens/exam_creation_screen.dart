@@ -1443,9 +1443,11 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
                 ],
               ),
             )
-          : Padding(
+          : SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(16.0),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -1812,7 +1814,7 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
                                         fontSize: 9,
                                         fontWeight: pw.FontWeight.bold)),
                                 pw.SizedBox(height: 4),
-                                pw.Text('sumquiz.app/s/$shareCode',
+                                pw.Text('sumquiz.xyz/s/$shareCode',
                                     style: const pw.TextStyle(
                                         fontSize: 10,
                                         color: PdfColors.blue800)),
@@ -1823,7 +1825,7 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
                                   child: pw.BarcodeWidget(
                                     color: PdfColors.black,
                                     barcode: pw.Barcode.qrCode(),
-                                    data: "https://sumquiz.app/s/$shareCode",
+                                    data: "https://sumquiz.xyz/s/$shareCode",
                                   ),
                                 ),
                               ]))

@@ -288,7 +288,7 @@ class SummaryScreenState extends State<SummaryScreen> {
 
       if (!mounted) return;
 
-      final shareUrl = 'https://sumquiz.app/deck?id=$deckId';
+      final shareUrl = 'https://sumquiz.xyz/deck?id=$deckId';
 
       showDialog(
           context: context,
@@ -379,7 +379,7 @@ class SummaryScreenState extends State<SummaryScreen> {
         title: Text(widget.summary == null ? 'Generate Summary' : 'Summary',
             style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface)),
+                color: const Color(0xFF0D9488))),
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         leading: BackButton(color: theme.colorScheme.onSurface),
@@ -428,7 +428,7 @@ class SummaryScreenState extends State<SummaryScreen> {
             child: CircularProgressIndicator(
               strokeWidth: 4,
               valueColor:
-                  AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                  AlwaysStoppedAnimation<Color>(const Color(0xFF0D9488)),
             ),
           ),
           const SizedBox(height: 24),
@@ -484,7 +484,7 @@ class SummaryScreenState extends State<SummaryScreen> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide:
-                        BorderSide(color: theme.colorScheme.primary, width: 2),
+                        const BorderSide(color: Color(0xFF0D9488), width: 2),
                   ),
                   contentPadding: const EdgeInsets.all(24),
                 ),
@@ -498,14 +498,14 @@ class SummaryScreenState extends State<SummaryScreen> {
                       icon: Icon(
                         Icons.upload_file_rounded,
                         color: _pdfFileName != null
-                            ? theme.colorScheme.primary
+                            ? const Color(0xFF0D9488)
                             : theme.colorScheme.onSurface.withOpacity(0.6),
                       ),
                       label: Text(
                         _pdfFileName ?? 'Upload PDF',
                         style: TextStyle(
                             color: _pdfFileName != null
-                                ? theme.colorScheme.primary
+                                ? const Color(0xFF0D9488)
                                 : theme.colorScheme.onSurface),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -513,7 +513,7 @@ class SummaryScreenState extends State<SummaryScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 20),
                         side: BorderSide(
                             color: _pdfFileName != null
-                                ? theme.colorScheme.primary
+                                ? const Color(0xFF0D9488)
                                 : theme.dividerColor,
                             width: _pdfFileName != null ? 2 : 1),
                         shape: RoundedRectangleBorder(
@@ -541,8 +541,8 @@ class SummaryScreenState extends State<SummaryScreen> {
                       style:
                           TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: theme.colorScheme.onPrimary,
+                    backgroundColor: const Color(0xFF0D9488),
+                    foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
@@ -703,8 +703,8 @@ class SummaryScreenState extends State<SummaryScreen> {
                             : const Icon(Icons.quiz_rounded, size: 18),
                         label: const Text('Generate Quiz'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: theme.colorScheme.primary,
-                          foregroundColor: theme.colorScheme.onPrimary,
+                          backgroundColor: const Color(0xFF0D9488),
+                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           elevation: 0,
                           shape: RoundedRectangleBorder(
@@ -769,7 +769,7 @@ class SummaryScreenState extends State<SummaryScreen> {
                       fontSize: 16,
                     ),
                     listBullet: theme.textTheme.bodyLarge?.copyWith(
-                      color: theme.colorScheme.primary,
+                      color: const Color(0xFF0D9488),
                     ),
                   ),
                 ).animate().fadeIn(delay: 300.ms),

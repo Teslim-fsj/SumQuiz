@@ -1,5 +1,4 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
-import 'dart:io';
 
 void main() async {
   const String apiKey = 'AIzaSyDWEUCZ9lfq7yspgl6fMt84jIUOAN9mItI';

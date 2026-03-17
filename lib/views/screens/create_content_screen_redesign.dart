@@ -93,7 +93,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
 
   // Topic-based learning state
   String _topicDepth = 'intermediate';
-  double _topicCardCount = 15;
+  final double _topicCardCount = 15;
 
   final ImagePicker _imagePicker = ImagePicker();
   String _selectedImportMethod = '';
@@ -1012,15 +1012,19 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                   HapticFeedback.lightImpact();
                   final String methodId = method['id'];
                   if (methodId == 'exam') {
-                    if (!_checkProAccess('Tutoring Lab', actionType: 'upload'))
+                    if (!_checkProAccess('Tutoring Lab',
+                        actionType: 'upload')) {
                       return;
+                    }
                     _resetInputs();
                     context.push('/exam-creation');
                     return;
                   }
                   if (methodId != 'text' && methodId != 'topic') {
-                    if (!_checkProAccess(method['label'], actionType: 'upload'))
+                    if (!_checkProAccess(method['label'],
+                        actionType: 'upload')) {
                       return;
+                    }
                   }
                   setState(() => _selectedImportMethod = methodId);
                 },
@@ -1078,8 +1082,9 @@ class _CreateContentScreenState extends State<CreateContentScreen>
   }
 
   Widget _buildBottomAction() {
-    if (_selectedImportMethod.isEmpty && _topicController.text.isEmpty)
+    if (_selectedImportMethod.isEmpty && _topicController.text.isEmpty) {
       return const SizedBox.shrink();
+    }
 
     return Positioned(
       bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? 10 : 32,
@@ -1164,8 +1169,8 @@ class _CreateContentScreenState extends State<CreateContentScreen>
             decoration: InputDecoration(
               hintText:
                   'Paste your lecture notes, documents, or insights here...',
-              hintStyle:
-                  TextStyle(color: Colors.white.withValues(alpha: 0.2), fontSize: 15),
+              hintStyle: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.2), fontSize: 15),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.all(16),
             ),
@@ -1208,7 +1213,8 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                     fontSize: 20),
                 decoration: InputDecoration(
                   hintText: 'Search any topic...',
-                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.2)),
+                  hintStyle:
+                      TextStyle(color: Colors.white.withValues(alpha: 0.2)),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.all(16),
                 ),
@@ -1284,7 +1290,8 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                     Text(
                       'Maximum size: 15MB',
                       style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.4), fontSize: 12),
+                          color: Colors.white.withValues(alpha: 0.4),
+                          fontSize: 12),
                     ),
                 ],
               ),
@@ -1307,7 +1314,9 @@ class _CreateContentScreenState extends State<CreateContentScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.06),
+            color: isSelected
+                ? Colors.white
+                : Colors.white.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(100),
             border: Border.all(
                 color: Colors.white.withValues(alpha: isSelected ? 1 : 0.1)),
@@ -1318,8 +1327,9 @@ class _CreateContentScreenState extends State<CreateContentScreen>
               style: GoogleFonts.outfit(
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
-                color:
-                    isSelected ? Colors.black : Colors.white.withValues(alpha: 0.6),
+                color: isSelected
+                    ? Colors.black
+                    : Colors.white.withValues(alpha: 0.6),
               ),
             ),
           ),
@@ -1361,7 +1371,9 @@ class _CreateContentScreenState extends State<CreateContentScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.auto_awesome_rounded,
-                  color: isReady ? Colors.white : Colors.white.withValues(alpha: 0.2),
+                  color: isReady
+                      ? Colors.white
+                      : Colors.white.withValues(alpha: 0.2),
                   size: 22),
               const SizedBox(width: 14),
               Text(
@@ -1369,7 +1381,9 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                 style: GoogleFonts.outfit(
                   fontSize: 17,
                   fontWeight: FontWeight.w900,
-                  color: isReady ? Colors.white : Colors.white.withValues(alpha: 0.2),
+                  color: isReady
+                      ? Colors.white
+                      : Colors.white.withValues(alpha: 0.2),
                   letterSpacing: 2,
                 ),
               ),
@@ -1393,7 +1407,8 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           color: const Color(0xFFEF4444).withValues(alpha: 0.95),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 20),
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.3), blurRadius: 20),
           ],
         ),
         child: Row(
@@ -1595,14 +1610,18 @@ class _CreateContentScreenState extends State<CreateContentScreen>
 
   String _getUserFriendlyError(dynamic error) {
     final errorStr = error.toString().toLowerCase();
-    if (errorStr.contains('rate limit'))
+    if (errorStr.contains('rate limit')) {
       return '🚦 Neural circuits overloaded. Please wait.';
-    if (errorStr.contains('api') || errorStr.contains('quota'))
+    }
+    if (errorStr.contains('api') || errorStr.contains('quota')) {
       return '🔑 Intelligence access restricted temporarily.';
-    if (errorStr.contains('too long'))
+    }
+    if (errorStr.contains('too long')) {
       return '📏 Concept too vast for single transmutation.';
-    if (errorStr.contains('youtube'))
+    }
+    if (errorStr.contains('youtube')) {
       return '🎥 Visual stream unavailable or restricted.';
+    }
     if (errorStr.contains('pdf')) return '📄 Document structure unreadable.';
     if (errorStr.contains('image')) return '🖼️ Visual pattern unrecognized.';
     return '❌ Conceptual breach detected. Please retry.';

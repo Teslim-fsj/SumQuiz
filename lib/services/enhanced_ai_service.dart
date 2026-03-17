@@ -151,6 +151,8 @@ class EnhancedAIService {
     required int questionCount,
     required List<String> questionTypes,
     required double difficultyMix,
+    bool evenTopicCoverage = true,
+    bool focusWeakAreas = false,
     required String userId,
     void Function(String)? onProgress,
     CancellationToken? cancelToken,
@@ -165,6 +167,8 @@ class EnhancedAIService {
       questionCount: questionCount,
       questionTypes: questionTypes,
       difficultyMix: difficultyMix,
+      evenTopicCoverage: evenTopicCoverage,
+      focusWeakAreas: focusWeakAreas,
       userId: userId,
       cancelToken: cancelToken,
     );

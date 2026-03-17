@@ -13,7 +13,9 @@ import '../../../services/auth_service.dart';
 import '../../../services/local_database_service.dart';
 import '../../../services/spaced_repetition_service.dart';
 import '../../../services/progress_service.dart';
+import '../../../services/firestore_service.dart';
 import '../../../models/flashcard.dart';
+import '../../../models/local_flashcard.dart';
 import '../../../models/local_flashcard_set.dart';
 import '../../../models/user_model.dart';
 import '../../../models/daily_mission.dart';
@@ -125,10 +127,34 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
       final avgAccuracy = await progressService.getAverageAccuracy(userId);
       final totalTimeSpent = await progressService.getTotalTimeSpent(userId);
 
-      // Fetch actual due items
-      final allSets = await localDb.getAllFlashcardSets(userId);
+      // Fetch flashcard sets with Firestore fallback
+      List<LocalFlashcardSet> allSets = await localDb.getAllFlashcardSets(userId);
+      if (allSets.isEmpty) {
+        final firestoreService = Provider.of<FirestoreService>(context, listen: false);
+        final fsSets = await firestoreService.streamFlashcardSets(userId).first;
+        if (fsSets.isNotEmpty) {
+          allSets = fsSets.map((s) => LocalFlashcardSet(
+            id: s.id,
+            title: s.title,
+            timestamp: s.timestamp.toDate(),
+            userId: userId,
+            flashcards: s.flashcards.map((f) => LocalFlashcard(
+              question: f.question,
+              answer: f.answer,
+            )).toList(),
+          )).toList();
+        }
+      }
+
+      if (!mounted) return;
+
       final dueIds = await srsService.getDueItems(userId);
       _dueFlashcardSets = allSets.where((s) => dueIds.contains(s.id)).toList();
+      
+      // If none are due but we have sets, show some anyway to avoid empty state
+      if (_dueFlashcardSets.isEmpty && allSets.isNotEmpty) {
+        _dueFlashcardSets = allSets.take(3).toList();
+      }
 
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
@@ -279,7 +305,6 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
       // Update completion stats
       double accuracy =
           _studyCards.isEmpty ? 0 : _correctCount / _studyCards.length;
-      int timeSpentSeconds = _stopwatch.elapsed.inSeconds;
 
       // Wrap in try-catch to ensure we return to dashboard even if analytics fail
       try {
@@ -289,10 +314,9 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
         }
         await userService.incrementItemsCompleted(userId);
 
-        // Save time spent
+        // Save progress details
         final progressService = ProgressService();
-        // Ideally we'd have a specific method to log a single session
-        // For now we'll rely on global fetch in _loadDashboardData
+        await progressService.logAccuracy(userId, accuracy);
       } catch (e) {
         debugPrint('Analytics error: $e');
       }
@@ -451,7 +475,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
     return Scaffold(
       backgroundColor: WebColors.background,
       body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: WebColors.primary))
+          ? const Center(child: CircularProgressIndicator(color: WebColors.primary))
           : _error != null
               ? Center(
                   child: Text(_error!,
@@ -669,7 +693,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                                 style: GoogleFonts.outfit(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w800,
-                                  color: WebColors.primary,
+                                  color: WebColors.secondary,
                                 ),
                               ),
                             ],
@@ -681,8 +705,8 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                               value:
                                   (_currentCardIndex + 1) / _studyCards.length,
                               backgroundColor: WebColors.backgroundAlt,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  WebColors.primary),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    WebColors.secondary),
                               minHeight: 10,
                             ),
                           ),
@@ -694,7 +718,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 24, vertical: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(204),
+                        color: Colors.white.withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: WebColors.border),
                         boxShadow: WebColors.subtleShadow,
@@ -703,7 +727,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.timer_outlined,
-                              size: 22, color: WebColors.primary),
+                              size: 22, color: WebColors.secondary),
                           const SizedBox(width: 12),
                           Text(
                             _formatDuration(_stopwatch.elapsed),
@@ -789,7 +813,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                 boxShadow: isBack
                     ? [
                         BoxShadow(
-                          color: WebColors.success.withAlpha(26),
+                          color: WebColors.success.withValues(alpha: 0.1),
                           blurRadius: 40,
                           offset: const Offset(0, 20),
                         ),
@@ -932,9 +956,8 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
           ),
           if (isDue)
             ElevatedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("SRS for web coming soon!")));
+            onPressed: () {
+                context.push('/spaced-repetition');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.amber[700],
@@ -967,8 +990,8 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
         Expanded(
           child: _buildStatCard(
             icon: Icons.timeline_rounded,
-            value: 'Top 10%',
-            label: 'Activity Ranking',
+            value: '${user?.currentMomentum.toStringAsFixed(0)}',
+            label: 'Momentum Score',
             color: const Color(0xFF6366F1),
           ),
         ),
@@ -976,7 +999,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
         Expanded(
           child: _buildStatCard(
             icon: Icons.schedule_rounded,
-            value: '25m',
+            value: '${_timeSpentMinutes}m',
             label: 'Study Time Today',
             color: const Color(0xFFEC4899),
           ),
@@ -1010,7 +1033,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: color.withAlpha(26),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(icon, color: color, size: 32),

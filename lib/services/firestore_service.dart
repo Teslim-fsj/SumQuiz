@@ -98,6 +98,36 @@ class FirestoreService {
             list.docs.map((doc) => FlashcardSet.fromFirestore(doc)).toList());
   }
 
+  Future<Summary?> getSummary(String userId, String summaryId) async {
+    final doc = await _db
+        .collection('users')
+        .doc(userId)
+        .collection('summaries')
+        .doc(summaryId)
+        .get();
+    return doc.exists ? Summary.fromFirestore(doc) : null;
+  }
+
+  Future<Quiz?> getQuiz(String userId, String quizId) async {
+    final doc = await _db
+        .collection('users')
+        .doc(userId)
+        .collection('quizzes')
+        .doc(quizId)
+        .get();
+    return doc.exists ? Quiz.fromFirestore(doc) : null;
+  }
+
+  Future<FlashcardSet?> getFlashcardSet(String userId, String setId) async {
+    final doc = await _db
+        .collection('users')
+        .doc(userId)
+        .collection('flashcard_sets')
+        .doc(setId)
+        .get();
+    return doc.exists ? FlashcardSet.fromFirestore(doc) : null;
+  }
+
   Stream<List<LibraryItem>> streamItems(String userId, String type) {
     switch (type) {
       case 'summaries':

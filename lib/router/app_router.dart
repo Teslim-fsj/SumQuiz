@@ -42,6 +42,7 @@ import 'package:sumquiz/views/screens/web/library_screen_web.dart';
 import 'package:sumquiz/views/screens/web/create_content_screen_web.dart';
 import 'package:sumquiz/views/screens/web/progress_screen_web.dart';
 import 'package:sumquiz/views/screens/web/results_view_screen_web.dart';
+import 'package:sumquiz/views/screens/web/teacher_dashboard_web.dart';
 import 'package:sumquiz/views/screens/web/landing_page_web.dart';
 import 'package:sumquiz/views/screens/exam_creation_screen.dart';
 import 'package:sumquiz/views/screens/web/review_screen_web.dart';
@@ -159,6 +160,10 @@ GoRouter createAppRouter(AuthService authService) {
         builder: (context, state) => const LandingPageWeb(),
       ),
       GoRoute(
+        path: '/Educator',
+        builder: (context, state) => const LandingPageWeb(initialTab: 1),
+      ),
+      GoRoute(
         path: '/onboarding',
         builder: (context, state) => const OnboardingScreen(),
       ),
@@ -190,7 +195,10 @@ GoRouter createAppRouter(AuthService authService) {
                     mobile: ReviewScreen(),
                     desktop: ReviewScreenWeb(),
                   ),
-                  creatorView: const TeacherDashboardScreen(),
+                  creatorView: ResponsiveView(
+                    mobile: TeacherDashboardScreen(),
+                    desktop: TeacherDashboardWeb(),
+                  ),
                 ),
                 routes: [],
               ),

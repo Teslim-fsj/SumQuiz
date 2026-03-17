@@ -10,6 +10,7 @@ class UserModel {
   final String uid;
   final String email;
   final String displayName;
+  final String? photoUrl;
   final DateTime? subscriptionExpiry;
 
   // Progress Tracking Fields
@@ -74,7 +75,10 @@ class UserModel {
     this.subscriptionType,
     this.referralCode,
     this.creatorProfile = const {},
+    this.photoUrl,
   }) : _isTrialUser = isTrial;
+
+  String? get photoURL => photoUrl;
 
   /// Returns true if user has active Pro access
   /// Priority: Creator Pro > Active Subscription
@@ -138,6 +142,7 @@ class UserModel {
       subscriptionType: data['subscriptionType'],
       referralCode: data['referralCode'],
       creatorProfile: data['creatorProfile'] ?? {},
+      photoUrl: data['photoUrl'] ?? data['photoURL'],
     );
   }
 
@@ -172,6 +177,7 @@ class UserModel {
       'subscriptionType': subscriptionType,
       if (referralCode != null) 'referralCode': referralCode,
       'creatorProfile': creatorProfile,
+      'photoUrl': photoUrl,
     };
   }
 
@@ -203,6 +209,7 @@ class UserModel {
     String? subscriptionType,
     String? referralCode,
     Map<String, dynamic>? creatorProfile,
+    String? photoUrl,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -234,6 +241,7 @@ class UserModel {
       subscriptionType: subscriptionType ?? this.subscriptionType,
       referralCode: referralCode ?? this.referralCode,
       creatorProfile: creatorProfile ?? this.creatorProfile,
+      photoUrl: photoUrl ?? this.photoUrl,
     );
   }
 }

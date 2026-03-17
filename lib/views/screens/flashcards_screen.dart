@@ -281,18 +281,18 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
                   color: theme.colorScheme.primary)),
           backgroundColor: Colors.transparent,
           elevation: 0,
-          leading: BackButton(color: theme.colorScheme.primary),
+          leading: const BackButton(color: Color(0xFFEC4899)),
           actions: [
             if (_flashcards.isNotEmpty && _state == FlashcardState.review)
               IconButton(
-                icon: Icon(Icons.save, color: theme.colorScheme.primary),
+                icon: const Icon(Icons.save, color: Color(0xFFEC4899)),
                 onPressed: _saveFlashcardSet,
                 tooltip: 'Save Set',
               ),
             if (_flashcards.isNotEmpty && _state == FlashcardState.review)
               IconButton(
-                icon: Icon(Icons.picture_as_pdf,
-                    color: theme.colorScheme.primary),
+                icon: const Icon(Icons.picture_as_pdf,
+                    color: Color(0xFFEC4899)),
                 onPressed: () {
                   final user = context.read<UserModel?>();
                   if (user != null && !user.isPro) {
@@ -398,14 +398,14 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
             child: CircularProgressIndicator(
               strokeWidth: 6,
               valueColor:
-                  AlwaysStoppedAnimation<Color>(theme.colorScheme.secondary),
+                  AlwaysStoppedAnimation<Color>(const Color(0xFFEC4899)),
             ),
           ),
           const SizedBox(height: 32),
           Text(_loadingMessage,
               style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.primary)),
+                  color: const Color(0xFFEC4899))),
         ],
       ).animate().fadeIn(),
     );
@@ -460,7 +460,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
           Text('Create a New Flashcard Set',
                   style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary))
+                      color: const Color(0xFFEC4899)))
               .animate()
               .fadeIn()
               .slideY(begin: -0.2),
@@ -531,8 +531,8 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.onPrimary)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: theme.colorScheme.onPrimary,
+                  backgroundColor: const Color(0xFFEC4899),
+                  foregroundColor: Colors.white,
                   elevation: 8,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16)),
@@ -599,8 +599,8 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
                             fontWeight: FontWeight.bold,
                             color: theme.colorScheme.onPrimary)),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: theme.colorScheme.onPrimary,
+                      backgroundColor: const Color(0xFFEC4899),
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
@@ -616,8 +616,8 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
                   onPressed: _reviewAgain,
                   label: const Text('Review Again'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: theme.colorScheme.primary,
-                    side: BorderSide(color: theme.colorScheme.primary),
+                    foregroundColor: const Color(0xFFEC4899),
+                    side: const BorderSide(color: Color(0xFFEC4899)),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
                   ),

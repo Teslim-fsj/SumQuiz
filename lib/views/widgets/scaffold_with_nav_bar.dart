@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../models/user_model.dart';
+import '../../theme/web_theme.dart';
 
 class ScaffoldWithNavBar extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
@@ -62,58 +63,190 @@ class ScaffoldWithNavBar extends StatelessWidget {
             ),
           );
         } else {
-          // Use NavigationRail for wider screens
+          // Professional Web Sidebar (ChatGPT/Claude alike)
           return Scaffold(
+            backgroundColor: const Color(0xFFF8FAFC),
             body: Row(
               children: [
-                NavigationRail(
-                  selectedIndex: navigationShell.currentIndex,
-                  onDestinationSelected: onTap,
-                  labelType: NavigationRailLabelType.all,
-                  backgroundColor: Colors.white,
-                   indicatorColor: theme.colorScheme.primary.withValues(alpha: 0.1),
-                  selectedIconTheme:
-                      IconThemeData(color: theme.colorScheme.primary),
-                  unselectedIconTheme:
-                      IconThemeData(color: Colors.grey.shade400),
-                  selectedLabelTextStyle: TextStyle(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12),
-                  unselectedLabelTextStyle: TextStyle(
-                      color: Colors.grey.shade500,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 12),
-                  useIndicator: true,
-                  // indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // Optional custom shape
-                  destinations: <NavigationRailDestination>[
-                    NavigationRailDestination(
-                        icon: Icon(isTeacher ? Icons.dashboard_outlined : Icons.home_outlined),
-                        selectedIcon: Icon(isTeacher ? Icons.dashboard : Icons.home),
-                        label: Text(isTeacher ? 'Dashboard' : 'Home')),
-                    NavigationRailDestination(
-                        icon: Icon(isTeacher ? Icons.assignment_outlined : Icons.book_outlined),
-                        selectedIcon: Icon(isTeacher ? Icons.assignment : Icons.book),
-                        label: Text(isTeacher ? 'Exams' : 'Library')),
-                    NavigationRailDestination(
-                        icon: const Icon(Icons.add_circle_outline),
-                        selectedIcon: const Icon(Icons.add_circle),
-                        label: const Text('Create')),
-                    NavigationRailDestination(
-                        icon: Icon(isTeacher ? Icons.analytics_outlined : Icons.show_chart_outlined),
-                        selectedIcon: Icon(isTeacher ? Icons.analytics : Icons.show_chart),
-                        label: Text(isTeacher ? 'Analytics' : 'Progress')),
-                    NavigationRailDestination(
-                        icon: const Icon(Icons.person_outline),
-                        selectedIcon: const Icon(Icons.person),
-                        label: const Text('Profile')),
-                    NavigationRailDestination(
-                        icon: const Icon(Icons.settings_outlined),
-                        selectedIcon: const Icon(Icons.settings),
-                        label: const Text('Settings')),
-                  ],
+                Container(
+                  width: 280,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A), // Dark slate like ChatGPT
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(2, 0),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      // Header / Logo
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primary,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.school, color: Colors.white, size: 24),
+                            ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'SumQuiz',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      // Primary Action
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: InkWell(
+                          onTap: () => navigationShell.goBranch(2), // Create tab
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              gradient: WebColors.PremiumGradient,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: WebColors.accent.withValues(alpha: 0.3),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.add_circle, color: WebColors.textPrimary, size: 20),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    isTeacher ? 'Create New Exam' : 'Build Study Pack',
+                                    style: const TextStyle(
+                                      color: WebColors.textPrimary,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                                const Icon(Icons.auto_awesome, color: Color(0xFFB45309), size: 14),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Navigation Items
+                      Expanded(
+                        child: ListView(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          children: [
+                            _buildSidebarItem(
+                              icon: isTeacher ? Icons.dashboard_outlined : Icons.auto_awesome_mosaic_outlined,
+                              activeIcon: isTeacher ? Icons.dashboard : Icons.auto_awesome_mosaic,
+                              label: isTeacher ? 'Dashboard' : 'Learning Home',
+                              isActive: navigationShell.currentIndex == 0,
+                              onTap: () => onTap(0),
+                            ),
+                            _buildSidebarItem(
+                              icon: isTeacher ? Icons.assignment_outlined : Icons.inventory_2_outlined,
+                              activeIcon: isTeacher ? Icons.assignment : Icons.inventory_2,
+                              label: isTeacher ? 'Teaching Library' : 'My Library',
+                              isActive: navigationShell.currentIndex == 1,
+                              onTap: () => onTap(1),
+                            ),
+                            _buildSidebarItem(
+                              icon: isTeacher ? Icons.analytics_outlined : Icons.insights_outlined,
+                              activeIcon: isTeacher ? Icons.analytics : Icons.insights,
+                              label: isTeacher ? 'Analytics' : 'Study Progress',
+                              isActive: navigationShell.currentIndex == 3,
+                              onTap: () => onTap(3),
+                            ),
+                            
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 20),
+                              child: Divider(color: Colors.white12, thickness: 1),
+                            ),
+                            
+                            _buildSidebarItem(
+                              icon: Icons.person_outline,
+                              activeIcon: Icons.person,
+                              label: 'Profile',
+                              isActive: navigationShell.currentIndex == 4,
+                              onTap: () => onTap(4),
+                            ),
+                            _buildSidebarItem(
+                              icon: Icons.settings_outlined,
+                              activeIcon: Icons.settings,
+                              label: 'Settings',
+                              isActive: navigationShell.currentIndex == 5,
+                              onTap: () => onTap(5),
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      // Bottom User Info
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          border: const Border(top: BorderSide(color: Colors.white10)),
+                        ),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 18,
+                              backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.2),
+                              backgroundImage: user?.photoURL != null ? NetworkImage(user!.photoURL!) : null,
+                              child: user?.photoURL == null 
+                                ? Text(user?.displayName.characters.first.toUpperCase() ?? 'U', 
+                                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold))
+                                : null,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    user?.displayName ?? 'User Name',
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    isTeacher ? 'Educator Plan' : 'Standard Plan',
+                                    style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () => onTap(5),
+                              icon: const Icon(Icons.more_horiz, color: Colors.white54, size: 20),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const VerticalDivider(thickness: 1, width: 1),
                 Expanded(
                   child: navigationShell,
                 ),
@@ -122,6 +255,47 @@ class ScaffoldWithNavBar extends StatelessWidget {
           );
         }
       },
+    );
+  }
+
+  Widget _buildSidebarItem({
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: isActive ? Colors.white.withValues(alpha: 0.12) : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                isActive ? activeIcon : icon,
+                color: isActive ? Colors.white : Colors.white60,
+                size: 22,
+              ),
+              const SizedBox(width: 16),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isActive ? Colors.white : Colors.white60,
+                  fontSize: 14,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

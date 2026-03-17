@@ -1,6 +1,4 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -11,7 +9,6 @@ import 'package:printing/printing.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:sumquiz/models/local_quiz.dart';
 import 'package:sumquiz/models/local_quiz_question.dart';
 import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/models/public_deck.dart';
@@ -21,7 +18,6 @@ import 'package:sumquiz/services/firestore_service.dart';
 import 'package:sumquiz/theme/web_theme.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
 import 'package:sumquiz/utils/share_code_generator.dart';
-import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
 
 class ExamCreationScreenWeb extends StatefulWidget {
   const ExamCreationScreenWeb({super.key});
@@ -31,6 +27,10 @@ class ExamCreationScreenWeb extends StatefulWidget {
 }
 
 class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
+  // Wizard State
+  int _currentStep = 0;
+  final PageController _pageController = PageController();
+
   // controllers
   final _schoolNameController = TextEditingController(text: 'SUMQUIZ ACADEMY');
   final _subjectController = TextEditingController();
@@ -40,11 +40,13 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   // state variables
   String _selectedLevel = 'JSS1';
   int _numberOfQuestions = 20;
-  double _difficultyValue = 0.5;
+  final double _difficultyValue = 0.5;
   bool _includeMultipleChoice = true;
   bool _includeShortAnswer = false;
   bool _includeTheory = false;
   bool _includeTrueFalse = false;
+  bool _evenTopicCoverage = true;
+  bool _focusWeakAreas = false;
 
   String _sourceMaterial = '';
   bool _isProcessingSource = false;
@@ -53,7 +55,6 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   CancellationToken? _cancelToken;
 
   List<LocalQuizQuestion> _generatedQuestions = [];
-  bool _showPreview = false;
 
   // Marks allocation
   int _marksA = 1;
@@ -67,10 +68,25 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
     _subjectController.dispose();
     _titleController.dispose();
     _durationController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
   // --- Logic Methods ---
+
+  void _nextStep() {
+    if (_currentStep < 3) {
+      setState(() => _currentStep++);
+      _pageController.nextPage(duration: 400.ms, curve: Curves.easeInOut);
+    }
+  }
+
+  void _prevStep() {
+    if (_currentStep > 0) {
+      setState(() => _currentStep--);
+      _pageController.previousPage(duration: 400.ms, curve: Curves.easeInOut);
+    }
+  }
 
   Future<void> _pickSource(String type) async {
     setState(() {
@@ -91,7 +107,11 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           type: FileType.image,
           withData: true,
         );
-      } else {
+      }
+
+      if (!mounted) return;
+
+      if (type == 'Notes') {
         _showNotesInputDialog();
         setState(() => _isProcessingSource = false);
         return;
@@ -132,17 +152,20 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   void _showNotesInputDialog() {
-    final controller = TextEditingController();
+    final controller = TextEditingController(text: _sourceMaterial);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Enter Source Material'),
-        content: TextField(
-          controller: controller,
-          maxLines: 15,
-          decoration: const InputDecoration(
-            hintText: 'Paste your teaching notes or syllabus content here...',
-            border: OutlineInputBorder(),
+        content: SizedBox(
+          width: 600,
+          child: TextField(
+            controller: controller,
+            maxLines: 15,
+            decoration: const InputDecoration(
+              hintText: 'Paste your teaching notes or syllabus content here...',
+              border: OutlineInputBorder(),
+            ),
           ),
         ),
         actions: [
@@ -189,13 +212,15 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           if (_includeTheory) 'Theory',
         ],
         difficultyMix: _difficultyValue,
+        evenTopicCoverage: _evenTopicCoverage,
+        focusWeakAreas: _focusWeakAreas,
         userId: user?.uid ?? 'anonymous',
       );
 
       setState(() {
         _generatedQuestions = quiz.questions;
         _isGeneratingQuestions = false;
-        _showPreview = true;
+        // _showPreview = true; // This variable is not defined in the provided code.
       });
     } catch (e) {
       setState(() => _isGeneratingQuestions = false);
@@ -204,17 +229,16 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Future<void> _exportExam() async {
-    // PDF generation logic similar to mobile but web-optimized
-    // It should include the QR loop we just built
-    setState(() => _isGeneratingQuestions = true);
-    setState(() => _processingMessage = 'Finalizing PDF document...');
+    setState(() {
+      _isGeneratingQuestions = true;
+      _processingMessage = 'Finalizing PDF document...';
+    });
 
     try {
       final firestore = Provider.of<FirestoreService>(context, listen: false);
       final user = Provider.of<UserModel?>(context, listen: false);
       final shareCode = ShareCodeGenerator.generate();
 
-      // Create a public deck for the QR loop
       final publicDeck = PublicDeck(
         id: const Uuid().v4(),
         creatorId: user?.uid ?? 'anonymous',
@@ -233,10 +257,8 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
 
       await firestore.publishDeck(publicDeck);
 
-      // Generate the PDF
       final pdf = await _generatePdfDocument(shareCode);
 
-      // On Web, use Printing.sharePdf or Printing.layoutPdf
       await Printing.layoutPdf(
         onLayout: (PdfPageFormat format) async => pdf.save(),
         name: '${_titleController.text}.pdf',
@@ -252,7 +274,6 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   Future<pw.Document> _generatePdfDocument(String shareCode) async {
     final pdf = pw.Document();
 
-    // Group questions by type for sections
     final sectionA = _generatedQuestions
         .where((q) =>
             q.questionType == 'Multiple Choice' ||
@@ -332,15 +353,11 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                   pw.Text('SUBJECT: ${_subjectController.text.toUpperCase()}',
                       style: pw.TextStyle(
                           fontWeight: pw.FontWeight.bold, fontSize: 11)),
-                  pw.SizedBox(height: 8),
+                  pw.SizedBox(height: 5),
                   pw.Text('CLASS: $_selectedLevel',
                       style: pw.TextStyle(
                           fontWeight: pw.FontWeight.bold, fontSize: 11)),
-                  pw.SizedBox(height: 8),
-                  pw.Text('DATE: ____________________',
-                      style: pw.TextStyle(
-                          fontWeight: pw.FontWeight.bold, fontSize: 11)),
-                  pw.SizedBox(height: 8),
+                  pw.SizedBox(height: 5),
                   pw.Text('TIME ALLOWED: ${_durationController.text} MINUTES',
                       style: pw.TextStyle(
                           fontWeight: pw.FontWeight.bold, fontSize: 11)),
@@ -351,33 +368,33 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                           fontWeight: pw.FontWeight.bold, fontSize: 11)),
                 ]),
             pw.Container(
-              padding: const pw.EdgeInsets.all(10),
+              padding: const pw.EdgeInsets.all(8),
               decoration: pw.BoxDecoration(
                 border: pw.Border.all(color: PdfColors.grey300),
                 borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
               ),
               child: pw.Column(children: [
-                pw.Text('Practice & Review:',
+                pw.Text('Review Online:',
                     style: pw.TextStyle(
-                        fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                        fontSize: 8, fontWeight: pw.FontWeight.bold)),
                 pw.SizedBox(height: 4),
-                pw.Text('sumquiz.app/s/$shareCode',
+                pw.Text('sumquiz.xyz/s/$shareCode',
                     style: const pw.TextStyle(
-                        fontSize: 10, color: PdfColors.blue800)),
-                pw.SizedBox(height: 6),
+                        fontSize: 9, color: PdfColors.blue800)),
+                pw.SizedBox(height: 4),
                 pw.Container(
-                  height: 60,
-                  width: 60,
+                  height: 45,
+                  width: 45,
                   child: pw.BarcodeWidget(
                     color: PdfColors.black,
                     barcode: pw.Barcode.qrCode(),
-                    data: "https://sumquiz.app/s/$shareCode",
+                    data: "https://sumquiz.xyz/s/$shareCode",
                   ),
                 ),
               ]),
             ),
           ]),
-      pw.SizedBox(height: 20),
+      pw.SizedBox(height: 15),
       pw.Divider(),
     ]);
   }
@@ -388,46 +405,45 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
       decoration: const pw.BoxDecoration(color: PdfColors.grey200),
       width: double.infinity,
       child: pw.Text(title,
-          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12)),
+          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
     );
   }
 
   pw.Widget _pdfQuestionItem(LocalQuizQuestion q, int number, int marks) {
     return pw.Container(
-      margin: const pw.EdgeInsets.only(bottom: 15),
+      margin: const pw.EdgeInsets.only(bottom: 12),
       child:
           pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
         pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-          pw.Text('$number. ', style: const pw.TextStyle(fontSize: 11)),
+          pw.Text('$number. ', style: const pw.TextStyle(fontSize: 10)),
           pw.Expanded(
             child: pw.Text('${q.question} ($marks Mark${marks > 1 ? 's' : ''})',
-                style: const pw.TextStyle(fontSize: 11)),
+                style: const pw.TextStyle(fontSize: 10)),
           ),
         ]),
         if (q.questionType == 'Multiple Choice') ...[
-          pw.SizedBox(height: 8),
+          pw.SizedBox(height: 6),
           pw.Padding(
-            padding: const pw.EdgeInsets.only(left: 20),
+            padding: const pw.EdgeInsets.only(left: 15),
             child: pw.Column(children: [
               for (int i = 0; i < q.options.length; i++)
                 pw.Padding(
-                  padding: const pw.EdgeInsets.only(bottom: 4),
+                  padding: const pw.EdgeInsets.only(bottom: 2),
                   child: pw.Row(children: [
                     pw.Text('(${String.fromCharCode(65 + i)}) ',
-                        style: const pw.TextStyle(fontSize: 10)),
+                        style: const pw.TextStyle(fontSize: 9)),
                     pw.Text(q.options[i],
-                        style: const pw.TextStyle(fontSize: 10)),
+                        style: const pw.TextStyle(fontSize: 9)),
                   ]),
                 ),
             ]),
           ),
         ] else if (q.questionType == 'Theory' || q.questionType == 'Essay') ...[
-          pw.SizedBox(height: 40), // Space for answer
+          pw.SizedBox(height: 35),
         ] else if (q.questionType == 'Short Answer') ...[
-          pw.SizedBox(height: 20),
+          pw.SizedBox(height: 15),
           pw.Text('Answer: __________________________________________________',
-              style:
-                  const pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+              style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
         ],
       ]),
     );
@@ -444,7 +460,6 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   Widget build(BuildContext context) {
     final user = Provider.of<UserModel?>(context);
 
-    // Pro logic
     if (user != null && !user.isPro) {
       return _buildUpgradeScreen();
     }
@@ -453,17 +468,14 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
       backgroundColor: WebColors.background,
       body: Stack(
         children: [
-          _buildBackground(),
-          Positioned.fill(
-            child: SafeArea(
-              child: Row(
-                children: [
-                  _buildLeftPane(),
-                  const VerticalDivider(width: 1),
-                  Expanded(child: _buildRightPane()),
-                ],
-              ),
-            ),
+          Row(
+            children: [
+              // Left Panel (Steps & Forms)
+              _buildWizardPanel(),
+              const VerticalDivider(width: 1),
+              // Right Panel (Live Preview)
+              Expanded(child: _buildPreviewPanel()),
+            ],
           ),
           if (_isGeneratingQuestions || _isProcessingSource)
             _buildOverlayLoading(),
@@ -487,7 +499,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.school_rounded,
-                  size: 80, color: WebColors.primary),
+                  size: 80, color: WebColors.purplePrimary),
               const SizedBox(height: 24),
               Text('Tutor Exam Pro',
                   style: GoogleFonts.outfit(
@@ -505,8 +517,8 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                 child: const Text('Upgrade to Pro'),
               ),
               TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Go Back')),
+                  onPressed: () => context.go('/'),
+                  child: const Text('Go Home')),
             ],
           ),
         ).animate().fadeIn().scale(),
@@ -514,468 +526,532 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
     );
   }
 
-  Widget _buildBackground() {
+  Widget _buildWizardPanel() {
     return Container(
-      decoration: BoxDecoration(
-        color: WebColors.background,
-        image: DecorationImage(
-          image: const NetworkImage(
-              'https://www.transparenttextures.com/patterns/cubes.png'),
-          opacity: 0.05,
-          repeat: ImageRepeat.repeat,
-        ),
+      width: 500,
+      color: Colors.white,
+      child: Column(
+        children: [
+          _buildWizardHeader(),
+          const Divider(height: 1),
+          Expanded(
+            child: PageView(
+              controller: _pageController,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                _buildStep1(),
+                _buildStep2(),
+                _buildStep3(),
+                _buildStep4(),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          _buildWizardFooter(),
+        ],
       ),
     );
   }
 
-  Widget _buildLeftPane() {
-    return Container(
-      width: 450,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildBreadcrumbs(),
-            const SizedBox(height: 24),
-            Text('Exam Configuration',
-                style: GoogleFonts.outfit(
-                    fontSize: 28, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text('Define the structure of your paper.',
-                style: WebTheme.lightTheme.textTheme.bodyMedium),
-            const SizedBox(height: 32),
-            _buildMetadataForm(),
-            const SizedBox(height: 32),
-            _buildSourceSection(),
-            const SizedBox(height: 32),
-            _buildQuestionSettings(),
-            const SizedBox(height: 48),
-            _buildGenerateCTA(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBreadcrumbs() {
-    return Row(
-      children: [
-        IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_rounded, size: 20),
-          style: IconButton.styleFrom(backgroundColor: WebColors.background),
-        ),
-        const SizedBox(width: 12),
-        const Text('Library / Tutor Exam',
-            style: TextStyle(color: WebColors.textSecondary, fontSize: 13)),
-      ],
-    );
-  }
-
-  Widget _buildMetadataForm() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _formHeader('GENERAL INFORMATION'),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _schoolNameController,
-          decoration:
-              const InputDecoration(labelText: 'School / Institution Name'),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _titleController,
-          decoration: const InputDecoration(
-              labelText: 'Exam Title (e.g., First Term Examination)'),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: DropdownButtonFormField<String>(
-                value: _selectedLevel,
-                decoration: const InputDecoration(labelText: 'Target Class'),
-                items: ['JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3', 'Tertiary']
-                    .map((l) => DropdownMenuItem(value: l, child: Text(l)))
-                    .toList(),
-                onChanged: (v) => setState(() => _selectedLevel = v!),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: TextField(
-                controller: _subjectController,
-                decoration: const InputDecoration(labelText: 'Subject'),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _durationController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                    labelText: 'Duration', suffixText: 'mins'),
-              ),
-            ),
-            const SizedBox(width: 16),
-            const Spacer(),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSourceSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _formHeader('SOURCE MATERIAL'),
-        const SizedBox(height: 16),
-        if (_sourceMaterial.isEmpty)
+  Widget _buildWizardHeader() {
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Row(
             children: [
-              _sourceButton('PDF', Icons.picture_as_pdf_outlined,
-                  () => _pickSource('PDF')),
-              const SizedBox(width: 12),
-              _sourceButton('SCAN', Icons.camera_alt_outlined,
-                  () => _pickSource('Image')),
-              const SizedBox(width: 12),
-              _sourceButton(
-                  'NOTES', Icons.note_alt_outlined, () => _pickSource('Notes')),
+              IconButton(
+                onPressed: () => context.go('/'),
+                icon: const Icon(Icons.close),
+              ),
+              const SizedBox(width: 16),
+              Text(
+                'Exam Builder',
+                style: GoogleFonts.outfit(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: WebColors.textPrimary,
+                ),
+              ),
             ],
-          )
-        else
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: WebColors.primaryLight,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: WebColors.primary.withOpacity(0.2)),
+          ),
+          const SizedBox(height: 32),
+          Row(
+            children: [
+              _stepIndicator(0, 'Context'),
+              _stepConnector(),
+              _stepIndicator(1, 'Source'),
+              _stepConnector(),
+              _stepIndicator(2, 'Rules'),
+              _stepConnector(),
+              _stepIndicator(3, 'Finalize'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _stepIndicator(int step, String label) {
+    bool isActive = _currentStep == step;
+    bool isDone = _currentStep > step;
+
+    return Column(
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isDone
+                ? WebColors.success
+                : (isActive
+                    ? WebColors.purplePrimary
+                    : WebColors.backgroundAlt),
+            border: Border.all(
+                color: isActive ? WebColors.purplePrimary : WebColors.border),
+          ),
+          child: Center(
+            child: isDone
+                ? const Icon(Icons.check, color: Colors.white, size: 16)
+                : Text(
+                    '${step + 1}',
+                    style: TextStyle(
+                      color: isActive ? Colors.white : WebColors.textSecondary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+            color: isActive ? WebColors.purplePrimary : WebColors.textTertiary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _stepConnector() {
+    return Expanded(
+      child: Container(
+        height: 2,
+        margin: const EdgeInsets.only(bottom: 18, left: 8, right: 8),
+        color: WebColors.border,
+      ),
+    );
+  }
+
+  Widget _buildWizardFooter() {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          if (_currentStep > 0)
+            OutlinedButton(
+              onPressed: _prevStep,
+              style: OutlinedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              ),
+              child: const Text('Back'),
+            )
+          else
+            const SizedBox(),
+          if (_currentStep < 3)
+            ElevatedButton(
+              onPressed: _canGoNext() ? _nextStep : null,
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              ),
+              child: const Text('Next Step'),
+            )
+          else
+            ElevatedButton(
+              onPressed: _sourceMaterial.isEmpty ? null : _generateQuestions,
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              ),
+              child: const Text('Generate Paper'),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+        ],
+      ),
+    );
+  }
+
+  bool _canGoNext() {
+    if (_currentStep == 0) {
+      return _titleController.text.isNotEmpty &&
+          _subjectController.text.isNotEmpty;
+    }
+    if (_currentStep == 1) {
+      return _sourceMaterial.isNotEmpty;
+    }
+    return true;
+  }
+
+  Widget _buildStep1() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _wizardSectionHeader(
+              'CONTEXTUAL DATA', 'Define your institution and class details.'),
+          const SizedBox(height: 32),
+          _titleField('Institution Name', _schoolNameController,
+              'e.g. Oakbridge High School'),
+          const SizedBox(height: 24),
+          _titleField(
+              'Subject', _subjectController, 'e.g. Advanced Mathematics'),
+          const SizedBox(height: 24),
+          _titleField(
+              'Exam Title', _titleController, 'e.g. Mid-Term Assessment'),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.check_circle,
-                        color: WebColors.success, size: 20),
-                    const SizedBox(width: 8),
-                    const Text('Content Extracted',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    const Spacer(),
-                    IconButton(
-                      onPressed: () => setState(() => _sourceMaterial = ''),
-                      icon: const Icon(Icons.close, size: 16),
+                    const Text('Class / Level',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 13)),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      initialValue: _selectedLevel,
+                      decoration:
+                          const InputDecoration(border: OutlineInputBorder()),
+                      items: [
+                        'JSS1',
+                        'JSS2',
+                        'JSS3',
+                        'SS1',
+                        'SS2',
+                        'SS3',
+                        'Tertiary'
+                      ]
+                          .map(
+                              (l) => DropdownMenuItem(value: l, child: Text(l)))
+                          .toList(),
+                      onChanged: (v) => setState(() => _selectedLevel = v!),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  _sourceMaterial.length > 150
-                      ? '${_sourceMaterial.substring(0, 150)}...'
-                      : _sourceMaterial,
-                  style: const TextStyle(
-                      fontSize: 12, color: WebColors.textSecondary),
+              ),
+              const SizedBox(width: 24),
+              Expanded(
+                child: _titleField('Duration (mins)', _durationController, '60',
+                    isNumber: true),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStep2() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _wizardSectionHeader('RESOURCE INGESTION',
+              'Upload the material the AI will use to generate questions.'),
+          const SizedBox(height: 32),
+          if (_sourceMaterial.isEmpty) ...[
+            _sourceUploadCard(
+                'Upload PDF Document',
+                'Highly recommended for textbooks & notes',
+                Icons.picture_as_pdf_outlined,
+                () => _pickSource('PDF')),
+            const SizedBox(height: 16),
+            _sourceUploadCard(
+                'Paste Study Notes',
+                'Copy-paste raw text or syllabus content',
+                Icons.note_alt_outlined,
+                () => _pickSource('Notes')),
+            const SizedBox(height: 16),
+            _sourceUploadCard(
+                'Scan Examination Paper',
+                'OCR extraction from physical papers',
+                Icons.camera_alt_outlined,
+                () => _pickSource('Image')),
+          ] else
+            _uploadedStateCard(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStep3() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _wizardSectionHeader(
+              'EXAM STRUCTURE', 'Configure the question mix and difficulty.'),
+          const SizedBox(height: 32),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Weight (Total Questions)',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                    color: WebColors.purpleUltraLight,
+                    borderRadius: BorderRadius.circular(12)),
+                child: Text('$_numberOfQuestions Items',
+                    style: const TextStyle(
+                        color: WebColors.purplePrimary,
+                        fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+          Slider(
+            value: _numberOfQuestions.toDouble(),
+            min: 5,
+            max: 100,
+            activeColor: WebColors.purplePrimary,
+            onChanged: (v) => setState(() => _numberOfQuestions = v.round()),
+          ),
+          const SizedBox(height: 32),
+          const Text('Question Components',
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          _checkboxTile(
+              'Objective / MCQ',
+              'Includes distractors & correct answer',
+              _includeMultipleChoice,
+              (v) => setState(() => _includeMultipleChoice = v!)),
+          _checkboxTile('True / False', 'Quick conceptual validation',
+              _includeTrueFalse, (v) => setState(() => _includeTrueFalse = v!)),
+          _checkboxTile(
+              'Short Answer',
+              'Fill-in-the-gap or definitions',
+              _includeShortAnswer,
+              (v) => setState(() => _includeShortAnswer = v!)),
+          _checkboxTile(
+              'Theory / Essay',
+              'Long-form responses (marking scheme included)',
+              _includeTheory,
+              (v) => setState(() => _includeTheory = v!)),
+          const SizedBox(height: 32),
+          _wizardSectionHeader(
+              'AI STRATEGY', 'Fine-tune the intelligence behavior.'),
+          const SizedBox(height: 16),
+          _switchTile(
+              'Even Topic Coverage',
+              'Ensure questions are spread across all pages',
+              _evenTopicCoverage,
+              (v) => setState(() => _evenTopicCoverage = v)),
+          _switchTile(
+              'Focus Complex Areas',
+              'Prioritize technical or difficult concepts',
+              _focusWeakAreas,
+              (v) => setState(() => _focusWeakAreas = v)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStep4() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _wizardSectionHeader('MARKS ALLOCATION',
+              'Define how many points each section contributes.'),
+          const SizedBox(height: 32),
+          _marksAllocationRow('Section A (Objective)', 'For MCQs and T/F',
+              _marksA, (v) => setState(() => _marksA = v)),
+          const SizedBox(height: 24),
+          _marksAllocationRow('Section B (Structured)', 'For Short Answers',
+              _marksB, (v) => setState(() => _marksB = v)),
+          const SizedBox(height: 24),
+          _marksAllocationRow('Section C (Continuous)', 'For Theory & Essays',
+              _marksC, (v) => setState(() => _marksC = v)),
+          const SizedBox(height: 48),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF7ED),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFFFEDD5)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline, color: Color(0xFFC2410C)),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Text(
+                    'AI will generate a high-quality paper based on these rules. You can edit every question individually in the preview pane.',
+                    style: TextStyle(color: Color(0xFF9A3412), fontSize: 13),
+                  ),
                 ),
               ],
             ),
           ),
-      ],
-    );
-  }
-
-  Widget _sourceButton(String label, IconData icon, VoidCallback onTap) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          decoration: BoxDecoration(
-            border: Border.all(color: WebColors.border),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, color: WebColors.primary, size: 24),
-              const SizedBox(height: 8),
-              Text(label,
-                  style: const TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.bold)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuestionSettings() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _formHeader('QUESTION STRUCTURE'),
-        const SizedBox(height: 24),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('Count', style: TextStyle(fontWeight: FontWeight.bold)),
-            Text('$_numberOfQuestions Questions',
-                style: const TextStyle(color: WebColors.primary)),
-          ],
-        ),
-        Slider(
-          value: _numberOfQuestions.toDouble(),
-          min: 5,
-          max: 100,
-          onChanged: (v) => setState(() => _numberOfQuestions = v.round()),
-        ),
-        const SizedBox(height: 16),
-        const Text('Question Types',
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          children: [
-            _typeChip('Objective', _includeMultipleChoice,
-                (v) => setState(() => _includeMultipleChoice = v)),
-            _typeChip('Short Answer', _includeShortAnswer,
-                (v) => setState(() => _includeShortAnswer = v)),
-            _typeChip('Theory', _includeTheory,
-                (v) => setState(() => _includeTheory = v)),
-            _typeChip('True/False', _includeTrueFalse,
-                (v) => setState(() => _includeTrueFalse = v)),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _typeChip(String label, bool selected, Function(bool) onSelected) {
-    return FilterChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: onSelected,
-      selectedColor: WebColors.primaryLight,
-      checkmarkColor: WebColors.primary,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-    );
-  }
-
-  Widget _buildGenerateCTA() {
-    return SizedBox(
-      width: double.infinity,
-      child: Column(
-        children: [
-          ElevatedButton.icon(
-            onPressed: _sourceMaterial.isEmpty ? null : _generateQuestions,
-            icon: const Icon(Icons.auto_awesome_rounded),
-            label: const Text('Generate Exam Paper'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text('Questions will be editable after generation.',
-              style: TextStyle(fontSize: 12, color: WebColors.textTertiary)),
         ],
       ),
     );
   }
 
-  Widget _buildRightPane() {
-    if (!_showPreview) {
-      return _buildEmptyState();
+  Widget _buildPreviewPanel() {
+    if (_generatedQuestions.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.description_outlined,
+                size: 120,
+                color: WebColors.purplePrimary.withValues(alpha: 0.05)),
+            const SizedBox(height: 24),
+            Text('Ready to Build',
+                style: GoogleFonts.outfit(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: WebColors.textPrimary)),
+            const SizedBox(height: 12),
+            const Text('Your exam preview will appear here in real-time.',
+                style: TextStyle(color: WebColors.textTertiary)),
+          ],
+        ),
+      );
     }
 
     return Column(
       children: [
-        _buildPreviewHeader(),
+        _buildPreviewToolBar(),
         Expanded(
-          child: _buildQuestionsList(),
+          child: Container(
+            color: WebColors.backgroundAlt,
+            child: ListView(
+              padding: const EdgeInsets.all(60),
+              children: [
+                _buildPaperLook(),
+              ],
+            ),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.description_outlined,
-              size: 100, color: WebColors.primary.withOpacity(0.1)),
-          const SizedBox(height: 24),
-          Text('Live Exam Preview',
-              style: GoogleFonts.outfit(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: WebColors.textPrimary)),
-          const SizedBox(height: 8),
-          const Text(
-              'Configure your exam and generate to see the live preview here.',
-              style: TextStyle(color: WebColors.textSecondary)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPreviewHeader() {
+  Widget _buildPreviewToolBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+      height: 80,
+      padding: const EdgeInsets.symmetric(horizontal: 40),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: WebColors.border)),
       ),
       child: Row(
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('EXAM PREVIEW',
-                  style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
-                      letterSpacing: 1,
-                      color: WebColors.textTertiary)),
-              const SizedBox(height: 4),
-              Text(_titleController.text,
-                  style: GoogleFonts.outfit(
-                      fontSize: 24, fontWeight: FontWeight.bold)),
-            ],
+          const Icon(Icons.visibility_outlined, color: WebColors.purplePrimary),
+          const SizedBox(width: 16),
+          Text(
+            'PAPER PREVIEW',
+            style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+                color: WebColors.textPrimary,
+                letterSpacing: 1),
           ),
           const Spacer(),
-          _marksConfig(),
-          const SizedBox(width: 32),
-          OutlinedButton.icon(
-            onPressed: () => setState(() => _showPreview = false),
-            icon: const Icon(Icons.edit_outlined),
-            label: const Text('Edit Config'),
-          ),
-          const SizedBox(width: 16),
           ElevatedButton.icon(
             onPressed: _exportExam,
-            icon: const Icon(Icons.print_rounded),
-            label: const Text('Export PDF'),
-            style:
-                ElevatedButton.styleFrom(backgroundColor: WebColors.secondary),
+            icon: const Icon(Icons.picture_as_pdf),
+            label: const Text('Download PDF'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF10B981),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _marksConfig() {
-    return Row(
-      children: [
-        _marksInput('MCQ', _marksA, (v) => setState(() => _marksA = v)),
-        const SizedBox(width: 16),
-        _marksInput('Short', _marksB, (v) => setState(() => _marksB = v)),
-        const SizedBox(width: 16),
-        _marksInput('Theory', _marksC, (v) => setState(() => _marksC = v)),
-      ],
-    );
-  }
-
-  Widget _marksInput(String label, int val, Function(int) onChanged) {
-    return Column(
-      children: [
-        Text(label,
-            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 4),
-        Container(
-          width: 50,
-          child: TextField(
-            textAlign: TextAlign.center,
-            decoration: const InputDecoration(contentPadding: EdgeInsets.zero),
-            controller: TextEditingController(text: '$val'),
-            keyboardType: TextInputType.number,
-            onChanged: (v) => onChanged(int.tryParse(v) ?? 1),
+  Widget _buildPaperLook() {
+    return Container(
+      padding: const EdgeInsets.all(60),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 40,
+              offset: const Offset(0, 20))
+        ],
+        border: Border.all(color: WebColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Text(
+              _schoolNameController.text.toUpperCase(),
+              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuestionsList() {
-    return ListView(
-      padding: const EdgeInsets.all(40),
-      children: [
-        // Mock Paper Look
-        Container(
-          padding: const EdgeInsets.all(48),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(4),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20)
-            ],
-            border: Border.all(color: WebColors.border),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: 48),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Header preview
-              Center(
-                  child: Text(_schoolNameController.text.toUpperCase(),
-                      style: const TextStyle(
-                          fontSize: 24, fontWeight: FontWeight.bold))),
-              const SizedBox(height: 32),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('SUBJECT: ${_subjectController.text.toUpperCase()}',
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      Text('CLASS: $_selectedLevel',
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      const Text('TIME: 1 HOUR',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey[300]!)),
-                    child: const Center(
-                        child:
-                            Icon(Icons.qr_code, size: 50, color: Colors.grey)),
-                  )
+                  _paperHeaderRow('SUBJECT', _subjectController.text),
+                  _paperHeaderRow('CLASS', _selectedLevel),
+                  _paperHeaderRow('TIME', '${_durationController.text} MINS'),
                 ],
               ),
-              const SizedBox(height: 24),
-              const Divider(thickness: 2),
-              const SizedBox(height: 32),
-
-              // Questions
-              for (int i = 0; i < _generatedQuestions.length; i++)
-                _editableQuestionWidget(_generatedQuestions[i], i + 1),
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                    border: Border.all(color: WebColors.border),
+                    borderRadius: BorderRadius.circular(8)),
+                child: const Center(
+                    child: Icon(Icons.qr_code_2,
+                        size: 64, color: WebColors.textTertiary)),
+              ),
             ],
           ),
-        ),
-      ],
+          const SizedBox(height: 32),
+          const Divider(thickness: 2, color: Colors.black87),
+          const SizedBox(height: 48),
+          for (int i = 0; i < _generatedQuestions.length; i++)
+            _editablePaperQuestion(_generatedQuestions[i], i + 1),
+        ],
+      ),
     );
   }
 
-  Widget _editableQuestionWidget(LocalQuizQuestion q, int index) {
+  Widget _editablePaperQuestion(LocalQuizQuestion q, int index) {
+    int marks =
+        (q.questionType == 'Multiple Choice' || q.questionType == 'True/False')
+            ? _marksA
+            : (q.questionType == 'Short Answer' ? _marksB : _marksC);
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 24),
+      margin: const EdgeInsets.only(bottom: 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -983,43 +1059,50 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('$index. ',
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 16)),
               Expanded(
                 child: TextField(
                   controller: TextEditingController(text: q.question),
                   maxLines: null,
                   onChanged: (v) => q.question = v,
-                  style: const TextStyle(fontSize: 16),
+                  style: const TextStyle(fontSize: 16, height: 1.5),
                   decoration: const InputDecoration(
                       border: InputBorder.none, isCollapsed: true),
                 ),
               ),
+              const SizedBox(width: 8),
+              Text('($marks Marks)',
+                  style: const TextStyle(
+                      fontStyle: FontStyle.italic,
+                      fontSize: 12,
+                      color: WebColors.textTertiary)),
               IconButton(
                 onPressed: () =>
                     setState(() => _generatedQuestions.removeAt(index - 1)),
-                icon: const Icon(Icons.delete_outline, size: 18),
+                icon: const Icon(Icons.delete_outline,
+                    size: 18, color: Colors.redAccent),
               ),
             ],
           ),
-          if (q.questionType == 'Multiple Choice') ...[
-            const SizedBox(height: 12),
+          if (q.questionType == 'Multiple Choice')
             Padding(
-              padding: const EdgeInsets.only(left: 20),
+              padding: const EdgeInsets.only(left: 24, top: 12),
               child: Column(
                 children: [
-                  for (int j = 0; j < q.options.length; j++)
+                  for (int i = 0; i < q.options.length; i++)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Row(
                         children: [
-                          Text('(${String.fromCharCode(65 + j)}) ',
-                              style: const TextStyle(
-                                  color: WebColors.textTertiary)),
+                          Text('(${String.fromCharCode(65 + i)}) ',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w600)),
                           Expanded(
                             child: TextField(
                               controller:
-                                  TextEditingController(text: q.options[j]),
-                              onChanged: (v) => q.options[j] = v,
+                                  TextEditingController(text: q.options[i]),
+                              onChanged: (v) => q.options[i] = v,
                               decoration: const InputDecoration(
                                   border: InputBorder.none, isCollapsed: true),
                             ),
@@ -1030,7 +1113,193 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                 ],
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  // --- Helpers ---
+
+  Widget _wizardSectionHeader(String title, String subtitle) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title,
+            style: const TextStyle(
+                color: WebColors.purplePrimary,
+                fontWeight: FontWeight.w800,
+                fontSize: 12,
+                letterSpacing: 1.5)),
+        const SizedBox(height: 8),
+        Text(subtitle,
+            style:
+                const TextStyle(color: WebColors.textSecondary, fontSize: 14)),
+      ],
+    );
+  }
+
+  Widget _titleField(String label, TextEditingController ctrl, String hint,
+      {bool isNumber = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: ctrl,
+          keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+          decoration: InputDecoration(
+              hintText: hint, border: const OutlineInputBorder()),
+        ),
+      ],
+    );
+  }
+
+  Widget _sourceUploadCard(
+      String title, String sub, IconData icon, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+            border: Border.all(color: WebColors.border),
+            borderRadius: BorderRadius.circular(16)),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                  color: WebColors.purplePrimary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, color: WebColors.purplePrimary),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 15)),
+                  const SizedBox(height: 4),
+                  Text(sub,
+                      style: const TextStyle(
+                          color: WebColors.textTertiary, fontSize: 12)),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios,
+                size: 14, color: WebColors.textTertiary),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _uploadedStateCard() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+          color: const Color(0xFFF0FDF4),
+          border: Border.all(color: const Color(0xFFDCFCE7)),
+          borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.check_circle, color: WebColors.success),
+              const SizedBox(width: 16),
+              const Expanded(
+                  child: Text('Source Material Extracted',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF166534)))),
+              IconButton(
+                  onPressed: () => setState(() => _sourceMaterial = ''),
+                  icon: const Icon(Icons.delete_outline, color: Colors.red)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _sourceMaterial.length > 200
+                ? '${_sourceMaterial.substring(0, 200)}...'
+                : _sourceMaterial,
+            style: const TextStyle(fontSize: 12, color: Color(0xFF166534)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _checkboxTile(
+      String title, String sub, bool val, Function(bool?) onChange) {
+    return CheckboxListTile(
+      title: Text(title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+      subtitle: Text(sub, style: const TextStyle(fontSize: 12)),
+      value: val,
+      onChanged: onChange,
+      activeColor: WebColors.purplePrimary,
+      contentPadding: EdgeInsets.zero,
+    );
+  }
+
+  Widget _switchTile(
+      String title, String sub, bool val, Function(bool) onChange) {
+    return SwitchListTile(
+      title: Text(title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+      subtitle: Text(sub, style: const TextStyle(fontSize: 12)),
+      value: val,
+      onChanged: onChange,
+      activeThumbColor: WebColors.purplePrimary,
+      contentPadding: EdgeInsets.zero,
+    );
+  }
+
+  Widget _marksAllocationRow(
+      String label, String sub, int val, Function(int) onChange) {
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 14)),
+              Text(sub,
+                  style: const TextStyle(
+                      fontSize: 12, color: WebColors.textTertiary)),
+            ],
+          ),
+        ),
+        SizedBox(
+          width: 80,
+          child: TextField(
+            textAlign: TextAlign.center,
+            keyboardType: TextInputType.number,
+            onChanged: (v) => onChange(int.tryParse(v) ?? 1),
+            decoration: InputDecoration(
+              hintText: '$val',
+              suffixText: 'pts',
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _paperHeaderRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(value.toUpperCase()),
         ],
       ),
     );
@@ -1038,39 +1307,27 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
 
   Widget _buildOverlayLoading() {
     return Container(
-      color: Colors.white.withOpacity(0.8),
+      color: Colors.black54,
       child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: 24),
-            Text(_processingMessage,
-                style: GoogleFonts.outfit(
-                    fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: () {
-                _cancelToken?.cancel();
-                setState(() {
-                  _isGeneratingQuestions = false;
-                  _isProcessingSource = false;
-                });
-              },
-              child: const Text('Cancel Operation'),
-            ),
-          ],
+        child: Container(
+          padding: const EdgeInsets.all(40),
+          decoration: BoxDecoration(
+              color: Colors.white, borderRadius: BorderRadius.circular(24)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 24),
+              Text(_processingMessage,
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              TextButton(
+                  onPressed: () => _cancelToken?.cancel(),
+                  child: const Text('Cancel Request')),
+            ],
+          ),
         ),
       ),
-    ).animate().fadeIn();
-  }
-
-  Widget _formHeader(String text) {
-    return Text(text,
-        style: GoogleFonts.outfit(
-            fontSize: 12,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 1,
-            color: WebColors.textTertiary));
+    );
   }
 }

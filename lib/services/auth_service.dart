@@ -408,4 +408,17 @@ class AuthService {
   }
 
   bool get isEmailVerified => _auth.currentUser?.emailVerified ?? false;
+
+  /// Update the user's role in Firestore (called after sign-up role selection)
+  Future<void> updateUserRole(String uid, UserRole role) async {
+    try {
+      await FirestoreService().db.collection('users').doc(uid).update({
+        'role': role.name,
+      });
+      developer.log('User role updated to ${role.name} for $uid');
+    } catch (e) {
+      developer.log('Failed to update user role', error: e);
+      rethrow;
+    }
+  }
 }

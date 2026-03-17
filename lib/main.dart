@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart'
     show kDebugMode, kIsWeb, PlatformDispatcher;
 import 'package:flutter/material.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:provider/provider.dart';
 import 'package:sumquiz/providers/sync_provider.dart';
 import 'package:sumquiz/providers/theme_provider.dart';
@@ -38,6 +39,7 @@ import 'package:sumquiz/theme/web_theme.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 void main() async {
+  usePathUrlStrategy(); // Remove # from web URLs (sumquiz.xyz/route instead of sumquiz.xyz/#/route)
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(

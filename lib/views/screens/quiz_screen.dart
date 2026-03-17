@@ -308,7 +308,7 @@ class _QuizScreenState extends State<QuizScreen> {
           widget.quiz == null ? 'Create Quiz' : 'Quiz',
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.w600,
-            color: theme.colorScheme.onSurface,
+            color: const Color(0xFFF59E0B),
           ),
         ),
         backgroundColor: theme.scaffoldBackgroundColor,
@@ -405,7 +405,7 @@ class _QuizScreenState extends State<QuizScreen> {
             child: CircularProgressIndicator(
               strokeWidth: 4,
               valueColor:
-                  AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                  AlwaysStoppedAnimation<Color>(const Color(0xFFF59E0B)),
             ),
           ),
           const SizedBox(height: 32),
@@ -460,8 +460,8 @@ class _QuizScreenState extends State<QuizScreen> {
               icon: const Icon(Icons.refresh_rounded),
               label: const Text('Try Again'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
+                backgroundColor: const Color(0xFFF59E0B),
+                foregroundColor: Colors.white,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 shape: RoundedRectangleBorder(
@@ -533,7 +533,7 @@ class _QuizScreenState extends State<QuizScreen> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide:
-                        BorderSide(color: theme.colorScheme.primary, width: 2),
+                        const BorderSide(color: Color(0xFFF59E0B), width: 2),
                   ),
                   contentPadding: const EdgeInsets.all(20),
                 ),
@@ -574,7 +574,7 @@ class _QuizScreenState extends State<QuizScreen> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide:
-                        BorderSide(color: theme.colorScheme.primary, width: 2),
+                        const BorderSide(color: Color(0xFFF59E0B), width: 2),
                   ),
                   contentPadding: const EdgeInsets.all(20),
                 ),
@@ -594,8 +594,8 @@ class _QuizScreenState extends State<QuizScreen> {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: theme.colorScheme.onPrimary,
+                    backgroundColor: const Color(0xFFF59E0B),
+                    foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

@@ -396,6 +396,8 @@ Text: $text''';
     required int questionCount,
     required List<String> questionTypes,
     required double difficultyMix,
+    bool evenTopicCoverage = true,
+    bool focusWeakAreas = false,
     String? userId,
     CancellationToken? cancelToken,
   }) async {
@@ -441,6 +443,8 @@ Text: $text''';
     - Total Questions: $questionCount
     - Allowed Types: ${questionTypes.join(', ')}
     - Overall Difficulty: $difficultyDesc
+    ${evenTopicCoverage ? '- Strategy: Ensure EVEN TOPIC COVERAGE across the source material.' : ''}
+    ${focusWeakAreas ? '- Strategy: FOCUS ON COMPLEX/TECHNICAL areas that are typically difficult for students.' : ''}
     - Source Material: $text
 
     REQUIREMENTS:

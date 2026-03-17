@@ -47,7 +47,7 @@ class DailyGoalCard extends StatelessWidget {
                 style: GoogleFonts.outfit(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
-                  color: WebColors.primary,
+                  color: WebColors.secondary,
                 ),
               ),
             ],
@@ -61,7 +61,7 @@ class DailyGoalCard extends StatelessWidget {
               value: clampedProgress,
               backgroundColor: WebColors.backgroundAlt,
               valueColor: AlwaysStoppedAnimation<Color>(
-                clampedProgress >= 1.0 ? WebColors.success : WebColors.primary,
+                clampedProgress >= 1.0 ? WebColors.success : WebColors.secondary,
               ),
               minHeight: 12,
             ),

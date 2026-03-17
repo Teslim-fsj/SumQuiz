@@ -44,11 +44,10 @@ class ActiveMissionCard extends StatelessWidget {
               flex: 4,
               child: Container(
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [
-                      // ignore: deprecated_member_use
-                      WebColors.accent.withOpacity(0.9),
-                      WebColors.primary
+                      Color(0xFF6B5CE7), // purplePrimary
+                      Color(0xFF8B5CF6),
                     ],
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
@@ -64,11 +63,11 @@ class ActiveMissionCard extends StatelessWidget {
                         width: 250,
                         height: 150,
                         decoration: BoxDecoration(
-                          color: WebColors.accent.withOpacity(0.3),
+                          color: const Color(0xFFEAB308).withOpacity(0.3), // WebColors.yellowTip
                           borderRadius: BorderRadius.circular(100),
                           boxShadow: [
                             BoxShadow(
-                              color: WebColors.accent.withOpacity(0.4),
+                              color: const Color(0xFFEAB308).withOpacity(0.4),
                               blurRadius: 80,
                               spreadRadius: 20,
                             ),
@@ -105,7 +104,7 @@ class ActiveMissionCard extends StatelessWidget {
                             style: GoogleFonts.outfit(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: WebColors.primary,
+                              color: WebColors.purplePrimary,
                               letterSpacing: 1.2,
                             ),
                           ),
@@ -115,12 +114,12 @@ class ActiveMissionCard extends StatelessWidget {
                           children: [
                             Text.rich(
                               TextSpan(
-                                text: '$done/$total',
-                                style: GoogleFonts.outfit(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w800,
-                                  color: WebColors.primary,
-                                ),
+                                  text: '$done/$total',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w800,
+                                    color: WebColors.purplePrimary,
+                                  ),
                                 children: [
                                   TextSpan(
                                     text: '\nSETS DONE',
@@ -185,7 +184,7 @@ class ActiveMissionCard extends StatelessWidget {
                       child: LinearProgressIndicator(
                         value: overflowProgress,
                         backgroundColor: WebColors.backgroundAlt,
-                        color: WebColors.accent,
+                        color: WebColors.purplePrimary,
                         minHeight: 12,
                       ),
                     ),
@@ -200,7 +199,7 @@ class ActiveMissionCard extends StatelessWidget {
                           child: ElevatedButton(
                             onPressed: onStart,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: WebColors.accent,
+                              backgroundColor: WebColors.purplePrimary,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 20),
                               shape: RoundedRectangleBorder(

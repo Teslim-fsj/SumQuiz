@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:sumquiz/views/widgets/web/get_mobile_app_dialog.dart';
 import 'package:sumquiz/theme/web_theme.dart';
 import 'package:sumquiz/views/screens/web/creator_tab_view.dart';
 
 class LandingPageWeb extends StatefulWidget {
-  const LandingPageWeb({super.key});
+  final int initialTab;
+  const LandingPageWeb({super.key, this.initialTab = 0});
 
   @override
   State<LandingPageWeb> createState() => _LandingPageWebState();
@@ -25,7 +25,11 @@ class _LandingPageWebState extends State<LandingPageWeb>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: widget.initialTab,
+    );
   }
 
   @override

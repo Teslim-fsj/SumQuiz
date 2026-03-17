@@ -32,6 +32,7 @@ class WebColors {
   static const Color accentOrange = Color(0xFFF59E0B); // Amber
   static const Color accentPink = Color(0xFFEC4899); // Pink
   static const Color success = Color(0xFF10B981); // Emerald 500
+  static const Color error = Color(0xFFEF4444); // Red 500
 
   // New colors for redesigned UI
   static const Color purplePrimary = Color(0xFF6B5CE7);

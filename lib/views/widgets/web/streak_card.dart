@@ -46,7 +46,7 @@ class StreakCard extends StatelessWidget {
                 style: GoogleFonts.outfit(
                   fontSize: 56,
                   fontWeight: FontWeight.w900,
-                  color: WebColors.accent, // Violet color from design
+                  color: WebColors.accentOrange,
                   height: 1.0,
                 ),
               ),
@@ -88,7 +88,7 @@ class StreakCard extends StatelessWidget {
           height: 32,
           decoration: BoxDecoration(
             color:
-                isActive ? WebColors.accent : WebColors.border.withOpacity(0.5),
+                isActive ? WebColors.accentOrange : WebColors.border.withOpacity(0.5),
             shape: BoxShape.circle,
           ),
           alignment: Alignment.center,

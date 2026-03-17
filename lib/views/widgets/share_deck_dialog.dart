@@ -15,7 +15,7 @@ class ShareDeckDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final shareLink = 'https://sumquiz.app/deck?code=$shareCode';
+    final shareLink = 'https://sumquiz.xyz/deck?code=$shareCode';
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

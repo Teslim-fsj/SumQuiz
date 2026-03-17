@@ -11,9 +11,12 @@ import '../../models/editable_content.dart';
 import '../../models/local_summary.dart';
 import '../../models/local_quiz.dart';
 import '../../models/local_flashcard_set.dart';
+import '../../models/local_flashcard.dart';
 import '../../models/quiz_question.dart';
+import '../../models/local_quiz_question.dart';
 import '../../models/flashcard.dart';
 import '../../models/flashcard_set.dart';
+import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../../services/local_database_service.dart';
 import '../../services/sync_service.dart';
@@ -463,19 +466,19 @@ class _LibraryViewState extends State<_LibraryView>
     switch (item.type) {
       case LibraryItemType.summary:
         icon = Icons.article_outlined;
-        iconColor = Colors.blueAccent;
+        iconColor = const Color(0xFF0D9488); // Teal
         break;
       case LibraryItemType.quiz:
         icon = Icons.quiz_outlined;
-        iconColor = Colors.greenAccent;
+        iconColor = const Color(0xFFF59E0B); // Amber/Orange
         break;
       case LibraryItemType.flashcards:
         icon = Icons.style_outlined;
-        iconColor = Colors.orangeAccent;
+        iconColor = const Color(0xFFEC4899); // Pink
         break;
       case LibraryItemType.exam:
         icon = Icons.assignment_outlined;
-        iconColor = Colors.purpleAccent;
+        iconColor = const Color(0xFF6B5CE7); // PurplePrimary
         break;
     }
 
@@ -716,20 +719,69 @@ class _LibraryViewState extends State<_LibraryView>
     if (user == null) return;
 
     try {
+      final userId = viewModel.userId;
+
       // Get the specific content based on its type
       dynamic contentData;
       switch (item.type) {
         case LibraryItemType.summary:
           contentData = await viewModel.localDb.getSummary(item.id);
+          // Fallback to Firestore if local data is missing
+          if (contentData == null) {
+            final fsDoc =
+                await viewModel.firestoreService.getSummary(userId, item.id);
+            if (fsDoc != null) {
+              contentData = LocalSummary(
+                id: fsDoc.id,
+                title: fsDoc.title,
+                content: fsDoc.content,
+                timestamp: fsDoc.timestamp.toDate(),
+                userId: userId,
+              );
+            }
+          }
           break;
         case LibraryItemType.quiz:
+        case LibraryItemType.exam:
           contentData = await viewModel.localDb.getQuiz(item.id);
+          // Fallback to Firestore if local data is missing
+          if (contentData == null) {
+            final fsDoc =
+                await viewModel.firestoreService.getQuiz(userId, item.id);
+            if (fsDoc != null) {
+              contentData = LocalQuiz(
+                id: fsDoc.id,
+                title: fsDoc.title,
+                timestamp: fsDoc.timestamp.toDate(),
+                userId: userId,
+                questions: fsDoc.questions
+                    .map((q) => q.toLocalQuizQuestion())
+                    .toList(),
+              );
+            }
+          }
           break;
         case LibraryItemType.flashcards:
           contentData = await viewModel.localDb.getFlashcardSet(item.id);
-          break;
-        case LibraryItemType.exam:
-          contentData = await viewModel.localDb.getQuiz(item.id);
+          // Fallback to Firestore if local data is missing
+          if (contentData == null) {
+            final fsDoc = await viewModel.firestoreService
+                .getFlashcardSet(userId, item.id);
+            if (fsDoc != null) {
+              contentData = LocalFlashcardSet(
+                id: fsDoc.id,
+                title: fsDoc.title,
+                timestamp: fsDoc.timestamp.toDate(),
+                userId: userId,
+                flashcards: fsDoc.flashcards
+                    .map((f) => LocalFlashcard(
+                          question: f.question,
+                          answer: f.answer,
+                        ))
+                    .toList(),
+              );
+            }
+          }
           break;
       }
 

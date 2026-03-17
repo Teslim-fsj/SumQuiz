@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sumquiz/models/user_model.dart';
 
 enum AuthMode { login, signUp }
 
@@ -67,6 +69,9 @@ class _AuthScreenState extends State<AuthScreen>
           _fullNameController.text.trim(),
           _referralCodeController.text.trim(),
         );
+        if (mounted) {
+          await _showRolePickerDialog();
+        }
       }
     } on FirebaseAuthException catch (e) {
       String errorMessage = 'Authentication failed. Please try again.';
@@ -145,6 +150,15 @@ class _AuthScreenState extends State<AuthScreen>
       final authService = Provider.of<AuthService>(context, listen: false);
       await authService.signInWithGoogle(context,
           referralCode: _referralCodeController.text.trim());
+      
+      // Check if new user to show role picker
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool('is_new_user') ?? false) {
+        if (mounted) {
+          await _showRolePickerDialog();
+          await prefs.setBool('is_new_user', false);
+        }
+      }
     } catch (e) {
       String errorMessage = 'Google Sign-In failed. Please try again.';
 
@@ -655,6 +669,120 @@ class _AuthScreenState extends State<AuthScreen>
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _showRolePickerDialog() async {
+    final theme = Theme.of(context);
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final user = authService.currentUser;
+    if (user == null) return;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: Container(
+            padding: const EdgeInsets.all(32),
+            constraints: const BoxConstraints(maxWidth: 500),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Welcome to SumQuiz!',
+                  style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'How do you plan to use SumQuiz?',
+                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.7)),
+                ),
+                const SizedBox(height: 32),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _RoleCard(
+                        title: 'Student',
+                        description: 'I want to study, create quizzes and flashcards for myself.',
+                        icon: Icons.school_outlined,
+                        color: theme.colorScheme.primary,
+                        onTap: () async {
+                          await authService.updateUserRole(user.uid, UserRole.student);
+                          if (context.mounted) Navigator.pop(context);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _RoleCard(
+                        title: 'Teacher',
+                        description: 'I want to create exams and materials for my students.',
+                        icon: Icons.assignment_ind_outlined,
+                        color: Colors.purple,
+                        onTap: () async {
+                          await authService.updateUserRole(user.uid, UserRole.creator);
+                          if (context.mounted) Navigator.pop(context);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RoleCard extends StatelessWidget {
+  final String title;
+  final String description;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _RoleCard({
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          border: Border.all(color: color.withOpacity(0.3), width: 2),
+          borderRadius: BorderRadius.circular(16),
+          color: color.withOpacity(0.05),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 40, color: color),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              description,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
