@@ -160,7 +160,7 @@ GoRouter createAppRouter(AuthService authService) {
         builder: (context, state) => const LandingPageWeb(),
       ),
       GoRoute(
-        path: '/Educator',
+        path: '/Educators',
         builder: (context, state) => const LandingPageWeb(initialTab: 1),
       ),
       GoRoute(
@@ -197,7 +197,7 @@ GoRouter createAppRouter(AuthService authService) {
                   ),
                   creatorView: ResponsiveView(
                     mobile: TeacherDashboardScreen(),
-                    desktop: TeacherDashboardWeb(),
+                    desktop: TeacherDashboardWeb(module: 'dashboard'),
                   ),
                 ),
                 routes: [],
@@ -218,13 +218,13 @@ GoRouter createAppRouter(AuthService authService) {
                   ),
                   creatorView: ResponsiveView(
                     mobile: ExamCreationScreen(),
-                    desktop: ExamCreationScreenWeb(),
+                    desktop: TeacherDashboardWeb(module: 'content'),
                   ),
                 ),
                 routes: [
                   // Sub-routes accessible from the Library tab
                   GoRoute(
-                    path: 'summary',
+                    path: 'summary/:id',
                     name: 'library-summary',
                     parentNavigatorKey:
                         _rootNavigatorKey, // Show without nav bar
@@ -233,7 +233,8 @@ GoRouter createAppRouter(AuthService authService) {
                         final summary = state.extra is LocalSummary
                             ? state.extra as LocalSummary?
                             : null;
-                        return SummaryScreen(summary: summary);
+                        final id = state.pathParameters['id'];
+                        return SummaryScreen(summary: summary, id: id);
                       } catch (e) {
                         debugPrint('Error in summary route: $e');
                         return Scaffold(
@@ -246,7 +247,7 @@ GoRouter createAppRouter(AuthService authService) {
                     },
                   ),
                   GoRoute(
-                    path: 'quiz',
+                    path: 'quiz/:id',
                     name: 'library-quiz',
                     parentNavigatorKey:
                         _rootNavigatorKey, // Show without nav bar
@@ -255,7 +256,8 @@ GoRouter createAppRouter(AuthService authService) {
                         final quiz = state.extra is LocalQuiz
                             ? state.extra as LocalQuiz?
                             : null;
-                        return QuizScreen(quiz: quiz);
+                        final id = state.pathParameters['id'];
+                        return QuizScreen(quiz: quiz, id: id);
                       } catch (e) {
                         debugPrint('Error in quiz route: $e');
                         return Scaffold(
@@ -268,7 +270,7 @@ GoRouter createAppRouter(AuthService authService) {
                     },
                   ),
                   GoRoute(
-                    path: 'flashcards',
+                    path: 'flashcards/:id',
                     name: 'library-flashcards',
                     parentNavigatorKey:
                         _rootNavigatorKey, // Show without nav bar
@@ -277,7 +279,8 @@ GoRouter createAppRouter(AuthService authService) {
                         final set = state.extra is FlashcardSet
                             ? state.extra as FlashcardSet?
                             : null;
-                        return FlashcardsScreen(flashcardSet: set);
+                        final id = state.pathParameters['id'];
+                        return FlashcardsScreen(flashcardSet: set, id: id);
                       } catch (e) {
                         debugPrint('Error in flashcards route: $e');
                         return Scaffold(
@@ -400,7 +403,7 @@ GoRouter createAppRouter(AuthService authService) {
                   ),
                   creatorView: ResponsiveView(
                     mobile: LibraryScreen(), // Teachers see Library as "Assets" for now
-                    desktop: LibraryScreenWeb(),
+                    desktop: TeacherDashboardWeb(module: 'analytics'),
                   ),
                 ),
                   routes: []),
@@ -451,6 +454,27 @@ GoRouter createAppRouter(AuthService authService) {
                     builder: (context, state) => const ReferralScreen(),
                   ),
                 ],
+              ),
+            ],
+          ),
+          // Branch 6: Students
+          StatefulShellBranch(
+            navigatorKey: GlobalKey<NavigatorState>(debugLabel: 'StudentsShell'),
+            routes: <RouteBase>[
+              GoRoute(
+                path: '/students',
+                builder: (context, state) => const TeacherDashboardWeb(module: 'students'),
+              ),
+            ],
+          ),
+
+          // Branch 7: AI Feedback
+          StatefulShellBranch(
+            navigatorKey: GlobalKey<NavigatorState>(debugLabel: 'FeedbackShell'),
+            routes: <RouteBase>[
+              GoRoute(
+                path: '/feedback',
+                builder: (context, state) => const TeacherDashboardWeb(module: 'feedback'),
               ),
             ],
           ),

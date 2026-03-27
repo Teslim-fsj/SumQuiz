@@ -250,28 +250,31 @@ abstract class AIBaseService {
       return part;
     }).toList();
 
-    var targetModel = customModel ?? _model;
-    if (targetModel == null) {
-      developer.log('Target model is null', name: 'AIBaseService');
-      throw AIServiceException('Model not available',
-          code: 'MODEL_NOT_AVAILABLE');
+    // Model cascade: primary → fallback (auto-switches on quota/rate-limit)
+    final modelChain = customModel != null
+        ? [customModel]
+        : [_model, _fallbackModel]
+            .whereType<GenerativeModel>()
+            .toList();
+
+    if (modelChain.isEmpty) {
+      throw AIServiceException('No models available', code: 'MODEL_NOT_AVAILABLE');
     }
 
-    developer.log('Using target model', name: 'AIBaseService');
-
-    // If custom config is provided, we need to re-wrap the model with it
-    // Note: GenerativeModel is immutable, but we can use provide custom config per request in newer SDKs
-    // but for compatibility we check if we can pass it to generateContent
+    developer.log('Model cascade chain: ${modelChain.length} model(s)',
+        name: 'AIBaseService');
 
     int attempt = 0;
+    int modelIndex = 0;
+
     while (attempt < AIConfig.maxRetries) {
       cancelToken?.throwIfCancelled();
+      final targetModel = modelChain[modelIndex];
 
       try {
         final response = await targetModel.generateContent(
           [Content.multi(sanitizedParts)],
-          generationConfig:
-              generationConfig, // Supported in newer versions of the SDK
+          generationConfig: generationConfig,
         ).timeout(const Duration(seconds: AIConfig.requestTimeoutSeconds));
 
         cancelToken?.throwIfCancelled();
@@ -284,16 +287,30 @@ abstract class AIBaseService {
               code: 'EMPTY_RESPONSE');
         }
 
-        // --- NEW LOGGING ---
         developer.log(
             'RAW AI RESPONSE (first 200 chars): ${text.length > 200 ? text.substring(0, 200) : text}',
             name: 'AIBaseService');
-        // -------------------
 
         developer.log('Successfully generated response', name: 'AIBaseService');
         return text.trim();
       } catch (e) {
         attempt++;
+        final errorMsg = e.toString().toLowerCase();
+        final isQuotaError = errorMsg.contains('quota') ||
+            errorMsg.contains('rate limit') ||
+            errorMsg.contains('429') ||
+            errorMsg.contains('resource_exhausted');
+        final isTimeout = e is TimeoutException;
+
+        // Cascade to next model in chain on quota/timeout
+        if ((isQuotaError || isTimeout) && modelIndex < modelChain.length - 1) {
+          modelIndex++;
+          developer.log(
+              'Cascading to next model (attempt $attempt) due to: $e',
+              name: 'AIBaseService');
+          continue;
+        }
+
         if (attempt >= AIConfig.maxRetries) {
           developer.log('Max retries exceeded for generation',
               name: 'AIBaseService', error: e);
@@ -307,10 +324,9 @@ abstract class AIBaseService {
           AIConfig.maxRetryDelayMs,
         ).toInt();
 
-        final errorMessage = e.toString().toLowerCase();
-        if (errorMessage.contains('403') ||
-            errorMessage.contains('permission_denied') ||
-            errorMessage.contains('api_key_invalid')) {
+        if (errorMsg.contains('403') ||
+            errorMsg.contains('permission_denied') ||
+            errorMsg.contains('api_key_invalid')) {
           developer.log(
               'CRITICAL: API Key appears to be invalid or restricted (403 Forbidden).',
               name: 'AIBaseService',

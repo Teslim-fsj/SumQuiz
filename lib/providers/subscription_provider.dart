@@ -144,6 +144,28 @@ class SubscriptionProvider with ChangeNotifier {
     }
   }
 
+  // Start a real Google Play free-trial subscription.
+  // Google Play will show its billing sheet and require the user to add a
+  // payment method before granting the 3-day trial.
+  // Firestore is updated asynchronously via the purchase stream listener —
+  // the UI should react to the UserModel stream rather than poll here.
+  Future<bool> startTrialPurchase() async {
+    if (_isLoading || _iapService == null) return false;
+
+    _setLoading(true);
+    try {
+      final initiated = await _iapService!.startTrialPurchase();
+      // Note: Firestore will be updated by _handleSuccessfulPurchase once
+      // Google Play confirms the purchase. We do NOT await it here.
+      return initiated;
+    } catch (e) {
+      debugPrint('Trial purchase error: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   // Restore purchases
   Future<void> restorePurchases() async {
     if (_isLoading || _iapService == null) return;

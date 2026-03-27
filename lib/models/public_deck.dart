@@ -15,6 +15,13 @@ class PublicDeck {
   final DateTime publishedAt;
   final bool isExam;
 
+  String get type {
+    if (isExam) return 'exam';
+    if (quizData.isNotEmpty) return 'quiz';
+    if (flashcardData.isNotEmpty) return 'flashcards';
+    return 'summary';
+  }
+
   PublicDeck({
     required this.id,
     required this.creatorId,

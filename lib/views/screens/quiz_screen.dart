@@ -25,12 +25,14 @@ enum QuizState { creation, loading, inProgress, finished, error }
 
 class QuizScreen extends StatefulWidget {
   final LocalQuiz? quiz;
+  final String? id;
   final String? initialText;
   final String? initialTitle;
 
   const QuizScreen({
     super.key,
     this.quiz,
+    this.id,
     this.initialText,
     this.initialTitle,
   });
@@ -61,13 +63,68 @@ class _QuizScreenState extends State<QuizScreen> {
     _aiService = EnhancedAIService(
         iapService: Provider.of<IAPService>(context, listen: false));
     _localDbService.init();
+    _loadQuiz();
+  }
 
+  Future<void> _loadQuiz() async {
     if (widget.quiz != null) {
       _questions = widget.quiz!.questions;
       _titleController.text = widget.quiz!.title;
       _quizId = widget.quiz!.id;
       _state = QuizState.inProgress;
       _stopwatch.start();
+    } else if (widget.id != null) {
+      setState(() {
+        _state = QuizState.loading;
+        _loadingMessage = 'Loading Quiz...';
+      });
+
+      try {
+        LocalQuiz? quiz = await _localDbService.getQuiz(widget.id!);
+
+        if (quiz == null) {
+          final user = Provider.of<UserModel?>(context, listen: false);
+          if (user != null) {
+            final firestore = FirestoreService();
+            final fsDoc = await firestore.getQuiz(user.uid, widget.id!);
+            if (fsDoc != null) {
+              quiz = LocalQuiz(
+                id: fsDoc.id,
+                title: fsDoc.title,
+                timestamp: fsDoc.timestamp.toDate(),
+                userId: user.uid,
+                questions: fsDoc.questions
+                    .map((q) => q.toLocalQuizQuestion())
+                    .toList(),
+              );
+              await _localDbService.saveQuiz(quiz);
+            }
+          }
+        }
+
+        if (quiz != null && mounted) {
+          final q = quiz;
+          setState(() {
+            _questions = q.questions;
+            _titleController.text = q.title;
+            _quizId = q.id;
+            _state = QuizState.inProgress;
+            _stopwatch.start();
+          });
+        } else if (mounted) {
+          setState(() {
+            _state = QuizState.error;
+            _errorMessage = 'Quiz not found.';
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _state = QuizState.error;
+            _errorMessage = 'Error loading quiz: $e';
+          });
+        }
+      }
     } else {
       _questions = [];
       _quizId = const Uuid().v4();

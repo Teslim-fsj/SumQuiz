@@ -139,30 +139,173 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
     return Scaffold(
       backgroundColor: WebColors.background,
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: WebColors.primary))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(40),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1200),
+          ? const Center(child: CircularProgressIndicator(color: WebColors.primary))
+          : Row(
+              children: [
+                _buildSidebar(context),
+                Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildTopHeader(user),
-                      const SizedBox(height: 32),
-                      _buildStatsRow(),
-                      const SizedBox(height: 32),
-                      _buildMainContent(),
-                      const SizedBox(height: 32),
-                      _buildAchievementsSection(),
-                      const SizedBox(height: 40),
-                      _buildFooter(),
+                      _buildModernHeader(user),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 1100),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildTopHeader(user),
+                                  const SizedBox(height: 32),
+                                  _buildStatsRow(),
+                                  const SizedBox(height: 32),
+                                  _buildMainContent(),
+                                  const SizedBox(height: 32),
+                                  _buildAchievementsSection(),
+                                  const SizedBox(height: 40),
+                                  _buildFooter(),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              ),
+              ],
             ),
+    );
+  }
+
+  Widget _buildSidebar(BuildContext context) {
+    return Container(
+      width: 280,
+      decoration: BoxDecoration(
+        color: WebColors.surface,
+        border: const Border(right: BorderSide(color: WebColors.border)),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: WebColors.HeroGradient,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.auto_awesome, color: Colors.white, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'SUMQUIZ',
+                  style: GoogleFonts.outfit(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.0,
+                    color: WebColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          _buildSidebarItem(Icons.dashboard_rounded, 'Overview', false, onTap: () => context.go('/review')),
+          _buildSidebarItem(Icons.library_books_rounded, 'Library', false, onTap: () => context.go('/library')),
+          _buildSidebarItem(Icons.analytics_rounded, 'Progress', true),
+          _buildSidebarItem(Icons.settings_rounded, 'Settings', false),
+          const Spacer(),
+          _buildSidebarItem(Icons.logout_rounded, 'Sign Out', false),
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSidebarItem(IconData icon, String label, bool isActive, {VoidCallback? onTap}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: isActive ? WebColors.primary.withOpacity(0.08) : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                color: isActive ? WebColors.primary : WebColors.textSecondary,
+                size: 22,
+              ),
+              const SizedBox(width: 16),
+              Text(
+                label,
+                style: GoogleFonts.outfit(
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                  color: isActive ? WebColors.primary : WebColors.textSecondary,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernHeader(UserModel? user) {
+    return Container(
+      height: 90,
+      padding: const EdgeInsets.symmetric(horizontal: 40),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.8),
+        border: const Border(bottom: BorderSide(color: WebColors.border)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Progress & Analytics',
+            style: GoogleFonts.outfit(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: WebColors.textPrimary,
+            ),
+          ),
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_none_rounded),
+                onPressed: () {},
+                style: IconButton.styleFrom(
+                  backgroundColor: WebColors.backgroundAlt,
+                  padding: const EdgeInsets.all(12),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  gradient: WebColors.AccentGradient,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                  boxShadow: WebColors.subtleShadow,
+                ),
+                child: const Icon(Icons.person_rounded, color: Colors.white),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -265,10 +408,13 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
   Widget _buildStreakCard() {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).dividerColor),
+      decoration: WebColors.glassDecoration(
+        blur: 15,
+        opacity: 0.05,
+        color: WebColors.surface,
+        borderRadius: 24,
+      ).copyWith(
+        boxShadow: WebColors.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

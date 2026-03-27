@@ -24,8 +24,9 @@ enum ScreenState { initial, loading, error, success }
 
 class SummaryScreen extends StatefulWidget {
   final LocalSummary? summary;
+  final String? id;
 
-  const SummaryScreen({super.key, this.summary});
+  const SummaryScreen({super.key, this.summary, this.id});
 
   @override
   SummaryScreenState createState() => SummaryScreenState();
@@ -52,11 +53,67 @@ class SummaryScreenState extends State<SummaryScreen> {
         iapService: Provider.of<IAPService>(context, listen: false));
     _localDbService = LocalDatabaseService();
     _localDbService.init();
+    _loadSummary();
+  }
+
+  Future<void> _loadSummary() async {
     if (widget.summary != null) {
       _summaryContent = widget.summary!.content;
       _summaryTitle = widget.summary!.title;
       _summaryTags = widget.summary!.tags;
       _state = ScreenState.success;
+    } else if (widget.id != null) {
+      setState(() {
+        _state = ScreenState.loading;
+        _loadingMessage = 'Loading Summary...';
+      });
+
+      try {
+        // Try local first
+        LocalSummary? summary = await _localDbService.getSummary(widget.id!);
+
+        // If not found in local, check Firestore if on Web
+        if (summary == null) {
+          final user = Provider.of<UserModel?>(context, listen: false);
+          if (user != null) {
+            final firestore = FirestoreService();
+            final fsDoc = await firestore.getSummary(user.uid, widget.id!);
+            if (fsDoc != null) {
+              summary = LocalSummary(
+                id: fsDoc.id,
+                title: fsDoc.title,
+                content: fsDoc.content,
+                timestamp: fsDoc.timestamp.toDate(),
+                userId: user.uid,
+              );
+              // Cache it locally
+              await _localDbService.saveSummary(summary);
+            }
+          }
+        }
+
+        if (summary != null && mounted) {
+          final s = summary;
+          setState(() {
+            _summaryContent = s.content;
+            _summaryTitle = s.title;
+            _summaryTags = s.tags;
+            _state = ScreenState.success;
+          });
+        } else if (mounted) {
+          setState(() {
+            _state = ScreenState.error;
+            _errorMessage = 'Summary not found.';
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _state = ScreenState.error;
+            _errorMessage = 'Error loading summary: $e';
+          });
+        }
+      }
     }
   }
 

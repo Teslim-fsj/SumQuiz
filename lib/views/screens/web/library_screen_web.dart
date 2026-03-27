@@ -11,7 +11,7 @@ import 'package:sumquiz/services/local_database_service.dart';
 import 'package:sumquiz/view_models/library_view_model.dart';
 import 'package:sumquiz/view_models/quiz_view_model.dart';
 import 'package:sumquiz/services/sync_service.dart';
-import 'package:sumquiz/models/folder.dart';
+import 'package:sumquiz/services/auth_service.dart';
 
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -22,7 +22,6 @@ import 'package:sumquiz/models/local_quiz.dart';
 import 'package:sumquiz/models/local_flashcard.dart';
 import 'package:sumquiz/models/flashcard_set.dart';
 import 'package:sumquiz/models/flashcard.dart';
-import 'package:sumquiz/services/auth_service.dart';
 import 'package:sumquiz/views/widgets/enter_code_dialog.dart';
 
 class LibraryScreenWeb extends StatefulWidget {
@@ -39,7 +38,9 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
   final TextEditingController _searchController = TextEditingController();
 
   String _searchQuery = '';
-  String _activeSidebarSection = 'All Content';
+  final String _activeSidebarSection = 'All Content';
+  LibraryViewModel? _viewModel;
+  bool _isNavigating = false;
 
   @override
   void initState() {
@@ -49,11 +50,21 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
     _localDb.init();
   }
 
+  void _initViewModel(UserModel user) {
+    _viewModel ??= LibraryViewModel(
+        localDb: _localDb,
+        firestoreService: context.read<FirestoreService>(),
+        syncService: context.read<SyncService>(),
+        userId: user.uid,
+      );
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final user = Provider.of<UserModel?>(context);
     if (user != null) {
+      _initViewModel(user);
       if (mounted) {
         Provider.of<QuizViewModel>(context, listen: false)
             .initializeForUser(user.uid);
@@ -72,29 +83,64 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
       return Scaffold(body: _buildLoginPrompt());
     }
 
-    return ChangeNotifierProvider(
-      create: (context) => LibraryViewModel(
-        localDb: context.read<LocalDatabaseService>(),
-        firestoreService: context.read<FirestoreService>(),
-        syncService: context.read<SyncService>(),
-        userId: user.uid,
-      ),
-      child: Consumer<LibraryViewModel>(
-        builder: (context, viewModel, child) {
-          return Scaffold(
-            body: Container(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              child: Row(
-                children: [
-                  _buildSidebar(viewModel),
-                  Expanded(
-                    child: _buildMainContent(user, viewModel),
+    if (_viewModel == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    return ChangeNotifierProvider.value(
+      value: _viewModel!,
+      child: Stack(
+        children: [
+          Consumer<LibraryViewModel>(
+            builder: (context, viewModel, child) {
+              return Scaffold(
+                backgroundColor: WebColors.background,
+                body: Row(
+                  children: [
+                    _buildSidebar(viewModel),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          _buildModernHeader(user, viewModel),
+                          Expanded(
+                            child: _buildMainContent(user, viewModel),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          if (_isNavigating)
+            Container(
+              color: Colors.black.withValues(alpha: 0.3),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                ],
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Preparing Content...',
+                        style: GoogleFonts.outfit(
+                          fontWeight: FontWeight.w600,
+                          color: WebColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          );
-        },
+        ],
       ),
     );
   }
@@ -130,7 +176,6 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
   }
 
   Widget _buildSidebar(LibraryViewModel viewModel) {
-    final selectedFolder = viewModel.selectedFolder;
     return Container(
       width: 280,
       padding: const EdgeInsets.fromLTRB(32, 40, 32, 32),
@@ -142,243 +187,126 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: WebColors.primary,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: WebColors.cardShadow,
+          Padding(
+            padding: const EdgeInsets.only(bottom: 32.0),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: WebColors.HeroGradient,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.auto_awesome, color: Colors.white, size: 24),
                 ),
-                child:
-                    const Icon(Icons.menu_book, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Text(
+                  'SUMQUIZ',
+                  style: GoogleFonts.outfit(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.0,
+                    color: WebColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 40),
+
+          // Main Navigation
+          _buildSidebarItem('Overview', Icons.dashboard_rounded, false, onTap: () => context.go('/review')),
+          _buildSidebarItem('Library', Icons.grid_view_rounded, true),
+          _buildSidebarItem('Progress', Icons.analytics_rounded, false, onTap: () => context.go('/progress')),
+          _buildSidebarItem('Settings', Icons.settings_rounded, false),
+          const Spacer(),
+          _buildSidebarItem('Sign Out', Icons.logout_rounded, false, onTap: () {
+            Provider.of<AuthService>(context, listen: false).signOut();
+            context.go('/auth');
+          }),
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSidebarItem(String title, IconData icon, bool isSelected, {VoidCallback? onTap}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? WebColors.primary.withValues(alpha: 0.08) : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                color: isSelected ? WebColors.primary : WebColors.textSecondary,
+                size: 22,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Text(
-                'SumQuiz Vault',
+                title,
                 style: GoogleFonts.outfit(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: WebColors.textPrimary,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? WebColors.primary : WebColors.textSecondary,
+                  fontSize: 16,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 40),
-
-          // Main Sections
-          _buildSidebarSection([
-            GestureDetector(
-                onTap: () {
-                  viewModel.selectFolder(null);
-                  setState(() => _activeSidebarSection = 'All Content');
-                },
-                child: _buildSidebarItem(
-                    'All Content',
-                    Icons.grid_view_rounded,
-                    _activeSidebarSection == 'All Content' &&
-                        selectedFolder == null)),
-            const SizedBox(height: 12),
-            GestureDetector(
-                onTap: () =>
-                    setState(() => _activeSidebarSection = 'Recently Viewed'),
-                child: _buildSidebarItem(
-                    'Recently Viewed',
-                    Icons.access_time_filled,
-                    _activeSidebarSection == 'Recently Viewed')),
-            GestureDetector(
-                onTap: () =>
-                    setState(() => _activeSidebarSection = 'Favorites'),
-                child: _buildSidebarItem('Favorites', Icons.star_border,
-                    _activeSidebarSection == 'Favorites')),
-            _buildSubItem('Collections', Icons.folder_outlined, onTap: () {}),
-          ]),
-
-          const SizedBox(height: 32),
-
-          // Collections List
-          Text(
-            'COLLECTIONS',
-            style: GoogleFonts.outfit(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              color: WebColors.textSecondary,
-              letterSpacing: 1.2,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: StreamBuilder<List<Folder>>(
-              stream: viewModel.allFolders$,
-              builder: (context, snapshot) {
-                final folders = snapshot.data ?? [];
-                return ListView.builder(
-                  itemCount: folders.length,
-                  itemBuilder: (context, index) {
-                    final folder = folders[index];
-                    final isSelected = selectedFolder?.id == folder.id;
-                    return GestureDetector(
-                      onTap: () {
-                        viewModel.selectFolder(folder);
-                        setState(() => _activeSidebarSection = 'Folder');
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 8, horizontal: 12),
-                        margin: const EdgeInsets.only(bottom: 4),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withValues(alpha: 0.1)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.folder_open,
-                                size: 18,
-                                color: isSelected
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Theme.of(context)
-                                        .colorScheme
-                                        .secondary
-                                        .withAlpha(128)),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                folder.name,
-                                style: GoogleFonts.outfit(
-                                  fontSize: 14,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w600
-                                      : FontWeight.w400,
-                                  color: isSelected
-                                      ? Theme.of(context).colorScheme.primary
-                                      : Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.color,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          GestureDetector(
-            onTap: () => context.push('/create'),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.add, color: Colors.white, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Create New',
-                    style: GoogleFonts.outfit(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSidebarSection(List<Widget> items) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: items,
-    );
-  }
-
-  Widget _buildSidebarItem(String title, IconData icon, bool isSelected) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        color: isSelected
-            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            color: isSelected
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.secondary.withAlpha(128),
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Text(
-            title,
-            style: GoogleFonts.outfit(
-              fontSize: 15,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              color: isSelected
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).textTheme.bodyMedium?.color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSubItem(String title, IconData icon, {VoidCallback? onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 36),
-        child: Row(
-          children: [
-            Icon(icon,
-                color: Theme.of(context).colorScheme.primary.withAlpha(153),
-                size: 18),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  color: Theme.of(context).textTheme.bodySmall?.color,
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );
   }
+
+  Widget _buildModernHeader(UserModel user, LibraryViewModel viewModel) {
+    return Container(
+      height: 90,
+      padding: const EdgeInsets.symmetric(horizontal: 40),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.8),
+        border: const Border(bottom: BorderSide(color: WebColors.border)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _buildHeader(viewModel),
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_none_rounded),
+                onPressed: () {},
+                style: IconButton.styleFrom(
+                  backgroundColor: WebColors.backgroundAlt,
+                  padding: const EdgeInsets.all(12),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  gradient: WebColors.AccentGradient,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                  boxShadow: WebColors.subtleShadow,
+                ),
+                child: const Icon(Icons.person_rounded, color: Colors.white),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+
 
   Widget _buildMainContent(UserModel user, LibraryViewModel viewModel) {
     return Padding(
@@ -708,12 +636,11 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
 
       switch (item.type) {
         case LibraryItemType.summary:
-          icon = Icons.article_outlined;
+          icon = Icons.description_outlined;
           bgColor = WebColors.secondary.withValues(alpha: 0.1);
           textColor = WebColors.secondary;
           typeName = 'SUMMARY';
-          badge =
-              item.description != null ? 'Details available' : 'No description';
+          badge = item.itemCount != null ? '${item.itemCount} Sections' : 'Detailed Analysis';
           break;
         case LibraryItemType.quiz:
           icon = Icons.quiz_outlined;
@@ -819,144 +746,115 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
   }) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: card.onTap,
-        child: Container(
-          decoration: BoxDecoration(
-            color: WebColors.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: WebColors.border),
-            boxShadow: WebColors.cardShadow,
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Stack(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          if (!card.isAddCard)
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: card.textColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(card.icon,
-                                  color: card.textColor, size: 24),
-                            )
-                          else
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).dividerColor,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Theme.of(context).dividerColor,
-                                  style: BorderStyle.solid,
-                                ),
-                              ),
-                              child: Icon(Icons.add,
-                                  color: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.color,
-                                  size: 24),
-                            ),
-                          if (card.typeName.isNotEmpty)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: card.textColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                card.typeName,
-                                style: GoogleFonts.outfit(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  color: card.textColor,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const Spacer(),
-                      Text(
-                        card.title,
-                        style: GoogleFonts.outfit(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: WebColors.textPrimary,
+      child: Container(
+        decoration: WebColors.glassDecoration(
+          blur: 15,
+          opacity: 0.05,
+          color: WebColors.surface,
+          borderRadius: 24,
+        ).copyWith(
+          boxShadow: WebColors.cardShadow,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: card.onTap,
+              hoverColor: card.textColor.withValues(alpha: 0.05),
+              splashColor: card.textColor.withValues(alpha: 0.1),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: card.textColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(card.icon,
+                              color: card.textColor, size: 24),
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        card.subtitle,
-                        style: GoogleFonts.outfit(
-                          fontSize: 14,
-                          color: WebColors.textSecondary,
-                          height: 1.5,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 16),
-                      if (!card.isAddCard)
-                        Row(
-                          children: [
-                            Text(
-                              card.date,
+                        if (card.typeName.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: card.textColor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              card.typeName,
                               style: GoogleFonts.outfit(
-                                fontSize: 12,
-                                color: Theme.of(context).colorScheme.primary,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: card.textColor,
+                                letterSpacing: 0.5,
                               ),
                             ),
-                            const Spacer(),
-                            if (card.badge.isNotEmpty)
-                              Row(
-                                children: [
-                                  Icon(
-                                    card.typeName == 'QUIZ'
-                                        ? Icons.emoji_events_outlined
-                                        : (card.typeName == 'FLASHCARDS'
-                                            ? Icons.layers_outlined
-                                            : Icons.visibility_outlined),
-                                    size: 14,
-                                    color: const Color(0xFF94A3B8),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    card.badge,
-                                    style: GoogleFonts.outfit(
-                                      fontSize: 12,
-                                      color: const Color(0xFF94A3B8),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            if (card.typeName != 'SUMMARY')
-                              const Icon(
-                                Icons.arrow_forward_ios,
-                                size: 16,
-                                color: Color(0xFF94A3B8),
-                              ),
-                          ],
+                          ),
+                      ],
+                    ),
+                    const Spacer(),
+                    Text(
+                      card.title,
+                      style: GoogleFonts.outfit(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: WebColors.textPrimary,
+                        letterSpacing: -0.5,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      card.date,
+                      style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: WebColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(height: 1),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Icon(
+                          card.typeName == 'QUIZ'
+                              ? Icons.emoji_events_outlined
+                              : (card.typeName == 'FLASHCARDS'
+                                  ? Icons.layers_outlined
+                                  : Icons.read_more_outlined),
+                          size: 14,
+                          color: card.textColor,
                         ),
-                    ],
-                  ),
+                        const SizedBox(width: 6),
+                        Text(
+                          card.badge,
+                          style: GoogleFonts.outfit(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: card.textColor,
+                          ),
+                        ),
+                        const Spacer(),
+                        Icon(
+                          Icons.arrow_forward,
+                          size: 16,
+                          color: card.textColor.withValues(alpha: 0.5),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -971,6 +869,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
 
   Future<void> _navigateToContent(LibraryItem item) async {
     final viewModel = context.read<LibraryViewModel>();
+
+    setState(() => _isNavigating = true);
 
     try {
       dynamic contentData;
@@ -991,9 +891,9 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
 
       if (contentData == null) {
         // Fallback to Firestore for Web
-        final userId = context.read<AuthService>().currentUser?.uid;
-        if (userId != null) {
-          final firestoreService = FirestoreService();
+        final userId = context.read<UserModel?>()?.uid ?? '';
+        if (userId.isNotEmpty) {
+          final firestoreService = viewModel.firestoreService;
           try {
             switch (item.type) {
               case LibraryItemType.summary:
@@ -1048,7 +948,9 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
           }
         }
       }
+
       if (!mounted) return;
+      setState(() => _isNavigating = false);
 
       if (contentData == null) {
         if (context.mounted) {
@@ -1073,13 +975,22 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
 
       switch (item.type) {
         case LibraryItemType.summary:
-          context.pushNamed('library-summary', extra: contentData);
+          context.pushNamed(
+            'library-summary',
+            pathParameters: {'id': item.id},
+            extra: contentData,
+          );
           break;
         case LibraryItemType.quiz:
-          context.pushNamed('library-quiz', extra: contentData);
+          context.pushNamed(
+            'library-quiz',
+            pathParameters: {'id': item.id},
+            extra: contentData,
+          );
           break;
         case LibraryItemType.flashcards:
           final localSet = contentData as LocalFlashcardSet;
+          final user = context.read<UserModel?>();
           final flashcardSet = FlashcardSet(
             id: localSet.id,
             title: localSet.title,
@@ -1091,11 +1002,20 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
                     ))
                 .toList(),
             timestamp: Timestamp.fromDate(localSet.timestamp),
+            userId: user?.uid ?? '',
           );
-          context.pushNamed('library-flashcards', extra: flashcardSet);
+          context.pushNamed(
+            'library-flashcards',
+            pathParameters: {'id': item.id},
+            extra: flashcardSet,
+          );
           break;
         case LibraryItemType.exam:
-          context.pushNamed('library-quiz', extra: contentData);
+          context.pushNamed(
+            'library-quiz',
+            pathParameters: {'id': item.id},
+            extra: contentData,
+          );
           break;
       }
     } catch (e) {
@@ -1106,6 +1026,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
       }
     }
   }
+
+
 
   @override
   void dispose() {

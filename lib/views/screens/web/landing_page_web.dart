@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:sumquiz/theme/web_theme.dart';
 import 'package:sumquiz/views/screens/web/creator_tab_view.dart';
 
@@ -30,11 +31,24 @@ class _LandingPageWebState extends State<LandingPageWeb>
       vsync: this,
       initialIndex: widget.initialTab,
     );
+    _tabController.addListener(_handleTabSelection);
+  }
+
+  void _handleTabSelection() {
+    if (_tabController.indexIsChanging) return;
+    
+    // Sync URL with tab index
+    if (_tabController.index == 0) {
+      context.go('/landing');
+    } else {
+      context.go('/Educators');
+    }
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _tabController.removeListener(_handleTabSelection);
     _tabController.dispose();
     super.dispose();
   }
@@ -110,19 +124,12 @@ class _LandingPageWebState extends State<LandingPageWeb>
   Widget _buildNavBar(BuildContext context) {
     return Container(
       height: 80,
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: WebColors.border, width: 1),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
-          ),
-        ],
+      decoration: WebColors.glassDecoration(
+        blur: 16,
+        opacity: 0.7,
+        borderRadius: 24,
       ),
       child: Center(
         child: Container(
@@ -229,7 +236,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
                             ),
                             tabs: const [
                               Tab(text: 'Student'),
-                              Tab(text: 'Educator'),
+                              Tab(text: 'Educators'),
                             ],
                           ),
                         ),
@@ -278,16 +285,8 @@ class _LandingPageWebState extends State<LandingPageWeb>
 
   Widget _buildHeroSection(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            WebColors.primary,
-            WebColors.primary.withOpacity(0.8),
-            WebColors.accent.withOpacity(0.6),
-          ],
-        ),
+      decoration: const BoxDecoration(
+        gradient: WebColors.HeroGradient,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 80),
       child: Center(
@@ -304,16 +303,11 @@ class _LandingPageWebState extends State<LandingPageWeb>
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
+                      decoration: WebColors.glassDecoration(
+                        blur: 8,
+                        opacity: 0.1,
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                            color: WebColors.primary.withOpacity(0.2),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                        borderRadius: 30,
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -445,22 +439,34 @@ class _LandingPageWebState extends State<LandingPageWeb>
 
   Widget _buildPrimaryButton(
       BuildContext context, String text, VoidCallback onPressed) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white,
-        foregroundColor: WebColors.primary,
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        textStyle: const TextStyle(
-          fontWeight: FontWeight.w700,
-          fontSize: 16,
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: WebColors.accent.withOpacity(0.35),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: Text(text),
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: WebColors.accent,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: GoogleFonts.outfit(
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+          ),
+        ),
+        child: Text(text),
+      ),
     ).animate().scale(delay: 100.ms);
   }
 
@@ -667,17 +673,13 @@ class _LandingPageWebState extends State<LandingPageWeb>
       String title, String description, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: WebColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+      decoration: WebColors.glassDecoration(
+        blur: 10,
+        opacity: 0.05,
+        color: WebColors.surface,
+        borderRadius: 24,
+      ).copyWith(
+        boxShadow: WebColors.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -774,17 +776,12 @@ class _LandingPageWebState extends State<LandingPageWeb>
     return Container(
       width: 280,
       padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: WebColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+      decoration: WebColors.glassDecoration(
+        blur: 20,
+        opacity: 0.08,
+        borderRadius: 32,
+      ).copyWith(
+        boxShadow: WebColors.cardShadow,
       ),
       child: Column(
         children: [

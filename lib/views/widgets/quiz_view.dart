@@ -17,6 +17,12 @@ const _essayTypes = {
   'written',
   'short_answer_essay',
   'long answer',
+  'theory / essay',
+  'essay / theory',
+  'subjective',
+  'structured',
+  'long_answer',
+  'descriptive',
 };
 
 bool _isEssayQuestion(LocalQuizQuestion q) {
@@ -92,21 +98,34 @@ class _QuizViewState extends State<QuizView> {
       _aiFeedback = null;
     });
 
-    final result = await widget.aiService!.verifyEssayAnswer(
-      question: _currentQuestion.question,
-      studentAnswer: text,
-      referenceAnswer: _currentQuestion.correctAnswer,
-    );
+    try {
+      final result = await widget.aiService!.verifyEssayAnswer(
+        question: _currentQuestion.question,
+        studentAnswer: text,
+        referenceAnswer: _currentQuestion.correctAnswer,
+      );
 
-    if (!mounted) return;
-    setState(() {
-      _isVerifying = false;
-      _aiFeedback = result;
-      _answerWasSelected = true;
-    });
+      if (!mounted) return;
+      setState(() {
+        _isVerifying = false;
+        _aiFeedback = result;
+        _answerWasSelected = true;
+      });
 
-    final isCorrect = (result['isCorrect'] as bool?) ?? false;
-    widget.onAnswer?.call(isCorrect);
+      final isCorrect = (result['isCorrect'] as bool?) ?? false;
+      widget.onAnswer?.call(isCorrect);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isVerifying = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Verification failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _handleNextQuestion() {
@@ -307,22 +326,40 @@ class _QuizViewState extends State<QuizView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildGlassContainer(
-          theme: theme,
-          padding: const EdgeInsets.all(4),
+        Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: _answerWasSelected
+                  ? (_aiFeedback?['isCorrect'] == true ? Colors.green : Colors.orange)
+                  : theme.dividerColor,
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
           child: TextField(
             controller: _essayController,
             maxLines: 6,
-            enabled: !_answerWasSelected,
-            style: theme.textTheme.bodyLarge?.copyWith(height: 1.6),
+            enabled: !_answerWasSelected && !_isVerifying,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              height: 1.6,
+              color: theme.colorScheme.onSurface,
+            ),
             decoration: InputDecoration(
-              hintText: 'Type your answer here...',
+              hintText: 'Type your detailed answer here...',
               hintStyle: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
               ),
               filled: false,
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.all(16),
+              contentPadding: const EdgeInsets.all(20),
             ),
             onChanged: (_) => setState(() {}),
           ),

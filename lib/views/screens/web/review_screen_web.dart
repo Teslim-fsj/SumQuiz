@@ -111,12 +111,14 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
       return;
     }
 
+    final missionService =
+        Provider.of<MissionService>(context, listen: false);
+    final localDb = Provider.of<LocalDatabaseService>(context, listen: false);
+    final firestoreService = Provider.of<FirestoreService>(context, listen: false);
+
     try {
-      final missionService =
-          Provider.of<MissionService>(context, listen: false);
       final mission = await missionService.generateDailyMission(userId);
 
-      final localDb = Provider.of<LocalDatabaseService>(context, listen: false);
       await localDb.init();
       final srsService =
           SpacedRepetitionService(localDb.getSpacedRepetitionBox());
@@ -130,7 +132,6 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
       // Fetch flashcard sets with Firestore fallback
       List<LocalFlashcardSet> allSets = await localDb.getAllFlashcardSets(userId);
       if (allSets.isEmpty) {
-        final firestoreService = Provider.of<FirestoreService>(context, listen: false);
         final fsSets = await firestoreService.streamFlashcardSets(userId).first;
         if (fsSets.isNotEmpty) {
           allSets = fsSets.map((s) => LocalFlashcardSet(
@@ -518,7 +519,11 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                                         streakDays:
                                             user?.missionCompletionStreak ?? 0),
                                     const SizedBox(height: 24),
-                                    AccuracyCard(accuracy: _accuracy),
+                                    AccuracyCard(
+                                      accuracy: _accuracy,
+                                      highestAccuracy: _accuracy,
+                                      lowestAccuracy: _accuracy,
+                                    ),
                                   ],
                                 ),
                               ),
@@ -588,10 +593,12 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                                     if (sets.isNotEmpty) {
                                       _startSetReview(sets.first);
                                     } else {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(const SnackBar(
-                                              content: Text(
-                                                  'No study sets found. Create one first!')));
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(const SnackBar(
+                                                content: Text(
+                                                    'No study sets found. Create one first!')));
+                                      }
                                     }
                                   },
                                 ),

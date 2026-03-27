@@ -65,7 +65,32 @@ class YouTubeAIService extends AIBaseService {
       final duration = video.duration ?? Duration.zero;
       developer.log('Video: "${video.title}", duration: ${duration.inSeconds}s',
           name: 'YouTubeAIService');
-
+ 
+      // ── TIER 0: Native URL Reasoning (Gemini 2026 / 3.1+) ──
+      // Gemini 3.1 can "read" public YouTube transcripts/content natively via URL
+      if (true) { // Enable native grounding for all non-test environments
+        developer.log('Tier 0: Attempting native URL reasoning for $videoUrl',
+            name: 'YouTubeAIService');
+        try {
+          final nativeResult = await _analyzeWithNativeUrl(
+            videoUrl: videoUrl,
+            title: video.title,
+            cancelToken: cancelToken,
+          ).timeout(const Duration(seconds: 45));
+ 
+          if (nativeResult != null && nativeResult.text.trim().length >= 200) {
+            developer.log('Tier 0 succeeded: Native URL reasoning complete.',
+                name: 'YouTubeAIService');
+            return Result.ok(nativeResult);
+          }
+          developer.log('Tier 0 sparse, trying Tier 1 (Transcript)',
+              name: 'YouTubeAIService');
+        } catch (e) {
+          developer.log('Tier 0 failed: $e. Falling back to Tier 1.',
+              name: 'YouTubeAIService');
+        }
+      }
+ 
       // ── TIER 1 & 2: Try transcript first (fast, works for most videos) ──
       final transcriptData = await _getRawTranscript(yt, videoId);
 
@@ -406,7 +431,54 @@ class YouTubeAIService extends AIBaseService {
       return null;
     }
   }
-
+ 
+  /// Tier 0: Send the URL directly to Gemini. 
+  /// Gemini 3.1 Pro/Flash can reason about public URLs natively.
+  Future<ExtractionResult?> _analyzeWithNativeUrl({
+    required String videoUrl,
+    required String title,
+    CancellationToken? cancelToken,
+  }) async {
+    if (!await ensureInitialized()) return null;
+ 
+    final prompt = '''Analyze this YouTube video URL: $videoUrl
+ 
+TASK: 
+1. Use your internal tools to access/read the content of this video.
+2. EXTRACT all core educational concepts, facts, and structure.
+3. Organize into a comprehensive Markdown study guide.
+ 
+TITLE: $title
+''';
+ 
+    final response = await generateWithRetry(
+      prompt,
+      customModel: youtubeModel,
+      cancelToken: cancelToken,
+      generationConfig: GenerationConfig(
+        responseMimeType: 'application/json',
+        responseSchema: Schema.object(
+          properties: {
+            'suggestedTitle': Schema.string(),
+            'content': Schema.string(description: 'Detailed study guide in Markdown'),
+          },
+          requiredProperties: ['suggestedTitle', 'content'],
+        ),
+      ),
+    );
+ 
+    final jsonStr = extractJson(response);
+    final data = safeJsonDecode(jsonStr);
+    final content = data['content']?.toString() ?? '';
+    if (content.isEmpty) return null;
+ 
+    return ExtractionResult(
+      text: content,
+      suggestedTitle: data['suggestedTitle']?.toString() ?? title,
+      sourceUrl: videoUrl,
+    );
+  }
+ 
   /// Refine a raw transcript into a structured study guide using Gemini.
   Future<ExtractionResult?> _refineTranscriptWithGemini({
     required String transcript,

@@ -30,7 +30,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         Provider.of<SubscriptionProvider>(context, listen: false);
 
     if (kIsWeb) {
-      // Web Flow still uses WebPaymentService directly or we could move it to provider too
       try {
         final products = await WebPaymentService().getAvailableProducts();
         if (mounted) {
@@ -43,16 +42,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         debugPrint('Error loading web products: $e');
       }
     } else {
-      // Mobile Flow - use provider
       await subscriptionProvider.loadProducts();
       if (mounted) {
         setState(() {
           _products = subscriptionProvider.products;
 
-          // If still empty on mobile, provide fallback informational products
           if (_products.isEmpty) {
-            debugPrint(
-                'Using fallback product details as IAP products could not be loaded');
             _products = [
               _FallbackProductDetails(
                 id: 'sumquiz_pro_weekly',
@@ -87,15 +82,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   void _setDefaultSelection() {
     if (_products.isNotEmpty) {
-      // First try to find a yearly product
       _selectedProduct = _products.firstWhere(
         (p) => p.id.contains('yearly'),
         orElse: () {
-          // Then try to find a monthly product
           return _products.firstWhere(
             (p) => p.id.contains('monthly'),
             orElse: () {
-              // Finally, just pick the first available product
               return _products.first;
             },
           );
@@ -116,7 +108,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     bool success;
 
     if (kIsWeb) {
-      // Redirect to mobile for subscription
       if (mounted) {
         showDialog(
           context: context,
@@ -129,7 +120,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       }
       return;
     } else {
-      // Mobile Payment Flow
       success =
           await subscriptionProvider.purchaseProduct(_selectedProduct!.id);
 
@@ -141,7 +131,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               backgroundColor: Colors.green,
             ),
           );
-          // Give user time to see success message
           await Future.delayed(const Duration(seconds: 1));
           if (mounted) context.pop();
         } else {
@@ -152,6 +141,35 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             ),
           );
         }
+      }
+    }
+  }
+
+  Future<void> _startTrial() async {
+    final subscriptionProvider = context.read<SubscriptionProvider>();
+    final initiated = await subscriptionProvider.startTrialPurchase();
+
+    if (mounted) {
+      if (initiated) {
+        // The Google Play billing sheet opened successfully.
+        // The actual Pro unlock will happen asynchronously once Google
+        // confirms the purchase via the purchase stream listener.
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Complete the setup in Google Play to start your free trial.'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Could not start trial. You may have already used your free trial, '
+                'or the product is not available.'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -177,12 +195,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           ? Center(child: CircularProgressIndicator(color: primaryColor))
           : Stack(
               children: [
-                // Main Content
                 SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header Image/Icon Section
                       Stack(
                         children: [
                           Container(
@@ -216,7 +232,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                           ),
                         ],
                       ),
-
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24.0),
                         child: Column(
@@ -235,8 +250,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                                   color: onSurfaceVariant, fontSize: 16),
                             ),
                             const SizedBox(height: 32),
-
-                            // Features List
                             _buildFeatureItem(
                                 'Unlimited AI Generations',
                                 'Generate as many decks as you need',
@@ -257,10 +270,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                                 'Study without restrictions',
                                 Icons.all_inclusive_rounded,
                                 theme),
-
                             const SizedBox(height: 16),
-
-                            // Plan Selection
+                            if (user != null && !user.isPro && !user.hasUsedTrial)
+                              _buildTrialCard(theme),
+                            const SizedBox(height: 16),
                             Text(
                               'Choose your plan',
                               style: theme.textTheme.titleLarge?.copyWith(
@@ -268,8 +281,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                                   fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 16),
-
-                            // Services (IAPService/WebPaymentService) already filter to allowed plans
                             if (_products.isEmpty &&
                                 !subscriptionProvider.isLoading)
                               Center(
@@ -299,17 +310,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                               ),
                             ..._products.map(
                                 (product) => _buildPlanCard(product, theme)),
-
-                            const SizedBox(
-                                height: 140), // Spacer for bottom button
+                            const SizedBox(height: 140),
                           ],
                         ),
                       ),
                     ],
                   ),
                 ),
-
-                // Bottom CTA
                 Positioned(
                   bottom: 0,
                   left: 0,
@@ -350,7 +357,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                                     child: CircularProgressIndicator(
                                         color: theme.colorScheme.onPrimary,
                                         strokeWidth: 2))
-                                : Text(
+                                : const Text(
                                     'Continue',
                                     style: TextStyle(
                                         fontSize: 18,
@@ -514,7 +521,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   Widget _buildFooterLink(String text, ThemeData theme) {
     return InkWell(
-      onTap: () {}, // Implement link action
+      onTap: () {},
       child: Text(
         text,
         style: theme.textTheme.bodySmall?.copyWith(
@@ -603,9 +610,85 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       ),
     );
   }
+
+  Widget _buildTrialCard(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primary,
+            theme.colorScheme.secondary,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.auto_awesome,
+                    color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Free Trial Available',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Link your card to unlock 3 days of SumQuiz Pro for free. No charges until the trial ends.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: Colors.white.withValues(alpha: 0.9),
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              onPressed: _startTrial,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: theme.colorScheme.primary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                'Start 3-Day Free Trial',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-/// Fallback product details for when the store is offline
 class _FallbackProductDetails implements ProductDetails {
   @override
   final String id;

@@ -37,6 +37,8 @@ class UserModel {
   // Trial & Creator Logic (stored fields)
   final bool _isTrialUser; // Private - use isTrial getter
   final bool isCreatorPro;
+  final bool hasLinkedCard;
+  final bool hasUsedTrial;
   final String? currentProduct; // Selected subscription product ID
   final String?
       subscriptionType; // e.g. 'monthly', 'yearly', 'lifetime' - for manual management
@@ -69,8 +71,10 @@ class UserModel {
     this.totalUploads = 0,
     this.lastDeckGenerationDate,
     this.updatedAt,
-    bool isTrial = false,
+     bool isTrial = false,
     this.isCreatorPro = false,
+    this.hasLinkedCard = false,
+    this.hasUsedTrial = false,
     this.currentProduct,
     this.subscriptionType,
     this.referralCode,
@@ -136,8 +140,10 @@ class UserModel {
         (e) => e.name == (data['role'] ?? 'student'),
         orElse: () => UserRole.student,
       ),
-      isTrial: data['isTrial'] ?? false,
+       isTrial: data['isTrial'] ?? false,
       isCreatorPro: data['isCreatorPro'] ?? false,
+      hasLinkedCard: data['hasLinkedCard'] ?? false,
+      hasUsedTrial: data['hasUsedTrial'] ?? false,
       currentProduct: data['currentProduct'],
       subscriptionType: data['subscriptionType'],
       referralCode: data['referralCode'],
@@ -171,8 +177,10 @@ class UserModel {
       if (lastWeeklyReset != null)
         'lastWeeklyReset': Timestamp.fromDate(lastWeeklyReset!),
       if (updatedAt != null) 'updatedAt': Timestamp.fromDate(updatedAt!),
-      'isTrial': _isTrialUser, // Store the private field
+       'isTrial': _isTrialUser, // Store the private field
       'isCreatorPro': isCreatorPro,
+      'hasLinkedCard': hasLinkedCard,
+      'hasUsedTrial': hasUsedTrial,
       'currentProduct': currentProduct,
       'subscriptionType': subscriptionType,
       if (referralCode != null) 'referralCode': referralCode,
@@ -203,8 +211,10 @@ class UserModel {
     DateTime? lastWeeklyReset,
     DateTime? updatedAt,
     UserRole? role,
-    bool? isTrial,
+     bool? isTrial,
     bool? isCreatorPro,
+    bool? hasLinkedCard,
+    bool? hasUsedTrial,
     String? currentProduct,
     String? subscriptionType,
     String? referralCode,
@@ -235,8 +245,10 @@ class UserModel {
           lastDeckGenerationDate ?? this.lastDeckGenerationDate,
       lastWeeklyReset: lastWeeklyReset ?? this.lastWeeklyReset,
       updatedAt: updatedAt ?? this.updatedAt,
-      isTrial: isTrial ?? _isTrialUser,
+       isTrial: isTrial ?? _isTrialUser,
       isCreatorPro: isCreatorPro ?? this.isCreatorPro,
+      hasLinkedCard: hasLinkedCard ?? this.hasLinkedCard,
+      hasUsedTrial: hasUsedTrial ?? this.hasUsedTrial,
       currentProduct: currentProduct ?? this.currentProduct,
       subscriptionType: subscriptionType ?? this.subscriptionType,
       referralCode: referralCode ?? this.referralCode,

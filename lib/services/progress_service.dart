@@ -70,30 +70,49 @@ class ProgressService {
     }
   }
 
-  Future<double> getAverageAccuracy(String userId) async {
+  Future<Map<String, double>> getAccuracyStats(String userId) async {
     try {
-      // Get all quizzes for the user
       final quizzesSnapshot =
           await _db.collection('users').doc(userId).collection('quizzes').get();
 
-      if (quizzesSnapshot.docs.isEmpty) return 0.0;
+      if (quizzesSnapshot.docs.isEmpty) {
+        return {'average': 0.0, 'highest': 0.0, 'lowest': 0.0};
+      }
 
       double totalAccuracy = 0.0;
+      double highest = 0.0;
+      double lowest = 1.0;
       int quizCount = 0;
 
       for (var doc in quizzesSnapshot.docs) {
         final data = doc.data();
         if (data.containsKey('accuracy') && data['accuracy'] != null) {
-          totalAccuracy += (data['accuracy'] as num).toDouble();
+          double acc = (data['accuracy'] as num).toDouble();
+          totalAccuracy += acc;
+          if (acc > highest) highest = acc;
+          if (acc < lowest) lowest = acc;
           quizCount++;
         }
       }
 
-      return quizCount > 0 ? totalAccuracy / quizCount : 0.0;
+      if (quizCount == 0) {
+        return {'average': 0.0, 'highest': 0.0, 'lowest': 0.0};
+      }
+
+      return {
+        'average': totalAccuracy / quizCount,
+        'highest': highest,
+        'lowest': lowest,
+      };
     } catch (e) {
-      debugPrint('Error getting average accuracy: $e');
-      return 0.0;
+      debugPrint('Error getting accuracy stats: $e');
+      return {'average': 0.0, 'highest': 0.0, 'lowest': 0.0};
     }
+  }
+
+  Future<double> getAverageAccuracy(String userId) async {
+    final stats = await getAccuracyStats(userId);
+    return stats['average'] ?? 0.0;
   }
 
   Future<int> getTotalTimeSpent(String userId) async {
@@ -184,6 +203,38 @@ class ProgressService {
       });
     } catch (e) {
       debugPrint('Error logging accuracy: $e');
+    }
+  }
+
+  /// Logs a complete study session to Firestore for cross-platform analytics
+  Future<void> logStudySession({
+    required String userId,
+    required double accuracy,
+    required int durationSeconds,
+    String? setId,
+  }) async {
+    try {
+      final now = DateTime.now();
+      
+      // 1. Update user aggregate stats
+      await _db.collection('users').doc(userId).update({
+        'totalStudyTime': FieldValue.increment(durationSeconds),
+        'itemsCompleted': FieldValue.increment(1),
+        'lastActive': Timestamp.fromDate(now),
+      });
+
+      // 2. Log specific session entry for detailed analytics
+      await _db.collection('users').doc(userId).collection('quizzes').add({
+        'accuracy': accuracy,
+        'time_spent': durationSeconds,
+        'created_at': Timestamp.fromDate(now),
+        'setId': setId ?? 'mission',
+        'platform': 'web',
+      });
+      
+      debugPrint('Study session logged successfully for web user: $userId');
+    } catch (e) {
+      debugPrint('Error logging study session for web: $e');
     }
   }
 }

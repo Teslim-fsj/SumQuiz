@@ -12,10 +12,12 @@ class StreakCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: WebColors.border),
+      decoration: WebColors.glassDecoration(
+        blur: 12,
+        opacity: 0.05,
+        color: WebColors.surface,
+        borderRadius: 24,
+      ).copyWith(
         boxShadow: WebColors.cardShadow,
       ),
       child: Column(
@@ -87,9 +89,18 @@ class StreakCard extends StatelessWidget {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color:
-                isActive ? WebColors.accentOrange : WebColors.border.withOpacity(0.5),
+            gradient: isActive 
+              ? const LinearGradient(colors: [Color(0xFFF97316), Color(0xFFFB923C)])
+              : null,
+            color: isActive ? null : WebColors.border.withValues(alpha: 0.5),
             shape: BoxShape.circle,
+            boxShadow: isActive ? [
+              BoxShadow(
+                color: const Color(0xFFF97316).withValues(alpha: 0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              )
+            ] : null,
           ),
           alignment: Alignment.center,
           child: Text(

@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 part 'daily_mission.g.dart';
 
@@ -46,4 +47,34 @@ class DailyMission extends HiveObject {
     required this.completionScore,
     required this.title,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'date': Timestamp.fromDate(date),
+      'flashcardIds': flashcardIds,
+      'miniQuizTopic': miniQuizTopic,
+      'isCompleted': isCompleted,
+      'estimatedTimeMinutes': estimatedTimeMinutes,
+      'momentumReward': momentumReward,
+      'difficultyLevel': difficultyLevel,
+      'completionScore': completionScore,
+      'title': title,
+    };
+  }
+
+  factory DailyMission.fromMap(Map<String, dynamic> map) {
+    return DailyMission(
+      id: map['id'] ?? '',
+      date: (map['date'] as Timestamp).toDate(),
+      flashcardIds: List<String>.from(map['flashcardIds'] ?? []),
+      miniQuizTopic: map['miniQuizTopic'],
+      isCompleted: map['isCompleted'] ?? false,
+      estimatedTimeMinutes: map['estimatedTimeMinutes'] ?? 0,
+      momentumReward: map['momentumReward'] ?? 0,
+      difficultyLevel: map['difficultyLevel'] ?? 3,
+      completionScore: (map['completionScore'] as num?)?.toDouble() ?? 0.0,
+      title: map['title'] ?? 'Daily Mission',
+    );
+  }
 }

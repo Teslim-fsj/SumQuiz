@@ -31,13 +31,30 @@ class MissionService {
     final now = DateTime.now();
     final missionId = _getMissionId(now);
 
-    // 1. Check if mission already exists for today
-    final existingMission = await _localDb.getDailyMission(missionId);
-    if (existingMission != null) {
-      return existingMission;
+    // 1. Check if mission already exists in Local DB (Hive)
+    final existingLocal = await _localDb.getDailyMission(missionId);
+    if (existingLocal != null) {
+      return existingLocal;
     }
 
-    // 2. Fetch User Data for Difficulty/Momentum
+    // 2. Check Firestore (for cross-platform/web persistence)
+    try {
+      final doc = await _firestoreService.db
+          .collection('users')
+          .doc(userId)
+          .collection('missions')
+          .doc(missionId)
+          .get();
+      if (doc.exists) {
+        final mission = DailyMission.fromMap(doc.data()!);
+        await _localDb.saveDailyMission(mission); // Sync back to local
+        return mission;
+      }
+    } catch (e) {
+      debugPrint('Error checking Firestore for mission: $e');
+    }
+
+    // 3. Generate New Mission if none found
     UserModel? user;
     try {
       user = await _firestoreService.streamUser(userId).first;
@@ -45,36 +62,26 @@ class MissionService {
       debugPrint('Error fetching user for mission generation: $e');
     }
 
-    // Default to Level 3 (Standard) if user not found or error
     final difficulty = user?.difficultyPreference ?? 3;
-
-    // 3. Adaptive Content Selection
     final dueCardIds = await _srs.getDueFlashcardIds(userId);
+    
     List<String> selectedFlashcards = [];
     int estimatedMinutes = 0;
-    int momentumReward = 100; // Base
+    int momentumReward = 100;
 
     if (difficulty <= 1) {
-      // Light Load: 5 Due Cards max
       selectedFlashcards = dueCardIds.take(5).toList();
       estimatedMinutes = 2;
       momentumReward = 50;
     } else if (difficulty >= 5) {
-      // Heavy Load: 15 Due Cards + 5 Weak (simulated by taking more due for now)
-      // MVP: Just take more due cards
       selectedFlashcards = dueCardIds.take(20).toList();
       estimatedMinutes = 12;
       momentumReward = 150;
     } else {
-      // Standard (Level 3): 10 Due Cards
       selectedFlashcards = dueCardIds.take(10).toList();
       estimatedMinutes = 6;
       momentumReward = 100;
     }
-
-    // If we don't have enough due cards, we should potentially fetch random ones from Library
-    // For MVP, we'll just use what we have, even if it's 0.
-    // Ideally, we'd fetch random non-due cards to fill the quota.
 
     final mission = DailyMission(
       id: missionId,
@@ -85,13 +92,24 @@ class MissionService {
       momentumReward: momentumReward,
       difficultyLevel: difficulty,
       completionScore: 0.0,
-      miniQuizTopic: null, title: '', // MVP: No quiz yet
+      title: 'Daily Mission ${now.day}/${now.month}',
+      miniQuizTopic: null,
     );
 
-    // 4. Save
+    // 4. Save to both Local and Firestore
     await _localDb.saveDailyMission(mission);
+    try {
+      await _firestoreService.db
+          .collection('users')
+          .doc(userId)
+          .collection('missions')
+          .doc(missionId)
+          .set(mission.toMap());
+    } catch (e) {
+      debugPrint('Error saving mission to Firestore: $e');
+    }
 
-    // 5. Schedule Priming Notification (30m before preferred time)
+    // 5. Schedule Priming Notification
     if (_notificationService != null && user != null) {
       try {
         await _notificationService.schedulePrimingNotification(
@@ -118,6 +136,21 @@ class MissionService {
     mission.isCompleted = true;
     mission.completionScore = score;
     await mission.save(); // Hive save
+
+    // Update Firestore too
+    try {
+      await _firestoreService.db
+          .collection('users')
+          .doc(userId)
+          .collection('missions')
+          .doc(mission.id)
+          .update({
+        'isCompleted': true,
+        'completionScore': score,
+      });
+    } catch (e) {
+      debugPrint('Error syncing mission completion to Firestore: $e');
+    }
 
     // Update User Momentum (only for Pro users)
     if (isPro) {

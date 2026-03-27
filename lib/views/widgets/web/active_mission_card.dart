@@ -29,10 +29,12 @@ class ActiveMissionCard extends StatelessWidget {
 
     return Container(
       height: 320,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: WebColors.border),
+      decoration: WebColors.glassDecoration(
+        blur: 15,
+        opacity: 0.05,
+        color: WebColors.surface,
+        borderRadius: 24,
+      ).copyWith(
         boxShadow: WebColors.cardShadow,
       ),
       child: ClipRRect(
@@ -43,15 +45,8 @@ class ActiveMissionCard extends StatelessWidget {
             Expanded(
               flex: 4,
               child: Container(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFF6B5CE7), // purplePrimary
-                      Color(0xFF8B5CF6),
-                    ],
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                  ),
+                decoration: const BoxDecoration(
+                  gradient: WebColors.AccentGradient,
                 ),
                 child: Stack(
                   alignment: Alignment.center,
@@ -138,7 +133,7 @@ class ActiveMissionCard extends StatelessWidget {
                     ),
                     const Spacer(),
                     Text(
-                      'Finish Foundation Module', // Hardcoded as per design for now, or use mission title
+                      mission!.title,
                       style: GoogleFonts.outfit(
                         fontSize: 28,
                         fontWeight: FontWeight.w700,
@@ -148,7 +143,7 @@ class ActiveMissionCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Complete $total quiz sets today to hit your XP target.',
+                      'Complete all $total quiz sets today to hit your XP target and maintain your streak.',
                       style: GoogleFonts.outfit(
                         fontSize: 16,
                         color: WebColors.textSecondary,

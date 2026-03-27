@@ -163,8 +163,8 @@ class AuthService {
             displayName: user.displayName ?? '',
             email: user.email ?? '',
             role: role,
-            isTrial: true,
-            subscriptionExpiry: DateTime.now().add(const Duration(days: 3)),
+            isTrial: false,
+            subscriptionExpiry: null,
           );
           await _firestoreService.saveUserData(newUser);
           developer.log('Trial granted and user profile created for ${user.uid}');
@@ -308,8 +308,8 @@ class AuthService {
           displayName: fullName,
           email: email,
           role: role,
-          isTrial: true,
-          subscriptionExpiry: DateTime.now().add(const Duration(days: 3)),
+          isTrial: false,
+          subscriptionExpiry: null,
         );
         await _firestoreService.saveUserData(newUser);
 

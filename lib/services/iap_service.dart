@@ -15,19 +15,23 @@ class IAPService {
   static const String _proWeeklyId = 'sumquiz_pro_weekly';
   static const String _proMonthlyId = 'sumquiz_pro_monthly';
   static const String _proYearlyId = 'sumquiz_pro_yearly';
+  /// 3-day free trial subscription — must be created in Play Console with a
+  /// free trial of 3 days before this product ID appears in query results.
+  static const String _proTrialId = 'sumquiz_pro_trial';
 
   late StreamSubscription<List<PurchaseDetails>> _subscription;
   final Set<String> _productIds = {
     _proWeeklyId,
     _proMonthlyId,
     _proYearlyId,
+    _proTrialId,
   };
 
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
 
   // Freemium limits
-  static const int freeUploadsLifetime = 3;
+  static const int freeUploadsLifetime = 1;
   static const int freeFoldersMax = 2;
   static const int freeSrsCardsMax = 50;
 
@@ -141,10 +145,13 @@ class IAPService {
   Future<void> _handleSuccessfulPurchase(
       String uid, PurchaseDetails purchaseDetails) async {
     try {
-      // Determine subscription details
-      DateTime? expiryDate;
       final now = DateTime.now();
-      if (purchaseDetails.productID == _proWeeklyId) {
+      final bool isTrial = purchaseDetails.productID == _proTrialId;
+
+      DateTime? expiryDate;
+      if (isTrial) {
+        expiryDate = now.add(const Duration(days: 3));
+      } else if (purchaseDetails.productID == _proWeeklyId) {
         expiryDate = now.add(const Duration(days: 7));
       } else if (purchaseDetails.productID == _proMonthlyId) {
         expiryDate = now.add(const Duration(days: 30));
@@ -152,19 +159,29 @@ class IAPService {
         expiryDate = now.add(const Duration(days: 365));
       }
 
-      // Update user document in Firestore
-      // Note: isPro is a computed getter, so we only update subscriptionExpiry
-      await _firestore.collection('users').doc(uid).set({
+      final Map<String, dynamic> update = {
         'subscriptionExpiry':
             expiryDate != null ? Timestamp.fromDate(expiryDate) : null,
-        'isTrial': false, // Paid subscription, not trial
+        'isTrial': isTrial,
         'currentProduct': purchaseDetails.productID,
         'lastVerified': FieldValue.serverTimestamp(),
         'purchaseToken':
             purchaseDetails.verificationData.serverVerificationData,
-      }, SetOptions(merge: true));
+      };
 
-      developer.log('Successfully updated user subscription status for $uid',
+      // Mark card as linked & trial as used when the trial subscription fires
+      if (isTrial) {
+        update['hasLinkedCard'] = true;
+        update['hasUsedTrial'] = true;
+      }
+
+      await _firestore
+          .collection('users')
+          .doc(uid)
+          .set(update, SetOptions(merge: true));
+
+      developer.log(
+          'Updated subscription for $uid: product=${purchaseDetails.productID}, trial=$isTrial',
           name: 'IAPService');
     } catch (e) {
       developer.log('Failed to update user subscription status',
@@ -318,6 +335,53 @@ class IAPService {
           name: 'IAPService', error: error);
       return {};
     });
+  }
+
+  /// Start a real Google Play free-trial subscription.
+  /// Google Play will show its billing sheet and require the user to add a
+  /// payment method before granting the 3-day trial. The purchase result is
+  /// handled via [_handleSuccessfulPurchase] in the purchase stream listener.
+  ///
+  /// Returns [true] if the purchase was initiated (Play sheet opened).
+  /// Returns [false] if the device isn't ready or the product wasn't found.
+  Future<bool> startTrialPurchase() async {
+    try {
+      // Guard: must not already have used the trial
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return false;
+
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      if (userDoc.exists) {
+        final user = UserModel.fromFirestore(userDoc);
+        if (user.hasUsedTrial) {
+          developer.log('User already used trial', name: 'IAPService');
+          return false;
+        }
+      }
+
+      if (!_isInitialized) await initialize();
+
+      final products = await _getProductDetails();
+      final trialProduct = products.where((p) => p.id == _proTrialId).firstOrNull;
+
+      if (trialProduct == null) {
+        developer.log(
+            'Trial product "$_proTrialId" not found in Play Console. '
+            'Ensure it is created and published to the current testing track.',
+            name: 'IAPService');
+        return false;
+      }
+
+      final purchaseParam = PurchaseParam(productDetails: trialProduct);
+      // Subscriptions must use buyNonConsumable on Android.
+      return await InAppPurchase.instance.buyNonConsumable(
+        purchaseParam: purchaseParam,
+      );
+    } catch (e) {
+      developer.log('Failed to start trial purchase',
+          name: 'IAPService', error: e);
+      return false;
+    }
   }
 
   /// Get available products

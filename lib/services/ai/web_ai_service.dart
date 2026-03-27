@@ -1,8 +1,7 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:html/parser.dart' as html_parser;
 import 'package:html/dom.dart' as html;
+import 'package:html/parser.dart' as html_parser;
 import 'package:http/http.dart' as http;
 import 'package:sumquiz/models/extraction_result.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
@@ -13,106 +12,78 @@ import 'dart:developer' as developer;
 
 /// Webpage content extraction service with a 2-tier strategy:
 ///
-/// 1. **Tier 1 — HTML Parsing**: Fetch + parse HTML directly (fast, no AI cost)
-/// 2. **Tier 2 — Gemini URL Analysis**: If HTML parsing yields sparse content,
-///    send the URL directly to Gemini's URL Context / Browse Tool for
-///    AI-powered extraction (handles JS-rendered pages, paywalled previews, etc.)
+/// 1. **Tier 1 — Native Gemini Grounding**: Gemini 3.1 uses internal tools to fetch/read live pages.
+/// 2. **Tier 2 — Direct HTML Parsing**: Fallback to manual HTTP fetch and local parsing.
 class WebAIService extends AIBaseService {
   /// Extract content from a webpage URL.
-  ///
-  /// Pass an optional [cancelToken] to support user-initiated cancellation.
   Future<Result<ExtractionResult>> extractWebpage(
     String url, {
     CancellationToken? cancelToken,
   }) async {
-    // ── Tier 1: Direct HTML Parsing (fast, no AI cost) ──
-    developer.log('Tier 1: Attempting direct HTML parsing...',
-        name: 'WebAIService');
-    try {
-      cancelToken?.throwIfCancelled();
-
-      final response = await http
-          .get(Uri.parse(url))
-          .timeout(Duration(seconds: AIConfig.webpageTimeoutSeconds));
-
-      if (response.statusCode != 200) {
-        developer.log('HTTP ${response.statusCode} — falling to Tier 2',
-            name: 'WebAIService');
-      } else {
-        final contentType = response.headers['content-type'] ?? '';
-        if (contentType.toLowerCase().contains('text/html')) {
-          final document = html_parser.parse(response.body);
-          final cleanText = _extractMainContent(document);
-          final title = _extractTitle(document);
-
-          if (cleanText.trim().length >= 100) {
-            developer.log(
-                'Tier 1 succeeded: ${cleanText.length} chars extracted',
-                name: 'WebAIService');
-            return Result.ok(ExtractionResult(
-              text: cleanText,
-              suggestedTitle: title,
-              sourceUrl: url,
-            ));
-          }
-          developer.log(
-              'Tier 1 returned sparse content (${cleanText.length} chars), falling to Tier 2',
-              name: 'WebAIService');
-        } else {
-          developer.log(
-              'Non-HTML content type: $contentType — falling to Tier 2',
-              name: 'WebAIService');
-        }
-      }
-    } on CancelledException {
-      return Result.error(EnhancedAIServiceException(
-          'Extraction cancelled by user.',
-          code: 'CANCELLED'));
-    } on TimeoutException {
-      developer.log('Tier 1 timed out, falling to Tier 2',
-          name: 'WebAIService');
-    } on FormatException {
-      return Result.error(EnhancedAIServiceException(
-          'Invalid URL format. Please check the URL and try again.'));
-    } on SocketException {
-      return Result.error(EnhancedAIServiceException(
-          'Network error. Please check your internet connection.'));
-    } catch (e) {
-      developer.log('Tier 1 failed: $e', name: 'WebAIService', error: e);
+    if (!_isValidUrl(url)) {
+      return Result.error(EnhancedAIServiceException('Invalid URL format',
+          code: 'INVALID_URL'));
     }
 
-    // ── Tier 2: Gemini URL Analysis (handles JS-heavy, sparse, or non-HTML pages) ──
-    developer.log('Tier 2: Attempting Gemini URL analysis...',
+    // ── Tier 1: Native Gemini Grounding (The "2026" way) ──
+    developer.log('Tier 1: Attempting native Gemini grounding for $url',
         name: 'WebAIService');
     try {
-      cancelToken?.throwIfCancelled();
-      final result = await _analyzeWithGemini(url, cancelToken: cancelToken)
-          .timeout(Duration(seconds: AIConfig.youtubeTimeoutSeconds));
-
-      if (result != null && result.text.trim().length >= 50) {
-        developer.log('Tier 2 succeeded: ${result.text.length} chars extracted',
-            name: 'WebAIService');
-        return Result.ok(result);
+      final geminiResult = await _analyzeWithGemini(url, cancelToken: cancelToken)
+          .timeout(const Duration(seconds: AIConfig.webpageTimeoutSeconds + 30));
+      
+      if (geminiResult != null && geminiResult.text.length > 500) {
+        developer.log('Tier 1 succeeded with grounding.', name: 'WebAIService');
+        return Result.ok(geminiResult);
       }
-      developer.log('Tier 2 returned sparse content', name: 'WebAIService');
+      developer.log('Tier 1 result sparse, attempting Tier 2 (HTML parsing)', name: 'WebAIService');
     } on CancelledException {
       return Result.error(EnhancedAIServiceException(
           'Extraction cancelled by user.',
           code: 'CANCELLED'));
     } on TimeoutException {
-      developer.log('Tier 2 timed out', name: 'WebAIService');
+      developer.log('Tier 1 (Gemini grounding) timed out for $url. Falling back to Tier 2.', name: 'WebAIService');
+    } catch (e) {
+      developer.log('Tier 1 (Gemini grounding) failed for $url: $e. Falling back to Tier 2.', name: 'WebAIService', error: e);
+    }
+
+    // ── Tier 2: Traditional HTML Parsing fallback ──
+    developer.log('Tier 2: Attempting traditional HTML parsing for $url', name: 'WebAIService');
+    try {
+      final doc = await _fetchDocument(url);
+      if (doc == null) {
+        return Result.error(EnhancedAIServiceException('Failed to fetch webpage or non-HTML content',
+            code: 'FETCH_FAILED'));
+      }
+
+      final title = _extractTitle(doc);
+      final mainContent = _extractMainContent(doc);
+
+      if (mainContent.trim().length < 100) {
+        return Result.error(EnhancedAIServiceException(
+          'No readable content found on this page via HTML parsing. '
+          'The page may require login, be behind a paywall, or have minimal text content.',
+          code: 'NO_CONTENT',
+        ));
+      }
+
+      developer.log('Tier 2 succeeded with HTML parsing.', name: 'WebAIService');
+      return Result.ok(ExtractionResult(
+        text: mainContent,
+        suggestedTitle: title,
+        sourceUrl: url,
+      ));
+    } on CancelledException {
+      return Result.error(EnhancedAIServiceException(
+          'Extraction cancelled by user.',
+          code: 'CANCELLED'));
     } catch (e) {
       developer.log('Tier 2 failed: $e', name: 'WebAIService', error: e);
+      return Result.error(EnhancedAIServiceException('Web extraction failed: $e'));
     }
-
-    return Result.error(EnhancedAIServiceException(
-      'No readable content found on this page. '
-      'The page may require login, be behind a paywall, or have minimal text content.',
-      code: 'NO_CONTENT',
-    ));
   }
 
-  /// Tier 2: Send the URL to Gemini for AI-powered content extraction.
+  /// Tier 1 helper: Send the URL to Gemini for AI-powered content extraction.
   Future<ExtractionResult?> _analyzeWithGemini(String url,
       {CancellationToken? cancelToken}) async {
     if (!await ensureInitialized()) return null;
@@ -131,23 +102,24 @@ class WebAIService extends AIBaseService {
     );
 
     final prompt =
-        '''Extract ALL educational and informational content from this webpage URL.
+        '''Analyze and extract ALL educational and informational content from this webpage URL.
 
-TASK: Use your Browse Tool / URL context capability to access and read the content at this URL.
+TASK:
+1. USE your Google Search / Browse Tool to access and read the LIVE version of this URL.
+2. EXTRACT (do not just summarize) all core text, definitions, examples, and data.
+3. Organize the output into clear section headings as a study guide.
 
 INSTRUCTIONS:
-1. EXTRACT (not summarize) all text content from the page
-2. Include: headings, paragraphs, lists, definitions, examples, code, data
-3. EXCLUDE: navigation menus, ads, footers, cookie banners, promotional content
-4. Organize the output with clear section headings
-5. Preserve the original structure and hierarchy
+- Include: headings, paragraphs, lists, code, and tables.
+- Exclude: ads, footers, navigation menus, and non-educational boilerplate.
+- Ensure the extraction is high-fidelity to the source.
 
 URL: $url
 
-OUTPUT FORMAT (JSON):
+OUTPUT (JSON):
 {
   "title": "Descriptive title for the page content",
-  "content": "All extracted text..."
+  "content": "All extracted structured text in Markdown..."
 }''';
 
     final response = await generateWithRetry(
@@ -171,31 +143,40 @@ OUTPUT FORMAT (JSON):
     );
   }
 
+  /// Private helper to fetch and parse HTML document
+  Future<html.Document?> _fetchDocument(String url) async {
+    try {
+      final response = await http
+          .get(Uri.parse(url), headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          })
+          .timeout(Duration(seconds: AIConfig.webpageTimeoutSeconds));
+
+      if (response.statusCode != 200) return null;
+      
+      final contentType = response.headers['content-type'] ?? '';
+      if (!contentType.toLowerCase().contains('text/html')) return null;
+
+      return html_parser.parse(response.body);
+    } catch (e) {
+      developer.log('Error fetching document: $e', name: 'WebAIService');
+      return null;
+    }
+  }
+
   /// Extract main content from HTML document, removing boilerplate
   String _extractMainContent(html.Document document) {
-    // Remove unwanted elements that pollute content
+    // Remove unwanted elements
     final unwantedSelectors = [
-      'script',
-      'style',
-      'nav',
-      'footer',
-      'header',
-      'aside',
-      'iframe',
-      'noscript',
-      'form',
-      '.advertisement',
-      '.ad',
-      '.social-share',
-      '.comments',
-      '.related-posts'
+      'script', 'style', 'nav', 'footer', 'header', 'aside', 'iframe', 
+      'noscript', 'form', '.advertisement', '.ad', '.social-share', 
+      '.comments', '.related-posts'
     ];
 
     for (var selector in unwantedSelectors) {
       document.querySelectorAll(selector).forEach((e) => e.remove());
     }
 
-    // Try to find main content area (in order of preference)
     final mainContent = document.querySelector('article') ??
         document.querySelector('main') ??
         document.querySelector('[role="main"]') ??
@@ -208,10 +189,7 @@ OUTPUT FORMAT (JSON):
 
     if (mainContent == null) return '';
 
-    // Extract text
     String text = mainContent.text;
-
-    // Clean up whitespace and formatting
     text = text
         .split('\n')
         .map((line) => line.trim())
@@ -221,15 +199,13 @@ OUTPUT FORMAT (JSON):
     return text;
   }
 
-  /// Extract title from HTML document using multiple sources
+  /// Extract title from HTML document
   String _extractTitle(html.Document document) {
-    // Try Open Graph title first (most reliable for articles)
     final ogTitle = document
         .querySelector('meta[property="og:title"]')
         ?.attributes['content'];
     if (ogTitle != null && ogTitle.isNotEmpty) return ogTitle.trim();
 
-    // Try Twitter card title
     final twitterTitle = document
         .querySelector('meta[name="twitter:title"]')
         ?.attributes['content'];
@@ -237,14 +213,21 @@ OUTPUT FORMAT (JSON):
       return twitterTitle.trim();
     }
 
-    // Try H1 heading
     final h1 = document.querySelector('h1')?.text;
     if (h1 != null && h1.trim().isNotEmpty) return h1.trim();
 
-    // Fallback to page title
     final pageTitle = document.head?.querySelector('title')?.text;
     if (pageTitle != null && pageTitle.isNotEmpty) return pageTitle.trim();
 
     return 'Web Page';
+  }
+
+  bool _isValidUrl(String url) {
+    try {
+      final uri = Uri.parse(url);
+      return uri.hasScheme && (uri.scheme == 'http' || uri.scheme == 'https');
+    } catch (_) {
+      return false;
+    }
   }
 }

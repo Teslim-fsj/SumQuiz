@@ -142,7 +142,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
       );
 
       if (user != null) {
-        await UsageService().recordDeckGeneration(user.uid);
+        await UsageService().recordAction(user.uid, 'generate');
       }
 
       // 🔔 Schedule notifications after content generation
@@ -195,12 +195,12 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                     Expanded(
                       flex: 3,
                       child: Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                              color: Theme.of(context).dividerColor,
-                              width: 1.5),
+                        decoration: WebColors.glassDecoration(
+                          blur: 15,
+                          opacity: 0.1,
+                          color: WebColors.surface,
+                          borderRadius: 24,
+                        ).copyWith(
                           boxShadow: WebColors.cardShadow,
                         ),
                         child: Column(
@@ -307,11 +307,12 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                       width: 380,
                       child: Container(
                         padding: const EdgeInsets.all(32),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                          border:
-                              Border.all(color: WebColors.border, width: 1.5),
+                        decoration: WebColors.glassDecoration(
+                          blur: 15,
+                          opacity: 0.1,
+                          color: WebColors.surface,
+                          borderRadius: 24,
+                        ).copyWith(
                           boxShadow: WebColors.cardShadow,
                         ),
                         child: Column(
@@ -628,10 +629,12 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
     return Container(
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Theme.of(context).dividerColor, width: 1.5),
+      decoration: WebColors.glassDecoration(
+        blur: 15,
+        opacity: 0.1,
+        color: WebColors.surface,
+        borderRadius: 20,
+      ).copyWith(
         boxShadow: WebColors.cardShadow,
       ),
       child: Row(

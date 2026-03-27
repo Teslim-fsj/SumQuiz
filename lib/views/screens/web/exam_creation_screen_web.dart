@@ -61,6 +61,10 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   int _marksB = 5;
   int _marksC = 10;
 
+  // Editor Controllers (to prevent focus loss during live edit)
+  final Map<int, TextEditingController> _qTitleControllers = {};
+  final Map<String, TextEditingController> _optControllers = {};
+
   @override
   void dispose() {
     _cancelToken?.cancel();
@@ -69,6 +73,12 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
     _titleController.dispose();
     _durationController.dispose();
     _pageController.dispose();
+    for (var c in _qTitleControllers.values) {
+      c.dispose();
+    }
+    for (var c in _optControllers.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -293,36 +303,34 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(40),
-        header: (pw.Context context) => _buildPdfHeader(shareCode),
+        margin: const pw.EdgeInsets.all(30),
+        header: (pw.Context context) => _buildPdfHeader(shareCode, isFirstPage: false),
         build: (pw.Context context) => [
-          pw.SizedBox(height: 20),
+          _buildPdfHeader(shareCode, isFirstPage: true),
+          pw.SizedBox(height: 10),
           if (sectionA.isNotEmpty) ...[
-            _pdfSectionTitle(
-                'SECTION A – OBJECTIVE (${sectionA.length * _marksA} MARKS)'),
-            pw.SizedBox(height: 10),
+            _pdfSectionTitle('SECTION A – OBJECTIVE (${sectionA.length * _marksA} MARKS)'),
+            pw.SizedBox(height: 8),
             pw.ListView.builder(
               itemCount: sectionA.length,
               itemBuilder: (context, index) =>
                   _pdfQuestionItem(sectionA[index], index + 1, _marksA),
             ),
-            pw.SizedBox(height: 20),
+            pw.SizedBox(height: 15),
           ],
           if (sectionB.isNotEmpty) ...[
-            _pdfSectionTitle(
-                'SECTION B – SHORT ANSWER (${sectionB.length * _marksB} MARKS)'),
-            pw.SizedBox(height: 10),
+            _pdfSectionTitle('SECTION B – SHORT ANSWER (${sectionB.length * _marksB} MARKS)'),
+            pw.SizedBox(height: 8),
             pw.ListView.builder(
               itemCount: sectionB.length,
               itemBuilder: (context, index) => _pdfQuestionItem(
                   sectionB[index], index + sectionA.length + 1, _marksB),
             ),
-            pw.SizedBox(height: 20),
+            pw.SizedBox(height: 15),
           ],
           if (sectionC.isNotEmpty) ...[
-            _pdfSectionTitle(
-                'SECTION C – THEORY / ESSAY (${sectionC.length * _marksC} MARKS)'),
-            pw.SizedBox(height: 10),
+            _pdfSectionTitle('SECTION C – THEORY / ESSAY (${sectionC.length * _marksC} MARKS)'),
+            pw.SizedBox(height: 8),
             pw.ListView.builder(
               itemCount: sectionC.length,
               itemBuilder: (context, index) => _pdfQuestionItem(sectionC[index],
@@ -333,10 +341,101 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
       ),
     );
 
+    // Add Answer Scheme Page
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(30),
+        header: (pw.Context context) => _buildPdfHeader(shareCode, isFirstPage: false),
+        build: (pw.Context context) => [
+          _pdfSectionTitle('MARKING SCHEME & ANSWER KEY'),
+          pw.SizedBox(height: 10),
+          if (sectionA.isNotEmpty) ...[
+            pw.Text('SECTION A - OBJECTIVE', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+            pw.SizedBox(height: 8),
+            pw.ListView.builder(
+              itemCount: sectionA.length,
+              itemBuilder: (context, index) {
+                final q = sectionA[index];
+                int optIndex = q.options.indexOf(q.correctAnswer);
+                String letter = optIndex >= 0 ? String.fromCharCode(65 + optIndex) : '';
+                return pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 4),
+                  child: pw.Text('${index + 1}. $letter - ${q.correctAnswer}', style: const pw.TextStyle(fontSize: 10)),
+                );
+              },
+            ),
+            pw.SizedBox(height: 15),
+          ],
+          if (sectionB.isNotEmpty) ...[
+            pw.Text('SECTION B - SHORT ANSWER', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+            pw.SizedBox(height: 8),
+            pw.ListView.builder(
+              itemCount: sectionB.length,
+              itemBuilder: (context, index) {
+                final q = sectionB[index];
+                return pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 6),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('${index + sectionA.length + 1}. ${q.correctAnswer}', style: const pw.TextStyle(fontSize: 10, color: PdfColors.green700)),
+                      if (q.explanation != null && q.explanation!.isNotEmpty) ...[
+                        pw.SizedBox(height: 2),
+                        pw.Text('Explanation: ${q.explanation}', style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic, color: PdfColors.grey700)),
+                      ]
+                    ]
+                  )
+                );
+              },
+            ),
+            pw.SizedBox(height: 15),
+          ],
+          if (sectionC.isNotEmpty) ...[
+            pw.Text('SECTION C - THEORY / ESSAY', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+            pw.SizedBox(height: 8),
+            pw.ListView.builder(
+              itemCount: sectionC.length,
+              itemBuilder: (context, index) {
+                final q = sectionC[index];
+                return pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 8),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('${index + sectionA.length + sectionB.length + 1}. Expected Answer/Points:', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                      pw.SizedBox(height: 2),
+                      pw.Text(q.correctAnswer, style: const pw.TextStyle(fontSize: 10, color: PdfColors.green700)),
+                      if (q.explanation != null && q.explanation!.isNotEmpty) ...[
+                        pw.SizedBox(height: 2),
+                        pw.Text('Marking Guide: ${q.explanation}', style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic, color: PdfColors.grey700)),
+                      ]
+                    ]
+                  )
+                );
+              },
+            ),
+          ],
+        ],
+      )
+    );
+
     return pdf;
   }
 
-  pw.Widget _buildPdfHeader(String shareCode) {
+  pw.Widget _buildPdfHeader(String shareCode, {bool isFirstPage = true}) {
+    if (!isFirstPage) {
+      return pw.Column(children: [
+        pw.Center(
+          child: pw.Text(_schoolNameController.text.toUpperCase(),
+              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
+        ),
+        pw.SizedBox(height: 5),
+        pw.Divider(thickness: 0.5, color: PdfColors.grey300),
+        pw.SizedBox(height: 10),
+      ]);
+    }
+
     return pw.Column(children: [
       pw.Center(
         child: pw.Text(_schoolNameController.text.toUpperCase(),
@@ -352,39 +451,39 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                 children: [
                   pw.Text('SUBJECT: ${_subjectController.text.toUpperCase()}',
                       style: pw.TextStyle(
-                          fontWeight: pw.FontWeight.bold, fontSize: 11)),
-                  pw.SizedBox(height: 5),
+                          fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                  pw.SizedBox(height: 4),
                   pw.Text('CLASS: $_selectedLevel',
                       style: pw.TextStyle(
-                          fontWeight: pw.FontWeight.bold, fontSize: 11)),
-                  pw.SizedBox(height: 5),
+                          fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                  pw.SizedBox(height: 4),
                   pw.Text('TIME ALLOWED: ${_durationController.text} MINUTES',
                       style: pw.TextStyle(
-                          fontWeight: pw.FontWeight.bold, fontSize: 11)),
-                  pw.SizedBox(height: 15),
+                          fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                  pw.SizedBox(height: 12),
                   pw.Text(
                       'STUDENT NAME: __________________________________________',
                       style: pw.TextStyle(
-                          fontWeight: pw.FontWeight.bold, fontSize: 11)),
+                          fontWeight: pw.FontWeight.bold, fontSize: 10)),
                 ]),
             pw.Container(
-              padding: const pw.EdgeInsets.all(8),
+              padding: const pw.EdgeInsets.all(6),
               decoration: pw.BoxDecoration(
                 border: pw.Border.all(color: PdfColors.grey300),
-                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
               ),
               child: pw.Column(children: [
                 pw.Text('Review Online:',
                     style: pw.TextStyle(
-                        fontSize: 8, fontWeight: pw.FontWeight.bold)),
-                pw.SizedBox(height: 4),
+                        fontSize: 7, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 2),
                 pw.Text('sumquiz.xyz/s/$shareCode',
                     style: const pw.TextStyle(
-                        fontSize: 9, color: PdfColors.blue800)),
+                        fontSize: 8, color: PdfColors.blue800)),
                 pw.SizedBox(height: 4),
                 pw.Container(
-                  height: 45,
-                  width: 45,
+                  height: 35,
+                  width: 35,
                   child: pw.BarcodeWidget(
                     color: PdfColors.black,
                     barcode: pw.Barcode.qrCode(),
@@ -394,41 +493,54 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
               ]),
             ),
           ]),
-      pw.SizedBox(height: 15),
-      pw.Divider(),
+      pw.SizedBox(height: 10),
+      pw.Divider(thickness: 1.5),
     ]);
   }
 
   pw.Widget _pdfSectionTitle(String title) {
     return pw.Container(
-      padding: const pw.EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-      decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+      padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+      decoration: const pw.BoxDecoration(
+        color: PdfColors.grey100,
+        border: pw.Border(
+          top: pw.BorderSide(width: 1),
+          bottom: pw.BorderSide(width: 1),
+        ),
+      ),
       width: double.infinity,
       child: pw.Text(title,
-          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
+          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
     );
   }
 
   pw.Widget _pdfQuestionItem(LocalQuizQuestion q, int number, int marks) {
     return pw.Container(
-      margin: const pw.EdgeInsets.only(bottom: 12),
+      margin: const pw.EdgeInsets.only(bottom: 8),
       child:
           pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
         pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
           pw.Text('$number. ', style: const pw.TextStyle(fontSize: 10)),
           pw.Expanded(
-            child: pw.Text('${q.question} ($marks Mark${marks > 1 ? 's' : ''})',
-                style: const pw.TextStyle(fontSize: 10)),
+            child: pw.RichText(
+              text: pw.TextSpan(
+                children: [
+                  pw.TextSpan(text: q.question, style: const pw.TextStyle(fontSize: 10)),
+                  pw.TextSpan(text: ' ($marks Mark${marks > 1 ? 's' : ''})', 
+                    style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, fontStyle: pw.FontStyle.italic)),
+                ],
+              ),
+            ),
           ),
         ]),
         if (q.questionType == 'Multiple Choice') ...[
-          pw.SizedBox(height: 6),
+          pw.SizedBox(height: 4),
           pw.Padding(
             padding: const pw.EdgeInsets.only(left: 15),
             child: pw.Column(children: [
               for (int i = 0; i < q.options.length; i++)
                 pw.Padding(
-                  padding: const pw.EdgeInsets.only(bottom: 2),
+                  padding: const pw.EdgeInsets.only(bottom: 1.5),
                   child: pw.Row(children: [
                     pw.Text('(${String.fromCharCode(65 + i)}) ',
                         style: const pw.TextStyle(fontSize: 9)),
@@ -439,11 +551,11 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
             ]),
           ),
         ] else if (q.questionType == 'Theory' || q.questionType == 'Essay') ...[
-          pw.SizedBox(height: 35),
+          pw.SizedBox(height: 30),
         ] else if (q.questionType == 'Short Answer') ...[
-          pw.SizedBox(height: 15),
+          pw.SizedBox(height: 10),
           pw.Text('Answer: __________________________________________________',
-              style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
+              style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
         ],
       ]),
     );
@@ -490,9 +602,12 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
         child: Container(
           width: 500,
           padding: const EdgeInsets.all(40),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(32),
+          decoration: WebColors.glassDecoration(
+            blur: 15,
+            opacity: 0.1,
+            color: WebColors.surface,
+            borderRadius: 32,
+          ).copyWith(
             boxShadow: WebColors.cardShadow,
           ),
           child: Column(
@@ -529,7 +644,10 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   Widget _buildWizardPanel() {
     return Container(
       width: 500,
-      color: Colors.white,
+      decoration: BoxDecoration(
+        color: WebColors.surface,
+        border: const Border(right: BorderSide(color: WebColors.border)),
+      ),
       child: Column(
         children: [
           _buildWizardHeader(),
@@ -548,6 +666,170 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           ),
           const Divider(height: 1),
           _buildWizardFooter(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreviewPanel() {
+    return Container(
+      color: WebColors.background,
+      child: Center(
+        child: Container(
+          width: 800,
+          margin: const EdgeInsets.all(40),
+          decoration: WebColors.glassDecoration(
+            blur: 15,
+            opacity: 0.05,
+            color: WebColors.surface,
+            borderRadius: 24,
+          ).copyWith(
+            boxShadow: WebColors.cardShadow,
+          ),
+          child: _generatedQuestions.isEmpty ? _buildEmptyPreview() : _buildExamPreview(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyPreview() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.description_outlined, size: 80, color: WebColors.textTertiary),
+        const SizedBox(height: 24),
+        Text(
+          'No Exam Generated Yet',
+          style: GoogleFonts.outfit(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: WebColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Generate your exam on the left to see the live preview here.',
+          style: GoogleFonts.outfit(color: WebColors.textTertiary),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildExamPreview() {
+    return Column(
+      children: [
+        _buildPreviewHeader(),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(32),
+            itemCount: _generatedQuestions.length,
+            itemBuilder: (context, index) => _buildPreviewQuestion(_generatedQuestions[index], index + 1),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPreviewHeader() {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: const BoxDecoration(
+        color: WebColors.backgroundAlt,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(bottom: BorderSide(color: WebColors.border)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: WebColors.HeroGradient,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.remove_red_eye_rounded, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Live Preview',
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+                  Text(
+                    'Dynamic update as you edit',
+                    style: GoogleFonts.outfit(fontSize: 12, color: WebColors.textSecondary),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          TextButton.icon(
+            onPressed: _exportExam,
+            icon: const Icon(Icons.download_rounded),
+            label: const Text('Export PDF'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreviewQuestion(LocalQuizQuestion q, int number) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: WebColors.backgroundAlt.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: WebColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('$number. ', style: const TextStyle(fontWeight: FontWeight.bold)),
+              Expanded(
+                child: Text(
+                  q.question,
+                  style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 15),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: WebColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  (q.questionType ?? '').toUpperCase(),
+                  style: GoogleFonts.outfit(fontSize: 9, fontWeight: FontWeight.w800, color: WebColors.primary),
+                ),
+              ),
+            ],
+          ),
+          if (q.questionType == 'Multiple Choice') ...[
+            const SizedBox(height: 16),
+            ...q.options.asMap().entries.map((entry) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: WebColors.border)),
+                    child: Center(child: Text(String.fromCharCode(65 + entry.key), style: const TextStyle(fontSize: 10))),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(entry.value, style: GoogleFonts.outfit(fontSize: 14)),
+                ],
+              ),
+            )),
+          ],
         ],
       ),
     );
@@ -824,7 +1106,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           Slider(
             value: _numberOfQuestions.toDouble(),
             min: 5,
-            max: 100,
+            max: 50,
             activeColor: WebColors.purplePrimary,
             onChanged: (v) => setState(() => _numberOfQuestions = v.round()),
           ),
@@ -908,47 +1190,6 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildPreviewPanel() {
-    if (_generatedQuestions.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.description_outlined,
-                size: 120,
-                color: WebColors.purplePrimary.withValues(alpha: 0.05)),
-            const SizedBox(height: 24),
-            Text('Ready to Build',
-                style: GoogleFonts.outfit(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: WebColors.textPrimary)),
-            const SizedBox(height: 12),
-            const Text('Your exam preview will appear here in real-time.',
-                style: TextStyle(color: WebColors.textTertiary)),
-          ],
-        ),
-      );
-    }
-
-    return Column(
-      children: [
-        _buildPreviewToolBar(),
-        Expanded(
-          child: Container(
-            color: WebColors.backgroundAlt,
-            child: ListView(
-              padding: const EdgeInsets.all(60),
-              children: [
-                _buildPaperLook(),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -1050,6 +1291,12 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
             ? _marksA
             : (q.questionType == 'Short Answer' ? _marksB : _marksC);
 
+    // Get or create controller for question title
+    if (!_qTitleControllers.containsKey(index)) {
+      _qTitleControllers[index] = TextEditingController(text: q.question);
+    }
+    final qCtrl = _qTitleControllers[index]!;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 32),
       child: Column(
@@ -1063,7 +1310,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                       fontWeight: FontWeight.bold, fontSize: 16)),
               Expanded(
                 child: TextField(
-                  controller: TextEditingController(text: q.question),
+                  controller: qCtrl,
                   maxLines: null,
                   onChanged: (v) => q.question = v,
                   style: const TextStyle(fontSize: 16, height: 1.5),
@@ -1078,8 +1325,17 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                       fontSize: 12,
                       color: WebColors.textTertiary)),
               IconButton(
-                onPressed: () =>
-                    setState(() => _generatedQuestions.removeAt(index - 1)),
+                onPressed: () {
+                  setState(() {
+                    _generatedQuestions.removeAt(index - 1);
+                    // Cleanup controllers
+                    _qTitleControllers.remove(index);
+                    // Note: Indices shift after removal, so we might need a more robust key-based system
+                    // but for this simple list it works if we clear and let it rebuild.
+                    _qTitleControllers.clear();
+                    _optControllers.clear();
+                  });
+                },
                 icon: const Icon(Icons.delete_outline,
                     size: 18, color: Colors.redAccent),
               ),
@@ -1090,26 +1346,35 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
               padding: const EdgeInsets.only(left: 24, top: 12),
               child: Column(
                 children: [
-                  for (int i = 0; i < q.options.length; i++)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        children: [
-                          Text('(${String.fromCharCode(65 + i)}) ',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w600)),
-                          Expanded(
-                            child: TextField(
-                              controller:
-                                  TextEditingController(text: q.options[i]),
-                              onChanged: (v) => q.options[i] = v,
-                              decoration: const InputDecoration(
-                                  border: InputBorder.none, isCollapsed: true),
+                  for (int i = 0; i < q.options.length; i++) ...[
+                    Builder(builder: (context) {
+                      final optKey = '${index}_$i';
+                      if (!_optControllers.containsKey(optKey)) {
+                        _optControllers[optKey] =
+                            TextEditingController(text: q.options[i]);
+                      }
+                      final optCtrl = _optControllers[optKey]!;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            Text('(${String.fromCharCode(65 + i)}) ',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w600)),
+                            Expanded(
+                              child: TextField(
+                                controller: optCtrl,
+                                onChanged: (v) => q.options[i] = v,
+                                decoration: const InputDecoration(
+                                    border: InputBorder.none,
+                                    isCollapsed: true),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
                 ],
               ),
             ),

@@ -161,10 +161,12 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
     return Container(
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: WebColors.border, width: 1.5),
+      decoration: WebColors.glassDecoration(
+        blur: 15,
+        opacity: 0.1,
+        color: WebColors.surface,
+        borderRadius: 24,
+      ).copyWith(
         boxShadow: WebColors.cardShadow,
       ),
       child: Row(
@@ -330,10 +332,12 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
   Widget _buildSidebar() {
     return Container(
       width: 280,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: WebColors.border, width: 1.5),
+      decoration: WebColors.glassDecoration(
+        blur: 15,
+        opacity: 0.05,
+        color: WebColors.surface,
+        borderRadius: 24,
+      ).copyWith(
         boxShadow: WebColors.cardShadow,
       ),
       child: Column(
@@ -467,10 +471,12 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
 
   Widget _buildContentArea() {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: WebColors.border, width: 1.5),
+      decoration: WebColors.glassDecoration(
+        blur: 15,
+        opacity: 0.05,
+        color: WebColors.surface,
+        borderRadius: 24,
+      ).copyWith(
         boxShadow: WebColors.cardShadow,
       ),
       child: _buildSelectedTabView()

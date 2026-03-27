@@ -22,10 +22,12 @@ class DailyGoalCard extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: WebColors.border),
+      decoration: WebColors.glassDecoration(
+        blur: 12,
+        opacity: 0.05,
+        color: WebColors.surface,
+        borderRadius: 24,
+      ).copyWith(
         boxShadow: WebColors.cardShadow,
       ),
       child: Column(

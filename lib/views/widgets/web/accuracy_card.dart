@@ -5,20 +5,30 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 class AccuracyCard extends StatelessWidget {
   final double accuracy; // 0.0 to 1.0
+  final double highestAccuracy;
+  final double lowestAccuracy;
 
-  const AccuracyCard({super.key, required this.accuracy});
+  const AccuracyCard({
+    super.key,
+    required this.accuracy,
+    required this.highestAccuracy,
+    required this.lowestAccuracy,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // Assuming accuracy is 88% like simple example
     final percentage = (accuracy * 100).toInt();
+    final highestPerc = (highestAccuracy * 100).toInt();
+    final lowestPerc = (lowestAccuracy * 100).toInt();
 
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: WebColors.border),
+      decoration: WebColors.glassDecoration(
+        blur: 12,
+        opacity: 0.05,
+        color: WebColors.surface,
+        borderRadius: 24,
+      ).copyWith(
         boxShadow: WebColors.cardShadow,
       ),
       child: Column(
@@ -57,7 +67,7 @@ class AccuracyCard extends StatelessWidget {
                       child: CircularProgressIndicator(
                         value: accuracy, // Dynamic
                         strokeWidth: 10,
-                        color: WebColors.accent,
+                        color: WebColors.success,
                         strokeCap: StrokeCap.round,
                       ),
                     ),
@@ -77,9 +87,9 @@ class AccuracyCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildStatRow('Highest', '96%'),
+                  _buildStatRow('Highest', '$highestPerc%'),
                   const SizedBox(height: 8),
-                  _buildStatRow('Lowest', '72%'),
+                  _buildStatRow('Lowest', '$lowestPerc%'),
                 ],
               ),
             ],

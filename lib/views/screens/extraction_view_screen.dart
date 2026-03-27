@@ -248,7 +248,7 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
       // Record usage (Deck Generation)
       if (user != null) {
         try {
-          await UsageService().recordDeckGeneration(user.uid);
+          await UsageService().recordAction(user.uid, 'generate');
         } catch (e) {
           debugPrint('Error recording deck generation: $e');
           // Don't fail the operation if usage recording fails

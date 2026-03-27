@@ -47,44 +47,75 @@ class WebColors {
   static const Color yellowTipBorder = Color(0xFFFFF3C4);
   static const Color yellowTipText = Color(0xFFCA8A04);
 
-  // Premium Gradients - Updated to match mobile theme
+  // Premium Gradients - Modern & Vibrant
   static const LinearGradient HeroGradient = LinearGradient(
-    colors: [Color(0xFF1E3A8A), Color(0xFF60A5FA)],
+    colors: [Color(0xFF0F172A), Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient AccentGradient = LinearGradient(
+    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6), Color(0xFFD946EF)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient PremiumGradient = LinearGradient(
-    colors: [Color(0xFFFACC15), Color(0xFFEAB308), Color(0xFFCA8A04)],
+    colors: [Color(0xFF6366F1), Color(0xFFA855F7), Color(0xFFEC4899)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  static const LinearGradient SurfaceGradient = LinearGradient(
-    colors: [Color(0xFFFFFFFF), Color(0xFFF9FAFB)],
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
+  static const LinearGradient SuccessGradient = LinearGradient(
+    colors: [Color(0xFF10B981), Color(0xFF059669)],
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
   );
+
+  static const LinearGradient GlassGradient = LinearGradient(
+    colors: [Colors.white24, Colors.white10],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  // Glassmorphism Utilities
+  static BoxDecoration glassDecoration({
+    double blur = 12.0,
+    double opacity = 0.1,
+    Color color = Colors.white,
+    double borderRadius = 20.0,
+    bool showBorder = true,
+  }) {
+    return BoxDecoration(
+      color: color.withOpacity(opacity),
+      borderRadius: BorderRadius.circular(borderRadius),
+      border: showBorder 
+        ? Border.all(color: color.withOpacity(0.2), width: 1.5)
+        : null,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 20,
+          offset: const Offset(0, 10),
+        ),
+      ],
+    );
+  }
 
   // Shadows
   static List<BoxShadow> get cardShadow => [
         BoxShadow(
-          color: const Color(0xFF0F172A).withOpacity(0.05),
-          blurRadius: 24,
-          offset: const Offset(0, 8),
-        ),
-        BoxShadow(
-          color: const Color(0xFF0F172A).withOpacity(0.03),
-          blurRadius: 8,
-          offset: const Offset(0, 2),
+          color: const Color(0xFF0F172A).withOpacity(0.08),
+          blurRadius: 30,
+          offset: const Offset(0, 12),
         ),
       ];
 
   static List<BoxShadow> get hoverShadow => [
         BoxShadow(
-          color: const Color(0xFF1E3A8A).withOpacity(0.12),
-          blurRadius: 32,
-          offset: const Offset(0, 12),
+          color: const Color(0xFF3B82F6).withOpacity(0.2),
+          blurRadius: 40,
+          offset: const Offset(0, 15),
         ),
       ];
 

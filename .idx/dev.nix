@@ -7,6 +7,8 @@
   packages = [
     pkgs.jdk21
     pkgs.unzip
+    pkgs.nodejs_20
+    pkgs.firebase-tools
   ];
   # Sets environment variables in the workspace
   env = {};

@@ -30,16 +30,19 @@ enum FlashcardState { creation, loading, review, finished, error }
 
 class FlashcardsScreen extends StatefulWidget {
   final FlashcardSet? flashcardSet;
+  final String? id;
   final bool isReadOnly;
   final String? publicDeckId;
   final String? creatorName;
 
-  const FlashcardsScreen(
-      {super.key,
-      this.flashcardSet,
-      this.isReadOnly = false,
-      this.publicDeckId,
-      this.creatorName});
+  const FlashcardsScreen({
+    super.key,
+    this.flashcardSet,
+    this.id,
+    this.isReadOnly = false,
+    this.publicDeckId,
+    this.creatorName,
+  });
 
   @override
   State<FlashcardsScreen> createState() => _FlashcardsScreenState();
@@ -65,12 +68,80 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
   void initState() {
     super.initState();
     _initializeServices();
+    _loadFlashcards();
+  }
+
+  Future<void> _loadFlashcards() async {
     if (widget.flashcardSet != null) {
       setState(() {
         _flashcards = widget.flashcardSet!.flashcards;
         _titleController.text = widget.flashcardSet!.title;
         _state = FlashcardState.review;
       });
+    } else if (widget.id != null) {
+      setState(() {
+        _state = FlashcardState.loading;
+        _loadingMessage = 'Loading Flashcards...';
+      });
+
+      try {
+        // Try local database first
+        LocalFlashcardSet? localSet =
+            await _localDbService.getFlashcardSet(widget.id!);
+
+        if (localSet == null) {
+          // Fallback to Firestore if on Web
+          final user = Provider.of<UserModel?>(context, listen: false);
+          if (user != null) {
+            final firestore = FirestoreService();
+            final fsDoc =
+                await firestore.getFlashcardSet(user.uid, widget.id!);
+            if (fsDoc != null) {
+              localSet = LocalFlashcardSet(
+                id: fsDoc.id,
+                title: fsDoc.title,
+                timestamp: fsDoc.timestamp.toDate(),
+                userId: user.uid,
+                flashcards: fsDoc.flashcards
+                    .map((f) => LocalFlashcard(
+                          question: f.question,
+                          answer: f.answer,
+                        ))
+                    .toList(),
+              );
+              // Save it locally for future use
+              await _localDbService.saveFlashcardSet(localSet);
+            }
+          }
+        }
+
+        if (localSet != null && mounted) {
+          final ls = localSet;
+          setState(() {
+            _flashcards = ls.flashcards
+                .map((f) => Flashcard(
+                      id: f.id,
+                      question: f.question,
+                      answer: f.answer,
+                    ))
+                .toList();
+            _titleController.text = ls.title;
+            _state = FlashcardState.review;
+          });
+        } else if (mounted) {
+          setState(() {
+            _state = FlashcardState.error;
+            _errorMessage = 'Flashcard set not found.';
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _state = FlashcardState.error;
+            _errorMessage = 'Error loading flashcards: $e';
+          });
+        }
+      }
     }
   }
 

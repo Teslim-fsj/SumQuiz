@@ -69,7 +69,7 @@ class _GoalSettingDialogState extends State<GoalSettingDialog> {
                     });
                   }
                 },
-                backgroundColor: theme.scaffoldBackgroundColor.withOpacity(0.5),
+                backgroundColor: theme.scaffoldBackgroundColor.withValues(alpha: 0.5),
                 selectedColor: theme.colorScheme.secondary,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20)),
@@ -87,7 +87,7 @@ class _GoalSettingDialogState extends State<GoalSettingDialog> {
             decoration: InputDecoration(
               hintText: 'Custom Goal',
               filled: true,
-              fillColor: theme.scaffoldBackgroundColor.withOpacity(0.5),
+              fillColor: theme.scaffoldBackgroundColor.withValues(alpha: 0.5),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,

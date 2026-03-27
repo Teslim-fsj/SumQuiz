@@ -200,12 +200,15 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
     }
 
     final usageService = UsageService();
-    final canGenerate = await usageService.canGenerateDeck(user.uid);
+    final action = _fileBytes != null ? 'upload' : 'generate';
+    final canPerform = await usageService.canPerformAction(user.uid, action);
     if (!mounted) return;
-    if (!canGenerate) {
+    if (!canPerform) {
       showDialog(
         context: context,
-        builder: (_) => const UpgradeDialog(featureName: 'Daily Limit'),
+        builder: (_) => UpgradeDialog(
+          featureName: action == 'upload' ? 'Lifetime Upload Limit' : 'Daily Limit',
+        ),
       );
       return;
     }
@@ -251,10 +254,7 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
           onProgress: (_) {},
         );
         if (!cancelToken.isCancelled && mounted) {
-          await usageService.recordDeckGeneration(user.uid);
-          if (extractType == 'pdf' || extractType == 'image' || extractType == 'audio') {
-            await usageService.recordAction(user.uid, 'upload');
-          }
+          await usageService.recordAction(user.uid, action);
           _extractionResult = result;
           setState(() => _screenState = _ScreenState.done);
         }
@@ -271,7 +271,7 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
           onProgress: (_) {},
         );
         if (!cancelToken.isCancelled && mounted) {
-          await usageService.recordDeckGeneration(user.uid);
+          await usageService.recordAction(user.uid, action);
           _extractionResult = result;
           setState(() => _screenState = _ScreenState.done);
         }
@@ -281,7 +281,7 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
             Provider.of<EnhancedAIService>(context, listen: false);
         final localDb =
             Provider.of<LocalDatabaseService>(context, listen: false);
-        await usageService.recordDeckGeneration(user.uid);
+        await usageService.recordAction(user.uid, action);
 
         if (raw.split(' ').length <= 8 && !raw.contains('\n')) {
           // Treat as topic
@@ -548,21 +548,13 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
   Widget _buildChatInputBox() {
     final hasFile = _fileName != null;
     return Container(
-      decoration: BoxDecoration(
+      decoration: WebColors.glassDecoration(
+        blur: 24,
+        opacity: 0.1,
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: WebColors.primary.withValues(alpha: 0.08),
-            blurRadius: 32,
-            offset: const Offset(0, 8),
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-          ),
-        ],
-        border: Border.all(color: WebColors.border, width: 1.5),
+        borderRadius: 24,
+      ).copyWith(
+        boxShadow: WebColors.cardShadow,
       ),
       child: Column(
         children: [
@@ -614,14 +606,14 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
                   icon: const Icon(Icons.auto_awesome_rounded, size: 18),
                   label: const Text('Generate'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: WebColors.primary,
+                    backgroundColor: WebColors.accent,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 28, vertical: 16),
+                        horizontal: 32, vertical: 20),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
                     textStyle: GoogleFonts.outfit(
-                        fontSize: 15, fontWeight: FontWeight.w700),
+                        fontSize: 16, fontWeight: FontWeight.w800),
                     elevation: 0,
                   ),
                 ),
@@ -781,10 +773,12 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-                decoration: BoxDecoration(
+                decoration: WebColors.glassDecoration(
+                  blur: 10,
+                  opacity: 0.05,
+                  borderRadius: 100,
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(100),
-                  border: Border.all(color: WebColors.border),
+                ).copyWith(
                   boxShadow: WebColors.subtleShadow,
                 ),
                 child: Text(

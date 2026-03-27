@@ -83,7 +83,7 @@ class CreatorTabView extends StatelessWidget {
                     ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.2),
                     const SizedBox(height: 24),
                     Text(
-                      'The AI-Powered Teaching Assistant',
+                      'The All-in-One Educator Platform',
                       style: TextStyle(
                         fontSize: 60,
                         fontWeight: FontWeight.w800,
@@ -97,7 +97,7 @@ class CreatorTabView extends StatelessWidget {
                         .slideX(begin: -0.2),
                     const SizedBox(height: 24),
                     Text(
-                      'Automate exam creation, generate professional study materials, and empower your students with interactive learning — from your own curriculum.',
+                      'Automate content creation, manage student performance with AI-driven insights, and deliver professional exams — all from a single, powerful dashboard.',
                       style: TextStyle(
                         fontSize: 20,
                         color: WebColors.textSecondary,
@@ -112,24 +112,24 @@ class CreatorTabView extends StatelessWidget {
                       spacing: 16,
                       runSpacing: 16,
                       children: [
-                        _buildPrimaryButton(context, 'Start Creating Now',
+                        _buildPrimaryButton(context, 'Launch Dashboard',
                             () => context.go('/auth')),
                         _buildSecondaryButton(
                             context,
-                            'Get mobile version',
+                            'Watch Demo',
                             () => launchUrl(Uri.parse(
-                                'https://play.google.com/store/apps/details?id=com.sumquiz.app'))),
+                                'https://sumquiz.xyz/demo'))),
                       ],
                     ).animate().fadeIn(delay: 600.ms, duration: 600.ms),
                     const SizedBox(height: 40),
                     Row(
                       children: [
                         _buildTrustBadge(
-                            Icons.timer_outlined, 'Save Hours Weekly'),
+                            Icons.dashboard_customize_outlined, 'Centralized Command'),
                         _buildTrustBadge(
-                            Icons.verified_outlined, 'Curriculum Aligned'),
+                            Icons.query_stats_outlined, 'Real-time Analytics'),
                         _buildTrustBadge(
-                            Icons.auto_awesome_outlined, 'Pro-Level Exports'),
+                            Icons.psychology_outlined, 'AI Feedback Engine'),
                       ],
                     ).animate().fadeIn(delay: 800.ms),
                   ],
@@ -154,8 +154,14 @@ class CreatorTabView extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(30),
                     child: Image.asset(
-                      'assets/images/web/creator_hero.png',
+                      'assets/images/web/teacher_dashboard_preview.png', // Updated placeholder name
                       fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: WebColors.primary.withOpacity(0.05),
+                        child: Center(
+                          child: Icon(Icons.dashboard, size: 80, color: WebColors.primary.withOpacity(0.2)),
+                        ),
+                      ),
                     ),
                   ),
                 )
@@ -173,16 +179,14 @@ class CreatorTabView extends StatelessWidget {
   Widget _buildTrustBadge(IconData icon, String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+      margin: const EdgeInsets.only(right: 12),
+      decoration: WebColors.glassDecoration(
+        blur: 10,
+        opacity: 0.8,
+        color: WebColors.surface,
+        borderRadius: 20,
+      ).copyWith(
+        boxShadow: WebColors.subtleShadow,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -210,13 +214,13 @@ class CreatorTabView extends StatelessWidget {
         backgroundColor: WebColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
         textStyle: const TextStyle(
           fontWeight: FontWeight.w700,
-          fontSize: 16,
+          fontSize: 17,
         ),
       ),
       child: Text(text),
@@ -229,14 +233,14 @@ class CreatorTabView extends StatelessWidget {
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
         foregroundColor: WebColors.primary,
-        side: BorderSide(color: WebColors.primary),
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+        side: BorderSide(color: WebColors.primary, width: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
         textStyle: const TextStyle(
           fontWeight: FontWeight.w600,
-          fontSize: 16,
+          fontSize: 17,
         ),
       ),
       child: Text(text),
@@ -253,13 +257,13 @@ class CreatorTabView extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildStatItem('1,000+', 'Verified Educators', Icons.school),
+              _buildStatItem('2,500+', 'Active Classrooms', Icons.meeting_room),
               _buildDivider(),
-              _buildStatItem('50,000+', 'Exams Generated', Icons.assignment),
+              _buildStatItem('150k+', 'Content Assets', Icons.library_books),
               _buildDivider(),
-              _buildStatItem('100%', 'Ownership', Icons.lock_outline),
+              _buildStatItem('20hrs+', 'Weekly Savings', Icons.timer),
               _buildDivider(),
-              _buildStatItem('99%', 'AI Precision', Icons.auto_awesome),
+              _buildStatItem('92%', 'Student Mastery', Icons.trending_up),
             ],
           ),
         ),
@@ -273,7 +277,7 @@ class CreatorTabView extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: WebColors.primary.withOpacity(0.1),
+            color: WebColors.primary.withOpacity(0.08),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Icon(icon, color: WebColors.primary, size: 32),
@@ -304,7 +308,7 @@ class CreatorTabView extends StatelessWidget {
     return Container(
       height: 60,
       width: 1,
-      color: WebColors.border,
+      color: Colors.grey.withOpacity(0.2),
     );
   }
 
@@ -312,14 +316,7 @@ class CreatorTabView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 80),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            WebColors.backgroundAlt,
-            Colors.white,
-          ],
-        ),
+        color: WebColors.backgroundAlt.withOpacity(0.5),
       ),
       child: Center(
         child: Container(
@@ -327,7 +324,7 @@ class CreatorTabView extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                'SIMPLE PROCESS',
+                'THE EDUCATOR WORKFLOW',
                 style: TextStyle(
                   color: WebColors.primary,
                   fontWeight: FontWeight.w700,
@@ -337,7 +334,7 @@ class CreatorTabView extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Professional materials in 3 easy steps',
+                'From raw material to academic excellence',
                 style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.w800,
@@ -348,14 +345,14 @@ class CreatorTabView extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildStepCard(1, 'Prepare Material',
-                      'Upload your syllabus, lecture notes, or textbooks in any format'),
+                  _buildStepCard(1, 'Automated Authoring',
+                      'Upload your syllabus or text. Our AI generates exams, flashcards, and summaries instantly.'),
                   _buildStepArrow(),
-                  _buildStepCard(2, 'Generate & Edit',
-                      'Let AI generate editable exam questions or interactive study decks'),
+                  _buildStepCard(2, 'Pro-Level Management',
+                      'Organize students into classes, distribute assignments, and track real-time study patterns.'),
                   _buildStepArrow(),
-                  _buildStepCard(3, 'Share & Export',
-                      'Export as clean PDFs or share digital versions with your students'),
+                  _buildStepCard(3, 'Intelligent Feedback',
+                      'Bridge the gap with AI-driven insights that identify exactly where each student is struggling.'),
                 ],
               ),
             ],
@@ -367,19 +364,15 @@ class CreatorTabView extends StatelessWidget {
 
   Widget _buildStepCard(int number, String title, String description) {
     return Container(
-      width: 280,
+      width: 320,
       padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
+      decoration: WebColors.glassDecoration(
+        blur: 15,
+        opacity: 0.1,
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: WebColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        borderRadius: 24,
+      ).copyWith(
+        boxShadow: WebColors.cardShadow,
       ),
       child: Column(
         children: [
@@ -406,10 +399,12 @@ class CreatorTabView extends StatelessWidget {
           const SizedBox(height: 24),
           Text(
             title,
+            textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w700,
               color: WebColors.textPrimary,
+              height: 1.2,
             ),
           ),
           const SizedBox(height: 12),
@@ -429,9 +424,9 @@ class CreatorTabView extends StatelessWidget {
 
   Widget _buildStepArrow() {
     return Icon(
-      Icons.arrow_forward,
-      color: WebColors.textTertiary,
-      size: 32,
+      Icons.chevron_right,
+      color: WebColors.primary.withOpacity(0.3),
+      size: 40,
     );
   }
 
@@ -445,7 +440,7 @@ class CreatorTabView extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                'EDUCATOR TOOLS',
+                'THE SUITE',
                 style: TextStyle(
                   color: WebColors.primary,
                   fontWeight: FontWeight.w700,
@@ -455,7 +450,7 @@ class CreatorTabView extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Professional tools for teaching excellence',
+                'Complete modules for the modern educator',
                 style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.w800,
@@ -469,42 +464,42 @@ class CreatorTabView extends StatelessWidget {
                 crossAxisCount: 3,
                 mainAxisSpacing: 24,
                 crossAxisSpacing: 24,
-                childAspectRatio: 1.2,
+                childAspectRatio: 1.25,
                 children: [
                   _buildFeatureCard(
-                    'Create Exams',
-                    'Generate professional test papers with automated marking schemes from your own materials.',
-                    Icons.assignment,
+                    'Educator Dashboard',
+                    'Your centralized command center for managing study materials, classes, and student performance.',
+                    Icons.dashboard_outlined,
                     WebColors.primary,
                   ),
                   _buildFeatureCard(
-                    'Share Study Decks',
-                    'Create interactive flashcards and summaries to help students master their courses.',
-                    Icons.library_books,
+                    'Student Management',
+                    'A robust registry to organize your students, monitor individual progress, and boost engagement.',
+                    Icons.people_alt_outlined,
                     WebColors.secondary,
                   ),
                   _buildFeatureCard(
-                    'Multi-Format Support',
-                    'Upload PDFs, PowerPoint slides, Word docs, or even YouTube lectures as sources.',
-                    Icons.file_present,
+                    'Advanced Analytics',
+                    'Deep-dive into mastery heatmaps and study metrics to understand class understanding at a glance.',
+                    Icons.pie_chart_outline,
                     WebColors.accent,
                   ),
                   _buildFeatureCard(
-                    'Advanced Controls',
-                    'Set difficulty levels, question types, and curriculum alignment for your exams.',
-                    Icons.tune,
+                    'AI Feedback Engine',
+                    'Automated, intelligent feedback that identifies student gaps and offers real-time remedial guidance.',
+                    Icons.psychology_outlined,
                     WebColors.primary,
                   ),
                   _buildFeatureCard(
-                    'Clean PDF Exports',
-                    'Export beautifully formatted exams ready for printing or digital distribution.',
-                    Icons.picture_as_pdf,
+                    'Professional PDF Exams',
+                    'Export beautifully formatted test papers with automated marking schemes from any source material.',
+                    Icons.picture_as_pdf_outlined,
                     WebColors.secondary,
                   ),
                   _buildFeatureCard(
-                    'Student Engagement',
-                    'Track how students interact with your study decks and monitor their progress.',
-                    Icons.analytics,
+                    'Secure Content Sharing',
+                    'Distribute interactive study decks and exams directly to your classes with one-click sharing.',
+                    Icons.share_outlined,
                     WebColors.accent,
                   ),
                 ],
@@ -520,10 +515,13 @@ class CreatorTabView extends StatelessWidget {
       String title, String description, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: WebColors.backgroundAlt,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: WebColors.border),
+      decoration: WebColors.glassDecoration(
+        blur: 15,
+        opacity: 0.05,
+        color: WebColors.surface,
+        borderRadius: 20,
+      ).copyWith(
+        boxShadow: WebColors.subtleShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -645,17 +643,13 @@ class CreatorTabView extends StatelessWidget {
       String quote, String name, String role, String stat, String statLabel) {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: WebColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+      decoration: WebColors.glassDecoration(
+        blur: 15,
+        opacity: 0.1,
+        color: WebColors.surface,
+        borderRadius: 20,
+      ).copyWith(
+        boxShadow: WebColors.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

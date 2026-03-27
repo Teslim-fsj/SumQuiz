@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:developer' as developer;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -7,13 +8,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:sumquiz/models/extraction_result.dart';
-import 'package:sumquiz/models/user_model.dart';
-import 'package:sumquiz/services/content_extraction_service.dart';
-import 'package:sumquiz/services/enhanced_ai_service.dart';
-import 'package:sumquiz/services/local_database_service.dart';
-import 'package:sumquiz/services/usage_service.dart';
-import 'package:sumquiz/services/extraction_result_cache.dart';
-import 'package:sumquiz/utils/cancellation_token.dart';
+import '../../models/user_model.dart';
+import '../../services/usage_service.dart';
+import '../../services/content_extraction_service.dart';
+import '../../services/enhanced_ai_service.dart';
+import '../../services/local_database_service.dart';
+import '../../utils/cancellation_token.dart';
+import '../../services/extraction_result_cache.dart';
 import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
@@ -72,11 +73,11 @@ class _CreateContentScreenState extends State<CreateContentScreen>
   // ── Build animation steps ─────────────────────────────────────
   int _buildStepIndex = 0;
   final List<String> _buildSteps = [
-    'Analyzing material…',
-    'Creating summary…',
-    'Generating quiz questions…',
-    'Building flashcards…',
-    'Finalizing your study pack…',
+    'Initializing AI engine...',
+    'Reading and extracting content...',
+    'Analyzing key concepts...',
+    'Generating study materials...',
+    'Finalizing your study pack...'
   ];
 
   // ── Result ───────────────────────────────────────────────────
@@ -85,14 +86,14 @@ class _CreateContentScreenState extends State<CreateContentScreen>
   String _packTitle = '';
   String _packSource = '';
 
-  // ── Colors ───────────────────────────────────────────────────
-  static const _bg = Color(0xFF0F172A);
-  static const _primary = Color(0xFF6366F1);
-  static const _card = Color(0xFF1E293B);
-  static const _border = Color(0xFF334155);
-  static const _textPrimary = Colors.white;
-  static final _textSecondary = Colors.white.withValues(alpha: 0.7);
-  static final _textTertiary = Colors.white.withValues(alpha: 0.4);
+  // ── Colors Helper ───────────────────────────────────────────
+  Color _getBg() => Theme.of(context).scaffoldBackgroundColor;
+  Color _getPrimary() => Theme.of(context).colorScheme.primary;
+  Color _getCard() => Theme.of(context).cardColor;
+  Color _getBorder() => Theme.of(context).dividerColor;
+  Color _getTextPrimary() => Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white;
+  Color _getTextSecondary() => (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.white).withValues(alpha: 0.7);
+  Color _getTextTertiary() => (Theme.of(context).textTheme.bodySmall?.color ?? Colors.white).withValues(alpha: 0.4);
 
   @override
   void initState() {
@@ -211,12 +212,15 @@ class _CreateContentScreenState extends State<CreateContentScreen>
     }
 
     final usageService = UsageService();
-    final canGenerate = await usageService.canGenerateDeck(user.uid);
+    final action = _fileBytes != null ? 'upload' : 'generate';
+    final canPerform = await usageService.canPerformAction(user.uid, action);
     if (!mounted) return;
-    if (!canGenerate) {
+    if (!canPerform) {
       showDialog(
         context: context,
-        builder: (_) => const UpgradeDialog(featureName: 'Daily Limit'),
+        builder: (_) => UpgradeDialog(
+          featureName: action == 'upload' ? 'Lifetime Upload Limit' : 'Daily Limit',
+        ),
       );
       return;
     }
@@ -256,39 +260,38 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           onProgress: (_) {},
         );
         if (!cancelToken.isCancelled && mounted) {
-          await usageService.recordDeckGeneration(user.uid);
-          if (extractType == 'pdf' ||
-              extractType == 'image' ||
-              extractType == 'audio') {
-            await usageService.recordAction(user.uid, 'upload');
-          }
+          await usageService.recordAction(user.uid, action);
           await FirebaseCrashlytics.instance
               .log('Content extracted. Type: $extractType');
-          _extractionResult = result;
-          if (mounted) setState(() => _screenState = _ScreenState.done);
+
+          await _generateFinalResults(result, user.uid, cancelToken);
         }
       } else if (_uploadType == 'link' ||
           (raw.startsWith('http://') || raw.startsWith('https://'))) {
         final extractionService =
             Provider.of<ContentExtractionService>(context, listen: false);
+
+        // Detect if it's a YouTube URL to trigger Tier 0 Native Reasoning
+        final type = InputValidator.isYoutubeUrl(raw) ? 'youtube' : 'link';
+
         final result = await extractionService.extractContent(
-          type: 'link',
+          type: type,
           input: raw,
           userId: user.uid,
           cancelToken: cancelToken,
           onProgress: (_) {},
         );
         if (!cancelToken.isCancelled && mounted) {
-          await usageService.recordDeckGeneration(user.uid);
-          _extractionResult = result;
-          if (mounted) setState(() => _screenState = _ScreenState.done);
+          await usageService.recordAction(user.uid, action);
+          await _generateFinalResults(result, user.uid, cancelToken);
         }
       } else {
-        final aiService =
-            Provider.of<EnhancedAIService>(context, listen: false);
-        final localDb =
-            Provider.of<LocalDatabaseService>(context, listen: false);
-        await usageService.recordDeckGeneration(user.uid);
+        final aiService = Provider.of<EnhancedAIService>(context, listen: false);
+        final localDb = Provider.of<LocalDatabaseService>(context, listen: false);
+        final extractionService = Provider.of<ContentExtractionService>(context, listen: false);
+
+
+        await usageService.recordAction(user.uid, action);
 
         if (raw.split(' ').length <= 8 && !raw.contains('\n')) {
           final folderId = await aiService.generateFromTopic(
@@ -298,14 +301,12 @@ class _CreateContentScreenState extends State<CreateContentScreen>
             depth: 'intermediate',
             cardCount: 20,
           );
-          if (!cancelToken.isCancelled && mounted) {
-            _resultFolderId = folderId;
-            setState(() => _screenState = _ScreenState.done);
-          }
-        } else {
-          final extractionService =
-              Provider.of<ContentExtractionService>(context, listen: false);
-          final result = await extractionService.extractContent(
+            if (!cancelToken.isCancelled && mounted) {
+              _resultFolderId = folderId;
+              setState(() => _screenState = _ScreenState.done);
+            }
+          } else {
+            final result = await extractionService.extractContent(
             type: 'text',
             input: raw,
             userId: user.uid,
@@ -313,8 +314,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
             onProgress: (_) {},
           );
           if (!cancelToken.isCancelled && mounted) {
-            _extractionResult = result;
-            setState(() => _screenState = _ScreenState.done);
+            await _generateFinalResults(result, user.uid, cancelToken);
           }
         }
       }
@@ -323,6 +323,41 @@ class _CreateContentScreenState extends State<CreateContentScreen>
         setState(() {
           _screenState = _ScreenState.idle;
           _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
+    }
+  }
+
+  Future<void> _generateFinalResults(ExtractionResult result, String userId,
+      CancellationToken cancelToken) async {
+    try {
+      final aiService = Provider.of<EnhancedAIService>(context, listen: false);
+      final localDb = Provider.of<LocalDatabaseService>(context, listen: false);
+
+      // Update animation step to "Generating..." (index 3 in _buildSteps)
+      if (mounted) setState(() => _buildStepIndex = 3);
+
+      final folderId = await aiService.generateAndStoreOutputs(
+        text: result.text,
+        title: _packTitle,
+        requestedOutputs: ['summary', 'quiz', 'flashcards'],
+        userId: userId,
+        localDb: localDb,
+        onProgress: (message) {
+          developer.log('Generation progress: $message', name: 'CreateContentScreen');
+        },
+        cancelToken: cancelToken,
+      );
+
+      if (!cancelToken.isCancelled && mounted) {
+        _resultFolderId = folderId;
+        setState(() => _screenState = _ScreenState.done);
+      }
+    } catch (e) {
+      if (!cancelToken.isCancelled && mounted) {
+        setState(() {
+          _screenState = _ScreenState.idle;
+          _errorMessage = 'Failed to generate study materials: $e';
         });
       }
     }
@@ -367,12 +402,10 @@ class _CreateContentScreenState extends State<CreateContentScreen>
   }
 
   // ─────────────────────────────────────────────────────────────
-  //  Build
-  // ─────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: _getBg(),
       resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
@@ -431,7 +464,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
             height: 250,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: _primary.withValues(alpha: 0.07),
+              color: _getPrimary().withValues(alpha: 0.07),
             ),
           ),
         )
@@ -468,10 +501,10 @@ class _CreateContentScreenState extends State<CreateContentScreen>
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _border),
+                border: Border.all(color: _getBorder()),
               ),
-              child: const Icon(Icons.arrow_back_ios_new_rounded,
-                  color: Colors.white, size: 18),
+              child: Icon(Icons.arrow_back_ios_new_rounded,
+                  color: _getTextPrimary(), size: 18),
             ),
           ),
           const SizedBox(width: 16),
@@ -480,7 +513,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
             style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w800,
-              color: _textPrimary,
+              color: _getTextPrimary(),
             ),
           ),
           const Spacer(),
@@ -496,21 +529,21 @@ class _CreateContentScreenState extends State<CreateContentScreen>
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: _primary.withValues(alpha: 0.15),
+          color: _getPrimary().withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(100),
-          border: Border.all(color: _primary.withValues(alpha: 0.3)),
+          border: Border.all(color: _getPrimary().withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.verified_rounded, color: _primary, size: 14),
+            Icon(Icons.verified_rounded, color: _getPrimary(), size: 14),
             const SizedBox(width: 5),
             Text(
               'PRO',
               style: GoogleFonts.outfit(
                   fontSize: 11,
                   fontWeight: FontWeight.w900,
-                  color: _primary,
+                  color: _getPrimary(),
                   letterSpacing: 0.8),
             ),
           ],
@@ -588,7 +621,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           'Type a topic, paste your notes, or attach a file.',
           style: GoogleFonts.outfit(
             fontSize: 15,
-            color: _textSecondary,
+            color: _getTextSecondary(),
             height: 1.5,
           ),
         ),
@@ -600,9 +633,9 @@ class _CreateContentScreenState extends State<CreateContentScreen>
     final hasFile = _fileName != null;
     return Container(
       decoration: BoxDecoration(
-        color: _card,
+        color: _getCard(),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _border),
+        border: Border.all(color: _getBorder()),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.25),
@@ -621,13 +654,13 @@ class _CreateContentScreenState extends State<CreateContentScreen>
             minLines: 3,
             style: GoogleFonts.outfit(
               fontSize: 15,
-              color: _textPrimary,
+              color: _getTextPrimary(),
               height: 1.6,
             ),
             decoration: InputDecoration(
               hintText: 'Type a topic or paste your material…',
               hintStyle: GoogleFonts.outfit(
-                color: _textTertiary,
+                color: _getTextTertiary(),
                 fontSize: 15,
               ),
               border: InputBorder.none,
@@ -646,7 +679,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
               color: Colors.white.withValues(alpha: 0.04),
               borderRadius:
                   const BorderRadius.vertical(bottom: Radius.circular(20)),
-              border: Border(top: BorderSide(color: _border)),
+              border: Border(top: BorderSide(color: _getBorder())),
             ),
             child: Row(
               children: [
@@ -731,7 +764,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           value: opt['type'] as String,
           child: Row(
             children: [
-              Icon(opt['icon'] as IconData, color: _primary, size: 18),
+              Icon(opt['icon'] as IconData, color: _getPrimary(), size: 18),
               const SizedBox(width: 10),
               Text(
                 opt['label'] as String,
@@ -743,13 +776,13 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: _primary.withValues(alpha: 0.2),
+                    color: _getPrimary().withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text('PRO',
                       style: GoogleFonts.outfit(
                           fontSize: 9,
-                          color: _primary,
+                          color: _getPrimary(),
                           fontWeight: FontWeight.w900)),
                 ),
               ],
@@ -762,18 +795,18 @@ class _CreateContentScreenState extends State<CreateContentScreen>
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.07),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: _border),
+          border: Border.all(color: _getBorder()),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.add_circle_outline_rounded,
-                size: 16, color: _textSecondary),
+                size: 16, color: _getTextSecondary()),
             const SizedBox(width: 6),
             Text('Attach',
                 style: GoogleFonts.outfit(
                     fontSize: 13,
-                    color: _textSecondary,
+                    color: _getTextSecondary(),
                     fontWeight: FontWeight.w600)),
           ],
         ),
@@ -786,19 +819,19 @@ class _CreateContentScreenState extends State<CreateContentScreen>
       margin: const EdgeInsets.fromLTRB(14, 14, 14, 0),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: _primary.withValues(alpha: 0.15),
+        color: _getPrimary().withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.attach_file_rounded, size: 14, color: _primary),
+          Icon(Icons.attach_file_rounded, size: 14, color: _getPrimary()),
           const SizedBox(width: 7),
           Flexible(
             child: Text(
               _fileName ?? '',
               style: GoogleFonts.outfit(
-                  fontSize: 12, color: _primary, fontWeight: FontWeight.w600),
+                  fontSize: 12, color: _getPrimary(), fontWeight: FontWeight.w600),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -809,7 +842,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
               _fileBytes = null;
               _uploadType = '';
             }),
-            child: const Icon(Icons.close_rounded, size: 14, color: _primary),
+            child: Icon(Icons.close_rounded, size: 14, color: _getPrimary()),
           ),
         ],
       ),
@@ -833,7 +866,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           style: GoogleFonts.outfit(
             fontSize: 10,
             fontWeight: FontWeight.w800,
-            color: _textTertiary,
+            color: _getTextTertiary(),
             letterSpacing: 1.5,
           ),
         ),
@@ -853,13 +886,13 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(100),
-                  border: Border.all(color: _border),
+                  border: Border.all(color: _getBorder()),
                 ),
                 child: Text(
                   e.value,
                   style: GoogleFonts.outfit(
                       fontSize: 12,
-                      color: _textSecondary,
+                      color: _getTextSecondary(),
                       fontWeight: FontWeight.w500),
                 ),
               ),
@@ -878,16 +911,16 @@ class _CreateContentScreenState extends State<CreateContentScreen>
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _border),
+        border: Border.all(color: _getBorder()),
       ),
       child: Row(
         children: [
-          Icon(Icons.info_outline_rounded, size: 16, color: _textTertiary),
+          Icon(Icons.info_outline_rounded, size: 16, color: _getTextTertiary()),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               'AI-generated content — always verify with trusted sources.',
-              style: GoogleFonts.outfit(fontSize: 12, color: _textTertiary),
+              style: GoogleFonts.outfit(fontSize: 12, color: _getTextTertiary()),
             ),
           ),
         ],
@@ -906,9 +939,9 @@ class _CreateContentScreenState extends State<CreateContentScreen>
         width: double.infinity,
         padding: const EdgeInsets.all(28),
         decoration: BoxDecoration(
-          color: _card,
+          color: _getCard(),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: _border),
+          border: Border.all(color: _getBorder()),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.3),
@@ -937,7 +970,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
               style: GoogleFonts.outfit(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
-                color: _textPrimary,
+                color: _getTextPrimary(),
               ),
               textAlign: TextAlign.center,
             ),
@@ -960,15 +993,15 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                           color: done
                               ? const Color(0xFF22C55E)
                               : active
-                                  ? _primary
+                                  ? _getPrimary()
                                   : Colors.transparent,
                           shape: BoxShape.circle,
                           border: Border.all(
                             color: done
                                 ? const Color(0xFF22C55E)
                                 : active
-                                    ? _primary
-                                    : _border,
+                                    ? _getPrimary()
+                                    : _getBorder(),
                           ),
                         ),
                         child: Icon(
@@ -978,7 +1011,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                                   ? Icons.radio_button_checked_rounded
                                   : Icons.radio_button_unchecked_rounded,
                           size: 14,
-                          color: done || active ? Colors.white : _border,
+                          color: done || active ? Colors.white : _getBorder(),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -992,18 +1025,18 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                             color: done
                                 ? const Color(0xFF22C55E)
                                 : active
-                                    ? _textPrimary
-                                    : _textTertiary,
+                                    ? _getTextPrimary()
+                                    : _getTextTertiary(),
                           ),
                         ),
                       ),
                       if (active)
-                        const SizedBox(
+                        SizedBox(
                           width: 14,
                           height: 14,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: _primary,
+                            color: _getPrimary(),
                           ),
                         ),
                     ],
@@ -1018,7 +1051,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                 _reset();
               },
               child: Text('Cancel',
-                  style: GoogleFonts.outfit(color: _textTertiary)),
+                  style: GoogleFonts.outfit(color: _getTextTertiary())),
             ),
           ],
         ),
@@ -1040,9 +1073,9 @@ class _CreateContentScreenState extends State<CreateContentScreen>
         width: double.infinity,
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: _card,
+          color: _getCard(),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: _border),
+          border: Border.all(color: _getBorder()),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.3),
@@ -1078,7 +1111,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                         style: GoogleFonts.outfit(
                           fontSize: 10,
                           fontWeight: FontWeight.w900,
-                          color: _primary,
+                          color: _getPrimary(),
                           letterSpacing: 1.2,
                         ),
                       ),
@@ -1087,7 +1120,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                         style: GoogleFonts.outfit(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
-                          color: _textPrimary,
+                          color: _getTextPrimary(),
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -1100,7 +1133,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
             const SizedBox(height: 6),
             Text(
               'Source: $_packSource',
-              style: GoogleFonts.outfit(fontSize: 13, color: _textTertiary),
+              style: GoogleFonts.outfit(fontSize: 13, color: _getTextTertiary()),
             ),
             const SizedBox(height: 20),
             // Contents
@@ -1109,7 +1142,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.04),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: _border),
+                border: Border.all(color: _getBorder()),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1118,7 +1151,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                       style: GoogleFonts.outfit(
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
-                          color: _textTertiary,
+                          color: _getTextTertiary(),
                           letterSpacing: 1.5)),
                   const SizedBox(height: 12),
                   _packItem(Icons.text_snippet_outlined, 'Summary',
@@ -1143,11 +1176,11 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                     Text('Progress',
                         style: GoogleFonts.outfit(
                             fontSize: 13,
-                            color: _textSecondary,
+                            color: _getTextSecondary(),
                             fontWeight: FontWeight.w600)),
                     Text('0%',
                         style: GoogleFonts.outfit(
-                            fontSize: 13, color: _textTertiary)),
+                            fontSize: 13, color: _getTextTertiary())),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -1155,8 +1188,8 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                   borderRadius: BorderRadius.circular(100),
                   child: LinearProgressIndicator(
                     value: 0,
-                    backgroundColor: _border,
-                    color: _primary,
+                    backgroundColor: _getBorder(),
+                    color: _getPrimary(),
                     minHeight: 5,
                   ),
                 ),
@@ -1171,7 +1204,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                 icon: const Icon(Icons.play_arrow_rounded),
                 label: const Text('Start Studying'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _primary,
+                  backgroundColor: _getPrimary(),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -1190,8 +1223,8 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                 icon: const Icon(Icons.bookmark_border_rounded),
                 label: const Text('Save to Library'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: _primary,
-                  side: BorderSide(color: _primary.withValues(alpha: 0.5)),
+                  foregroundColor: _getPrimary(),
+                  side: BorderSide(color: _getPrimary().withValues(alpha: 0.5)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
@@ -1207,7 +1240,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                 icon: const Icon(Icons.refresh_rounded, size: 14),
                 label: const Text('Create another'),
                 style: TextButton.styleFrom(
-                  foregroundColor: _textTertiary,
+                  foregroundColor: _getTextTertiary(),
                   textStyle: GoogleFonts.outfit(fontSize: 13),
                 ),
               ),
@@ -1240,7 +1273,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
             label,
             style: GoogleFonts.outfit(
               fontSize: 14,
-              color: _textSecondary,
+              color: _getTextSecondary(),
               fontWeight: FontWeight.w500,
             ),
           ),

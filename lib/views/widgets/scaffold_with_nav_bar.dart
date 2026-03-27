@@ -4,30 +4,38 @@ import 'package:provider/provider.dart';
 import '../../models/user_model.dart';
 import '../../theme/web_theme.dart';
 
-class ScaffoldWithNavBar extends StatelessWidget {
+class ScaffoldWithNavBar extends StatefulWidget {
   final StatefulNavigationShell navigationShell;
 
   const ScaffoldWithNavBar({super.key, required this.navigationShell});
 
   @override
+  State<ScaffoldWithNavBar> createState() => _ScaffoldWithNavBarState();
+}
+
+class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
+  bool _isExpanded = true;
+
+  @override
   Widget build(BuildContext context) {
     void onTap(int index) {
-      navigationShell.goBranch(
+      widget.navigationShell.goBranch(
         index,
-        initialLocation: index == navigationShell.currentIndex,
+        initialLocation: index == widget.navigationShell.currentIndex,
       );
     }
 
     final theme = Theme.of(context);
     final user = Provider.of<UserModel?>(context);
     final isTeacher = user?.role == UserRole.creator;
+    final isDark = theme.brightness == Brightness.dark;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < 600) {
           // Use BottomNavigationBar for narrow screens
           return Scaffold(
-            body: navigationShell,
+            body: widget.navigationShell,
             bottomNavigationBar: BottomNavigationBar(
               items: <BottomNavigationBarItem>[
                 BottomNavigationBarItem(
@@ -55,7 +63,7 @@ class ScaffoldWithNavBar extends StatelessWidget {
                     activeIcon: const Icon(Icons.settings),
                     label: 'Settings'),
               ],
-              currentIndex: navigationShell.currentIndex,
+              currentIndex: widget.navigationShell.currentIndex,
               onTap: onTap,
               type: BottomNavigationBarType.fixed,
               selectedItemColor: theme.colorScheme.primary,
@@ -65,17 +73,25 @@ class ScaffoldWithNavBar extends StatelessWidget {
         } else {
           // Professional Web Sidebar (ChatGPT/Claude alike)
           return Scaffold(
-            backgroundColor: const Color(0xFFF8FAFC),
+            backgroundColor: theme.colorScheme.surface,
             body: Row(
               children: [
-                Container(
-                  width: 280,
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  width: _isExpanded ? 280 : 80,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A), // Dark slate like ChatGPT
+                    color: isDark ? const Color(0xFF171717) : const Color(0xFFF8FAFC),
+                    border: Border(
+                      right: BorderSide(
+                        color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+                        width: 1,
+                      ),
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 15,
                         offset: const Offset(2, 0),
                       ),
                     ],
@@ -84,26 +100,42 @@ class ScaffoldWithNavBar extends StatelessWidget {
                     children: [
                       // Header / Logo
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: _isExpanded ? 20 : 0,
+                          vertical: 24,
+                        ),
                         child: Row(
+                          mainAxisAlignment: _isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primary,
-                                borderRadius: BorderRadius.circular(10),
+                            if (_isExpanded) ...[
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  gradient: WebColors.HeroGradient,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.school, color: Colors.white, size: 24),
                               ),
-                              child: const Icon(Icons.school, color: Colors.white, size: 24),
-                            ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              'SumQuiz',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: -0.5,
+                              const SizedBox(width: 12),
+                              Text(
+                                'SumQuiz',
+                                style: TextStyle(
+                                  color: theme.colorScheme.onSurface,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.5,
+                                ),
                               ),
+                              const Spacer(),
+                            ],
+                            IconButton(
+                              onPressed: () => setState(() => _isExpanded = !_isExpanded),
+                              icon: Icon(
+                                _isExpanded ? Icons.menu_open_rounded : Icons.menu_rounded,
+                                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                size: 24,
+                              ),
+                              tooltip: _isExpanded ? 'Collapse' : 'Expand',
                             ),
                           ],
                         ),
@@ -111,37 +143,45 @@ class ScaffoldWithNavBar extends StatelessWidget {
                       
                       // Primary Action
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         child: InkWell(
-                          onTap: () => navigationShell.goBranch(2), // Create tab
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          onTap: () => widget.navigationShell.goBranch(2), // Create tab
+                          borderRadius: BorderRadius.circular(12),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: _isExpanded ? 16 : 0,
+                              vertical: 12,
+                            ),
                             decoration: BoxDecoration(
-                              gradient: WebColors.PremiumGradient,
+                              gradient: WebColors.HeroGradient,
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: WebColors.accent.withValues(alpha: 0.3),
-                                  blurRadius: 12,
+                                  color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                                  blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
                             child: Row(
+                              mainAxisAlignment: _isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.add_circle, color: WebColors.textPrimary, size: 20),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    isTeacher ? 'Create New Exam' : 'Build Study Pack',
-                                    style: const TextStyle(
-                                      color: WebColors.textPrimary,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 14,
+                                const Icon(Icons.add_circle, color: Colors.white, size: 20),
+                                if (_isExpanded) ...[
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      isTeacher ? 'Create Exam' : 'Build Pack',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 14,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                const Icon(Icons.auto_awesome, color: Color(0xFFB45309), size: 14),
+                                  const Icon(Icons.auto_awesome, color: Colors.white70, size: 14),
+                                ],
                               ],
                             ),
                           ),
@@ -158,43 +198,79 @@ class ScaffoldWithNavBar extends StatelessWidget {
                             _buildSidebarItem(
                               icon: isTeacher ? Icons.dashboard_outlined : Icons.auto_awesome_mosaic_outlined,
                               activeIcon: isTeacher ? Icons.dashboard : Icons.auto_awesome_mosaic,
-                              label: isTeacher ? 'Dashboard' : 'Learning Home',
-                              isActive: navigationShell.currentIndex == 0,
+                              label: isTeacher ? 'Dashboard' : 'Home',
+                              isActive: widget.navigationShell.currentIndex == 0,
                               onTap: () => onTap(0),
+                              isExpanded: _isExpanded,
+                              theme: theme,
                             ),
                             _buildSidebarItem(
-                              icon: isTeacher ? Icons.assignment_outlined : Icons.inventory_2_outlined,
-                              activeIcon: isTeacher ? Icons.assignment : Icons.inventory_2,
-                              label: isTeacher ? 'Teaching Library' : 'My Library',
-                              isActive: navigationShell.currentIndex == 1,
+                              icon: isTeacher ? Icons.inventory_2_outlined : Icons.book_outlined,
+                              activeIcon: isTeacher ? Icons.inventory_2 : Icons.book,
+                              label: isTeacher ? 'Content' : 'Library',
+                              isActive: widget.navigationShell.currentIndex == 1,
                               onTap: () => onTap(1),
+                              isExpanded: _isExpanded,
+                              theme: theme,
                             ),
+                            if (isTeacher)
+                              _buildSidebarItem(
+                                icon: Icons.people_outline_rounded,
+                                activeIcon: Icons.people_rounded,
+                                label: 'Students',
+                                isActive: widget.navigationShell.currentIndex == 6,
+                                onTap: () => onTap(6),
+                                isExpanded: _isExpanded,
+                                theme: theme,
+                              ),
                             _buildSidebarItem(
                               icon: isTeacher ? Icons.analytics_outlined : Icons.insights_outlined,
                               activeIcon: isTeacher ? Icons.analytics : Icons.insights,
-                              label: isTeacher ? 'Analytics' : 'Study Progress',
-                              isActive: navigationShell.currentIndex == 3,
+                              label: isTeacher ? 'Analytics' : 'Progress',
+                              isActive: widget.navigationShell.currentIndex == 3,
                               onTap: () => onTap(3),
+                              isExpanded: _isExpanded,
+                              theme: theme,
                             ),
+                            if (isTeacher)
+                              _buildSidebarItem(
+                                icon: Icons.auto_awesome_rounded,
+                                activeIcon: Icons.auto_awesome,
+                                label: 'AI Feedback',
+                                isActive: widget.navigationShell.currentIndex == 7,
+                                onTap: () => onTap(7),
+                                isExpanded: _isExpanded,
+                                theme: theme,
+                              ),
                             
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 20),
-                              child: Divider(color: Colors.white12, thickness: 1),
+                            Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: _isExpanded ? 8 : 4,
+                                vertical: 20,
+                              ),
+                              child: Divider(
+                                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                                thickness: 1,
+                              ),
                             ),
                             
                             _buildSidebarItem(
                               icon: Icons.person_outline,
                               activeIcon: Icons.person,
                               label: 'Profile',
-                              isActive: navigationShell.currentIndex == 4,
+                              isActive: widget.navigationShell.currentIndex == 4,
                               onTap: () => onTap(4),
+                              isExpanded: _isExpanded,
+                              theme: theme,
                             ),
                             _buildSidebarItem(
                               icon: Icons.settings_outlined,
                               activeIcon: Icons.settings,
                               label: 'Settings',
-                              isActive: navigationShell.currentIndex == 5,
+                              isActive: widget.navigationShell.currentIndex == 5,
                               onTap: () => onTap(5),
+                              isExpanded: _isExpanded,
+                              theme: theme,
                             ),
                           ],
                         ),
@@ -202,45 +278,67 @@ class ScaffoldWithNavBar extends StatelessWidget {
                       
                       // Bottom User Info
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          border: const Border(top: BorderSide(color: Colors.white10)),
+                          color: isDark ? Colors.black.withValues(alpha: 0.1) : Colors.white,
+                          border: Border(
+                            top: BorderSide(
+                              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                            ),
+                          ),
                         ),
                         child: Row(
+                          mainAxisAlignment: _isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
                           children: [
                             CircleAvatar(
                               radius: 18,
-                              backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.2),
+                              backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
                               backgroundImage: user?.photoURL != null ? NetworkImage(user!.photoURL!) : null,
                               child: user?.photoURL == null 
-                                ? Text(user?.displayName.characters.first.toUpperCase() ?? 'U', 
-                                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold))
+                                ? Text(
+                                    user?.displayName.characters.first.toUpperCase() ?? 'U', 
+                                    style: TextStyle(
+                                      color: theme.colorScheme.primary,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )
                                 : null,
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    user?.displayName ?? 'User Name',
-                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  Text(
-                                    isTeacher ? 'Educator Plan' : 'Standard Plan',
-                                    style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11),
-                                  ),
-                                ],
+                            if (_isExpanded) ...[
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      user?.displayName ?? 'User',
+                                      style: TextStyle(
+                                        color: theme.colorScheme.onSurface,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 13,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      isTeacher ? 'Pro Educator' : 'Learner',
+                                      style: TextStyle(
+                                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            IconButton(
-                              onPressed: () => onTap(5),
-                              icon: const Icon(Icons.more_horiz, color: Colors.white54, size: 20),
-                            ),
+                              Icon(
+                                Icons.verified_rounded,
+                                color: theme.colorScheme.primary,
+                                size: 14,
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -248,7 +346,7 @@ class ScaffoldWithNavBar extends StatelessWidget {
                   ),
                 ),
                 Expanded(
-                  child: navigationShell,
+                  child: ClipRRect(child: widget.navigationShell),
                 ),
               ],
             ),
@@ -264,38 +362,64 @@ class ScaffoldWithNavBar extends StatelessWidget {
     required String label,
     required bool isActive,
     required VoidCallback onTap,
+    required bool isExpanded,
+    required ThemeData theme,
   }) {
+    final content = Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isExpanded ? 16 : 0,
+        vertical: 12,
+      ),
+      decoration: BoxDecoration(
+        color: isActive 
+          ? theme.colorScheme.primary.withValues(alpha: 0.08) 
+          : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
+        children: [
+          Icon(
+            isActive ? activeIcon : icon,
+            color: isActive 
+              ? theme.colorScheme.primary 
+              : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            size: 22,
+          ),
+          if (isExpanded) ...[
+            const SizedBox(width: 16),
+            Text(
+              label,
+              style: TextStyle(
+                color: isActive 
+                  ? theme.colorScheme.primary 
+                  : theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                fontSize: 14,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: isActive ? Colors.white.withValues(alpha: 0.12) : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
+      child: isExpanded 
+        ? InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(12),
+            child: content,
+          )
+        : Tooltip(
+            message: label,
+            preferBelow: false,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(12),
+              child: content,
+            ),
           ),
-          child: Row(
-            children: [
-              Icon(
-                isActive ? activeIcon : icon,
-                color: isActive ? Colors.white : Colors.white60,
-                size: 22,
-              ),
-              const SizedBox(width: 16),
-              Text(
-                label,
-                style: TextStyle(
-                  color: isActive ? Colors.white : Colors.white60,
-                  fontSize: 14,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

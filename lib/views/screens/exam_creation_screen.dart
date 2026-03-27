@@ -164,7 +164,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
                   Text(
                     'Turn your teaching materials into an editable test paper.',
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -1006,64 +1006,58 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
                 ],
               ),
             )
-          : Column(
-              children: [
-                // Top bar with exam info
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  color: theme.cardColor,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.examTitle,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
+            : ListView(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                children: [
+                  // Top bar with exam info
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    color: theme.cardColor,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.examTitle,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                            Text(
-                              'Total Questions: ${_questions.length}',
-                              style: theme.textTheme.bodySmall,
-                            ),
-                            Text(
-                              'Estimated Duration: ${widget.duration} mins',
-                              style: theme.textTheme.bodySmall,
-                            ),
-                          ],
+                              Text(
+                                'Total Questions: ${_questions.length}',
+                                style: theme.textTheme.bodySmall,
+                              ),
+                              Text(
+                                'Estimated Duration: ${widget.duration} mins',
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.add),
-                        onPressed: _addQuestion,
-                        tooltip: 'Add Question',
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Questions list
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: () async {
-                      // Simulate refreshing questions
-                      await Future.delayed(const Duration(seconds: 1));
-                    },
-                    child: ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _questions.length,
-                      itemBuilder: (context, index) {
-                        return _buildQuestionCard(index);
-                      },
+                        IconButton(
+                          icon: const Icon(Icons.add),
+                          onPressed: _addQuestion,
+                          tooltip: 'Add Question',
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(height: 16),
+                  // Questions list
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      children: List.generate(
+                        _questions.length,
+                        (index) => _buildQuestionCard(index),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
     );
   }
 
@@ -1125,7 +1119,21 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
               },
             ),
             const SizedBox(height: 12),
-            ...List.generate(
+            RadioGroup<String>(
+              groupValue: question.correctAnswer,
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    _questions[index] = LocalQuizQuestion(
+                      question: question.question,
+                      options: question.options,
+                      correctAnswer: value,
+                    );
+                  });
+                }
+              },
+              child: Column(
+                children: List.generate(
               question.options.length,
               (optionIndex) => Padding(
                 padding: const EdgeInsets.only(bottom: 8.0),
@@ -1185,8 +1193,10 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 8),
-            TextFormField(
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
               initialValue: question.explanation,
               maxLines: null,
               decoration: const InputDecoration(
@@ -1302,6 +1312,7 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
         timestamp: DateTime.now(),
         userId: user.uid,
         isSynced: false,
+        isExam: true,
       );
 
       await LocalDatabaseService().saveQuiz(quiz);
@@ -1443,170 +1454,164 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
                 ],
               ),
             )
-          : SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
+          : ListView(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Professional structure for printable exams.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                    ),
+              children: [
+                Text(
+                  'Professional structure for printable exams.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
-                  const SizedBox(height: 24),
+                ),
+                const SizedBox(height: 24),
 
-                  // 1. Header Information
-                  _buildSectionCard(
-                    title: 'Exam Header',
-                    child: Column(
-                      children: [
-                        TextField(
-                          controller: _schoolNameController,
-                          decoration: const InputDecoration(
-                            labelText: 'School Name',
-                            hintText: 'e.g. Greenhill International Academy',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.school),
-                          ),
+                // 1. Header Information
+                _buildSectionCard(
+                  title: 'Exam Header',
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: _schoolNameController,
+                        decoration: const InputDecoration(
+                          labelText: 'School Name',
+                          hintText: 'e.g. Greenhill International Academy',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.school),
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 2. Marks Allocation
-                  _buildSectionCard(
-                    title: 'Marks Allocation',
-                    child: Column(
-                      children: [
-                        _buildMarkInput(
-                          'Section A (MCQ / T&F)',
-                          _marksA,
-                          (val) => setState(() => _marksA = val),
-                        ),
-                        const Divider(),
-                        _buildMarkInput(
-                          'Section B (Short Answer)',
-                          _marksB,
-                          (val) => setState(() => _marksB = val),
-                        ),
-                        const Divider(),
-                        _buildMarkInput(
-                          'Section C (Theory / Essay)',
-                          _marksC,
-                          (val) => setState(() => _marksC = val),
-                        ),
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'TOTAL MARKS:',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.onPrimaryContainer,
-                                ),
-                              ),
-                              Text(
-                                '$_totalMarks',
-                                style: theme.textTheme.headlineSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 3. Document Settings
-                  _buildSectionCard(
-                    title: 'Document Settings',
-                    child: Column(
-                      children: [
-                        SwitchListTile(
-                          title: const Text('Include answer sheet'),
-                          subtitle:
-                              const Text('Separate page with correct options'),
-                          value: _includeAnswerSheet,
-                          onChanged: (bool? value) {
-                            setState(() {
-                              _includeAnswerSheet = value!;
-                            });
-                          },
-                        ),
-                        SwitchListTile(
-                          title: const Text('Include marking scheme'),
-                          subtitle:
-                              const Text('Detailed explanations for answers'),
-                          value: _includeMarkingScheme,
-                          onChanged: (bool? value) {
-                            setState(() {
-                              _includeMarkingScheme = value!;
-                            });
-                          },
-                        ),
-                        SwitchListTile(
-                          title: const Text('Randomize question order'),
-                          value: _randomizeQuestionOrder,
-                          onChanged: (bool? value) {
-                            setState(() {
-                              _randomizeQuestionOrder = value!;
-                            });
-                          },
-                        ),
-                        SwitchListTile(
-                          title: const Text('Randomize options'),
-                          value: _randomizeOptions,
-                          onChanged: (bool? value) {
-                            setState(() {
-                              _randomizeOptions = value!;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Download PDF button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton.icon(
-                      onPressed: _downloadPdf,
-                      icon: const Icon(Icons.download),
-                      label: const Text(
-                        'Download PDF',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w600),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.colorScheme.primary,
-                        foregroundColor: theme.colorScheme.onPrimary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // 2. Marks Allocation
+                _buildSectionCard(
+                  title: 'Marks Allocation',
+                  child: Column(
+                    children: [
+                      _buildMarkInput(
+                        'Section A (MCQ / T&F)',
+                        _marksA,
+                        (val) => setState(() => _marksA = val),
+                      ),
+                      const Divider(),
+                      _buildMarkInput(
+                        'Section B (Short Answer)',
+                        _marksB,
+                        (val) => setState(() => _marksB = val),
+                      ),
+                      const Divider(),
+                      _buildMarkInput(
+                        'Section C (Theory / Essay)',
+                        _marksC,
+                        (val) => setState(() => _marksC = val),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(8),
                         ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'TOTAL MARKS:',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.onPrimaryContainer,
+                              ),
+                            ),
+                            Text(
+                              '$_totalMarks',
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // 3. Document Settings
+                _buildSectionCard(
+                  title: 'Document Settings',
+                  child: Column(
+                    children: [
+                      SwitchListTile(
+                        title: const Text('Include answer sheet'),
+                        subtitle:
+                            const Text('Separate page with correct options'),
+                        value: _includeAnswerSheet,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            _includeAnswerSheet = value!;
+                          });
+                        },
+                      ),
+                      SwitchListTile(
+                        title: const Text('Include marking scheme'),
+                        subtitle:
+                            const Text('Detailed explanations for answers'),
+                        value: _includeMarkingScheme,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            _includeMarkingScheme = value!;
+                          });
+                        },
+                      ),
+                      SwitchListTile(
+                        title: const Text('Randomize question order'),
+                        value: _randomizeQuestionOrder,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            _randomizeQuestionOrder = value!;
+                          });
+                        },
+                      ),
+                      SwitchListTile(
+                        title: const Text('Randomize options'),
+                        value: _randomizeOptions,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            _randomizeOptions = value!;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Download PDF button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton.icon(
+                    onPressed: _downloadPdf,
+                    icon: const Icon(Icons.download),
+                    label: const Text(
+                      'Download PDF',
+                      style: TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.colorScheme.primary,
+                      foregroundColor: theme.colorScheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                   ),
-
-                  const SizedBox(height: 32),
-                ],
-              ),
+                ),
+                const SizedBox(height: 32),
+              ],
             ),
     );
   }

@@ -8,7 +8,7 @@ import 'package:sumquiz/services/local_database_service.dart';
 
 class UsageConfig {
   static const int freeDecksPerDay = 2; // Text/General daily limit
-  static const int freeUploadsLifetime = 3; // Lifetime upload limit for files
+  static const int freeUploadsLifetime = 1; // Lifetime upload limit for files
   static const int trialDecksPerDay = 3;
   static const int proDecksPerDay = 100;
 }
@@ -142,30 +142,29 @@ class UsageService {
         developer.log('Error recording upload action',
             name: 'UsageService', error: e);
       }
-    } else {
+    } else if (action == 'generate') {
       await recordDeckGeneration(uid);
     }
   }
 
   /// Check if user can perform an action
   Future<bool> canPerformAction(String uid, String action) async {
-    try {
+    if (action == 'upload') {
       final userDoc = await _db.collection('users').doc(uid).get();
-      if (!userDoc.exists) return true;
+      final data = userDoc.data();
+      if (data == null) return false;
 
-      final user = UserModel.fromFirestore(userDoc);
-      if (user.isPro) return true;
+      final isPro = data['isPro'] as bool? ?? false;
+      if (isPro) return true;
 
-      if (action == 'upload') {
-        return user.totalUploads < UsageConfig.freeUploadsLifetime;
-      }
-
-      // Default to deck generation logic for text/general actions
+      final totalUploads = data['totalUploads'] as int? ?? 0;
+      final lifetimeOk = totalUploads < UsageConfig.freeUploadsLifetime;
+      
+      if (!lifetimeOk) return false;
+      
       return await canGenerateDeck(uid);
-    } catch (e) {
-      developer.log('Error in canPerformAction',
-          name: 'UsageService', error: e);
-      return false;
+    } else {
+      return await canGenerateDeck(uid);
     }
   }
 }
