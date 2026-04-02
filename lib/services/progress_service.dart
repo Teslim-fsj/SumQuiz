@@ -115,6 +115,7 @@ class ProgressService {
     return stats['average'] ?? 0.0;
   }
 
+  /// Gets total time spent across all sessions (legacy method)
   Future<int> getTotalTimeSpent(String userId) async {
     try {
       // Get all quizzes for the user
@@ -134,6 +135,88 @@ class ProgressService {
     } catch (e) {
       debugPrint('Error getting total time spent: $e');
       return 0;
+    }
+  }
+
+  /// Gets time spent studying TODAY only (for daily goal tracking)
+  Future<int> getTimeSpentToday(String userId) async {
+    try {
+      final today = DateTime.now();
+      final startOfDay = DateTime(today.year, today.month, today.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+
+      // Get today's quizzes
+      final quizzesSnapshot = await _db
+          .collection('users')
+          .doc(userId)
+          .collection('quizzes')
+          .where('created_at',
+              isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+          .where('created_at', isLessThan: Timestamp.fromDate(endOfDay))
+          .get();
+
+      int totalTime = 0;
+
+      for (var doc in quizzesSnapshot.docs) {
+        final data = doc.data();
+        if (data.containsKey('time_spent') && data['time_spent'] != null) {
+          totalTime += (data['time_spent'] as num).toInt();
+        }
+      }
+
+      return totalTime;
+    } catch (e) {
+      debugPrint('Error getting time spent today: $e');
+      return 0;
+    }
+  }
+
+  /// Gets accuracy stats for the last 7 days only
+  Future<Map<String, double>> getRecentAccuracyStats(String userId) async {
+    try {
+      final now = DateTime.now();
+      final sevenDaysAgo = now.subtract(const Duration(days: 7));
+
+      final quizzesSnapshot = await _db
+          .collection('users')
+          .doc(userId)
+          .collection('quizzes')
+          .where('created_at',
+              isGreaterThanOrEqualTo: Timestamp.fromDate(sevenDaysAgo))
+          .get();
+
+      if (quizzesSnapshot.docs.isEmpty) {
+        return {'average': 0.0, 'highest': 0.0, 'lowest': 0.0};
+      }
+
+      double totalAccuracy = 0.0;
+      double highest = 0.0;
+      double lowest = 1.0;
+      int quizCount = 0;
+
+      for (var doc in quizzesSnapshot.docs) {
+        final data = doc.data();
+        if (data.containsKey('accuracy') && data['accuracy'] != null) {
+          double acc = (data['accuracy'] as num).toDouble();
+          totalAccuracy += acc;
+          if (acc > highest) highest = acc;
+          if (acc < lowest) lowest = acc;
+          quizCount++;
+        }
+      }
+
+      if (quizCount == 0) {
+        return {'average': 0.0, 'highest': 0.0, 'lowest': 0.0};
+      }
+
+      return {
+        'average': totalAccuracy / quizCount,
+        'highest': highest,
+        'lowest': lowest,
+      };
+    } catch (e) {
+      debugPrint('Error getting recent accuracy stats: $e');
+      return {'average': 0.0, 'highest': 0.0, 'lowest': 0.0};
     }
   }
 
@@ -215,7 +298,7 @@ class ProgressService {
   }) async {
     try {
       final now = DateTime.now();
-      
+
       // 1. Update user aggregate stats
       await _db.collection('users').doc(userId).update({
         'totalStudyTime': FieldValue.increment(durationSeconds),
@@ -231,7 +314,7 @@ class ProgressService {
         'setId': setId ?? 'mission',
         'platform': 'web',
       });
-      
+
       debugPrint('Study session logged successfully for web user: $userId');
     } catch (e) {
       debugPrint('Error logging study session for web: $e');

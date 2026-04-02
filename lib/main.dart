@@ -67,8 +67,7 @@ void main() async {
 
   if (!kIsWeb) {
     await FirebaseAppCheck.instance.activate(
-      androidProvider:
-          kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
+      androidProvider: AndroidProvider.debug, // Change to playIntegrity in production
       appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.appAttest,
     );
   }
@@ -160,7 +159,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _router = createAppRouter(widget.authService);
+    _router = createRouter();
   }
 
   Future<void> _scheduleNotificationsOnLaunch(BuildContext context) async {
@@ -178,6 +177,7 @@ class _MyAppState extends State<MyApp> {
 
         if (userDoc.exists) {
           final userModel = UserModel.fromFirestore(userDoc);
+          if (!context.mounted) return;
           await NotificationIntegration.onAppLaunch(context, userModel);
         }
       }

@@ -58,6 +58,12 @@ class AIConfig {
         responseMimeType: 'application/json',
       );
 
+  static GenerationConfig get thinkingGenerationConfig => GenerationConfig(
+        temperature: 0.7, // Higher temp for broader reasoning
+        maxOutputTokens: 16384,
+        // thinkingBudget: 4000, // Valid for Gemini 2.0 Flash Thinking
+      );
+
   static GenerationConfig get extractionGenerationConfig => GenerationConfig(
         temperature: 0.1, // Low temperature for high accuracy
         maxOutputTokens: maxOutputTokens,

@@ -15,7 +15,6 @@ import 'package:sumquiz/models/public_deck.dart';
 import 'package:sumquiz/services/enhanced_ai_service.dart';
 import 'package:sumquiz/services/content_extraction_service.dart';
 import 'package:sumquiz/services/firestore_service.dart';
-import 'package:sumquiz/theme/web_theme.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
 import 'package:sumquiz/utils/share_code_generator.dart';
 
@@ -304,12 +303,14 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(30),
-        header: (pw.Context context) => _buildPdfHeader(shareCode, isFirstPage: false),
+        header: (pw.Context context) =>
+            _buildPdfHeader(shareCode, isFirstPage: false),
         build: (pw.Context context) => [
           _buildPdfHeader(shareCode, isFirstPage: true),
           pw.SizedBox(height: 10),
           if (sectionA.isNotEmpty) ...[
-            _pdfSectionTitle('SECTION A – OBJECTIVE (${sectionA.length * _marksA} MARKS)'),
+            _pdfSectionTitle(
+                'SECTION A – OBJECTIVE (${sectionA.length * _marksA} MARKS)'),
             pw.SizedBox(height: 8),
             pw.ListView.builder(
               itemCount: sectionA.length,
@@ -319,7 +320,8 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
             pw.SizedBox(height: 15),
           ],
           if (sectionB.isNotEmpty) ...[
-            _pdfSectionTitle('SECTION B – SHORT ANSWER (${sectionB.length * _marksB} MARKS)'),
+            _pdfSectionTitle(
+                'SECTION B – SHORT ANSWER (${sectionB.length * _marksB} MARKS)'),
             pw.SizedBox(height: 8),
             pw.ListView.builder(
               itemCount: sectionB.length,
@@ -329,7 +331,8 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
             pw.SizedBox(height: 15),
           ],
           if (sectionC.isNotEmpty) ...[
-            _pdfSectionTitle('SECTION C – THEORY / ESSAY (${sectionC.length * _marksC} MARKS)'),
+            _pdfSectionTitle(
+                'SECTION C – THEORY / ESSAY (${sectionC.length * _marksC} MARKS)'),
             pw.SizedBox(height: 8),
             pw.ListView.builder(
               itemCount: sectionC.length,
@@ -342,83 +345,104 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
     );
 
     // Add Answer Scheme Page
-    pdf.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(30),
-        header: (pw.Context context) => _buildPdfHeader(shareCode, isFirstPage: false),
-        build: (pw.Context context) => [
-          _pdfSectionTitle('MARKING SCHEME & ANSWER KEY'),
-          pw.SizedBox(height: 10),
-          if (sectionA.isNotEmpty) ...[
-            pw.Text('SECTION A - OBJECTIVE', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
-            pw.SizedBox(height: 8),
-            pw.ListView.builder(
-              itemCount: sectionA.length,
-              itemBuilder: (context, index) {
-                final q = sectionA[index];
-                int optIndex = q.options.indexOf(q.correctAnswer);
-                String letter = optIndex >= 0 ? String.fromCharCode(65 + optIndex) : '';
-                return pw.Padding(
-                  padding: const pw.EdgeInsets.only(bottom: 4),
-                  child: pw.Text('${index + 1}. $letter - ${q.correctAnswer}', style: const pw.TextStyle(fontSize: 10)),
-                );
-              },
-            ),
-            pw.SizedBox(height: 15),
-          ],
-          if (sectionB.isNotEmpty) ...[
-            pw.Text('SECTION B - SHORT ANSWER', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
-            pw.SizedBox(height: 8),
-            pw.ListView.builder(
-              itemCount: sectionB.length,
-              itemBuilder: (context, index) {
-                final q = sectionB[index];
-                return pw.Padding(
+    pdf.addPage(pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      margin: const pw.EdgeInsets.all(30),
+      header: (pw.Context context) =>
+          _buildPdfHeader(shareCode, isFirstPage: false),
+      build: (pw.Context context) => [
+        _pdfSectionTitle('MARKING SCHEME & ANSWER KEY'),
+        pw.SizedBox(height: 10),
+        if (sectionA.isNotEmpty) ...[
+          pw.Text('SECTION A - OBJECTIVE',
+              style:
+                  pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+          pw.SizedBox(height: 8),
+          pw.ListView.builder(
+            itemCount: sectionA.length,
+            itemBuilder: (context, index) {
+              final q = sectionA[index];
+              int optIndex = q.options.indexOf(q.correctAnswer);
+              String letter =
+                  optIndex >= 0 ? String.fromCharCode(65 + optIndex) : '';
+              return pw.Padding(
+                padding: const pw.EdgeInsets.only(bottom: 4),
+                child: pw.Text('${index + 1}. $letter - ${q.correctAnswer}',
+                    style: const pw.TextStyle(fontSize: 10)),
+              );
+            },
+          ),
+          pw.SizedBox(height: 15),
+        ],
+        if (sectionB.isNotEmpty) ...[
+          pw.Text('SECTION B - SHORT ANSWER',
+              style:
+                  pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+          pw.SizedBox(height: 8),
+          pw.ListView.builder(
+            itemCount: sectionB.length,
+            itemBuilder: (context, index) {
+              final q = sectionB[index];
+              return pw.Padding(
                   padding: const pw.EdgeInsets.only(bottom: 6),
                   child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text('${index + sectionA.length + 1}. ${q.correctAnswer}', style: const pw.TextStyle(fontSize: 10, color: PdfColors.green700)),
-                      if (q.explanation != null && q.explanation!.isNotEmpty) ...[
-                        pw.SizedBox(height: 2),
-                        pw.Text('Explanation: ${q.explanation}', style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic, color: PdfColors.grey700)),
-                      ]
-                    ]
-                  )
-                );
-              },
-            ),
-            pw.SizedBox(height: 15),
-          ],
-          if (sectionC.isNotEmpty) ...[
-            pw.Text('SECTION C - THEORY / ESSAY', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
-            pw.SizedBox(height: 8),
-            pw.ListView.builder(
-              itemCount: sectionC.length,
-              itemBuilder: (context, index) {
-                final q = sectionC[index];
-                return pw.Padding(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(
+                            '${index + sectionA.length + 1}. ${q.correctAnswer}',
+                            style: const pw.TextStyle(
+                                fontSize: 10, color: PdfColors.green700)),
+                        if (q.explanation != null &&
+                            q.explanation!.isNotEmpty) ...[
+                          pw.SizedBox(height: 2),
+                          pw.Text('Explanation: ${q.explanation}',
+                              style: pw.TextStyle(
+                                  fontSize: 9,
+                                  fontStyle: pw.FontStyle.italic,
+                                  color: PdfColors.grey700)),
+                        ]
+                      ]));
+            },
+          ),
+          pw.SizedBox(height: 15),
+        ],
+        if (sectionC.isNotEmpty) ...[
+          pw.Text('SECTION C - THEORY / ESSAY',
+              style:
+                  pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+          pw.SizedBox(height: 8),
+          pw.ListView.builder(
+            itemCount: sectionC.length,
+            itemBuilder: (context, index) {
+              final q = sectionC[index];
+              return pw.Padding(
                   padding: const pw.EdgeInsets.only(bottom: 8),
                   child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text('${index + sectionA.length + sectionB.length + 1}. Expected Answer/Points:', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
-                      pw.SizedBox(height: 2),
-                      pw.Text(q.correctAnswer, style: const pw.TextStyle(fontSize: 10, color: PdfColors.green700)),
-                      if (q.explanation != null && q.explanation!.isNotEmpty) ...[
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(
+                            '${index + sectionA.length + sectionB.length + 1}. Expected Answer/Points:',
+                            style: pw.TextStyle(
+                                fontSize: 10, fontWeight: pw.FontWeight.bold)),
                         pw.SizedBox(height: 2),
-                        pw.Text('Marking Guide: ${q.explanation}', style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic, color: PdfColors.grey700)),
-                      ]
-                    ]
-                  )
-                );
-              },
-            ),
-          ],
+                        pw.Text(q.correctAnswer,
+                            style: const pw.TextStyle(
+                                fontSize: 10, color: PdfColors.green700)),
+                        if (q.explanation != null &&
+                            q.explanation!.isNotEmpty) ...[
+                          pw.SizedBox(height: 2),
+                          pw.Text('Marking Guide: ${q.explanation}',
+                              style: pw.TextStyle(
+                                  fontSize: 9,
+                                  fontStyle: pw.FontStyle.italic,
+                                  color: PdfColors.grey700)),
+                        ]
+                      ]));
+            },
+          ),
         ],
-      )
-    );
+      ],
+    ));
 
     return pdf;
   }
@@ -428,7 +452,10 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
       return pw.Column(children: [
         pw.Center(
           child: pw.Text(_schoolNameController.text.toUpperCase(),
-              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
+              style: pw.TextStyle(
+                  fontSize: 14,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.grey700)),
         ),
         pw.SizedBox(height: 5),
         pw.Divider(thickness: 0.5, color: PdfColors.grey300),
@@ -525,9 +552,15 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
             child: pw.RichText(
               text: pw.TextSpan(
                 children: [
-                  pw.TextSpan(text: q.question, style: const pw.TextStyle(fontSize: 10)),
-                  pw.TextSpan(text: ' ($marks Mark${marks > 1 ? 's' : ''})', 
-                    style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, fontStyle: pw.FontStyle.italic)),
+                  pw.TextSpan(
+                      text: q.question,
+                      style: const pw.TextStyle(fontSize: 10)),
+                  pw.TextSpan(
+                      text: ' ($marks Mark${marks > 1 ? 's' : ''})',
+                      style: pw.TextStyle(
+                          fontSize: 9,
+                          fontWeight: pw.FontWeight.bold,
+                          fontStyle: pw.FontStyle.italic)),
                 ],
               ),
             ),
@@ -570,6 +603,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final user = Provider.of<UserModel?>(context);
 
     if (user != null && !user.isPro) {
@@ -577,7 +611,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
     }
 
     return Scaffold(
-      backgroundColor: WebColors.background,
+      backgroundColor: theme.colorScheme.surface,
       body: Stack(
         children: [
           Row(
@@ -597,24 +631,29 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Widget _buildUpgradeScreen() {
+    final theme = Theme.of(context);
     return Scaffold(
       body: Center(
         child: Container(
           width: 500,
           padding: const EdgeInsets.all(40),
-          decoration: WebColors.glassDecoration(
-            blur: 15,
-            opacity: 0.1,
-            color: WebColors.surface,
-            borderRadius: 32,
-          ).copyWith(
-            boxShadow: WebColors.cardShadow,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest
+                .withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+                color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4))
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.school_rounded,
-                  size: 80, color: WebColors.purplePrimary),
+              const Icon(Icons.school_rounded, size: 80),
               const SizedBox(height: 24),
               Text('Tutor Exam Pro',
                   style: GoogleFonts.outfit(
@@ -642,11 +681,14 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Widget _buildWizardPanel() {
+    final theme = Theme.of(context);
     return Container(
       width: 500,
       decoration: BoxDecoration(
-        color: WebColors.surface,
-        border: const Border(right: BorderSide(color: WebColors.border)),
+        color: theme.colorScheme.surfaceContainerHighest,
+        border: Border(
+            right: BorderSide(
+                color: theme.colorScheme.outline.withValues(alpha: 0.1))),
       ),
       child: Column(
         children: [
@@ -672,50 +714,63 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Widget _buildPreviewPanel() {
+    final theme = Theme.of(context);
     return Container(
-      color: WebColors.background,
+      color: theme.colorScheme.surface,
       child: Center(
         child: Container(
           width: 800,
           margin: const EdgeInsets.all(40),
-          decoration: WebColors.glassDecoration(
-            blur: 15,
-            opacity: 0.05,
-            color: WebColors.surface,
-            borderRadius: 24,
-          ).copyWith(
-            boxShadow: WebColors.cardShadow,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest
+                .withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+                color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4))
+            ],
           ),
-          child: _generatedQuestions.isEmpty ? _buildEmptyPreview() : _buildExamPreview(),
+          child: _generatedQuestions.isEmpty
+              ? _buildEmptyPreview()
+              : _buildExamPreview(),
         ),
       ),
     );
   }
 
   Widget _buildEmptyPreview() {
+    final theme = Theme.of(context);
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.description_outlined, size: 80, color: WebColors.textTertiary),
+        Icon(Icons.description_outlined,
+            size: 80,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
         const SizedBox(height: 24),
         Text(
           'No Exam Generated Yet',
           style: GoogleFonts.outfit(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: WebColors.textSecondary,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
         const SizedBox(height: 12),
         Text(
           'Generate your exam on the left to see the live preview here.',
-          style: GoogleFonts.outfit(color: WebColors.textTertiary),
+          style: GoogleFonts.outfit(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
         ),
       ],
     );
   }
 
   Widget _buildExamPreview() {
+    final theme = Theme.of(context);
     return Column(
       children: [
         _buildPreviewHeader(),
@@ -723,7 +778,8 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           child: ListView.builder(
             padding: const EdgeInsets.all(32),
             itemCount: _generatedQuestions.length,
-            itemBuilder: (context, index) => _buildPreviewQuestion(_generatedQuestions[index], index + 1),
+            itemBuilder: (context, index) =>
+                _buildPreviewQuestion(_generatedQuestions[index], index + 1),
           ),
         ),
       ],
@@ -731,12 +787,15 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Widget _buildPreviewHeader() {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(32),
-      decoration: const BoxDecoration(
-        color: WebColors.backgroundAlt,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(bottom: BorderSide(color: WebColors.border)),
+        border: Border(
+            bottom: BorderSide(
+                color: theme.colorScheme.outline.withValues(alpha: 0.1))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -746,10 +805,14 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  gradient: WebColors.HeroGradient,
+                  gradient: LinearGradient(colors: [
+                    theme.colorScheme.primary,
+                    theme.colorScheme.tertiary
+                  ]),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.remove_red_eye_rounded, color: Colors.white, size: 20),
+                child: const Icon(Icons.remove_red_eye_rounded,
+                    color: Colors.white, size: 20),
               ),
               const SizedBox(width: 16),
               Column(
@@ -757,11 +820,15 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                 children: [
                   Text(
                     'Live Preview',
-                    style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18),
+                    style: GoogleFonts.outfit(
+                        fontWeight: FontWeight.bold, fontSize: 18),
                   ),
                   Text(
                     'Dynamic update as you edit',
-                    style: GoogleFonts.outfit(fontSize: 12, color: WebColors.textSecondary),
+                    style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.6)),
                   ),
                 ],
               ),
@@ -778,13 +845,15 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Widget _buildPreviewQuestion(LocalQuizQuestion q, int number) {
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: WebColors.backgroundAlt.withValues(alpha: 0.5),
+        color: theme.colorScheme.surface.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: WebColors.border),
+        border:
+            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -792,22 +861,28 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('$number. ', style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text('$number. ',
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
               Expanded(
                 child: Text(
                   q.question,
-                  style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 15),
+                  style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.w600, fontSize: 15),
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: WebColors.primary.withValues(alpha: 0.1),
+                  color:
+                      theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   (q.questionType ?? '').toUpperCase(),
-                  style: GoogleFonts.outfit(fontSize: 9, fontWeight: FontWeight.w800, color: WebColors.primary),
+                  style: GoogleFonts.outfit(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      color: theme.colorScheme.primary),
                 ),
               ),
             ],
@@ -815,20 +890,27 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           if (q.questionType == 'Multiple Choice') ...[
             const SizedBox(height: 16),
             ...q.options.asMap().entries.map((entry) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: [
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: WebColors.border)),
-                    child: Center(child: Text(String.fromCharCode(65 + entry.key), style: const TextStyle(fontSize: 10))),
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                                color: theme.colorScheme.outline
+                                    .withValues(alpha: 0.1))),
+                        child: Center(
+                            child: Text(String.fromCharCode(65 + entry.key),
+                                style: const TextStyle(fontSize: 10))),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(entry.value,
+                          style: GoogleFonts.outfit(fontSize: 14)),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Text(entry.value, style: GoogleFonts.outfit(fontSize: 14)),
-                ],
-              ),
-            )),
+                )),
           ],
         ],
       ),
@@ -836,6 +918,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Widget _buildWizardHeader() {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -853,7 +936,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                 style: GoogleFonts.outfit(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: WebColors.textPrimary,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
             ],
@@ -876,6 +959,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Widget _stepIndicator(int step, String label) {
+    final theme = Theme.of(context);
     bool isActive = _currentStep == step;
     bool isDone = _currentStep > step;
 
@@ -887,12 +971,14 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: isDone
-                ? WebColors.success
+                ? theme.colorScheme.tertiary
                 : (isActive
-                    ? WebColors.purplePrimary
-                    : WebColors.backgroundAlt),
+                    ? theme.colorScheme.error
+                    : theme.colorScheme.surface),
             border: Border.all(
-                color: isActive ? WebColors.purplePrimary : WebColors.border),
+                color: isActive
+                    ? theme.colorScheme.tertiary
+                    : theme.colorScheme.outline.withValues(alpha: 0.1)),
           ),
           child: Center(
             child: isDone
@@ -900,7 +986,9 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                 : Text(
                     '${step + 1}',
                     style: TextStyle(
-                      color: isActive ? Colors.white : WebColors.textSecondary,
+                      color: isActive
+                          ? Colors.white
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
@@ -913,7 +1001,9 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           style: TextStyle(
             fontSize: 10,
             fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-            color: isActive ? WebColors.purplePrimary : WebColors.textTertiary,
+            color: isActive
+                ? theme.colorScheme.tertiary
+                : theme.colorScheme.onSurface.withValues(alpha: 0.4),
           ),
         ),
       ],
@@ -921,16 +1011,18 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Widget _stepConnector() {
+    final theme = Theme.of(context);
     return Expanded(
       child: Container(
         height: 2,
         margin: const EdgeInsets.only(bottom: 18, left: 8, right: 8),
-        color: WebColors.border,
+        color: theme.colorScheme.outline.withValues(alpha: 0.1),
       ),
     );
   }
 
   Widget _buildWizardFooter() {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Row(
@@ -982,6 +1074,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Widget _buildStep1() {
+    final theme = Theme.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -1043,6 +1136,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Widget _buildStep2() {
+    final theme = Theme.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -1077,6 +1171,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Widget _buildStep3() {
+    final theme = Theme.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -1094,11 +1189,11 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                    color: WebColors.purpleUltraLight,
+                    color: theme.colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(12)),
                 child: Text('$_numberOfQuestions Items',
-                    style: const TextStyle(
-                        color: WebColors.purplePrimary,
+                    style: TextStyle(
+                        color: theme.colorScheme.tertiary,
                         fontWeight: FontWeight.bold)),
               ),
             ],
@@ -1107,7 +1202,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
             value: _numberOfQuestions.toDouble(),
             min: 5,
             max: 50,
-            activeColor: WebColors.purplePrimary,
+            activeColor: theme.colorScheme.tertiary,
             onChanged: (v) => setState(() => _numberOfQuestions = v.round()),
           ),
           const SizedBox(height: 32),
@@ -1151,6 +1246,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Widget _buildStep4() {
+    final theme = Theme.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -1194,23 +1290,26 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Widget _buildPreviewToolBar() {
+    final theme = Theme.of(context);
     return Container(
       height: 80,
       padding: const EdgeInsets.symmetric(horizontal: 40),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: WebColors.border)),
+        border: Border(
+            bottom: BorderSide(
+                color: theme.colorScheme.outline.withValues(alpha: 0.1))),
       ),
       child: Row(
         children: [
-          const Icon(Icons.visibility_outlined, color: WebColors.purplePrimary),
+          Icon(Icons.visibility_outlined, color: theme.colorScheme.tertiary),
           const SizedBox(width: 16),
           Text(
             'PAPER PREVIEW',
             style: TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 13,
-                color: WebColors.textPrimary,
+                color: theme.colorScheme.onSurface,
                 letterSpacing: 1),
           ),
           const Spacer(),
@@ -1229,6 +1328,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Widget _buildPaperLook() {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(60),
       decoration: BoxDecoration(
@@ -1239,7 +1339,8 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
               blurRadius: 40,
               offset: const Offset(0, 20))
         ],
-        border: Border.all(color: WebColors.border),
+        border:
+            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1267,11 +1368,11 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                 width: 100,
                 height: 100,
                 decoration: BoxDecoration(
-                    border: Border.all(color: WebColors.border),
+                    border: Border.all(
+                        color:
+                            theme.colorScheme.outline.withValues(alpha: 0.1)),
                     borderRadius: BorderRadius.circular(8)),
-                child: const Center(
-                    child: Icon(Icons.qr_code_2,
-                        size: 64, color: WebColors.textTertiary)),
+                child: const Center(child: Icon(Icons.qr_code_2, size: 64)),
               ),
             ],
           ),
@@ -1286,6 +1387,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Widget _editablePaperQuestion(LocalQuizQuestion q, int index) {
+    final theme = Theme.of(context);
     int marks =
         (q.questionType == 'Multiple Choice' || q.questionType == 'True/False')
             ? _marksA
@@ -1305,25 +1407,12 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('$index. ',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 16)),
-              Expanded(
-                child: TextField(
-                  controller: qCtrl,
-                  maxLines: null,
-                  onChanged: (v) => q.question = v,
-                  style: const TextStyle(fontSize: 16, height: 1.5),
-                  decoration: const InputDecoration(
-                      border: InputBorder.none, isCollapsed: true),
-                ),
-              ),
-              const SizedBox(width: 8),
               Text('($marks Marks)',
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontStyle: FontStyle.italic,
                       fontSize: 12,
-                      color: WebColors.textTertiary)),
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.4))),
               IconButton(
                 onPressed: () {
                   setState(() {
@@ -1386,19 +1475,21 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   // --- Helpers ---
 
   Widget _wizardSectionHeader(String title, String subtitle) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title,
-            style: const TextStyle(
-                color: WebColors.purplePrimary,
+            style: TextStyle(
+                color: theme.colorScheme.tertiary,
                 fontWeight: FontWeight.w800,
                 fontSize: 12,
                 letterSpacing: 1.5)),
         const SizedBox(height: 8),
         Text(subtitle,
-            style:
-                const TextStyle(color: WebColors.textSecondary, fontSize: 14)),
+            style: TextStyle(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                fontSize: 14)),
       ],
     );
   }
@@ -1423,22 +1514,24 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
 
   Widget _sourceUploadCard(
       String title, String sub, IconData icon, VoidCallback onTap) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-            border: Border.all(color: WebColors.border),
+            border: Border.all(
+                color: theme.colorScheme.outline.withValues(alpha: 0.1)),
             borderRadius: BorderRadius.circular(16)),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                  color: WebColors.purplePrimary.withValues(alpha: 0.1),
+                  color: theme.colorScheme.tertiary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12)),
-              child: Icon(icon, color: WebColors.purplePrimary),
+              child: Icon(icon, color: theme.colorScheme.tertiary),
             ),
             const SizedBox(width: 20),
             Expanded(
@@ -1450,13 +1543,16 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                           fontWeight: FontWeight.bold, fontSize: 15)),
                   const SizedBox(height: 4),
                   Text(sub,
-                      style: const TextStyle(
-                          color: WebColors.textTertiary, fontSize: 12)),
+                      style: TextStyle(
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.4),
+                          fontSize: 12)),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios,
-                size: 14, color: WebColors.textTertiary),
+            Icon(Icons.arrow_forward_ios,
+                size: 14,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
           ],
         ),
       ),
@@ -1464,6 +1560,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Widget _uploadedStateCard() {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -1474,7 +1571,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
         children: [
           Row(
             children: [
-              const Icon(Icons.check_circle, color: WebColors.success),
+              Icon(Icons.check_circle, color: theme.colorScheme.tertiary),
               const SizedBox(width: 16),
               const Expanded(
                   child: Text('Source Material Extracted',
@@ -1500,32 +1597,35 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
 
   Widget _checkboxTile(
       String title, String sub, bool val, Function(bool?) onChange) {
+    final theme = Theme.of(context);
     return CheckboxListTile(
       title: Text(title,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
       subtitle: Text(sub, style: const TextStyle(fontSize: 12)),
       value: val,
       onChanged: onChange,
-      activeColor: WebColors.purplePrimary,
+      activeColor: theme.colorScheme.tertiary,
       contentPadding: EdgeInsets.zero,
     );
   }
 
   Widget _switchTile(
       String title, String sub, bool val, Function(bool) onChange) {
+    final theme = Theme.of(context);
     return SwitchListTile(
       title: Text(title,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
       subtitle: Text(sub, style: const TextStyle(fontSize: 12)),
       value: val,
       onChanged: onChange,
-      activeThumbColor: WebColors.purplePrimary,
+      activeThumbColor: theme.colorScheme.tertiary,
       contentPadding: EdgeInsets.zero,
     );
   }
 
   Widget _marksAllocationRow(
       String label, String sub, int val, Function(int) onChange) {
+    final theme = Theme.of(context);
     return Row(
       children: [
         Expanded(
@@ -1536,8 +1636,10 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, fontSize: 14)),
               Text(sub,
-                  style: const TextStyle(
-                      fontSize: 12, color: WebColors.textTertiary)),
+                  style: TextStyle(
+                      fontSize: 12,
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.4))),
             ],
           ),
         ),

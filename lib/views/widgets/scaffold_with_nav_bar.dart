@@ -39,11 +39,15 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
             bottomNavigationBar: BottomNavigationBar(
               items: <BottomNavigationBarItem>[
                 BottomNavigationBarItem(
-                    icon: Icon(isTeacher ? Icons.dashboard_outlined : Icons.home_outlined),
+                    icon: Icon(isTeacher
+                        ? Icons.dashboard_outlined
+                        : Icons.home_outlined),
                     activeIcon: Icon(isTeacher ? Icons.dashboard : Icons.home),
                     label: isTeacher ? 'Dashboard' : 'Home'),
                 BottomNavigationBarItem(
-                    icon: Icon(isTeacher ? Icons.assignment_outlined : Icons.book_outlined),
+                    icon: Icon(isTeacher
+                        ? Icons.assignment_outlined
+                        : Icons.book_outlined),
                     activeIcon: Icon(isTeacher ? Icons.assignment : Icons.book),
                     label: isTeacher ? 'Exams' : 'Library'),
                 BottomNavigationBarItem(
@@ -51,8 +55,11 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                     activeIcon: const Icon(Icons.add_circle),
                     label: 'Create'),
                 BottomNavigationBarItem(
-                    icon: Icon(isTeacher ? Icons.analytics_outlined : Icons.show_chart_outlined),
-                    activeIcon: Icon(isTeacher ? Icons.analytics : Icons.show_chart),
+                    icon: Icon(isTeacher
+                        ? Icons.analytics_outlined
+                        : Icons.show_chart_outlined),
+                    activeIcon:
+                        Icon(isTeacher ? Icons.analytics : Icons.show_chart),
                     label: isTeacher ? 'Analytics' : 'Progress'),
                 BottomNavigationBarItem(
                     icon: const Icon(Icons.person_outline),
@@ -67,7 +74,8 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
               onTap: onTap,
               type: BottomNavigationBarType.fixed,
               selectedItemColor: theme.colorScheme.primary,
-              unselectedItemColor: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              unselectedItemColor:
+                  theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           );
         } else {
@@ -81,10 +89,13 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                   curve: Curves.easeInOut,
                   width: _isExpanded ? 280 : 80,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF171717) : const Color(0xFFF8FAFC),
+                    color: isDark
+                        ? const Color(0xFF171717)
+                        : const Color(0xFFF8FAFC),
                     border: Border(
                       right: BorderSide(
-                        color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+                        color: theme.colorScheme.outlineVariant
+                            .withValues(alpha: 0.5),
                         width: 1,
                       ),
                     ),
@@ -105,16 +116,26 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                           vertical: 24,
                         ),
                         child: Row(
-                          mainAxisAlignment: _isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
+                          mainAxisAlignment: _isExpanded
+                              ? MainAxisAlignment.start
+                              : MainAxisAlignment.center,
                           children: [
                             if (_isExpanded) ...[
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  gradient: WebColors.HeroGradient,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Icon(Icons.school, color: Colors.white, size: 24),
+                              Image.asset(
+                                'assets/images/sumquiz_logo.png',
+                                width: 32,
+                                height: 32,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      gradient: WebColors.HeroGradient,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Icon(Icons.school,
+                                        color: Colors.white, size: 24),
+                                  );
+                                },
                               ),
                               const SizedBox(width: 12),
                               Text(
@@ -129,10 +150,14 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               const Spacer(),
                             ],
                             IconButton(
-                              onPressed: () => setState(() => _isExpanded = !_isExpanded),
+                              onPressed: () =>
+                                  setState(() => _isExpanded = !_isExpanded),
                               icon: Icon(
-                                _isExpanded ? Icons.menu_open_rounded : Icons.menu_rounded,
-                                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                _isExpanded
+                                    ? Icons.menu_open_rounded
+                                    : Icons.menu_rounded,
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.6),
                                 size: 24,
                               ),
                               tooltip: _isExpanded ? 'Collapse' : 'Expand',
@@ -140,12 +165,21 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                           ],
                         ),
                       ),
-                      
+
                       // Primary Action
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
                         child: InkWell(
-                          onTap: () => widget.navigationShell.goBranch(2), // Create tab
+                          onTap: () {
+                            if (isTeacher) {
+                              // Teachers go to Exam Creation screen
+                              context.go('/exam-creation');
+                            } else {
+                              // Students go to Content/Study Pack creation
+                              widget.navigationShell.goBranch(2);
+                            }
+                          },
                           borderRadius: BorderRadius.circular(12),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 300),
@@ -158,21 +192,27 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                                  color: theme.colorScheme.primary
+                                      .withValues(alpha: 0.2),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
                             child: Row(
-                              mainAxisAlignment: _isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
+                              mainAxisAlignment: _isExpanded
+                                  ? MainAxisAlignment.start
+                                  : MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.add_circle, color: Colors.white, size: 20),
+                                const Icon(Icons.add_circle,
+                                    color: Colors.white, size: 20),
                                 if (_isExpanded) ...[
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Text(
-                                      isTeacher ? 'Create Exam' : 'Build Pack',
+                                      isTeacher
+                                          ? 'Create Exam'
+                                          : 'Build Study Pack',
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontWeight: FontWeight.w700,
@@ -180,85 +220,127 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                       ),
                                     ),
                                   ),
-                                  const Icon(Icons.auto_awesome, color: Colors.white70, size: 14),
+                                  const Icon(Icons.auto_awesome,
+                                      color: Colors.white70, size: 14),
                                 ],
                               ],
                             ),
                           ),
                         ),
                       ),
-                      
+
                       const SizedBox(height: 16),
-                      
-                      // Navigation Items
+
+                      // Navigation Items - Role-Based Workflows
                       Expanded(
                         child: ListView(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           children: [
-                            _buildSidebarItem(
-                              icon: isTeacher ? Icons.dashboard_outlined : Icons.auto_awesome_mosaic_outlined,
-                              activeIcon: isTeacher ? Icons.dashboard : Icons.auto_awesome_mosaic,
-                              label: isTeacher ? 'Dashboard' : 'Home',
-                              isActive: widget.navigationShell.currentIndex == 0,
-                              onTap: () => onTap(0),
-                              isExpanded: _isExpanded,
-                              theme: theme,
-                            ),
-                            _buildSidebarItem(
-                              icon: isTeacher ? Icons.inventory_2_outlined : Icons.book_outlined,
-                              activeIcon: isTeacher ? Icons.inventory_2 : Icons.book,
-                              label: isTeacher ? 'Content' : 'Library',
-                              isActive: widget.navigationShell.currentIndex == 1,
-                              onTap: () => onTap(1),
-                              isExpanded: _isExpanded,
-                              theme: theme,
-                            ),
-                            if (isTeacher)
+                            // === TEACHER WORKFLOW ===
+                            if (isTeacher) ...[
+                              _buildSidebarItem(
+                                icon: Icons.dashboard_outlined,
+                                activeIcon: Icons.dashboard,
+                                label: 'Dashboard',
+                                isActive:
+                                    widget.navigationShell.currentIndex == 0,
+                                onTap: () => onTap(0),
+                                isExpanded: _isExpanded,
+                                theme: theme,
+                              ),
+                              _buildSidebarItem(
+                                icon: Icons.inventory_2_outlined,
+                                activeIcon: Icons.inventory_2,
+                                label: 'Content Manager',
+                                isActive:
+                                    widget.navigationShell.currentIndex == 1,
+                                onTap: () => onTap(1),
+                                isExpanded: _isExpanded,
+                                theme: theme,
+                              ),
                               _buildSidebarItem(
                                 icon: Icons.people_outline_rounded,
                                 activeIcon: Icons.people_rounded,
                                 label: 'Students',
-                                isActive: widget.navigationShell.currentIndex == 6,
-                                onTap: () => onTap(6),
+                                isActive:
+                                    widget.navigationShell.currentIndex == 2,
+                                onTap: () => onTap(2),
                                 isExpanded: _isExpanded,
                                 theme: theme,
                               ),
-                            _buildSidebarItem(
-                              icon: isTeacher ? Icons.analytics_outlined : Icons.insights_outlined,
-                              activeIcon: isTeacher ? Icons.analytics : Icons.insights,
-                              label: isTeacher ? 'Analytics' : 'Progress',
-                              isActive: widget.navigationShell.currentIndex == 3,
-                              onTap: () => onTap(3),
-                              isExpanded: _isExpanded,
-                              theme: theme,
-                            ),
-                            if (isTeacher)
+                              _buildSidebarItem(
+                                icon: Icons.analytics_outlined,
+                                activeIcon: Icons.analytics,
+                                label: 'Analytics',
+                                isActive:
+                                    widget.navigationShell.currentIndex == 3,
+                                onTap: () => onTap(3),
+                                isExpanded: _isExpanded,
+                                theme: theme,
+                              ),
                               _buildSidebarItem(
                                 icon: Icons.auto_awesome_rounded,
                                 activeIcon: Icons.auto_awesome,
-                                label: 'AI Feedback',
-                                isActive: widget.navigationShell.currentIndex == 7,
-                                onTap: () => onTap(7),
+                                label: 'AI Insights',
+                                isActive:
+                                    widget.navigationShell.currentIndex == 4,
+                                onTap: () => onTap(4),
                                 isExpanded: _isExpanded,
                                 theme: theme,
                               ),
-                            
+                            ] else
+                              // === STUDENT WORKFLOW ===
+                              ...[
+                              _buildSidebarItem(
+                                icon: Icons.auto_awesome_mosaic_outlined,
+                                activeIcon: Icons.auto_awesome_mosaic,
+                                label: 'Home',
+                                isActive:
+                                    widget.navigationShell.currentIndex == 0,
+                                onTap: () => onTap(0),
+                                isExpanded: _isExpanded,
+                                theme: theme,
+                              ),
+                              _buildSidebarItem(
+                                icon: Icons.book_outlined,
+                                activeIcon: Icons.book,
+                                label: 'My Library',
+                                isActive:
+                                    widget.navigationShell.currentIndex == 1,
+                                onTap: () => onTap(1),
+                                isExpanded: _isExpanded,
+                                theme: theme,
+                              ),
+                              _buildSidebarItem(
+                                icon: Icons.insights_outlined,
+                                activeIcon: Icons.insights,
+                                label: 'Progress',
+                                isActive:
+                                    widget.navigationShell.currentIndex == 2,
+                                onTap: () => onTap(2),
+                                isExpanded: _isExpanded,
+                                theme: theme,
+                              ),
+                            ],
+
                             Padding(
                               padding: EdgeInsets.symmetric(
                                 horizontal: _isExpanded ? 8 : 4,
                                 vertical: 20,
                               ),
                               child: Divider(
-                                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                                color: theme.colorScheme.outlineVariant
+                                    .withValues(alpha: 0.3),
                                 thickness: 1,
                               ),
                             ),
-                            
+
                             _buildSidebarItem(
                               icon: Icons.person_outline,
                               activeIcon: Icons.person,
                               label: 'Profile',
-                              isActive: widget.navigationShell.currentIndex == 4,
+                              isActive:
+                                  widget.navigationShell.currentIndex == 4,
                               onTap: () => onTap(4),
                               isExpanded: _isExpanded,
                               theme: theme,
@@ -267,7 +349,8 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               icon: Icons.settings_outlined,
                               activeIcon: Icons.settings,
                               label: 'Settings',
-                              isActive: widget.navigationShell.currentIndex == 5,
+                              isActive:
+                                  widget.navigationShell.currentIndex == 5,
                               onTap: () => onTap(5),
                               isExpanded: _isExpanded,
                               theme: theme,
@@ -275,35 +358,46 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                           ],
                         ),
                       ),
-                      
+
                       // Bottom User Info
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 20),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.black.withValues(alpha: 0.1) : Colors.white,
+                          color: isDark
+                              ? Colors.black.withValues(alpha: 0.1)
+                              : Colors.white,
                           border: Border(
                             top: BorderSide(
-                              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                              color: theme.colorScheme.outlineVariant
+                                  .withValues(alpha: 0.3),
                             ),
                           ),
                         ),
                         child: Row(
-                          mainAxisAlignment: _isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
+                          mainAxisAlignment: _isExpanded
+                              ? MainAxisAlignment.start
+                              : MainAxisAlignment.center,
                           children: [
                             CircleAvatar(
                               radius: 18,
-                              backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
-                              backgroundImage: user?.photoURL != null ? NetworkImage(user!.photoURL!) : null,
-                              child: user?.photoURL == null 
-                                ? Text(
-                                    user?.displayName.characters.first.toUpperCase() ?? 'U', 
-                                    style: TextStyle(
-                                      color: theme.colorScheme.primary,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  )
-                                : null,
+                              backgroundColor: theme.colorScheme.primary
+                                  .withValues(alpha: 0.1),
+                              backgroundImage: user?.photoURL != null
+                                  ? NetworkImage(user!.photoURL!)
+                                  : null,
+                              child: user?.photoURL == null
+                                  ? Text(
+                                      user?.displayName.characters.first
+                                              .toUpperCase() ??
+                                          'U',
+                                      style: TextStyle(
+                                        color: theme.colorScheme.primary,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    )
+                                  : null,
                             ),
                             if (_isExpanded) ...[
                               const SizedBox(width: 12),
@@ -325,7 +419,8 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                     Text(
                                       isTeacher ? 'Pro Educator' : 'Learner',
                                       style: TextStyle(
-                                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                                        color: theme.colorScheme.onSurface
+                                            .withValues(alpha: 0.5),
                                         fontSize: 11,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -371,19 +466,20 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
         vertical: 12,
       ),
       decoration: BoxDecoration(
-        color: isActive 
-          ? theme.colorScheme.primary.withValues(alpha: 0.08) 
-          : Colors.transparent,
+        color: isActive
+            ? theme.colorScheme.primary.withValues(alpha: 0.08)
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
-        mainAxisAlignment: isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
+        mainAxisAlignment:
+            isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
         children: [
           Icon(
             isActive ? activeIcon : icon,
-            color: isActive 
-              ? theme.colorScheme.primary 
-              : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            color: isActive
+                ? theme.colorScheme.primary
+                : theme.colorScheme.onSurface.withValues(alpha: 0.6),
             size: 22,
           ),
           if (isExpanded) ...[
@@ -391,9 +487,9 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
             Text(
               label,
               style: TextStyle(
-                color: isActive 
-                  ? theme.colorScheme.primary 
-                  : theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                color: isActive
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.7),
                 fontSize: 14,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
               ),
@@ -405,21 +501,21 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
-      child: isExpanded 
-        ? InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(12),
-            child: content,
-          )
-        : Tooltip(
-            message: label,
-            preferBelow: false,
-            child: InkWell(
+      child: isExpanded
+          ? InkWell(
               onTap: onTap,
               borderRadius: BorderRadius.circular(12),
               child: content,
+            )
+          : Tooltip(
+              message: label,
+              preferBelow: false,
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(12),
+                child: content,
+              ),
             ),
-          ),
     );
   }
 }

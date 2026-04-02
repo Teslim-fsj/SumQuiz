@@ -3,7 +3,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:sumquiz/theme/web_theme.dart';
 import 'package:sumquiz/views/screens/web/creator_tab_view.dart';
 
 class LandingPageWeb extends StatefulWidget {
@@ -36,7 +35,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
 
   void _handleTabSelection() {
     if (_tabController.indexIsChanging) return;
-    
+
     // Sync URL with tab index
     if (_tabController.index == 0) {
       context.go('/landing');
@@ -68,10 +67,11 @@ class _LandingPageWebState extends State<LandingPageWeb>
   }
 
   Widget _buildNavLink(String text, VoidCallback onTap) {
+    final theme = Theme.of(context);
     return TextButton(
       onPressed: onTap,
       style: TextButton.styleFrom(
-        foregroundColor: WebColors.textSecondary,
+        foregroundColor: theme.colorScheme.onSurface.withValues(alpha: 0.6),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
       child: Text(
@@ -86,8 +86,9 @@ class _LandingPageWebState extends State<LandingPageWeb>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: WebColors.background,
+      backgroundColor: theme.colorScheme.surface,
       body: Column(
         children: [
           _buildNavBar(context),
@@ -122,14 +123,17 @@ class _LandingPageWebState extends State<LandingPageWeb>
   }
 
   Widget _buildNavBar(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       height: 80,
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: WebColors.glassDecoration(
-        blur: 16,
-        opacity: 0.7,
-        borderRadius: 24,
+      decoration: BoxDecoration(
+        color:
+            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(24),
+        border:
+            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: Center(
         child: Container(
@@ -147,11 +151,15 @@ class _LandingPageWebState extends State<LandingPageWeb>
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        gradient: WebColors.HeroGradient,
+                        gradient: LinearGradient(colors: [
+                          theme.colorScheme.primary,
+                          theme.colorScheme.tertiary
+                        ]),
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: WebColors.primary.withOpacity(0.3),
+                            color: theme.colorScheme.primaryContainer
+                                .withValues(alpha: 0.3),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -173,7 +181,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w800,
-                        color: WebColors.textPrimary,
+                        color: theme.colorScheme.onSurface,
                         letterSpacing: -0.5,
                       ),
                     ),
@@ -222,7 +230,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
                                 ),
                               ],
                             ),
-                            labelColor: WebColors.primary,
+                            labelColor: theme.colorScheme.primary,
                             unselectedLabelColor:
                                 const Color(0xFF64748B), // Slate 500
                             labelStyle: const TextStyle(
@@ -244,7 +252,8 @@ class _LandingPageWebState extends State<LandingPageWeb>
                         TextButton(
                           onPressed: () => context.go('/auth'),
                           style: TextButton.styleFrom(
-                            foregroundColor: WebColors.textSecondary,
+                            foregroundColor: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.6),
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 12),
                           ),
@@ -254,7 +263,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
                         ElevatedButton(
                           onPressed: () => context.go('/auth'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: WebColors.primary,
+                            backgroundColor: theme.colorScheme.primary,
                             foregroundColor: Colors.white,
                             elevation: 0,
                             padding: const EdgeInsets.symmetric(
@@ -284,9 +293,11 @@ class _LandingPageWebState extends State<LandingPageWeb>
   }
 
   Widget _buildHeroSection(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
-      decoration: const BoxDecoration(
-        gradient: WebColors.HeroGradient,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+            colors: [theme.colorScheme.primary, theme.colorScheme.tertiary]),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 80),
       child: Center(
@@ -303,21 +314,24 @@ class _LandingPageWebState extends State<LandingPageWeb>
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
-                      decoration: WebColors.glassDecoration(
-                        blur: 8,
-                        opacity: 0.1,
-                        color: Colors.white,
-                        borderRadius: 30,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                            color: theme.colorScheme.outline
+                                .withValues(alpha: 0.1)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.speed, color: WebColors.primary, size: 20),
+                          Icon(Icons.speed,
+                              color: theme.colorScheme.primary, size: 20),
                           const SizedBox(width: 8),
                           Text(
                             'Study 3x Faster',
                             style: TextStyle(
-                              color: WebColors.primary,
+                              color: theme.colorScheme.primary,
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
                             ),
@@ -386,7 +400,8 @@ class _LandingPageWebState extends State<LandingPageWeb>
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
-                        color: WebColors.primary.withOpacity(0.3),
+                        color: theme.colorScheme.primaryContainer
+                            .withValues(alpha: 0.3),
                         blurRadius: 40,
                         offset: const Offset(0, 20),
                       ),
@@ -412,6 +427,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
   }
 
   Widget _buildTrustBadge(IconData icon, String text) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -439,12 +455,13 @@ class _LandingPageWebState extends State<LandingPageWeb>
 
   Widget _buildPrimaryButton(
       BuildContext context, String text, VoidCallback onPressed) {
+    final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: WebColors.accent.withOpacity(0.35),
+            color: theme.colorScheme.tertiaryContainer.withValues(alpha: 0.35),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -453,7 +470,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: WebColors.accent,
+          backgroundColor: theme.colorScheme.tertiary,
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
@@ -472,6 +489,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
 
   Widget _buildSecondaryButton(
       BuildContext context, String text, VoidCallback onPressed) {
+    final theme = Theme.of(context);
     return OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
@@ -491,16 +509,14 @@ class _LandingPageWebState extends State<LandingPageWeb>
   }
 
   Widget _buildStatsSection(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 80),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Colors.white,
-            WebColors.backgroundAlt,
-          ],
+          colors: [Colors.white, theme.colorScheme.surface],
         ),
       ),
       child: Center(
@@ -511,7 +527,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
               Text(
                 'PROVEN RESULTS',
                 style: TextStyle(
-                  color: WebColors.primary,
+                  color: theme.colorScheme.primary,
                   fontWeight: FontWeight.w700,
                   fontSize: 14,
                   letterSpacing: 1.5,
@@ -523,7 +539,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
                 style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.w800,
-                  color: WebColors.textPrimary,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 48),
@@ -547,15 +563,16 @@ class _LandingPageWebState extends State<LandingPageWeb>
   }
 
   Widget _buildStatItem(String value, String label, IconData icon) {
+    final theme = Theme.of(context);
     return Column(
       children: [
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: WebColors.primary.withOpacity(0.1),
+            color: theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Icon(icon, color: WebColors.primary, size: 32),
+          child: Icon(icon, color: theme.colorScheme.primary, size: 32),
         ),
         const SizedBox(height: 16),
         Text(
@@ -563,7 +580,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
           style: TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.w800,
-            color: WebColors.textPrimary,
+            color: theme.colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 8),
@@ -571,7 +588,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
           label,
           style: TextStyle(
             fontSize: 16,
-            color: WebColors.textSecondary,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -580,14 +597,16 @@ class _LandingPageWebState extends State<LandingPageWeb>
   }
 
   Widget _buildStatDivider() {
+    final theme = Theme.of(context);
     return Container(
       height: 60,
       width: 1,
-      color: WebColors.border,
+      color: theme.colorScheme.outline.withValues(alpha: 0.1),
     );
   }
 
   Widget _buildFeaturesGrid(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       key: _featuresKey,
       padding: const EdgeInsets.symmetric(vertical: 80),
@@ -600,7 +619,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
               Text(
                 'POWERFUL FEATURES',
                 style: TextStyle(
-                  color: WebColors.primary,
+                  color: theme.colorScheme.primary,
                   fontWeight: FontWeight.w700,
                   fontSize: 14,
                   letterSpacing: 1.5,
@@ -612,7 +631,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
                 style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.w800,
-                  color: WebColors.textPrimary,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 48),
@@ -628,37 +647,37 @@ class _LandingPageWebState extends State<LandingPageWeb>
                     'AI-Powered Content',
                     'Transform any text, PDF, or video into interactive learning materials',
                     Icons.auto_awesome,
-                    WebColors.primary,
+                    theme.colorScheme.primary,
                   ),
                   _buildFeatureCard(
                     'Spaced Repetition',
                     'Never forget what you learn with scientifically-proven review scheduling',
                     Icons.schedule,
-                    WebColors.secondary,
+                    theme.colorScheme.secondary,
                   ),
                   _buildFeatureCard(
                     'Daily Missions',
                     'Build consistent learning habits with personalized daily challenges',
                     Icons.flag,
-                    WebColors.accent,
+                    theme.colorScheme.tertiary,
                   ),
                   _buildFeatureCard(
                     'Progress Tracking',
                     'Visualize your learning journey with detailed analytics and insights',
                     Icons.show_chart,
-                    WebColors.primary,
+                    theme.colorScheme.primary,
                   ),
                   _buildFeatureCard(
                     'Offline Access',
                     'Study anywhere, anytime with full offline functionality',
                     Icons.offline_bolt,
-                    WebColors.secondary,
+                    theme.colorScheme.secondary,
                   ),
                   _buildFeatureCard(
                     'Collaborative Learning',
                     'Share decks, compete with friends, and learn together',
                     Icons.group,
-                    WebColors.accent,
+                    theme.colorScheme.tertiary,
                   ),
                 ],
               ),
@@ -671,15 +690,15 @@ class _LandingPageWebState extends State<LandingPageWeb>
 
   Widget _buildFeatureCard(
       String title, String description, IconData icon, Color color) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: WebColors.glassDecoration(
-        blur: 10,
-        opacity: 0.05,
-        color: WebColors.surface,
-        borderRadius: 24,
-      ).copyWith(
-        boxShadow: WebColors.cardShadow,
+      decoration: BoxDecoration(
+        color:
+            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(24),
+        border:
+            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -698,7 +717,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: WebColors.textPrimary,
+              color: theme.colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
@@ -706,7 +725,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
             description,
             style: TextStyle(
               fontSize: 14,
-              color: WebColors.textSecondary,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               height: 1.5,
             ),
           ),
@@ -716,6 +735,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
   }
 
   Widget _buildHowItWorks(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 80),
       decoration: BoxDecoration(
@@ -723,7 +743,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            WebColors.backgroundAlt,
+            theme.colorScheme.surface,
             Colors.white,
           ],
         ),
@@ -736,7 +756,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
               Text(
                 'HOW IT WORKS',
                 style: TextStyle(
-                  color: WebColors.primary,
+                  color: theme.colorScheme.primary,
                   fontWeight: FontWeight.w700,
                   fontSize: 14,
                   letterSpacing: 1.5,
@@ -748,7 +768,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
                 style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.w800,
-                  color: WebColors.textPrimary,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 48),
@@ -773,15 +793,22 @@ class _LandingPageWebState extends State<LandingPageWeb>
   }
 
   Widget _buildStepCard(int number, String title, String description) {
+    final theme = Theme.of(context);
     return Container(
       width: 280,
       padding: const EdgeInsets.all(32),
-      decoration: WebColors.glassDecoration(
-        blur: 20,
-        opacity: 0.08,
-        borderRadius: 32,
-      ).copyWith(
-        boxShadow: WebColors.cardShadow,
+      decoration: BoxDecoration(
+        color:
+            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(24),
+        border:
+            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 4))
+        ],
       ),
       child: Column(
         children: [
@@ -789,7 +816,10 @@ class _LandingPageWebState extends State<LandingPageWeb>
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              gradient: WebColors.HeroGradient,
+              gradient: LinearGradient(colors: [
+                theme.colorScheme.primary,
+                theme.colorScheme.tertiary
+              ]),
               borderRadius: BorderRadius.circular(25),
             ),
             child: Center(
@@ -809,7 +839,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: WebColors.textPrimary,
+              color: theme.colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 12),
@@ -818,7 +848,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
-              color: WebColors.textSecondary,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               height: 1.5,
             ),
           ),
@@ -828,14 +858,16 @@ class _LandingPageWebState extends State<LandingPageWeb>
   }
 
   Widget _buildStepArrow() {
+    final theme = Theme.of(context);
     return Icon(
       Icons.arrow_forward,
-      color: WebColors.textTertiary,
+      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
       size: 32,
     );
   }
 
   Widget _buildTestimonials(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 80),
       color: Colors.white,
@@ -847,7 +879,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
               Text(
                 'SUCCESS STORIES',
                 style: TextStyle(
-                  color: WebColors.primary,
+                  color: theme.colorScheme.primary,
                   fontWeight: FontWeight.w700,
                   fontSize: 14,
                   letterSpacing: 1.5,
@@ -859,7 +891,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
                 style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.w800,
-                  color: WebColors.textPrimary,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 48),
@@ -900,12 +932,14 @@ class _LandingPageWebState extends State<LandingPageWeb>
 
   Widget _buildTestimonialCard(
       String quote, String name, String role, String avatarPath) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: WebColors.backgroundAlt,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: WebColors.border),
+        border:
+            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -916,7 +950,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: WebColors.primary,
+                  color: theme.colorScheme.primary,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: ClipRRect(
@@ -933,14 +967,14 @@ class _LandingPageWebState extends State<LandingPageWeb>
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: WebColors.textPrimary,
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
                   Text(
                     role,
                     style: TextStyle(
                       fontSize: 14,
-                      color: WebColors.textSecondary,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -952,7 +986,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
             quote,
             style: TextStyle(
               fontSize: 14,
-              color: WebColors.textPrimary,
+              color: theme.colorScheme.onSurface,
               height: 1.5,
             ),
           ),
@@ -972,6 +1006,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
   }
 
   Widget _buildFAQ(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       key: _faqKey,
       padding: const EdgeInsets.symmetric(vertical: 80),
@@ -979,10 +1014,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Colors.white,
-            WebColors.backgroundAlt,
-          ],
+          colors: [Colors.white, theme.colorScheme.surface],
         ),
       ),
       child: Center(
@@ -993,7 +1025,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
               Text(
                 'FREQUENTLY ASKED QUESTIONS',
                 style: TextStyle(
-                  color: WebColors.primary,
+                  color: theme.colorScheme.primary,
                   fontWeight: FontWeight.w700,
                   fontSize: 14,
                   letterSpacing: 1.5,
@@ -1005,7 +1037,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
                 style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.w800,
-                  color: WebColors.textPrimary,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 48),
@@ -1036,12 +1068,14 @@ class _LandingPageWebState extends State<LandingPageWeb>
   }
 
   Widget _buildFAQItem(String question, String answer) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: WebColors.border),
+        border:
+            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1051,7 +1085,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: WebColors.textPrimary,
+              color: theme.colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 12),
@@ -1059,7 +1093,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
             answer,
             style: TextStyle(
               fontSize: 16,
-              color: WebColors.textSecondary,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               height: 1.5,
             ),
           ),
@@ -1069,10 +1103,12 @@ class _LandingPageWebState extends State<LandingPageWeb>
   }
 
   Widget _buildCTASection(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 80),
       decoration: BoxDecoration(
-        gradient: WebColors.HeroGradient,
+        gradient: LinearGradient(
+            colors: [theme.colorScheme.primary, theme.colorScheme.tertiary]),
       ),
       child: Center(
         child: Container(
@@ -1134,9 +1170,10 @@ class _LandingPageWebState extends State<LandingPageWeb>
   }
 
   Widget _buildFooter(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 60),
-      color: WebColors.textPrimary,
+      color: theme.colorScheme.onSurface,
       child: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 1200),
@@ -1153,7 +1190,10 @@ class _LandingPageWebState extends State<LandingPageWeb>
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              gradient: WebColors.HeroGradient,
+                              gradient: LinearGradient(colors: [
+                                theme.colorScheme.primary,
+                                theme.colorScheme.tertiary
+                              ]),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Image.asset(
@@ -1255,6 +1295,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
   }
 
   Widget _buildFooterColumn(String title, List<String> items) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

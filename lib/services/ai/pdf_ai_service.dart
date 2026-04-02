@@ -74,18 +74,18 @@ class PdfAIService extends AIBaseService {
     return _fallbackToText(fallbackText, filename);
   }
 
-  /// Analyze audio file and extract educational content.
+  /// Analyze multimodal media file (audio or video) and extract educational content.
   ///
-  /// Supports: `audio/mp3`, `audio/wav`, `audio/m4a`, `audio/ogg`, `audio/flac`
-  /// Gemini 2.5+ can process up to 8.4 hours of audio per prompt.
-  Future<Result<ExtractionResult>> extractAudio(
-    Uint8List audioBytes,
+  /// Supports: `audio/*` and `video/*`
+  /// Gemini 2.5+ can process up to 8.4 hours of media per prompt.
+  Future<Result<ExtractionResult>> extractMultimodalMedia(
+    Uint8List mediaBytes,
     String mimeType, {
-    String filename = 'recording',
+    String filename = 'media',
     CancellationToken? cancelToken,
   }) async {
     developer.log(
-        'Audio extraction started for "$filename" (${(audioBytes.length / 1024).toStringAsFixed(0)} KB, $mimeType)',
+        'Media extraction started for "$filename" (${(mediaBytes.length / 1024).toStringAsFixed(0)} KB, $mimeType)',
         name: 'PdfAIService');
 
     if (!await ensureInitialized()) {
@@ -110,54 +110,55 @@ class PdfAIService extends AIBaseService {
         ),
       );
 
-      const prompt = '''You are analyzing an audio recording (lecture, lesson, or talk).
+      final prompt = '''You are analyzing a ${mimeType.startsWith('video') ? 'video' : 'audio'} recording (lecture, lesson, or talk).
 
 TASK:
-1. Transcribe or deeply understand the audio content
+1. ${mimeType.startsWith('video') ? 'Watch and listen to' : 'Listen to'} the media content deeply
 2. Extract all educational concepts, facts, definitions, and examples
-3. Structure the output as a coherent study document
+3. Structure the output as a coherent study document in Markdown
+4. If it's a video, describe any key visual aids (slides, whiteboard drawings) that are crucial for understanding.
 
 OUTPUT (JSON):
 {
   "title": "Clear, descriptive title of the topic covered",
-  "content": "Full structured educational content from the audio — organized with headings, key points, and examples",
+  "content": "Full structured educational content — organized with headings, key points, and examples",
   "language": "en"
 }''';
 
       final response = await generateMultimodal(
-        [TextPart(prompt), DataPart(mimeType, audioBytes)],
-        customModel: educatorModel,
+        [TextPart(prompt), DataPart(mimeType, mediaBytes)],
+        customModel: mimeType.startsWith('video') ? visionModel : educatorModel,
         generationConfig: config,
         cancelToken: cancelToken,
       ).timeout(Duration(seconds: AIConfig.masterExtractionTimeoutSeconds));
 
       final data = safeJsonDecode(extractJson(response));
       final content = data['content']?.toString() ?? '';
-      final title = data['title']?.toString() ?? 'Audio Recording';
+      final title = data['title']?.toString() ?? 'Media Recording';
 
       if (content.trim().isEmpty) {
         return Result.error(EnhancedAIServiceException(
-            'No content could be extracted from the audio.',
+            'No content could be extracted from the media.',
             code: 'NO_CONTENT'));
       }
 
       return Result.ok(ExtractionResult(
         text: content,
         suggestedTitle: title,
-        sourceUrl: 'audio:$filename',
+        sourceUrl: 'media:$filename',
       ));
     } on CancelledException {
       return Result.error(
           EnhancedAIServiceException('Extraction cancelled.', code: 'CANCELLED'));
     } on TimeoutException {
       return Result.error(
-          EnhancedAIServiceException('Audio processing timed out. Try a shorter recording.',
+          EnhancedAIServiceException('Media processing timed out. Try a shorter file.',
               code: 'TIMEOUT'));
     } catch (e) {
-      developer.log('Audio extraction failed: $e',
+      developer.log('Media extraction failed: $e',
           name: 'PdfAIService', error: e);
       return Result.error(
-          EnhancedAIServiceException('Audio extraction failed: $e'));
+          EnhancedAIServiceException('Media extraction failed: $e'));
     }
   }
 

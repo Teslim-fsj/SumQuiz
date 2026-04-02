@@ -8,7 +8,6 @@ import 'package:sumquiz/models/local_summary.dart';
 import 'package:sumquiz/models/local_quiz.dart';
 import 'package:sumquiz/models/local_flashcard_set.dart';
 import 'package:sumquiz/services/progress_service.dart';
-import 'package:sumquiz/theme/web_theme.dart';
 import 'package:go_router/go_router.dart';
 
 class ProgressScreenWeb extends StatefulWidget {
@@ -134,140 +133,58 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final user = Provider.of<UserModel?>(context);
 
     return Scaffold(
-      backgroundColor: WebColors.background,
+      backgroundColor: theme.colorScheme.surface,
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: WebColors.primary))
-          : Row(
+          ? Center(
+              child:
+                  CircularProgressIndicator(color: theme.colorScheme.primary))
+          : Column(
               children: [
-                _buildSidebar(context),
+                _buildModernHeader(user),
                 Expanded(
-                  child: Column(
-                    children: [
-                      _buildModernHeader(user),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
-                          child: Center(
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 1100),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildTopHeader(user),
-                                  const SizedBox(height: 32),
-                                  _buildStatsRow(),
-                                  const SizedBox(height: 32),
-                                  _buildMainContent(),
-                                  const SizedBox(height: 32),
-                                  _buildAchievementsSection(),
-                                  const SizedBox(height: 40),
-                                  _buildFooter(),
-                                ],
-                              ),
-                            ),
-                          ),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 40, vertical: 32),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1100),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildTopHeader(user),
+                            const SizedBox(height: 32),
+                            _buildStatsRow(),
+                            const SizedBox(height: 32),
+                            _buildMainContent(),
+                            const SizedBox(height: 32),
+                            _buildAchievementsSection(),
+                            const SizedBox(height: 40),
+                            _buildFooter(),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ],
             ),
-    );
-  }
-
-  Widget _buildSidebar(BuildContext context) {
-    return Container(
-      width: 280,
-      decoration: BoxDecoration(
-        color: WebColors.surface,
-        border: const Border(right: BorderSide(color: WebColors.border)),
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(32.0),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    gradient: WebColors.HeroGradient,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.auto_awesome, color: Colors.white, size: 24),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'SUMQUIZ',
-                  style: GoogleFonts.outfit(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.0,
-                    color: WebColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          _buildSidebarItem(Icons.dashboard_rounded, 'Overview', false, onTap: () => context.go('/review')),
-          _buildSidebarItem(Icons.library_books_rounded, 'Library', false, onTap: () => context.go('/library')),
-          _buildSidebarItem(Icons.analytics_rounded, 'Progress', true),
-          _buildSidebarItem(Icons.settings_rounded, 'Settings', false),
-          const Spacer(),
-          _buildSidebarItem(Icons.logout_rounded, 'Sign Out', false),
-          const SizedBox(height: 32),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSidebarItem(IconData icon, String label, bool isActive, {VoidCallback? onTap}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: isActive ? WebColors.primary.withOpacity(0.08) : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                color: isActive ? WebColors.primary : WebColors.textSecondary,
-                size: 22,
-              ),
-              const SizedBox(width: 16),
-              Text(
-                label,
-                style: GoogleFonts.outfit(
-                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                  color: isActive ? WebColors.primary : WebColors.textSecondary,
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
   Widget _buildModernHeader(UserModel? user) {
+    final theme = Theme.of(context);
     return Container(
       height: 90,
       padding: const EdgeInsets.symmetric(horizontal: 40),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.8),
-        border: const Border(bottom: BorderSide(color: WebColors.border)),
+        border: Border(
+            bottom: BorderSide(
+                color: theme.colorScheme.outline.withValues(alpha: 0.1))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -277,7 +194,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
             style: GoogleFonts.outfit(
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: WebColors.textPrimary,
+              color: theme.colorScheme.onSurface,
             ),
           ),
           Row(
@@ -286,7 +203,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                 icon: const Icon(Icons.notifications_none_rounded),
                 onPressed: () {},
                 style: IconButton.styleFrom(
-                  backgroundColor: WebColors.backgroundAlt,
+                  backgroundColor: theme.colorScheme.surface,
                   padding: const EdgeInsets.all(12),
                 ),
               ),
@@ -295,10 +212,17 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  gradient: WebColors.AccentGradient,
+                  gradient: LinearGradient(colors: [
+                    theme.colorScheme.primary,
+                    theme.colorScheme.tertiary
+                  ]),
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 2),
-                  boxShadow: WebColors.subtleShadow,
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10)
+                  ],
                 ),
                 child: const Icon(Icons.person_rounded, color: Colors.white),
               ),
@@ -310,6 +234,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
   }
 
   Widget _buildTopHeader(UserModel? user) {
+    final theme = Theme.of(context);
     return Row(
       children: [
         Expanded(
@@ -321,7 +246,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                 style: GoogleFonts.outfit(
                   fontSize: 32,
                   fontWeight: FontWeight.w800,
-                  color: WebColors.textPrimary,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
@@ -329,7 +254,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                 'You\'re on track to hit your weekly learning goals.',
                 style: GoogleFonts.outfit(
                   fontSize: 16,
-                  color: WebColors.textSecondary,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -340,15 +265,23 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: WebColors.surface,
+                color: theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: WebColors.border),
-                boxShadow: WebColors.cardShadow,
+                border: Border.all(
+                    color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4))
+                ],
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.calendar_today,
-                      size: 16, color: WebColors.textSecondary),
+                  Icon(Icons.calendar_today,
+                      size: 16,
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                   const SizedBox(width: 8),
                   Text(
                     'Last 7 Days',
@@ -369,11 +302,15 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: BoxDecoration(
-                  gradient: WebColors.HeroGradient,
+                  gradient: LinearGradient(colors: [
+                    theme.colorScheme.primary,
+                    theme.colorScheme.tertiary
+                  ]),
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: WebColors.primary.withValues(alpha: 0.3),
+                      color: theme.colorScheme.primaryContainer
+                          .withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -396,6 +333,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
   }
 
   Widget _buildStatsRow() {
+    final theme = Theme.of(context);
     return Row(
       children: [
         Expanded(child: _buildStreakCard()),
@@ -406,15 +344,21 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
   }
 
   Widget _buildStreakCard() {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: WebColors.glassDecoration(
-        blur: 15,
-        opacity: 0.05,
-        color: WebColors.surface,
-        borderRadius: 24,
-      ).copyWith(
-        boxShadow: WebColors.cardShadow,
+      decoration: BoxDecoration(
+        color:
+            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(24),
+        border:
+            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 4))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -455,7 +399,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
             style: GoogleFonts.outfit(
               fontSize: 48,
               fontWeight: FontWeight.w800,
-              color: WebColors.textPrimary,
+              color: theme.colorScheme.onSurface,
               letterSpacing: -2,
             ),
           ),
@@ -473,7 +417,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
             'You\'re in the top 5% of learners this week! Keep the flame alive.',
             style: GoogleFonts.outfit(
               fontSize: 14,
-              color: WebColors.textSecondary,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               height: 1.5,
             ),
           ),
@@ -483,13 +427,20 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
   }
 
   Widget _buildGoalCompletionCard() {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: WebColors.surface,
+        color: theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: WebColors.border),
-        boxShadow: WebColors.cardShadow,
+        border:
+            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 4))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -516,7 +467,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
             style: GoogleFonts.outfit(
               fontSize: 20,
               fontWeight: FontWeight.w800,
-              color: WebColors.textPrimary,
+              color: theme.colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 16),
@@ -527,7 +478,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                 style: GoogleFonts.outfit(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
-                  color: WebColors.primary,
+                  color: theme.colorScheme.primary,
                 ),
               ),
               const SizedBox(width: 8),
@@ -535,7 +486,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                 '$_itemsToday/$_dailyGoal',
                 style: GoogleFonts.outfit(
                   fontSize: 16,
-                  color: WebColors.textSecondary,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -545,8 +496,8 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
             borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
               value: (_itemsToday / _dailyGoal).clamp(0.0, 1.0),
-              backgroundColor: WebColors.border,
-              color: WebColors.primary,
+              backgroundColor: theme.colorScheme.outline.withValues(alpha: 0.1),
+              color: theme.colorScheme.primary,
               minHeight: 12,
             ),
           ),
@@ -570,6 +521,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
 
   Widget _buildMetricBox(
       String label, String value, IconData icon, Color color) {
+    final theme = Theme.of(context);
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -587,7 +539,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
               style: GoogleFonts.outfit(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
-                color: WebColors.textPrimary,
+                color: theme.colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 4),
@@ -606,6 +558,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
   }
 
   Widget _buildMainContent() {
+    final theme = Theme.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -625,13 +578,20 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
   }
 
   Widget _buildWeeklyActivity() {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: WebColors.surface,
+        color: theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: WebColors.border),
-        boxShadow: WebColors.cardShadow,
+        border:
+            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 4))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -641,7 +601,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
             style: GoogleFonts.outfit(
               fontSize: 20,
               fontWeight: FontWeight.w800,
-              color: WebColors.textPrimary,
+              color: theme.colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 32),
@@ -678,8 +638,9 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                             style: GoogleFonts.outfit(
                               fontSize: 12,
                               color: value.toInt() == 6
-                                  ? WebColors.primary
-                                  : WebColors.textTertiary,
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.4),
                               fontWeight: value.toInt() == 6
                                   ? FontWeight.w800
                                   : FontWeight.w500,
@@ -705,8 +666,9 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                       BarChartRodData(
                         toY: _weeklyActivity[i].toDouble(),
                         color: i == 6
-                            ? WebColors.primary
-                            : WebColors.primary.withValues(alpha: 0.2),
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.primaryContainer
+                                .withValues(alpha: 0.2),
                         width: 16,
                         borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(6)),
@@ -723,13 +685,20 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
   }
 
   Widget _buildMilestoneCard() {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: WebColors.surface,
+        color: theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: WebColors.border),
-        boxShadow: WebColors.cardShadow,
+        border:
+            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 4))
+        ],
       ),
       child: Stack(
         children: [
@@ -740,8 +709,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
               opacity: 0.1,
               child: Transform.rotate(
                 angle: 0.3,
-                child: const Icon(Icons.emoji_events,
-                    size: 80, color: WebColors.primary),
+                child: const Icon(Icons.emoji_events, size: 80),
               ),
             ),
           ),
@@ -750,15 +718,15 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.emoji_events_outlined,
-                      color: WebColors.primary, size: 20),
+                  Icon(Icons.emoji_events_outlined,
+                      color: theme.colorScheme.primary, size: 20),
                   const SizedBox(width: 8),
                   Text(
                     'NEXT MILESTONE',
                     style: GoogleFonts.outfit(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
-                      color: WebColors.primary,
+                      color: theme.colorScheme.primary,
                       letterSpacing: 1.5,
                     ),
                   ),
@@ -770,7 +738,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                 style: GoogleFonts.outfit(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
-                  color: WebColors.textPrimary,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
@@ -780,7 +748,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                     : 'Complete ${(_milestoneGoal - _milestoneProgress).toInt()} more items to unlock this badge.',
                 style: GoogleFonts.outfit(
                   fontSize: 14,
-                  color: WebColors.textSecondary,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   height: 1.5,
                 ),
               ),
@@ -789,8 +757,9 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                 borderRadius: BorderRadius.circular(6),
                 child: LinearProgressIndicator(
                   value: (_milestoneProgress / _milestoneGoal).clamp(0.0, 1.0),
-                  backgroundColor: WebColors.border,
-                  color: WebColors.primary,
+                  backgroundColor:
+                      theme.colorScheme.outline.withValues(alpha: 0.1),
+                  color: theme.colorScheme.primary,
                   minHeight: 10,
                 ),
               ),
@@ -800,7 +769,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                 style: GoogleFonts.outfit(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: WebColors.textTertiary,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
               ),
             ],
@@ -811,6 +780,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
   }
 
   Widget _buildQuickTipCard() {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -853,6 +823,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
   }
 
   Widget _buildAchievementsSection() {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -861,7 +832,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
           style: GoogleFonts.outfit(
             fontSize: 24,
             fontWeight: FontWeight.w900,
-            color: WebColors.textPrimary,
+            color: theme.colorScheme.onSurface,
             letterSpacing: -0.5,
           ),
         ),
@@ -872,6 +843,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
   }
 
   Widget _buildRecentAchievements() {
+    final theme = Theme.of(context);
     final user = Provider.of<UserModel?>(context);
     final totalItems = user?.totalDecksGenerated ?? 0;
     final streak = user?.missionCompletionStreak ?? 0;
@@ -904,14 +876,21 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
 
   Widget _buildAchievementCard(
       String title, String subtitle, IconData icon, Color color) {
+    final theme = Theme.of(context);
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: WebColors.surface,
+          color: theme.colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: WebColors.border),
-          boxShadow: WebColors.cardShadow,
+          border: Border.all(
+              color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 4))
+          ],
         ),
         child: Column(
           children: [
@@ -929,7 +908,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
               style: GoogleFonts.outfit(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
-                color: WebColors.textPrimary,
+                color: theme.colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
             ),
@@ -939,7 +918,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
               style: GoogleFonts.outfit(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: WebColors.textSecondary,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               textAlign: TextAlign.center,
             ),
@@ -950,11 +929,15 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
   }
 
   Widget _buildFooter() {
+    final theme = Theme.of(context);
     return Center(
       child: Column(
         children: [
           ShaderMask(
-            shaderCallback: (bounds) => WebColors.HeroGradient.createShader(bounds),
+            shaderCallback: (bounds) => LinearGradient(colors: [
+              theme.colorScheme.primary,
+              theme.colorScheme.tertiary
+            ]).createShader(bounds),
             child: Text(
               'SumQuiz',
               style: GoogleFonts.outfit(
@@ -971,7 +954,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
             style: GoogleFonts.outfit(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: WebColors.textTertiary,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
             ),
           ),
           const SizedBox(height: 8),
@@ -980,7 +963,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
             style: GoogleFonts.outfit(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: WebColors.textTertiary,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
               letterSpacing: 0.2,
             ),
           ),

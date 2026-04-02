@@ -48,6 +48,7 @@ class UserModel {
 
   // Creator Profile
   final Map<String, dynamic> creatorProfile;
+  final bool isEmailVerified;
 
   UserModel({
     required this.uid,
@@ -80,6 +81,7 @@ class UserModel {
     this.referralCode,
     this.creatorProfile = const {},
     this.photoUrl,
+    this.isEmailVerified = false,
   }) : _isTrialUser = isTrial;
 
   String? get photoURL => photoUrl;
@@ -149,6 +151,7 @@ class UserModel {
       referralCode: data['referralCode'],
       creatorProfile: data['creatorProfile'] ?? {},
       photoUrl: data['photoUrl'] ?? data['photoURL'],
+      isEmailVerified: data['isEmailVerified'] ?? false,
     );
   }
 
@@ -186,6 +189,7 @@ class UserModel {
       if (referralCode != null) 'referralCode': referralCode,
       'creatorProfile': creatorProfile,
       'photoUrl': photoUrl,
+      'isEmailVerified': isEmailVerified,
     };
   }
 
@@ -220,6 +224,7 @@ class UserModel {
     String? referralCode,
     Map<String, dynamic>? creatorProfile,
     String? photoUrl,
+    bool? isEmailVerified,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -254,6 +259,7 @@ class UserModel {
       referralCode: referralCode ?? this.referralCode,
       creatorProfile: creatorProfile ?? this.creatorProfile,
       photoUrl: photoUrl ?? this.photoUrl,
+      isEmailVerified: isEmailVerified ?? this.isEmailVerified,
     );
   }
 }

@@ -1,7 +1,7 @@
+import 'dart:developer' as developer;
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
@@ -12,43 +12,88 @@ import 'package:sumquiz/services/content_extraction_service.dart';
 import 'package:sumquiz/services/enhanced_ai_service.dart';
 import 'package:sumquiz/services/local_database_service.dart';
 import 'package:sumquiz/services/usage_service.dart';
-import 'package:sumquiz/services/extraction_result_cache.dart';
-import 'package:sumquiz/theme/web_theme.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
 import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
 
 // ─────────────────────────────────────────────────────────────
-//  Screen states
+//  Chat message model
 // ─────────────────────────────────────────────────────────────
-enum _ScreenState { idle, building, done }
+enum _WebMsgType { user, thinking, result }
 
+class _WebChatMsg {
+  final _WebMsgType type;
+  final String? userText;
+  final DateTime? sentAt;
+  final String? packTitle;
+  final String? packSource;
+  final String? folderId;
+
+  _WebChatMsg.user(this.userText)
+      : type = _WebMsgType.user,
+        sentAt = DateTime.now(),
+        packTitle = null,
+        packSource = null,
+        folderId = null;
+
+  _WebChatMsg.thinking()
+      : type = _WebMsgType.thinking,
+        sentAt = null,
+        userText = null,
+        packTitle = null,
+        packSource = null,
+        folderId = null;
+
+  _WebChatMsg.result({
+    required this.packTitle,
+    required this.packSource,
+    required this.folderId,
+  })  : type = _WebMsgType.result,
+        sentAt = null,
+        userText = null;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Screen
+// ─────────────────────────────────────────────────────────────
 class CreateContentScreenWeb extends StatefulWidget {
   const CreateContentScreenWeb({super.key});
 
   @override
-  State<CreateContentScreenWeb> createState() => _CreateContentScreenWebState();
+  State<CreateContentScreenWeb> createState() =>
+      _CreateContentScreenWebState();
 }
 
 class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
     with TickerProviderStateMixin {
-  // ── Controllers ──────────────────────────────────────────────
+  // ── Design tokens ─────────────────────────────────────────────
+  Color get _primaryColor => Theme.of(context).colorScheme.primary;
+  Color get _accentColor => Theme.of(context).colorScheme.secondary;
+  Color get _textPrimary => Theme.of(context).colorScheme.onSurface;
+  Color get _textSecondary => Theme.of(context).colorScheme.onSurfaceVariant;
+  Color get _surfaceColor => Theme.of(context).colorScheme.surface;
+  Color get _surfaceRaised => Theme.of(context).cardColor;
+  Color get _userBubble => Theme.of(context).colorScheme.primaryContainer;
+
+  // ── Controllers ───────────────────────────────────────────────
   final _inputController = TextEditingController();
   final _inputFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
 
-  // ── Upload state ─────────────────────────────────────────────
+  // ── Upload state ──────────────────────────────────────────────
   String? _fileName;
   Uint8List? _fileBytes;
   String? _mimeType;
-  String _uploadType = ''; // 'pdf', 'image', 'audio', 'link', 'video'
+  String _uploadType = '';
 
-  // ── Screen state ─────────────────────────────────────────────
-  _ScreenState _screenState = _ScreenState.idle;
+  // ── Chat & generation state ───────────────────────────────────
+  final List<_WebChatMsg> _messages = [];
+  bool _isBuilding = false;
   String _errorMessage = '';
   CancellationToken? _cancelToken;
+  String _selectedDifficulty = 'intermediate';
+  int _selectedCount = 15;
 
-  // ── Build animation steps ─────────────────────────────────────
-  late AnimationController _buildAnimController;
+  // ── Build step tracking ───────────────────────────────────────
   int _buildStepIndex = 0;
   final List<String> _buildSteps = [
     'Analyzing material…',
@@ -58,19 +103,16 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
     'Finalizing your study pack…',
   ];
 
-  // ── Result from generation ───────────────────────────────────
-  String _resultFolderId = '';
-  ExtractionResult? _extractionResult;
+  // ── Result ────────────────────────────────────────────────────
   String _packTitle = '';
   String _packSource = '';
+
+  bool get _isDone => _messages.any((m) => m.type == _WebMsgType.result);
 
   @override
   void initState() {
     super.initState();
-    _buildAnimController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
+    _inputFocusNode.addListener(() => setState(() {}));
   }
 
   @override
@@ -79,13 +121,21 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
     _inputController.dispose();
     _inputFocusNode.dispose();
     _scrollController.dispose();
-    _buildAnimController.dispose();
     super.dispose();
   }
 
-  // ─────────────────────────────────────────────────────────────
-  //  Upload helpers
-  // ─────────────────────────────────────────────────────────────
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent + 200,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
   String _getMimeType(String name) {
     final ext = name.split('.').last.toLowerCase();
     const map = {
@@ -110,12 +160,19 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
     return map[ext] ?? 'application/octet-stream';
   }
 
+  // ─────────────────────────────────────────────────────────────
+  //  File attach
+  // ─────────────────────────────────────────────────────────────
   Future<void> _handleAttachType(String type) async {
     final user = Provider.of<UserModel?>(context, listen: false);
 
-    // Pro check for non-text types
-    if ((type == 'pdf' || type == 'image' || type == 'audio' || type == 'video' || type == 'slides') &&
-        user != null && !user.isPro) {
+    if ((type == 'pdf' ||
+            type == 'image' ||
+            type == 'audio' ||
+            type == 'video' ||
+            type == 'slides') &&
+        user != null &&
+        !user.isPro) {
       showDialog(
         context: context,
         builder: (_) => UpgradeDialog(featureName: _typeLabel(type)),
@@ -124,7 +181,6 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
     }
 
     if (type == 'link') {
-      // Already handled via input box (user types URL)
       setState(() {
         _uploadType = 'link';
         _fileName = null;
@@ -158,7 +214,6 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
       allowedExtensions: allowed,
       withData: true,
     );
-
     if (result != null && result.files.single.bytes != null) {
       final file = result.files.single;
       setState(() {
@@ -183,15 +238,16 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
   }
 
   // ─────────────────────────────────────────────────────────────
-  //  Main generate flow
+  //  Generate
   // ─────────────────────────────────────────────────────────────
   Future<void> _generate() async {
     final raw = _inputController.text.trim();
     if (raw.isEmpty && _fileBytes == null) {
-      setState(() => _errorMessage = 'Type a topic or attach a file to start.');
+      setState(
+          () => _errorMessage = 'Type a topic or attach a file to start.');
       return;
     }
-    if (_screenState != _ScreenState.idle) return;
+    if (_isBuilding) return;
 
     final user = Provider.of<UserModel?>(context, listen: false);
     if (user == null) {
@@ -207,33 +263,40 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
       showDialog(
         context: context,
         builder: (_) => UpgradeDialog(
-          featureName: action == 'upload' ? 'Lifetime Upload Limit' : 'Daily Limit',
+          featureName:
+              action == 'upload' ? 'Lifetime Upload Limit' : 'Daily Limit',
         ),
       );
       return;
     }
 
+    _packTitle = raw.isEmpty ? (_fileName ?? 'Uploaded Content') : raw;
+    _packSource = _fileBytes != null
+        ? (_fileName ?? 'File')
+        : 'Typed / pasted content';
+
+    final userText =
+        raw.isNotEmpty ? raw : '📎 Processing: ${_fileName ?? 'file'}';
+
     setState(() {
-      _screenState = _ScreenState.building;
+      _messages.add(_WebChatMsg.user(userText));
+      _messages.add(_WebChatMsg.thinking());
+      _isBuilding = true;
       _buildStepIndex = 0;
       _errorMessage = '';
-      _packTitle = raw.isEmpty ? (_fileName ?? 'Uploaded Content') : raw;
-      _packSource =
-          _fileBytes != null ? (_fileName ?? 'File') : 'Typed / pasted content';
     });
+    _scrollToBottom();
 
     _cancelToken = CancellationToken();
     final cancelToken = _cancelToken!;
-
-    // Begin step animation loop
     _animateBuildSteps(cancelToken);
+    _inputController.clear();
+    _inputFocusNode.unfocus();
 
     try {
       if (_fileBytes != null) {
-        // File-based extraction
         final extractionService =
             Provider.of<ContentExtractionService>(context, listen: false);
-
         String extractType;
         if (_uploadType == 'image') {
           extractType = 'image';
@@ -255,12 +318,11 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
         );
         if (!cancelToken.isCancelled && mounted) {
           await usageService.recordAction(user.uid, action);
-          _extractionResult = result;
-          setState(() => _screenState = _ScreenState.done);
+          await _generateFinalResults(result, user.uid, cancelToken);
         }
       } else if (_uploadType == 'link' ||
-          (raw.startsWith('http://') || raw.startsWith('https://'))) {
-        // Link-based extraction
+          raw.startsWith('http://') ||
+          raw.startsWith('https://')) {
         final extractionService =
             Provider.of<ContentExtractionService>(context, listen: false);
         final result = await extractionService.extractContent(
@@ -272,34 +334,30 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
         );
         if (!cancelToken.isCancelled && mounted) {
           await usageService.recordAction(user.uid, action);
-          _extractionResult = result;
-          setState(() => _screenState = _ScreenState.done);
+          await _generateFinalResults(result, user.uid, cancelToken);
         }
       } else {
-        // Topic or text
+        // Capture all services before any await to satisfy use_build_context_synchronously
         final aiService =
             Provider.of<EnhancedAIService>(context, listen: false);
         final localDb =
             Provider.of<LocalDatabaseService>(context, listen: false);
+        final extractionService =
+            Provider.of<ContentExtractionService>(context, listen: false);
         await usageService.recordAction(user.uid, action);
 
         if (raw.split(' ').length <= 8 && !raw.contains('\n')) {
-          // Treat as topic
           final folderId = await aiService.generateFromTopic(
             topic: raw,
             userId: user.uid,
             localDb: localDb,
-            depth: 'intermediate',
-            cardCount: 20,
+            depth: _selectedDifficulty,
+            cardCount: _selectedCount,
           );
           if (!cancelToken.isCancelled && mounted) {
-            _resultFolderId = folderId;
-            setState(() => _screenState = _ScreenState.done);
+            _showResult(folderId);
           }
         } else {
-          // Treat as pasted text
-          final extractionService =
-              Provider.of<ContentExtractionService>(context, listen: false);
           final result = await extractionService.extractContent(
             type: 'text',
             input: raw,
@@ -308,55 +366,108 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
             onProgress: (_) {},
           );
           if (!cancelToken.isCancelled && mounted) {
-            _extractionResult = result;
-            setState(() => _screenState = _ScreenState.done);
+            await _generateFinalResults(result, user.uid, cancelToken);
           }
         }
       }
     } catch (e) {
       if (!cancelToken.isCancelled && mounted) {
         setState(() {
-          _screenState = _ScreenState.idle;
+          _isBuilding = false;
+          _messages
+              .removeWhere((m) => m.type == _WebMsgType.thinking);
           _errorMessage = e.toString().replaceFirst('Exception: ', '');
         });
       }
     }
   }
 
+  Future<void> _generateFinalResults(ExtractionResult result, String userId,
+      CancellationToken cancelToken) async {
+    try {
+      final aiService = Provider.of<EnhancedAIService>(context, listen: false);
+      final localDb = Provider.of<LocalDatabaseService>(context, listen: false);
+
+      if (mounted) setState(() => _buildStepIndex = 3);
+
+      final folderId = await aiService.generateAndStoreOutputs(
+        text: result.text,
+        title: _packTitle,
+        requestedOutputs: ['summary', 'quiz', 'flashcards'],
+        userId: userId,
+        localDb: localDb,
+        difficulty: _selectedDifficulty,
+        questionCount: _selectedCount,
+        cardCount: _selectedCount,
+        onProgress: (message) {
+          developer.log('Generation progress: $message',
+              name: 'CreateContentScreenWeb');
+        },
+        cancelToken: cancelToken,
+      );
+
+      if (!cancelToken.isCancelled && mounted) {
+        _showResult(folderId);
+      }
+    } catch (e) {
+      if (!cancelToken.isCancelled && mounted) {
+        setState(() {
+          _isBuilding = false;
+          _messages
+              .removeWhere((m) => m.type == _WebMsgType.thinking);
+          _errorMessage = 'Failed to generate study materials: $e';
+        });
+      }
+    }
+  }
+
+  void _showResult(String folderId) {
+    setState(() {
+      _isBuilding = false;
+      _messages.removeWhere((m) => m.type == _WebMsgType.thinking);
+      _messages.add(_WebChatMsg.result(
+        packTitle: _packTitle,
+        packSource: _packSource,
+        folderId: folderId,
+      ));
+      _fileName = null;
+      _fileBytes = null;
+      _uploadType = '';
+    });
+    _scrollToBottom();
+  }
+
   void _animateBuildSteps(CancellationToken cancelToken) async {
     for (int i = 0; i < _buildSteps.length; i++) {
       if (cancelToken.isCancelled || !mounted) return;
-      if (_screenState != _ScreenState.building) return;
+      if (!_isBuilding) return;
       await Future.delayed(const Duration(milliseconds: 900));
-      if (mounted && _screenState == _ScreenState.building) {
+      if (mounted && _isBuilding) {
         setState(() => _buildStepIndex = i);
       }
     }
   }
 
-  void _navigateToStudyPack() {
-    if (_resultFolderId.isNotEmpty) {
-      context.push('/library/results-view/$_resultFolderId');
-    } else if (_extractionResult != null) {
-      ExtractionResultCache.set(_extractionResult!);
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        if (mounted) context.push('/create/extraction-view');
-      });
+  void _navigateToStudyPack(String folderId) {
+    if (folderId.isNotEmpty) {
+      context.pushNamed('results-view',
+          pathParameters: {'folderId': folderId});
     }
   }
 
   void _reset() {
     _cancelToken?.cancel();
     setState(() {
-      _screenState = _ScreenState.idle;
+      _messages.clear();
+      _isBuilding = false;
       _buildStepIndex = 0;
       _errorMessage = '';
       _fileName = null;
       _fileBytes = null;
       _mimeType = null;
       _uploadType = '';
-      _resultFolderId = '';
-      _extractionResult = null;
+      _packTitle = '';
+      _packSource = '';
     });
     _inputController.clear();
   }
@@ -366,52 +477,25 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
   // ─────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: WebColors.background,
-      body: Stack(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: Column(
         children: [
-          _buildBackground(),
-          SafeArea(
-            child: Column(
+          _buildTopBar(),
+          Expanded(
+            child: Row(
               children: [
-                _buildTopBar(),
                 Expanded(
-                  child: Center(
-                    child: SingleChildScrollView(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 32),
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 740),
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 500),
-                          transitionBuilder: (child, anim) => FadeTransition(
-                            opacity: anim,
-                            child: SlideTransition(
-                              position: Tween<Offset>(
-                                begin: const Offset(0, 0.06),
-                                end: Offset.zero,
-                              ).animate(CurvedAnimation(
-                                parent: anim,
-                                curve: Curves.easeOutCubic,
-                              )),
-                              child: child,
-                            ),
-                          ),
-                          child: _screenState == _ScreenState.idle
-                              ? _buildIdleContent()
-                              : _screenState == _ScreenState.building
-                                  ? _buildBuildingCard()
-                                  : _buildDoneCard(),
-                        ),
-                      ),
-                    ),
-                  ),
+                  child: _messages.isEmpty
+                      ? _buildIdleContent()
+                      : _buildChatArea(),
                 ),
               ],
             ),
           ),
           if (_errorMessage.isNotEmpty) _buildErrorBanner(),
+          _buildBottomInputBar(),
         ],
       ),
     );
@@ -421,200 +505,478 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
   //  Top bar
   // ─────────────────────────────────────────────────────────────
   Widget _buildTopBar() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final user = Provider.of<UserModel?>(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+      height: 62,
+      padding: const EdgeInsets.symmetric(horizontal: 28),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        border: Border(
+          bottom: BorderSide(color: colorScheme.primary.withValues(alpha: 0.1)),
+        ),
+      ),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Row(
-              children: [
-                const Icon(Icons.arrow_back_rounded,
-                    color: WebColors.textSecondary, size: 20),
-                const SizedBox(width: 10),
-                Text(
-                  'Back',
-                  style: GoogleFonts.outfit(
-                    color: WebColors.textSecondary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
-                ),
-              ],
+          ShaderMask(
+            shaderCallback: (b) => LinearGradient(
+              colors: [colorScheme.primary, colorScheme.secondary],
+            ).createShader(b),
+            child: Text(
+              'SumQuiz',
+              style: GoogleFonts.outfit(
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              'Create',
+              style: GoogleFonts.outfit(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: colorScheme.primary),
             ),
           ),
           const Spacer(),
-          _buildProBadge(),
+          if (_messages.isNotEmpty)
+            TextButton.icon(
+              onPressed: _reset,
+              icon: Icon(Icons.add_rounded,
+                  size: 16, color: colorScheme.primary),
+              label: Text(
+                'New Session',
+                style: GoogleFonts.outfit(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.primary),
+              ),
+            ),
+          const SizedBox(width: 12),
+          _buildProBadge(user),
         ],
       ),
     );
   }
 
-  Widget _buildProBadge() {
-    final user = Provider.of<UserModel?>(context);
+  Widget _buildProBadge(UserModel? user) {
     if (user?.isPro ?? false) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: WebColors.primary.withValues(alpha: 0.08),
+          color: _primaryColor.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(100),
-          border: Border.all(
-              color: WebColors.primary.withValues(alpha: 0.2)),
+          border:
+              Border.all(color: _primaryColor.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.verified_rounded,
-                color: WebColors.primary, size: 15),
-            const SizedBox(width: 6),
+            Icon(Icons.verified_rounded,
+                color: _primaryColor, size: 14),
+            const SizedBox(width: 5),
             Text(
               'PRO',
               style: GoogleFonts.outfit(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: WebColors.primary,
-                letterSpacing: 1,
-              ),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  color: _primaryColor,
+                  letterSpacing: 0.8),
             ),
           ],
         ),
       );
     }
-    return ElevatedButton.icon(
-      onPressed: () => context.push('/settings/subscription'),
-      icon: const Icon(Icons.auto_awesome_rounded, size: 16),
-      label: const Text('Upgrade to Pro'),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        textStyle:
-            GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w700),
+    return GestureDetector(
+      onTap: () => context.push('/settings/subscription'),
+      child: Container(
+        padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [_primaryColor, _accentColor],
+          ),
+          borderRadius: BorderRadius.circular(100),
+        ),
+        child: Text(
+          'Upgrade to Pro',
+          style: GoogleFonts.outfit(
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }
 
   // ─────────────────────────────────────────────────────────────
-  //  IDLE — main input
+  //  IDLE state
   // ─────────────────────────────────────────────────────────────
   Widget _buildIdleContent() {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 680),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _buildHero()
+                  .animate()
+                  .fadeIn(duration: 700.ms)
+                  .slideY(begin: 0.06, end: 0, curve: Curves.easeOutCubic),
+              const SizedBox(height: 44),
+              _buildSourceRow()
+                  .animate()
+                  .fadeIn(delay: 200.ms, duration: 500.ms),
+              const SizedBox(height: 20),
+              _buildSuggestionChips()
+                  .animate()
+                  .fadeIn(delay: 320.ms, duration: 500.ms),
+              const SizedBox(height: 36),
+              _buildAINote()
+                  .animate()
+                  .fadeIn(delay: 440.ms, duration: 500.ms),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHero() {
     return Column(
-      key: const ValueKey('idle'),
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 40),
-        _buildHeroText(),
-        const SizedBox(height: 40),
-        _buildChatInputBox(),
-        const SizedBox(height: 24),
-        _buildQuickTopics(),
-        const SizedBox(height: 48),
-        _buildAINote(),
+        RichText(
+          textAlign: TextAlign.center,
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: 'Turn anything into a\n',
+                style: GoogleFonts.outfit(
+                  fontSize: 46,
+                  fontWeight: FontWeight.w900,
+                  color: _textPrimary,
+                  height: 1.15,
+                ),
+              ),
+              WidgetSpan(
+                child: ShaderMask(
+                  shaderCallback: (b) => LinearGradient(
+                    colors: [_primaryColor, _accentColor],
+                  ).createShader(b),
+                  child: Text(
+                    'study system',
+                    style: GoogleFonts.outfit(
+                      fontSize: 46,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      height: 1.15,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          'Type a topic, paste notes, or upload files — AI generates\na complete study pack with summary, quiz and flashcards.',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.outfit(
+            fontSize: 16,
+            color: _textSecondary,
+            height: 1.6,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildHeroText() {
+  Widget _buildSourceRow() {
+    final sources = [
+      (Icons.picture_as_pdf_rounded, 'PDF', 'pdf'),
+      (Icons.description_outlined, 'Notes', 'image'),
+      (Icons.link_rounded, 'Link', 'link'),
+      (Icons.mic_none_rounded, 'Audio', 'audio'),
+      (Icons.videocam_outlined, 'Video', 'video'),
+    ];
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ShaderMask(
-          shaderCallback: (bounds) =>
-              WebColors.HeroGradient.createShader(bounds),
-          child: Text(
-            'Turn anything into\na study system',
-            style: GoogleFonts.outfit(
-              fontSize: 52,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-              letterSpacing: -1.5,
-              height: 1.1,
-            ),
+        Text(
+          'ADD SOURCE',
+          style: GoogleFonts.outfit(
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            color: _textSecondary.withValues(alpha: 0.5),
+            letterSpacing: 1.5,
           ),
         ),
-        const SizedBox(height: 16),
-        Text(
-          'Type a topic, paste notes, or upload files — AI does the rest.',
-          style: GoogleFonts.outfit(
-            fontSize: 18,
-            color: WebColors.textSecondary,
-            height: 1.5,
-          ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: sources
+              .map(
+                (s) => Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: _buildSourceButton(s.$1, s.$2, s.$3),
+                ),
+              )
+              .toList(),
         ),
       ],
-    ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1, end: 0);
+    );
   }
 
-  Widget _buildChatInputBox() {
-    final hasFile = _fileName != null;
-    return Container(
-      decoration: WebColors.glassDecoration(
-        blur: 24,
-        opacity: 0.1,
-        color: Colors.white,
-        borderRadius: 24,
-      ).copyWith(
-        boxShadow: WebColors.cardShadow,
+  Widget _buildSourceButton(IconData icon, String label, String type) {
+    return GestureDetector(
+      onTap: () => _handleAttachType(type),
+      child: Container(
+        padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: _surfaceRaised,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _primaryColor.withValues(alpha: 0.15)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: _primaryColor, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: GoogleFonts.outfit(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: _textPrimary,
+              ),
+            ),
+          ],
+        ),
       ),
-      child: Column(
+    );
+  }
+
+  Widget _buildSuggestionChips() {
+    final chips = [
+      'Generate exam',
+      'Create flashcards',
+      'Summarize notes',
+      'Explain simply',
+      'Mind map',
+    ];
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 8,
+      runSpacing: 8,
+      children: chips
+          .map(
+            (label) => GestureDetector(
+              onTap: () {
+                _inputController.text = label;
+                _inputFocusNode.requestFocus();
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: _primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(100),
+                  border: Border.all(
+                      color: _primaryColor.withValues(alpha: 0.25)),
+                ),
+                child: Text(
+                  label,
+                  style: GoogleFonts.outfit(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: _primaryColor,
+                  ),
+                ),
+              ),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  Widget _buildAINote() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: _surfaceColor,
+        borderRadius: BorderRadius.circular(12),
+        border:
+            Border.all(color: _primaryColor.withValues(alpha: 0.1)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          if (hasFile) _buildFileChip(),
-          TextField(
-            controller: _inputController,
-            focusNode: _inputFocusNode,
-            maxLines: 5,
-            minLines: 3,
+          Icon(Icons.info_outline_rounded,
+              size: 15,
+              color: _textSecondary.withValues(alpha: 0.5)),
+          const SizedBox(width: 10),
+          Text(
+            'AI-generated — always verify with trusted sources.',
             style: GoogleFonts.outfit(
-              fontSize: 17,
-              color: WebColors.textPrimary,
-              height: 1.6,
-            ),
-            decoration: InputDecoration(
-              hintText: 'Type a topic or paste your material here…',
-              hintStyle: GoogleFonts.outfit(
-                color: WebColors.textTertiary,
-                fontSize: 17,
-              ),
-              border: InputBorder.none,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            ),
-            onChanged: (v) {
-              if (_errorMessage.isNotEmpty) {
-                setState(() => _errorMessage = '');
-              }
-            },
+                fontSize: 12,
+                color: _textSecondary.withValues(alpha: 0.6)),
           ),
+        ],
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  //  Chat area
+  // ─────────────────────────────────────────────────────────────
+  Widget _buildChatArea() {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 760),
+        child: ListView.builder(
+          controller: _scrollController,
+          padding:
+              const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          itemCount: _messages.length,
+          itemBuilder: (context, index) {
+            final msg = _messages[index];
+            switch (msg.type) {
+              case _WebMsgType.user:
+                return _buildUserBubble(msg);
+              case _WebMsgType.thinking:
+                return _buildAIThinkingBubble();
+              case _WebMsgType.result:
+                return _buildAIResultCard(msg);
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserBubble(_WebChatMsg msg) {
+    final hour = msg.sentAt?.hour.toString().padLeft(2, '0') ?? '';
+    final min = msg.sentAt?.minute.toString().padLeft(2, '0') ?? '';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            constraints: const BoxConstraints(maxWidth: 480),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             decoration: BoxDecoration(
-              color: WebColors.background,
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(20),
+              color: _userBubble,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(4),
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
               ),
-              border: Border(
-                  top: BorderSide(color: WebColors.border, width: 1)),
+              border: Border.all(
+                  color: _primaryColor.withValues(alpha: 0.3)),
             ),
-            child: Row(
+            child: Text(
+              msg.userText ?? '',
+              style: GoogleFonts.outfit(
+                fontSize: 15,
+                color: _textPrimary,
+                height: 1.5,
+              ),
+            ),
+          ).animate().fadeIn(duration: 300.ms).slideX(begin: 0.06, end: 0),
+          const SizedBox(height: 5),
+          Text(
+            'Sent $hour:$min',
+            style: GoogleFonts.outfit(
+                fontSize: 11,
+                color: _textSecondary.withValues(alpha: 0.5)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAIThinkingBubble() {
+    final step = _buildStepIndex < _buildSteps.length
+        ? _buildSteps[_buildStepIndex]
+        : 'Finalizing…';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildAIAvatar(),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Attach button
-                _buildAttachButton(),
-                const Spacer(),
-                // Generate button
-                ElevatedButton.icon(
-                  onPressed: _generate,
-                  icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-                  label: const Text('Generate'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: WebColors.accent,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 32, vertical: 20),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    textStyle: GoogleFonts.outfit(
-                        fontSize: 16, fontWeight: FontWeight.w800),
-                    elevation: 0,
+                ShaderMask(
+                  shaderCallback: (b) => LinearGradient(
+                    colors: [_accentColor, _primaryColor],
+                  ).createShader(b),
+                  child: Text(
+                    step,
+                    style: GoogleFonts.outfit(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                )
+                    .animate(onPlay: (c) => c.repeat())
+                    .shimmer(
+                      duration: 1800.ms,
+                      color: _accentColor.withValues(alpha: 0.35),
+                    ),
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value:
+                        (_buildStepIndex + 1) / _buildSteps.length,
+                    minHeight: 3,
+                    backgroundColor: _surfaceRaised,
+                    valueColor: AlwaysStoppedAnimation<Color>(_primaryColor),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                GestureDetector(
+                  onTap: () {
+                    _cancelToken?.cancel();
+                    setState(() {
+                      _isBuilding = false;
+                      _messages.removeWhere(
+                          (m) => m.type == _WebMsgType.thinking);
+                    });
+                  },
+                  child: Text(
+                    'Cancel generation',
+                    style: GoogleFonts.outfit(
+                      fontSize: 12,
+                      color: _textSecondary.withValues(alpha: 0.5),
+                      decoration: TextDecoration.underline,
+                      decorationColor:
+                          _textSecondary.withValues(alpha: 0.3),
+                    ),
                   ),
                 ),
               ],
@@ -622,619 +984,540 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 500.ms, delay: 100.ms).slideY(begin: 0.05, end: 0);
+    ).animate().fadeIn(duration: 400.ms);
   }
 
-  Widget _buildAttachButton() {
-    return PopupMenuButton<String>(
-      onSelected: _handleAttachType,
-      tooltip: 'Attach file or link',
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      offset: const Offset(0, -240),
-      itemBuilder: (_) => [
-        _attachMenuItem(Icons.picture_as_pdf_rounded, 'PDF / Document', 'pdf', false),
-        _attachMenuItem(Icons.slideshow_rounded, 'Slides (PPT)', 'slides', false),
-        _attachMenuItem(Icons.image_outlined, 'Image / Scan', 'image', false),
-        _attachMenuItem(Icons.mic_none_rounded, 'Audio', 'audio', false),
-        _attachMenuItem(Icons.videocam_outlined, 'Video', 'video', false),
-        _attachMenuItem(Icons.link_rounded, 'Paste URL', 'link', true),
-      ],
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: WebColors.border),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.add_circle_outline_rounded,
-                size: 18, color: WebColors.textSecondary),
-            const SizedBox(width: 8),
-            Text(
-              'Attach',
-              style: GoogleFonts.outfit(
-                fontSize: 14,
-                color: WebColors.textSecondary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  PopupMenuItem<String> _attachMenuItem(
-      IconData icon, String label, String value, bool isFree) {
-    return PopupMenuItem<String>(
-      value: value,
+  Widget _buildAIResultCard(_WebChatMsg msg) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: WebColors.primary),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: GoogleFonts.outfit(fontSize: 14, color: WebColors.textPrimary),
-          ),
-          if (!isFree) ...[
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: WebColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                'PRO',
-                style: GoogleFonts.outfit(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w900,
-                  color: WebColors.primary,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFileChip() {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: WebColors.primaryLight,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.attach_file_rounded, size: 16, color: WebColors.primary),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              _fileName ?? '',
-              style: GoogleFonts.outfit(
-                fontSize: 13,
-                color: WebColors.primary,
-                fontWeight: FontWeight.w600,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: () => setState(() {
-              _fileName = null;
-              _fileBytes = null;
-              _uploadType = '';
-            }),
-            child: const Icon(Icons.close_rounded, size: 16, color: WebColors.primary),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickTopics() {
-    const topics = [
-      'Photosynthesis',
-      'Mitosis',
-      'Algebra',
-      'World War II',
-      'Newton\'s Laws',
-      'Cell Biology',
-    ];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'QUICK TOPICS',
-          style: GoogleFonts.outfit(
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-            color: WebColors.textTertiary,
-            letterSpacing: 1.5,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: topics.asMap().entries.map((entry) {
-            return GestureDetector(
-              onTap: () {
-                _inputController.text = entry.value;
-                _inputFocusNode.requestFocus();
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-                decoration: WebColors.glassDecoration(
-                  blur: 10,
-                  opacity: 0.05,
-                  borderRadius: 100,
-                  color: Colors.white,
-                ).copyWith(
-                  boxShadow: WebColors.subtleShadow,
-                ),
-                child: Text(
-                  entry.value,
-                  style: GoogleFonts.outfit(
-                    fontSize: 13,
-                    color: WebColors.textSecondary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            )
-                .animate(delay: (entry.key * 40).ms)
-                .fadeIn()
-                .scale(begin: const Offset(0.9, 0.9));
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAINote() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: WebColors.border),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.info_outline_rounded,
-              size: 18, color: WebColors.textTertiary),
-          const SizedBox(width: 12),
+          _buildAIAvatar(),
+          const SizedBox(width: 14),
           Expanded(
-            child: Text(
-              'AI-generated content — always verify with trusted sources.',
-              style: GoogleFonts.outfit(
-                fontSize: 13,
-                color: WebColors.textTertiary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  //  BUILDING — animated progress card
-  // ─────────────────────────────────────────────────────────────
-  Widget _buildBuildingCard() {
-    return Column(
-      key: const ValueKey('building'),
-      children: [
-        const SizedBox(height: 60),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(40),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: WebColors.border),
-            boxShadow: WebColors.cardShadow,
-          ),
-          child: Column(
-            children: [
-              // Animated icon
-              ShaderMask(
-                shaderCallback: (b) =>
-                    WebColors.HeroGradient.createShader(b),
-                child: const Icon(Icons.auto_awesome_rounded,
-                    size: 56, color: Colors.white),
-              )
-                  .animate(onPlay: (c) => c.repeat(reverse: true))
-                  .scale(
-                    begin: const Offset(1.0, 1.0),
-                    end: const Offset(1.12, 1.12),
-                    duration: 1200.ms,
-                    curve: Curves.easeInOut,
-                  ),
-              const SizedBox(height: 32),
-              Text(
-                'Building your study pack…',
-                style: GoogleFonts.outfit(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w800,
-                  color: WebColors.textPrimary,
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: _surfaceColor,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(4),
+                  topRight: Radius.circular(20),
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
                 ),
-              ),
-              const SizedBox(height: 32),
-              // Steps
-              ..._buildSteps.asMap().entries.map((e) {
-                final done = e.key < _buildStepIndex;
-                final active = e.key == _buildStepIndex;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: AnimatedOpacity(
-                    opacity: active || done ? 1.0 : 0.3,
-                    duration: const Duration(milliseconds: 400),
-                    child: Row(
-                      children: [
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: done
-                                ? const Color(0xFF22C55E)
-                                : active
-                                    ? WebColors.primary
-                                    : WebColors.background,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: done
-                                  ? const Color(0xFF22C55E)
-                                  : active
-                                      ? WebColors.primary
-                                      : WebColors.border,
-                            ),
-                          ),
-                          child: Icon(
-                            done
-                                ? Icons.check_rounded
-                                : active
-                                    ? Icons.radio_button_checked_rounded
-                                    : Icons.radio_button_unchecked_rounded,
-                            size: 16,
-                            color: done || active ? Colors.white : WebColors.border,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Text(
-                          e.value,
-                          style: GoogleFonts.outfit(
-                            fontSize: 16,
-                            fontWeight: active
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                            color: done
-                                ? const Color(0xFF22C55E)
-                                : active
-                                    ? WebColors.textPrimary
-                                    : WebColors.textTertiary,
-                          ),
-                        ),
-                        if (active) ...[
-                          const SizedBox(width: 10),
-                          const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: WebColors.primary,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                );
-              }),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () {
-                  _cancelToken?.cancel();
-                  _reset();
-                },
-                child: Text(
-                  'Cancel',
-                  style: GoogleFonts.outfit(color: WebColors.textTertiary),
-                ),
-              ),
-            ],
-          ),
-        ).animate().fadeIn(duration: 400.ms).scale(
-              begin: const Offset(0.97, 0.97),
-              end: const Offset(1, 1),
-            ),
-      ],
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  //  DONE — study pack card
-  // ─────────────────────────────────────────────────────────────
-  Widget _buildDoneCard() {
-    return Column(
-      key: const ValueKey('done'),
-      children: [
-        const SizedBox(height: 40),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(40),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: WebColors.border),
-            boxShadow: WebColors.cardShadow,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      gradient: WebColors.HeroGradient,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Icon(Icons.menu_book_rounded,
-                        color: Colors.white, size: 28),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Study Pack Ready!',
-                          style: GoogleFonts.outfit(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                            color: WebColors.primary,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                        Text(
-                          _packTitle,
-                          style: GoogleFonts.outfit(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: WebColors.textPrimary,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
+                border: Border.all(
+                    color: _primaryColor.withValues(alpha: 0.25)),
+                boxShadow: [
+                  BoxShadow(
+                    color: _primaryColor.withValues(alpha: 0.08),
+                    blurRadius: 30,
+                    offset: Offset(0, 8),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Source: $_packSource',
-                style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  color: WebColors.textTertiary,
-                ),
-              ),
-              const SizedBox(height: 28),
-              // Contents
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: WebColors.background,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: WebColors.border),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'CONTAINS',
-                      style: GoogleFonts.outfit(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: WebColors.textTertiary,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    _packItem(Icons.text_snippet_outlined, 'Summary', const Color(0xFF6366F1)),
-                    _packItem(Icons.style_rounded, 'Flashcards', const Color(0xFF8B5CF6)),
-                    _packItem(Icons.quiz_outlined, 'Quiz', const Color(0xFF10B981)),
-                    _packItem(Icons.description_outlined, 'Exam (if applicable)', const Color(0xFFEC4899)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 28),
-              // Progress bar
-              Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Progress',
-                        style: GoogleFonts.outfit(
-                          fontSize: 13,
-                          color: WebColors.textSecondary,
-                          fontWeight: FontWeight.w600,
-                        ),
+                  // Badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _primaryColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'GENERATED CONTENT',
+                      style: GoogleFonts.outfit(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        color: _primaryColor,
+                        letterSpacing: 1.2,
                       ),
-                      Text(
-                        '0%',
-                        style: GoogleFonts.outfit(
-                          fontSize: 13,
-                          color: WebColors.textTertiary,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    '📚 ${msg.packTitle ?? ''}',
+                    style: GoogleFonts.outfit(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: _textPrimary,
+                      height: 1.3,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 14),
+                  // Content badges
+                  Row(
+                    children: [
+                      _contentBadge('📄', 'Summary'),
+                      const SizedBox(width: 8),
+                      _contentBadge('❓', 'Quiz'),
+                      const SizedBox(width: 8),
+                      _contentBadge('🗂️', 'Flashcards'),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(Icons.info_outline_rounded,
+                          size: 13, color: _textSecondary),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Based on ${msg.packSource ?? ''}',
+                          style: GoogleFonts.outfit(
+                              fontSize: 12, color: _textSecondary),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(100),
-                    child: LinearProgressIndicator(
-                      value: 0,
-                      backgroundColor: WebColors.border,
-                      color: WebColors.primary,
-                      minHeight: 6,
-                    ),
+                  const SizedBox(height: 20),
+                  // CTA row
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: SizedBox(
+                          height: 46,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  _primaryColor,
+                                  Color(0xFF9333EA)
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: ElevatedButton.icon(
+                              onPressed: () => _navigateToStudyPack(
+                                  msg.folderId ?? ''),
+                              icon: Icon(
+                                  Icons.play_arrow_rounded,
+                                  size: 18),
+                              label: Text(
+                                'Start Studying',
+                                style: GoogleFonts.outfit(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w800),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                foregroundColor: Colors.white,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(12)),
+                                elevation: 0,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: SizedBox(
+                          height: 46,
+                          child: OutlinedButton.icon(
+                            onPressed: () => context.go('/library'),
+                            icon: Icon(
+                                Icons.bookmark_border_rounded,
+                                size: 16),
+                            label: Text(
+                              'Save to Library',
+                              style: GoogleFonts.outfit(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: _primaryColor,
+                              side: BorderSide(
+                                  color: _primaryColor
+                                      .withValues(alpha: 0.5)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.circular(12)),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 14),
+                  _buildFollowUpChips(),
                 ],
               ),
-              const SizedBox(height: 32),
-              // CTAs
-              Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: ElevatedButton.icon(
-                      onPressed: _navigateToStudyPack,
-                      icon: const Icon(Icons.play_arrow_rounded),
-                      label: const Text('Start Studying'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: WebColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
-                        textStyle: GoogleFonts.outfit(
-                            fontSize: 16, fontWeight: FontWeight.w700),
-                        elevation: 0,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: OutlinedButton.icon(
-                      onPressed: _navigateToStudyPack,
-                      icon: const Icon(Icons.bookmark_border_rounded),
-                      label: const Text('Save to Library'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: WebColors.primary,
-                        side: const BorderSide(color: WebColors.primary),
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
-                        textStyle: GoogleFonts.outfit(
-                            fontSize: 15, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Center(
-                child: TextButton.icon(
-                  onPressed: _reset,
-                  icon: const Icon(Icons.refresh_rounded, size: 16),
-                  label: const Text('Create another pack'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: WebColors.textTertiary,
-                    textStyle: GoogleFonts.outfit(fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.07, end: 0);
+  }
+
+  Widget _buildFollowUpChips() {
+    final chips = ['Make it harder', 'Add more flashcards', 'Simplify'];
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: chips
+          .map(
+            (label) => GestureDetector(
+              onTap: () {
+                _inputController.text = label;
+                _inputFocusNode.requestFocus();
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: _accentColor.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(100),
+                  border: Border.all(
+                      color: _accentColor.withValues(alpha: 0.2)),
+                ),
+                child: Text(
+                  label,
+                  style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _accentColor,
                   ),
                 ),
               ),
-            ],
-          ),
-        )
-            .animate()
-            .fadeIn(duration: 500.ms)
-            .scale(begin: const Offset(0.96, 0.96), end: const Offset(1, 1)),
-      ],
+            ),
+          )
+          .toList(),
     );
   }
 
-  Widget _packItem(IconData icon, String label, Color color) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+  Widget _contentBadge(String emoji, String label) {
+    return Container(
+      padding:
+          const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: _surfaceRaised,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _primaryColor.withValues(alpha: 0.2)),
+      ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 16, color: color),
-          ),
-          const SizedBox(width: 12),
+          Text(emoji, style: TextStyle(fontSize: 12)),
+          const SizedBox(width: 5),
           Text(
             label,
             style: GoogleFonts.outfit(
-              fontSize: 15,
-              color: WebColors.textSecondary,
-              fontWeight: FontWeight.w500,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: _textPrimary.withValues(alpha: 0.85),
             ),
           ),
-          const Spacer(),
-          const Icon(Icons.check_circle_rounded,
-              size: 18, color: Color(0xFF22C55E)),
         ],
       ),
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  //  Background
-  // ─────────────────────────────────────────────────────────────
-  Widget _buildBackground() {
+  Widget _buildAIAvatar() {
     return Container(
-      decoration: const BoxDecoration(color: WebColors.background),
-      child: Stack(
-        children: [
-          Positioned(
-            top: -200,
-            right: -200,
-            child: Container(
-              width: 600,
-              height: 600,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(colors: [
-                  WebColors.primary.withValues(alpha: 0.07),
-                  Colors.transparent,
-                ]),
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [_primaryColor, _accentColor],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(Icons.auto_awesome_rounded,
+          color: Colors.white, size: 18),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  //  Bottom input bar
+  // ─────────────────────────────────────────────────────────────
+  Widget _buildBottomInputBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: _surfaceColor,
+        border: Border(
+          top: BorderSide(color: _primaryColor.withValues(alpha: 0.1)),
+        ),
+      ),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 760),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Source type row
+              Padding(
+                padding:
+                    const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _sourceChip(Icons.picture_as_pdf_rounded, 'PDF',
+                          'pdf'),
+                      _sourceChip(Icons.description_outlined, 'Notes',
+                          'image'),
+                      _sourceChip(Icons.link_rounded, 'Link', 'link'),
+                      _sourceChip(
+                          Icons.mic_none_rounded, 'Audio', 'audio'),
+                      _sourceChip(
+                          Icons.videocam_outlined, 'Video', 'video'),
+                      const SizedBox(width: 8),
+                      Container(width: 1, height: 20, color: _primaryColor.withValues(alpha: 0.2)),
+                      const SizedBox(width: 12),
+                      _difficultyChip('Beginner', 'beginner'),
+                      _difficultyChip('Intermediate', 'intermediate'),
+                      _difficultyChip('Advanced', 'advanced'),
+                      const SizedBox(width: 12),
+                      Container(width: 1, height: 20, color: _primaryColor.withValues(alpha: 0.2)),
+                      const SizedBox(width: 12),
+                      _countChip(10),
+                      _countChip(15),
+                      _countChip(20),
+                      _countChip(30),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          )
-              .animate(onPlay: (c) => c.repeat(reverse: true))
-              .moveY(begin: 0, end: 80, duration: 10.seconds),
-          Positioned(
-            bottom: -150,
-            left: -100,
-            child: Container(
-              width: 500,
-              height: 500,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(colors: [
-                  const Color(0xFFC026D3).withValues(alpha: 0.05),
-                  Colors.transparent,
-                ]),
+              if (_fileName != null) _buildAttachedFileChip(),
+              // Main input row
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: _surfaceRaised,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                              color:
+                                  _primaryColor.withValues(alpha: 0.15)),
+                        ),
+                        child: TextField(
+                          controller: _inputController,
+                          focusNode: _inputFocusNode,
+                          maxLines: 5,
+                          minLines: 1,
+                          style: GoogleFonts.outfit(
+                            fontSize: 14,
+                            color: _textPrimary,
+                            height: 1.5,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: _isDone
+                                ? 'Ask a follow-up question…'
+                                : 'Type a topic, paste notes, or add a link…',
+                            hintStyle: GoogleFonts.outfit(
+                              fontSize: 14,
+                              color: _textSecondary,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
+                          ),
+                          onChanged: (_) => setState(() {}),
+                          onSubmitted: (_) => _generate(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Send button
+                    GestureDetector(
+                      onTap: _isBuilding ? null : _generate,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          gradient: _isBuilding
+                              ? null
+                              : LinearGradient(
+                                  colors: [_primaryColor, _accentColor],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                          color: _isBuilding ? _surfaceRaised : null,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          _isBuilding
+                              ? Icons.hourglass_bottom_rounded
+                              : Icons.arrow_upward_rounded,
+                          color: _isBuilding
+                              ? _textSecondary
+                              : Colors.white,
+                          size: 22,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sourceChip(IconData icon, String label, String type) {
+    final isActive = _uploadType == type;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: () => _handleAttachType(type),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: isActive
+                ? _primaryColor.withValues(alpha: 0.18)
+                : _surfaceRaised,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isActive
+                  ? _primaryColor.withValues(alpha: 0.5)
+                  : _primaryColor.withValues(alpha: 0.12),
             ),
-          )
-              .animate(onPlay: (c) => c.repeat(reverse: true))
-              .moveX(begin: 0, end: 100, duration: 14.seconds),
-        ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon,
+                  color: isActive ? _primaryColor : _textSecondary,
+                  size: 14),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: GoogleFonts.outfit(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isActive ? _primaryColor : _textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAttachedFileChip() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: _primaryColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+                color: _primaryColor.withValues(alpha: 0.25)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.attach_file_rounded,
+                  size: 13, color: _primaryColor),
+              const SizedBox(width: 6),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 240),
+                child: Text(
+                  _fileName ?? '',
+                  style: GoogleFonts.outfit(
+                      fontSize: 12,
+                      color: _primaryColor,
+                      fontWeight: FontWeight.w600),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 6),
+              GestureDetector(
+                onTap: () => setState(() {
+                  _fileName = null;
+                  _fileBytes = null;
+                  _uploadType = '';
+                }),
+                child: Icon(Icons.close_rounded,
+                    size: 13, color: _primaryColor),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _difficultyChip(String label, String value) {
+    final isActive = _selectedDifficulty == value;
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedDifficulty = value),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: isActive ? _accentColor.withValues(alpha: 0.15) : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isActive ? _accentColor.withValues(alpha: 0.5) : _textSecondary.withValues(alpha: 0.1),
+            ),
+          ),
+          child: Text(
+            label,
+            style: GoogleFonts.outfit(
+              fontSize: 11,
+              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+              color: isActive ? _accentColor : _textSecondary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _countChip(int count) {
+    final isActive = _selectedCount == count;
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedCount = count),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: isActive ? _primaryColor.withValues(alpha: 0.15) : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isActive ? _primaryColor.withValues(alpha: 0.5) : _textSecondary.withValues(alpha: 0.1),
+            ),
+          ),
+          child: Text(
+            count.toString(),
+            style: GoogleFonts.outfit(
+              fontSize: 11,
+              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+              color: isActive ? _primaryColor : _textSecondary,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1243,69 +1526,40 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb>
   //  Error banner
   // ─────────────────────────────────────────────────────────────
   Widget _buildErrorBanner() {
-    return Positioned(
-      bottom: 32,
-      left: 32,
-      right: 32,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFEF2F2),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFFCA5A5)),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.error_outline_rounded,
-                color: Color(0xFFEF4444), size: 20),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                _errorMessage,
-                style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  color: const Color(0xFFEF4444),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 760),
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.red.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
+            border:
+                Border.all(color: Colors.red.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.error_outline_rounded,
+                  color: Colors.red, size: 16),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  _errorMessage,
+                  style:
+                      GoogleFonts.outfit(fontSize: 13, color: Colors.red),
                 ),
               ),
-            ),
-            GestureDetector(
-              onTap: () => setState(() => _errorMessage = ''),
-              child: const Icon(Icons.close_rounded,
-                  size: 18, color: Color(0xFFEF4444)),
-            ),
-          ],
+              GestureDetector(
+                onTap: () => setState(() => _errorMessage = ''),
+                child: const Icon(Icons.close_rounded,
+                    size: 14, color: Colors.red),
+              ),
+            ],
+          ),
         ),
-      ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.3, end: 0),
-    );
+      ),
+    ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.2, end: 0);
   }
-}
-
-// ─────────────────────────────────────────────────────────────
-//  Attach Picker Sheet
-// ─────────────────────────────────────────────────────────────
-// End of file classes
-
-// ─────────────────────────────────────────────────────────────
-//  Grid background painter (reused from old code)
-// ─────────────────────────────────────────────────────────────
-class GridPainter extends CustomPainter {
-  final Color color;
-  GridPainter(this.color);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 0.5;
-    const spacing = 40.0;
-    for (double x = 0; x < size.width; x += spacing) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (double y = 0; y < size.height; y += spacing) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(GridPainter old) => old.color != color;
 }

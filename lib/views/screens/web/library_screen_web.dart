@@ -52,11 +52,11 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
 
   void _initViewModel(UserModel user) {
     _viewModel ??= LibraryViewModel(
-        localDb: _localDb,
-        firestoreService: context.read<FirestoreService>(),
-        syncService: context.read<SyncService>(),
-        userId: user.uid,
-      );
+      localDb: _localDb,
+      firestoreService: context.read<FirestoreService>(),
+      syncService: context.read<SyncService>(),
+      userId: user.uid,
+    );
   }
 
   @override
@@ -78,6 +78,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<UserModel?>(context);
+    final theme = Theme.of(context);
 
     if (user == null) {
       return Scaffold(body: _buildLoginPrompt());
@@ -94,19 +95,12 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
           Consumer<LibraryViewModel>(
             builder: (context, viewModel, child) {
               return Scaffold(
-                backgroundColor: WebColors.background,
-                body: Row(
+                backgroundColor: theme.colorScheme.background,
+                body: Column(
                   children: [
-                    _buildSidebar(viewModel),
+                    _buildModernHeader(user, viewModel),
                     Expanded(
-                      child: Column(
-                        children: [
-                          _buildModernHeader(user, viewModel),
-                          Expanded(
-                            child: _buildMainContent(user, viewModel),
-                          ),
-                        ],
-                      ),
+                      child: _buildMainContent(user, viewModel),
                     ),
                   ],
                 ),
@@ -132,7 +126,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
                         'Preparing Content...',
                         style: GoogleFonts.outfit(
                           fontWeight: FontWeight.w600,
-                          color: WebColors.textPrimary,
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                     ],
@@ -146,16 +140,19 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
   }
 
   Widget _buildLoginPrompt() {
+    final theme = Theme.of(context);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.lock_person, size: 60, color: WebColors.textSecondary),
+          Icon(Icons.lock_person,
+              size: 60,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
           const SizedBox(height: 20),
           Text(
             "Please Log In to View Library",
             style: TextStyle(
-              color: WebColors.textPrimary,
+              color: theme.colorScheme.onSurface,
               fontSize: 24,
               fontWeight: FontWeight.w700,
             ),
@@ -164,103 +161,13 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
           ElevatedButton(
             onPressed: () => context.go('/auth'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: WebColors.primary,
-              foregroundColor: Colors.white,
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             ),
             child: const Text('Log In'),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSidebar(LibraryViewModel viewModel) {
-    return Container(
-      width: 280,
-      padding: const EdgeInsets.fromLTRB(32, 40, 32, 32),
-      decoration: BoxDecoration(
-        color: WebColors.surface,
-        border: Border(right: BorderSide(color: WebColors.border)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.only(bottom: 32.0),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    gradient: WebColors.HeroGradient,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.auto_awesome, color: Colors.white, size: 24),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'SUMQUIZ',
-                  style: GoogleFonts.outfit(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.0,
-                    color: WebColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 40),
-
-          // Main Navigation
-          _buildSidebarItem('Overview', Icons.dashboard_rounded, false, onTap: () => context.go('/review')),
-          _buildSidebarItem('Library', Icons.grid_view_rounded, true),
-          _buildSidebarItem('Progress', Icons.analytics_rounded, false, onTap: () => context.go('/progress')),
-          _buildSidebarItem('Settings', Icons.settings_rounded, false),
-          const Spacer(),
-          _buildSidebarItem('Sign Out', Icons.logout_rounded, false, onTap: () {
-            Provider.of<AuthService>(context, listen: false).signOut();
-            context.go('/auth');
-          }),
-          const SizedBox(height: 32),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSidebarItem(String title, IconData icon, bool isSelected, {VoidCallback? onTap}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected ? WebColors.primary.withValues(alpha: 0.08) : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                color: isSelected ? WebColors.primary : WebColors.textSecondary,
-                size: 22,
-              ),
-              const SizedBox(width: 16),
-              Text(
-                title,
-                style: GoogleFonts.outfit(
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected ? WebColors.primary : WebColors.textSecondary,
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -306,16 +213,12 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
     );
   }
 
-
-
   Widget _buildMainContent(UserModel user, LibraryViewModel viewModel) {
     return Padding(
       padding: const EdgeInsets.all(40),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(viewModel),
-          const SizedBox(height: 32),
           _buildLibraryTabs(),
           const SizedBox(height: 24),
           Expanded(
@@ -584,6 +487,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
   }
 
   Widget _buildLibraryTabs() {
+    final theme = Theme.of(context);
     return Container(
       height: 48,
       decoration: BoxDecoration(
@@ -640,7 +544,9 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
           bgColor = WebColors.secondary.withValues(alpha: 0.1);
           textColor = WebColors.secondary;
           typeName = 'SUMMARY';
-          badge = item.itemCount != null ? '${item.itemCount} Sections' : 'Detailed Analysis';
+          badge = item.itemCount != null
+              ? '${item.itemCount} Sections'
+              : 'Detailed Analysis';
           break;
         case LibraryItemType.quiz:
           icon = Icons.quiz_outlined;
@@ -777,8 +683,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
                             color: card.textColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Icon(card.icon,
-                              color: card.textColor, size: 24),
+                          child:
+                              Icon(card.icon, color: card.textColor, size: 24),
                         ),
                         if (card.typeName.isNotEmpty)
                           Container(
@@ -868,166 +774,37 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
   }
 
   Future<void> _navigateToContent(LibraryItem item) async {
-    final viewModel = context.read<LibraryViewModel>();
+    debugPrint(
+        '🔍 Navigating to content: ${item.type} - ${item.title} (ID: ${item.id})');
 
     setState(() => _isNavigating = true);
 
     try {
-      dynamic contentData;
-      switch (item.type) {
-        case LibraryItemType.summary:
-          contentData = await viewModel.localDb.getSummary(item.id);
-          break;
-        case LibraryItemType.quiz:
-          contentData = await viewModel.localDb.getQuiz(item.id);
-          break;
-        case LibraryItemType.flashcards:
-          contentData = await viewModel.localDb.getFlashcardSet(item.id);
-          break;
-        case LibraryItemType.exam:
-          contentData = await viewModel.localDb.getQuiz(item.id);
-          break;
-      }
-
-      if (contentData == null) {
-        // Fallback to Firestore for Web
-        final userId = context.read<UserModel?>()?.uid ?? '';
-        if (userId.isNotEmpty) {
-          final firestoreService = viewModel.firestoreService;
-          try {
-            switch (item.type) {
-              case LibraryItemType.summary:
-                final fsDoc =
-                    await firestoreService.getSummary(userId, item.id);
-                if (fsDoc != null) {
-                  contentData = LocalSummary(
-                    id: fsDoc.id,
-                    title: fsDoc.title,
-                    content: fsDoc.content,
-                    timestamp: fsDoc.timestamp.toDate(),
-                    userId: userId,
-                  );
-                }
-                break;
-              case LibraryItemType.quiz:
-              case LibraryItemType.exam:
-                final fsDoc = await firestoreService.getQuiz(userId, item.id);
-                if (fsDoc != null) {
-                  contentData = LocalQuiz(
-                    id: fsDoc.id,
-                    title: fsDoc.title,
-                    timestamp: fsDoc.timestamp.toDate(),
-                    userId: userId,
-                    questions: fsDoc.questions
-                        .map((q) => q.toLocalQuizQuestion())
-                        .toList(),
-                  );
-                }
-                break;
-              case LibraryItemType.flashcards:
-                final fsDoc =
-                    await firestoreService.getFlashcardSet(userId, item.id);
-                if (fsDoc != null) {
-                  contentData = LocalFlashcardSet(
-                    id: fsDoc.id,
-                    title: fsDoc.title,
-                    timestamp: fsDoc.timestamp.toDate(),
-                    userId: userId,
-                    flashcards: fsDoc.flashcards
-                        .map((f) => LocalFlashcard(
-                              question: f.question,
-                              answer: f.answer,
-                            ))
-                        .toList(),
-                  );
-                }
-                break;
-            }
-          } catch (e) {
-            debugPrint('Firestore fallback error: $e');
-          }
-        }
-      }
-
-      if (!mounted) return;
-      setState(() => _isNavigating = false);
-
-      if (contentData == null) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Content not found. Please try again later.'),
-              backgroundColor: WebColors.error,
-            ),
-          );
-        }
+      if (!mounted) {
+        debugPrint('⚠️ Widget not mounted, aborting navigation');
+        setState(() => _isNavigating = false);
         return;
       }
 
-      if (!mounted) return;
-
-      if (contentData == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error: Could not load content.')),
-        );
-        return;
-      }
-
-      switch (item.type) {
-        case LibraryItemType.summary:
-          context.pushNamed(
-            'library-summary',
-            pathParameters: {'id': item.id},
-            extra: contentData,
-          );
-          break;
-        case LibraryItemType.quiz:
-          context.pushNamed(
-            'library-quiz',
-            pathParameters: {'id': item.id},
-            extra: contentData,
-          );
-          break;
-        case LibraryItemType.flashcards:
-          final localSet = contentData as LocalFlashcardSet;
-          final user = context.read<UserModel?>();
-          final flashcardSet = FlashcardSet(
-            id: localSet.id,
-            title: localSet.title,
-            flashcards: localSet.flashcards
-                .map((f) => Flashcard(
-                      id: f.id,
-                      question: f.question,
-                      answer: f.answer,
-                    ))
-                .toList(),
-            timestamp: Timestamp.fromDate(localSet.timestamp),
-            userId: user?.uid ?? '',
-          );
-          context.pushNamed(
-            'library-flashcards',
-            pathParameters: {'id': item.id},
-            extra: flashcardSet,
-          );
-          break;
-        case LibraryItemType.exam:
-          context.pushNamed(
-            'library-quiz',
-            pathParameters: {'id': item.id},
-            extra: contentData,
-          );
-          break;
-      }
+      // Navigate to ResultsViewScreenWeb for all content types
+      debugPrint('🚀 Navigating to results view screen...');
+      context.pushNamed(
+        'results-view',
+        pathParameters: {'folderId': item.id},
+      );
     } catch (e) {
+      debugPrint('❌ Navigation error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('An error occurred: $e')),
         );
       }
+    } finally {
+      if (mounted) {
+        setState(() => _isNavigating = false);
+      }
     }
   }
-
-
 
   @override
   void dispose() {

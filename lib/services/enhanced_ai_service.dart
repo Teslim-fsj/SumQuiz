@@ -110,37 +110,45 @@ class EnhancedAIService {
   Future<LocalSummary> generateSummary({
     required String text,
     required String userId,
-    String depth = 'intermediate',
+    String difficulty = 'intermediate',
     void Function(String)? onProgress,
     CancellationToken? cancelToken,
   }) async {
     onProgress?.call('Generating summary...');
     return _generatorService.generateSummary(text,
-        userId: userId, cancelToken: cancelToken);
+        userId: userId, difficulty: difficulty, cancelToken: cancelToken);
   }
 
   Future<LocalQuiz> generateQuiz({
     required String text,
     required String userId,
     int questionCount = 10,
+    String difficulty = 'intermediate',
     void Function(String)? onProgress,
     CancellationToken? cancelToken,
   }) async {
     onProgress?.call('Generating quiz...');
     return _generatorService.generateQuiz(text,
-        userId: userId, questionCount: questionCount, cancelToken: cancelToken);
+        userId: userId,
+        questionCount: questionCount,
+        difficulty: difficulty,
+        cancelToken: cancelToken);
   }
 
   Future<LocalFlashcardSet> generateFlashcards({
     required String text,
     required String userId,
     int cardCount = 15,
+    String difficulty = 'intermediate',
     void Function(String)? onProgress,
     CancellationToken? cancelToken,
   }) async {
     onProgress?.call('Generating flashcards...');
     return _generatorService.generateFlashcards(text,
-        userId: userId, cardCount: cardCount, cancelToken: cancelToken);
+        userId: userId,
+        cardCount: cardCount,
+        difficulty: difficulty,
+        cancelToken: cancelToken);
   }
 
   Future<LocalQuiz> generateExam({
@@ -290,6 +298,9 @@ class EnhancedAIService {
     required String userId,
     required LocalDatabaseService localDb,
     required void Function(String message) onProgress,
+    String difficulty = 'intermediate',
+    int questionCount = 10,
+    int cardCount = 15,
     CancellationToken? cancelToken,
   }) async {
     developer.log(
@@ -341,7 +352,9 @@ class EnhancedAIService {
           switch (outputType) {
             case 'summary':
               final summary = await _generatorService.generateSummary(text,
-                  userId: userId, cancelToken: cancelToken);
+                  userId: userId,
+                  difficulty: difficulty,
+                  cancelToken: cancelToken);
               if (summary.id.isEmpty) {
                 summary.id = const Uuid().v4();
               }
@@ -350,7 +363,10 @@ class EnhancedAIService {
 
             case 'quiz':
               final quiz = await _generatorService.generateQuiz(text,
-                  userId: userId, cancelToken: cancelToken);
+                  userId: userId,
+                  questionCount: questionCount,
+                  difficulty: difficulty,
+                  cancelToken: cancelToken);
               if (quiz.id.isEmpty) {
                 quiz.id = const Uuid().v4();
               }
@@ -359,7 +375,10 @@ class EnhancedAIService {
 
             case 'flashcards':
               final set = await _generatorService.generateFlashcards(text,
-                  userId: userId, cancelToken: cancelToken);
+                  userId: userId,
+                  cardCount: cardCount,
+                  difficulty: difficulty,
+                  cancelToken: cancelToken);
               if (set.id.isEmpty) {
                 set.id = const Uuid().v4();
               }

@@ -60,7 +60,7 @@ class ContentExtractionService {
           throw Exception(
               'Text input too large. Maximum 50,000 characters allowed.');
         }
-        break;
+        case 'youtube':
       case 'link':
         if (input == null || input.toString().isEmpty) {
           throw Exception('URL cannot be empty');
@@ -505,32 +505,32 @@ class ContentExtractionService {
                 'Audio file is empty. Please try with a valid audio file.');
           }
 
-          // ── Native Gemini Audio Understanding (Gemini 2.5+) ──
-          onProgress?.call('Transcribing audio with Gemini AI...');
-          developer.log('Processing audio with native Gemini, mimeType: $mimeType',
+          // ── Native Gemini Media Understanding (Gemini 2.5+) ──
+          onProgress?.call('Transcribing media with Gemini AI...');
+          developer.log('Processing media with native Gemini, mimeType: $mimeType',
               name: 'ContentExtractionService');
-          final audioMime =
-              mimeType ?? _getMimeType('file.mp3'); // Default to mp3
+          final mediaMime =
+              mimeType ?? (type == 'audio' ? 'audio/mpeg' : 'video/mp4');
           try {
-            final audioResult = await _pdfAiService.extractAudio(
+            final mediaResult = await _pdfAiService.extractMultimodalMedia(
               input,
-              audioMime,
-              filename: 'recording',
+              mediaMime,
+              filename: type == 'audio' ? 'recording' : 'video',
               cancelToken: cancelToken,
             );
-            if (audioResult is Ok<ExtractionResult>) {
-              return audioResult.value;
-            } else if (audioResult
+            if (mediaResult is Ok<ExtractionResult>) {
+              return mediaResult.value;
+            } else if (mediaResult
                 is ResultError<ExtractionResult>) {
-              final err = audioResult.error;
+              final err = mediaResult.error;
               throw Exception(
                   err is EnhancedAIServiceException ? err.message : err.toString());
             }
           } catch (e) {
-            developer.log('Gemini audio extraction failed: $e',
+            developer.log('Gemini media extraction failed: $e',
                 name: 'ContentExtractionService');
             throw Exception(
-                'Audio transcription failed: $e. Try uploading a transcript text file.');
+                'Media analysis failed: $e. Try uploading a transcript text file instead.');
           }
         case 'video':
           developer.log('Processing video with mimeType: $mimeType',
@@ -551,15 +551,18 @@ class ContentExtractionService {
                 'Video file is empty. Please try with a valid video file.');
           }
 
-          if (localOnlyTest) {
-            return ExtractionResult(
-                text: 'Local extraction test', suggestedTitle: 'Test Video');
-          }
-          // Since AI analysis is disabled, we need to handle video differently
-          onProgress?.call(
-              'Video processing requires AI analysis. Try pasting text instead.');
-          throw Exception(
-              'Video content cannot be processed without AI analysis. Try uploading a text-based document instead.');
+          // Video is now handled by the multimodal block above (fall-through logic)
+          // To ensure fall-through works in Dart 3, I'll just copy the logic or combine the cases.
+          // Let's combine audio and video cases.
+          return await _extractContentInternal(
+            type: 'audio', // Reuse common media logic
+            input: input,
+            userId: userId,
+            mimeType: mimeType,
+            refineWithAI: refineWithAI,
+            onProgress: onProgress,
+            cancelToken: cancelToken,
+          );
         default:
           throw Exception('Unknown content type: $type');
       }

@@ -6,14 +6,18 @@ import 'package:sumquiz/models/local_quiz_question.dart';
 import 'package:sumquiz/models/local_flashcard.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
 import 'package:uuid/uuid.dart';
+import 'ai_config.dart';
 import 'ai_base_service.dart';
 
 import 'dart:developer' as developer;
 
 class GeneratorAIService extends AIBaseService {
   Future<LocalSummary> generateSummary(String text,
-      {String? userId, CancellationToken? cancelToken}) async {
-    developer.log('Generating summary for text length: ${text.length}',
+      {String? userId,
+      String difficulty = 'intermediate',
+      CancellationToken? cancelToken}) async {
+    developer.log(
+        'Generating $difficulty summary for text length: ${text.length}',
         name: 'GeneratorAIService');
     final config = GenerationConfig(
       responseMimeType: 'application/json',
@@ -31,6 +35,7 @@ class GeneratorAIService extends AIBaseService {
 
     final prompt =
         '''Create a comprehensive, EXAM-FOCUSED study guide from the provided text.
+TARGET DIFFICULTY: $difficulty (Scale your depth and terminology complexity accordingly).
 
 OUTPUT REQUIREMENTS:
 1. **Title**: A professional, topic-focused title.
@@ -91,9 +96,10 @@ Text: $text''';
   Future<LocalQuiz> generateQuiz(String text,
       {String? userId,
       int questionCount = 10,
+      String difficulty = 'intermediate',
       CancellationToken? cancelToken}) async {
     developer.log(
-        'Generating quiz ($questionCount questions) for text length: ${text.length}',
+        'Generating $difficulty quiz ($questionCount questions) for text length: ${text.length}',
         name: 'GeneratorAIService');
     final config = GenerationConfig(
       responseMimeType: 'application/json',
@@ -126,6 +132,7 @@ Text: $text''';
 
     final prompt =
         '''Generate a challenging $questionCount-question multiple-choice quiz based on this text.
+TARGET DIFFICULTY: $difficulty
 
 QUIZ RULES:
 1. Questions must require understanding/application, not just simple name/date recall.
@@ -186,11 +193,13 @@ Text: $text''';
   Future<LocalFlashcardSet> generateFlashcards(String text,
       {String? userId,
       int cardCount = 15,
+      String difficulty = 'intermediate',
       CancellationToken? cancelToken}) async {
     developer.log(
-        'Generating flashcards ($cardCount) for text length: ${text.length}',
+        'Generating $difficulty flashcards ($cardCount) for text length: ${text.length}',
         name: 'GeneratorAIService');
     final config = GenerationConfig(
+      // ... (rest of config)
       responseMimeType: 'application/json',
       responseSchema: Schema.object(
         properties: {
@@ -212,6 +221,7 @@ Text: $text''';
     );
 
     final prompt = '''Create $cardCount active-recall flashcards from the text.
+TARGET DIFFICULTY: $difficulty
 
 FLASHCARD PRINCIPLES:
 - **Atomic Principle**: One question = one idea. Keep answers concise.
@@ -324,10 +334,8 @@ Text: $text''';
     GENERATE:
     1. **TITLE**: Engaging title.
     2. **SUMMARY**: Structured sections with bullet points.
-    3. **QUIZ**: 10 mcqs with 4 options, correctAnswer (exact string), and explanation.
-    4. **FLASHCARDS**: $cardCount question-answer pairs.
-
-    Text: $topic''';
+    3. **QUIZ**: 15 mcqs with 4 options, correctAnswer (exact string), and explanation.
+    4. **FLASHCARDS**: $cardCount question-answer pairs.''';
 
     try {
       final response = await generateWithRetry(prompt,
@@ -401,38 +409,7 @@ Text: $text''';
     String? userId,
     CancellationToken? cancelToken,
   }) async {
-    final config = GenerationConfig(
-      responseMimeType: 'application/json',
-      responseSchema: Schema.object(
-        properties: {
-          'questions': Schema.array(
-            items: Schema.object(
-              properties: {
-                'question':
-                    Schema.string(description: 'The exam question text'),
-                'type': Schema.string(
-                    description: 'Type of question from the requested list'),
-                'options': Schema.array(
-                    items: Schema.string(),
-                    description:
-                        'Required for Multiple Choice or True/False. Null otherwise.'),
-                'correctAnswer': Schema.string(
-                    description:
-                        'The correct answer or ideal key points for theory'),
-                'explanation': Schema.string(
-                    description:
-                        'Why this is the answer / Marking scheme guide'),
-                'difficulty':
-                    Schema.string(description: 'Easy, Medium, or Hard'),
-              },
-              requiredProperties: ['question', 'type', 'correctAnswer'],
-            ),
-          ),
-        },
-        requiredProperties: ['questions'],
-      ),
-    );
-
+    final config = AIConfig.thinkingGenerationConfig;
     final difficultyDesc =
         difficultyMix < 0.4 ? 'Easy' : (difficultyMix > 0.6 ? 'Hard' : 'Mixed');
 
@@ -442,61 +419,68 @@ Text: $text''';
     PARAMETERS:
     - Total Questions: $questionCount
     - Allowed Types: ${questionTypes.join(', ')}
-    - Overall Difficulty: $difficultyDesc
-    ${evenTopicCoverage ? '- Strategy: Ensure EVEN TOPIC COVERAGE across the source material.' : ''}
-    ${focusWeakAreas ? '- Strategy: FOCUS ON COMPLEX/TECHNICAL areas that are typically difficult for students.' : ''}
-    - Source Material: $text
+    - Target Difficulty Mix: $difficultyDesc
+    - Even Topic Coverage: $evenTopicCoverage
+    - Focus Weak Areas: $focusWeakAreas
 
-    REQUIREMENTS:
-    1. Distribute questions across the allowed types fairly.
-    2. Ensure questions align with the academic standard for $level.
-    3. Multiple Choice must have EXACTLY 4 options.
-    4. True/False must have EXACTLY 2 options (True, False).
-    5. Theory (Short Answer/Essay) should provide marking guidance in "correctAnswer".
-    6. Maintain high academic rigor.
+    GENERATE a full set of high-quality exam questions using the provided source text.
+    For each question, provide:
+    1. The question text.
+    2. The type.
+    3. Options (if MC/TF).
+    4. The correct answer.
+    5. A thorough explanation/marking scheme.
+    6. Difficulty level.
 
-    Source: $text''';
+    SOURCE TEXT:
+    $text
 
-    final response = await generateWithRetry(prompt,
+    OUTPUT FORMAT: JSON only.''';
+
+    try {
+      final response = await generateWithRetry(
+        prompt,
         customModel: educatorModel,
         generationConfig: config,
-        cancelToken: cancelToken);
-    developer.log('AI Response received for exam generation',
-        name: 'GeneratorAIService');
-    final jsonStr = extractJson(response);
-    final data = safeJsonDecode(jsonStr);
+        cancelToken: cancelToken,
+      );
 
-    final questionsData = data['questions'];
-    final List<LocalQuizQuestion> questions = [];
-    if (questionsData is List) {
-      for (final q in questionsData) {
-        if (q is Map) {
-          final List<String> options = [];
-          final rawOptions = q['options'];
-          if (rawOptions is List) {
-            for (final o in rawOptions) {
-              options.add(o.toString());
+      final jsonStr = extractJson(response);
+      final data = safeJsonDecode(jsonStr);
+
+      final questionsData = data['questions'];
+      final List<LocalQuizQuestion> questions = [];
+      if (questionsData is List) {
+        for (final q in questionsData) {
+          if (q is Map) {
+            final List<String> options = [];
+            final rawOptions = q['options'];
+            if (rawOptions is List) {
+              for (final o in rawOptions) {
+                options.add(o.toString());
+              }
             }
-          }
 
-          questions.add(LocalQuizQuestion(
-            question: q['question']?.toString() ?? 'Unknown Question',
-            options: options,
-            correctAnswer: q['correctAnswer']?.toString() ?? '',
-            explanation: q['explanation']?.toString(),
-            questionType: q['type']?.toString(),
-          ));
+            questions.add(LocalQuizQuestion(
+              question: q['question']?.toString() ?? '...',
+              options: options,
+              correctAnswer: q['correctAnswer']?.toString() ?? '',
+              explanation: q['explanation']?.toString(),
+            ));
+          }
         }
       }
-    }
 
-    return LocalQuiz(
-      id: const Uuid().v4(),
-      userId: userId ?? '',
-      title: title,
-      questions: questions,
-      timestamp: DateTime.now(),
-    );
+      return LocalQuiz(
+        id: const Uuid().v4(),
+        userId: userId ?? '',
+        title: title,
+        questions: questions,
+        timestamp: DateTime.now(),
+      );
+    } catch (e) {
+      rethrow;
+    }
   }
 
   // --- VERIFICATION API ---

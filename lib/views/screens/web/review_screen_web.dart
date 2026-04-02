@@ -8,7 +8,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sumquiz/theme/web_theme.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/local_database_service.dart';
 import '../../../services/spaced_repetition_service.dart';
@@ -111,10 +110,10 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
       return;
     }
 
-    final missionService =
-        Provider.of<MissionService>(context, listen: false);
+    final missionService = Provider.of<MissionService>(context, listen: false);
     final localDb = Provider.of<LocalDatabaseService>(context, listen: false);
-    final firestoreService = Provider.of<FirestoreService>(context, listen: false);
+    final firestoreService =
+        Provider.of<FirestoreService>(context, listen: false);
 
     try {
       final mission = await missionService.generateDailyMission(userId);
@@ -126,24 +125,32 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
       final nextDate = srsService.getNextReviewDate(userId);
 
       final progressService = ProgressService();
-      final avgAccuracy = await progressService.getAverageAccuracy(userId);
-      final totalTimeSpent = await progressService.getTotalTimeSpent(userId);
+      // Use recent accuracy for last 7 days
+      final avgAccuracy = await progressService.getRecentAccuracyStats(userId);
+      // Get time spent TODAY only
+      final totalTimeSpentSeconds =
+          await progressService.getTimeSpentToday(userId);
 
       // Fetch flashcard sets with Firestore fallback
-      List<LocalFlashcardSet> allSets = await localDb.getAllFlashcardSets(userId);
+      List<LocalFlashcardSet> allSets =
+          await localDb.getAllFlashcardSets(userId);
       if (allSets.isEmpty) {
         final fsSets = await firestoreService.streamFlashcardSets(userId).first;
         if (fsSets.isNotEmpty) {
-          allSets = fsSets.map((s) => LocalFlashcardSet(
-            id: s.id,
-            title: s.title,
-            timestamp: s.timestamp.toDate(),
-            userId: userId,
-            flashcards: s.flashcards.map((f) => LocalFlashcard(
-              question: f.question,
-              answer: f.answer,
-            )).toList(),
-          )).toList();
+          allSets = fsSets
+              .map((s) => LocalFlashcardSet(
+                    id: s.id,
+                    title: s.title,
+                    timestamp: s.timestamp.toDate(),
+                    userId: userId,
+                    flashcards: s.flashcards
+                        .map((f) => LocalFlashcard(
+                              question: f.question,
+                              answer: f.answer,
+                            ))
+                        .toList(),
+                  ))
+              .toList();
         }
       }
 
@@ -151,7 +158,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
 
       final dueIds = await srsService.getDueItems(userId);
       _dueFlashcardSets = allSets.where((s) => dueIds.contains(s.id)).toList();
-      
+
       // If none are due but we have sets, show some anyway to avoid empty state
       if (_dueFlashcardSets.isEmpty && allSets.isNotEmpty) {
         _dueFlashcardSets = allSets.take(3).toList();
@@ -171,7 +178,8 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
         dailyGoal = userData?['dailyGoal'] as int? ?? 60;
       }
 
-      timeSpentToday = (totalTimeSpent / 60).round();
+      // Convert seconds to minutes for display
+      timeSpentToday = (totalTimeSpentSeconds / 60).round();
 
       if (allSets.isNotEmpty && allSets.first.flashcards.isNotEmpty) {
         lastQuestion = allSets.first.flashcards.first.question;
@@ -182,7 +190,8 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
           _dailyMission = mission;
           _dueCount = stats['dueForReviewCount'] as int? ?? 0;
           _nextReviewDate = nextDate;
-          _accuracy = avgAccuracy;
+          // Extract average from the stats map
+          _accuracy = avgAccuracy['average'] ?? 0.0;
           _dailyGoalMinutes = dailyGoal;
           _timeSpentMinutes = timeSpentToday;
           _previewQuestion = lastQuestion;
@@ -315,9 +324,16 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
         }
         await userService.incrementItemsCompleted(userId);
 
-        // Save progress details
+        // Save progress details with proper logging
         final progressService = ProgressService();
         await progressService.logAccuracy(userId, accuracy);
+
+        // Log the complete study session for cross-platform tracking
+        await progressService.logStudySession(
+          userId: userId,
+          accuracy: accuracy,
+          durationSeconds: _stopwatch.elapsed.inSeconds,
+        );
       } catch (e) {
         debugPrint('Analytics error: $e');
       }
@@ -333,6 +349,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
   }
 
   void _showCompletionDialog() {
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -349,14 +366,15 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                     fontSize: 18, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             Text('Time: ${_formatDuration(_stopwatch.elapsed)}',
-                style: GoogleFonts.outfit(color: WebColors.textSecondary)),
+                style: GoogleFonts.outfit(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7))),
           ],
         ),
         actions: [
           ElevatedButton(
             onPressed: () => Navigator.pop(context),
             style: ElevatedButton.styleFrom(
-              backgroundColor: WebColors.primary,
+              backgroundColor: theme.colorScheme.primary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
@@ -370,7 +388,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
 
   void _showMissionDetails(BuildContext context) {
     if (_dailyMission == null) return;
-
+    final theme = Theme.of(context);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -392,14 +410,15 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                   style: GoogleFonts.outfit(
                     fontSize: 24,
                     fontWeight: FontWeight.w800,
-                    color: WebColors.textPrimary,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.close),
                   style: IconButton.styleFrom(
-                      backgroundColor: WebColors.backgroundAlt),
+                    backgroundColor: theme.colorScheme.surface,
+                  ),
                 ),
               ],
             ),
@@ -409,7 +428,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
               style: GoogleFonts.outfit(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: WebColors.primary,
+                color: theme.colorScheme.primary,
               ),
             ),
             const SizedBox(height: 12),
@@ -417,7 +436,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
               'Complete the curated quiz sets for today to earn extra XP and maintain your streak.',
               style: GoogleFonts.outfit(
                 fontSize: 16,
-                color: WebColors.textSecondary,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                 height: 1.5,
               ),
             ),
@@ -430,7 +449,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                   _fetchAndStartMission();
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: WebColors.primary,
+                  backgroundColor: theme.colorScheme.primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   shape: RoundedRectangleBorder(
@@ -467,6 +486,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final user = Provider.of<UserModel?>(context);
 
     if (_isStudying) {
@@ -474,14 +494,16 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
     }
 
     return Scaffold(
-      backgroundColor: WebColors.background,
+      backgroundColor: theme.colorScheme.surface,
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: WebColors.primary))
+          ? Center(
+              child:
+                  CircularProgressIndicator(color: theme.colorScheme.primary))
           : _error != null
               ? Center(
                   child: Text(_error!,
                       style: TextStyle(
-                          color: WebColors.textPrimary, fontSize: 18)))
+                          color: theme.colorScheme.onSurface, fontSize: 18)))
               : SingleChildScrollView(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
@@ -571,10 +593,11 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                                     Clipboard.setData(
                                         ClipboardData(text: _previewQuestion));
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
+                                      SnackBar(
                                         content: Text(
                                             'Question copied to clipboard!'),
-                                        backgroundColor: WebColors.success,
+                                        backgroundColor:
+                                            theme.colorScheme.tertiaryContainer,
                                       ),
                                     );
                                   },
@@ -621,6 +644,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
   }
 
   Widget _buildHeader(UserModel? user) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -629,7 +653,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
           style: GoogleFonts.outfit(
             fontSize: 32,
             fontWeight: FontWeight.w900,
-            color: WebColors.textPrimary,
+            color: theme.colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 8),
@@ -637,7 +661,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
           'You\'re on a ${user?.missionCompletionStreak ?? 0}-day learning streak. Keep it up!',
           style: GoogleFonts.outfit(
             fontSize: 16,
-            color: WebColors.textSecondary,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
       ],
@@ -645,6 +669,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
   }
 
   Widget _buildStudySession() {
+    final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
@@ -654,7 +679,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [WebColors.background, Colors.white],
+                colors: [theme.colorScheme.surface, Colors.white],
               ),
             ),
           ),
@@ -674,8 +699,8 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                       },
                       tooltip: 'Exit Session',
                       style: IconButton.styleFrom(
-                        backgroundColor: WebColors.backgroundAlt,
-                        foregroundColor: WebColors.textPrimary,
+                        backgroundColor: theme.colorScheme.surface,
+                        foregroundColor: theme.colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(width: 32),
@@ -691,7 +716,8 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                                 style: GoogleFonts.outfit(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w800,
-                                  color: WebColors.textTertiary,
+                                  color: theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.5),
                                   letterSpacing: 1.5,
                                 ),
                               ),
@@ -700,7 +726,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                                 style: GoogleFonts.outfit(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w800,
-                                  color: WebColors.secondary,
+                                  color: theme.colorScheme.secondary,
                                 ),
                               ),
                             ],
@@ -711,9 +737,9 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                             child: LinearProgressIndicator(
                               value:
                                   (_currentCardIndex + 1) / _studyCards.length,
-                              backgroundColor: WebColors.backgroundAlt,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                    WebColors.secondary),
+                              backgroundColor: theme.colorScheme.surface,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  theme.colorScheme.secondary),
                               minHeight: 10,
                             ),
                           ),
@@ -727,21 +753,27 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: WebColors.border),
-                        boxShadow: WebColors.subtleShadow,
+                        border: Border.all(
+                            color: theme.colorScheme.outline
+                                .withValues(alpha: 0.1)),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 10)
+                        ],
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.timer_outlined,
-                              size: 22, color: WebColors.secondary),
+                              size: 22, color: theme.colorScheme.secondary),
                           const SizedBox(width: 12),
                           Text(
                             _formatDuration(_stopwatch.elapsed),
                             style: GoogleFonts.jetBrainsMono(
                               fontWeight: FontWeight.w700,
                               fontSize: 18,
-                              color: WebColors.textPrimary,
+                              color: theme.colorScheme.onSurface,
                             ),
                           ),
                         ],
@@ -781,7 +813,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                         icon: const Icon(Icons.flip),
                         label: const Text('Show Answer'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: WebColors.primary,
+                          backgroundColor: theme.colorScheme.primary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
                               horizontal: 48, vertical: 24),
@@ -798,6 +830,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
   }
 
   Widget _build3DFlashcard() {
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: () => setState(() => _isFlipped = !_isFlipped),
       child: TweenAnimationBuilder(
@@ -816,16 +849,18 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(32),
-                border: Border.all(color: WebColors.border.withAlpha(128)),
+                border: Border.all(
+                    color: theme.colorScheme.outline.withValues(alpha: 0.5)),
                 boxShadow: isBack
                     ? [
                         BoxShadow(
-                          color: WebColors.success.withValues(alpha: 0.1),
+                          color: theme.colorScheme.tertiaryContainer
+                              .withValues(alpha: 0.1),
                           blurRadius: 40,
                           offset: const Offset(0, 20),
                         ),
                       ]
-                    : WebColors.hoverShadow,
+                    : null,
               ),
               child: isBack
                   ? Transform(
@@ -844,6 +879,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
   }
 
   Widget _buildCardContent(String text, bool isAnswer) {
+    final theme = Theme.of(context);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -851,7 +887,9 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: isAnswer ? Colors.green[50] : WebColors.primaryLight,
+              color: isAnswer
+                  ? Colors.green[50]
+                  : theme.colorScheme.primaryContainer,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -859,7 +897,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
-                color: isAnswer ? Colors.green : WebColors.primary,
+                color: isAnswer ? Colors.green : theme.colorScheme.primary,
                 letterSpacing: 1.5,
               ),
             ),
@@ -872,7 +910,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w600,
-                color: WebColors.textPrimary,
+                color: theme.colorScheme.onSurface,
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
@@ -885,6 +923,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
 
   Widget _buildControlButton(
       IconData icon, String label, Color bg, Color fg, VoidCallback onTap) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
@@ -907,6 +946,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
   }
 
   Widget _buildSrsBanner(BuildContext context) {
+    final theme = Theme.of(context);
     bool isDue = _dueCount > 0;
     String timeText = "";
 
@@ -963,7 +1003,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
           ),
           if (isDue)
             ElevatedButton(
-            onPressed: () {
+              onPressed: () {
                 context.push('/spaced-repetition');
               },
               style: ElevatedButton.styleFrom(
@@ -983,6 +1023,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
   }
 
   Widget _buildStatsOverview(UserModel? user) {
+    final theme = Theme.of(context);
     return Row(
       children: [
         Expanded(
@@ -990,7 +1031,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
             icon: Icons.checklist_rounded,
             value: '${user?.itemsCompletedToday ?? 0}',
             label: 'Items Completed Today',
-            color: WebColors.secondary,
+            color: theme.colorScheme.secondary,
           ),
         ),
         const SizedBox(width: 24),
@@ -1021,12 +1062,14 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
     required String label,
     required Color color,
   }) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: WebColors.border),
+        border:
+            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withAlpha(5),
@@ -1055,7 +1098,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w800,
-                    color: WebColors.textPrimary,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -1063,7 +1106,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                   label,
                   style: TextStyle(
                     fontSize: 14,
-                    color: WebColors.textSecondary,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     fontWeight: FontWeight.w500,
                   ),
                 ),

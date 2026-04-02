@@ -3,7 +3,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:sumquiz/theme/web_theme.dart';
 import 'package:sumquiz/services/enhanced_ai_service.dart';
 import 'package:sumquiz/services/local_database_service.dart';
 import 'package:sumquiz/services/usage_service.dart';
@@ -161,8 +160,8 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
       }
 
       if (mounted) {
-        context.pushNamed('results-view',
-            pathParameters: {'folderId': folderId});
+        context
+            .pushNamed('results-view', pathParameters: {'folderId': folderId});
       }
     } catch (e) {
       if (mounted) _showError('Generation failed: $e');
@@ -178,6 +177,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
@@ -195,13 +195,19 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                     Expanded(
                       flex: 3,
                       child: Container(
-                        decoration: WebColors.glassDecoration(
-                          blur: 15,
-                          opacity: 0.1,
-                          color: WebColors.surface,
-                          borderRadius: 24,
-                        ).copyWith(
-                          boxShadow: WebColors.cardShadow,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                              color: theme.colorScheme.outline
+                                  .withValues(alpha: 0.1)),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.08),
+                                blurRadius: 20,
+                                offset: const Offset(0, 4))
+                          ],
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,7 +219,10 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                                   Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      gradient: WebColors.HeroGradient,
+                                      gradient: LinearGradient(colors: [
+                                        theme.colorScheme.primary,
+                                        theme.colorScheme.tertiary
+                                      ]),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Icon(Icons.edit_note,
@@ -274,22 +283,28 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(16),
                                       borderSide: BorderSide(
-                                          color: WebColors.border, width: 1.5),
+                                          color: theme.colorScheme.outline
+                                              .withValues(alpha: 0.2),
+                                          width: 1.5),
                                     ),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(16),
                                       borderSide: BorderSide(
-                                          color: WebColors.border, width: 1.5),
+                                          color: theme.colorScheme.outline
+                                              .withValues(alpha: 0.2),
+                                          width: 1.5),
                                     ),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(16),
                                       borderSide: BorderSide(
-                                          color: WebColors.primary, width: 2),
+                                          color: theme.colorScheme.primary,
+                                          width: 2),
                                     ),
                                     hintText:
                                         "Edit your content here... The AI will process this text to generate summaries, quizzes, and flashcards",
                                     hintStyle: GoogleFonts.outfit(
-                                      color: WebColors.textTertiary,
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.4),
                                     ),
                                   ),
                                 ),
@@ -307,13 +322,19 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                       width: 380,
                       child: Container(
                         padding: const EdgeInsets.all(32),
-                        decoration: WebColors.glassDecoration(
-                          blur: 15,
-                          opacity: 0.1,
-                          color: WebColors.surface,
-                          borderRadius: 24,
-                        ).copyWith(
-                          boxShadow: WebColors.cardShadow,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                              color: theme.colorScheme.outline
+                                  .withValues(alpha: 0.1)),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.08),
+                                blurRadius: 20,
+                                offset: const Offset(0, 4))
+                          ],
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -334,7 +355,8 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                               "Customize your learning materials",
                               style: GoogleFonts.outfit(
                                 fontSize: 16,
-                                color: WebColors.textSecondary,
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.6),
                               ),
                             ),
                             const SizedBox(height: 40),
@@ -365,7 +387,8 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                               decoration: InputDecoration(
                                 hintText: "Enter a title for your content...",
                                 hintStyle: GoogleFonts.outfit(
-                                    color: WebColors.textTertiary),
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.4)),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(
@@ -379,7 +402,8 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(
-                                      color: WebColors.primary, width: 2),
+                                      color: theme.colorScheme.primary,
+                                      width: 2),
                                 ),
                               ),
                             ),
@@ -526,11 +550,13 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                                   Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: WebColors.primary.withOpacity(0.1),
+                                      color: theme.colorScheme.primaryContainer
+                                          .withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Icon(Icons.shield_outlined,
-                                        color: WebColors.primary, size: 20),
+                                        color: theme.colorScheme.primary,
+                                        size: 20),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
@@ -553,7 +579,8 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                                           'High confidence in content quality',
                                           style: GoogleFonts.outfit(
                                             fontSize: 12,
-                                            color: WebColors.textSecondary,
+                                            color: theme.colorScheme.onSurface
+                                                .withValues(alpha: 0.6),
                                           ),
                                         ),
                                       ],
@@ -571,11 +598,15 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                             else
                               Container(
                                 decoration: BoxDecoration(
-                                  gradient: WebColors.HeroGradient,
+                                  gradient: LinearGradient(colors: [
+                                    theme.colorScheme.primary,
+                                    theme.colorScheme.tertiary
+                                  ]),
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: WebColors.primary.withOpacity(0.3),
+                                      color: theme.colorScheme.primaryContainer
+                                          .withValues(alpha: 0.3),
                                       blurRadius: 16,
                                       offset: const Offset(0, 8),
                                     ),
@@ -626,16 +657,22 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
   }
 
   Widget _buildHeader() {
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-      decoration: WebColors.glassDecoration(
-        blur: 15,
-        opacity: 0.1,
-        color: WebColors.surface,
-        borderRadius: 20,
-      ).copyWith(
-        boxShadow: WebColors.cardShadow,
+      decoration: BoxDecoration(
+        color:
+            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(24),
+        border:
+            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 4))
+        ],
       ),
       child: Row(
         children: [
@@ -703,6 +740,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
   }
 
   Widget _buildLoadingIndicator() {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -720,7 +758,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
             width: 32,
             height: 32,
             child: CircularProgressIndicator(
-              color: WebColors.primary,
+              color: theme.colorScheme.primary,
               strokeWidth: 3,
             ),
           ),
@@ -738,7 +776,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
           Text(
             'Processing with AI...',
             style: GoogleFonts.outfit(
-              color: WebColors.textSecondary,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               fontSize: 12,
             ),
           ),

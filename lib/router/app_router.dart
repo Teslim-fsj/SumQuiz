@@ -1,17 +1,12 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart'
-    show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:sumquiz/models/user_model.dart';
-import 'package:sumquiz/models/editable_content.dart';
 import 'package:sumquiz/models/flashcard_set.dart';
 import 'package:sumquiz/models/local_quiz.dart';
 import 'package:sumquiz/models/local_summary.dart';
-import 'package:sumquiz/models/summary_model.dart';
 import 'package:sumquiz/services/auth_service.dart';
-import 'package:sumquiz/services/extraction_result_cache.dart';
 import 'package:sumquiz/views/screens/auth_screen.dart';
 import 'package:sumquiz/views/screens/library_screen.dart';
 import 'package:sumquiz/views/screens/progress_screen.dart';
@@ -20,11 +15,8 @@ import 'package:sumquiz/views/screens/review_screen.dart';
 import 'package:sumquiz/views/screens/summary_screen.dart';
 import 'package:sumquiz/views/screens/quiz_screen.dart';
 import 'package:sumquiz/views/screens/flashcards_screen.dart';
-import 'package:sumquiz/views/screens/edit_screen.dart';
 import 'package:sumquiz/views/screens/edit_creator_profile_screen.dart';
 import 'package:sumquiz/views/screens/creator_dashboard_screen.dart';
-import 'package:sumquiz/views/screens/edit_quiz_screen.dart';
-import 'package:sumquiz/views/screens/edit_flashcards_screen.dart';
 import 'package:sumquiz/views/screens/preferences_screen.dart';
 import 'package:sumquiz/views/screens/data_storage_screen.dart';
 import 'package:sumquiz/views/screens/subscription_screen.dart';
@@ -34,7 +26,6 @@ import 'package:sumquiz/views/screens/onboarding_screen.dart';
 import 'package:sumquiz/views/screens/referral_screen.dart';
 import 'package:sumquiz/views/screens/account_profile_screen.dart';
 import 'package:sumquiz/views/screens/create_content_screen.dart';
-import 'package:sumquiz/views/screens/extraction_view_screen.dart';
 import 'package:sumquiz/views/screens/results_view_screen.dart';
 import 'package:sumquiz/views/widgets/scaffold_with_nav_bar.dart';
 import 'package:sumquiz/views/widgets/responsive_view.dart';
@@ -46,7 +37,6 @@ import 'package:sumquiz/views/screens/web/teacher_dashboard_web.dart';
 import 'package:sumquiz/views/screens/web/landing_page_web.dart';
 import 'package:sumquiz/views/screens/exam_creation_screen.dart';
 import 'package:sumquiz/views/screens/web/review_screen_web.dart';
-import 'package:sumquiz/views/screens/web/extraction_view_screen_web.dart';
 import 'package:sumquiz/views/screens/public_deck_screen.dart';
 import 'package:sumquiz/views/screens/web/exam_creation_screen_web.dart';
 
@@ -102,51 +92,45 @@ final _profileShellNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'ProfileShell');
 final _settingsShellNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'SettingsShell');
+final _studentsShellNavigatorKey =
+    GlobalKey<NavigatorState>(debugLabel: 'StudentsShell');
+final _feedbackShellNavigatorKey =
+    GlobalKey<NavigatorState>(debugLabel: 'FeedbackShell');
 
-GoRouter createAppRouter(AuthService authService) {
+GoRouter createRouter() {
+  final authStream = Provider.of<AuthService>(
+    _rootNavigatorKey.currentContext!,
+    listen: false,
+  ).authStateChanges;
+
   return GoRouter(
+    initialLocation: '/',
     navigatorKey: _rootNavigatorKey,
-    initialLocation: (kIsWeb ||
-            defaultTargetPlatform == TargetPlatform.windows ||
-            defaultTargetPlatform == TargetPlatform.linux ||
-            defaultTargetPlatform == TargetPlatform.macOS)
-        ? '/landing'
-        : '/splash',
-    refreshListenable: GoRouterRefreshStream(authService.authStateChanges),
+    refreshListenable: GoRouterRefreshStream(authStream),
     redirect: (context, state) {
-      final user = authService.currentUser;
       final isAuthRoute = state.matchedLocation == '/auth';
+      final isLanding = state.matchedLocation == '/landing' ||
+          state.matchedLocation == '/Educators';
       final isSplash = state.matchedLocation == '/splash';
       final isOnboarding = state.matchedLocation == '/onboarding';
-      final isLanding = state.matchedLocation == '/landing';
 
-      // Web & Desktop Logic: Bypass Splash and Onboarding completely
-      final isDesktop = !kIsWeb &&
-          (defaultTargetPlatform == TargetPlatform.windows ||
-              defaultTargetPlatform == TargetPlatform.linux ||
-              defaultTargetPlatform == TargetPlatform.macOS);
+      final user = Provider.of<UserModel?>(context);
 
-      if (kIsWeb || isDesktop) {
-        if (state.matchedLocation == '/splash' ||
-            state.matchedLocation == '/onboarding') {
-          return '/landing';
-        }
+      if (user != null && !user.isEmailVerified && user.role == UserRole.creator) {
+        return null;
       }
 
       if (isSplash || isOnboarding) {
-        return null; // Allow splash and onboarding (Mobile only)
+        return null;
       }
 
-      // Redirect unauthenticated users
       if (user == null) {
-        // If trying to access root or protected routes, go to Landing
-        if (state.matchedLocation == '/' || (!isAuthRoute && !isLanding)) {
-          return '/landing';
+        if (isAuthRoute || isLanding || isSplash || isOnboarding) {
+          return null;
         }
-        return null; // Allow access to auth or landing
+        return '/landing';
       }
 
-      // Redirect authenticated users
       if (isAuthRoute || isLanding || isSplash || isOnboarding) {
         return '/';
       }
@@ -154,7 +138,7 @@ GoRouter createAppRouter(AuthService authService) {
       return null;
     },
     routes: <RouteBase>[
-      // Top-level routes that should not have the nav bar
+      // Top-level standalone routes (no nav bar)
       GoRoute(
         path: '/landing',
         builder: (context, state) => const LandingPageWeb(),
@@ -175,20 +159,18 @@ GoRouter createAppRouter(AuthService authService) {
         path: '/auth',
         builder: (context, state) => const AuthScreen(),
       ),
-      // Settings and Profile moved to main application shell branches
 
-      // Main application shell with bottom navigation bar
+      // Main application shell with navigation
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return ScaffoldWithNavBar(navigationShell: navigationShell);
         },
         branches: <StatefulShellBranch>[
-          // Branch 1: Home (formerly Review)
+          // Branch 0: Home/Dashboard
           StatefulShellBranch(
             navigatorKey: _reviewShellNavigatorKey,
             routes: <RouteBase>[
               GoRoute(
-                // Home Route (Responsive)
                 path: '/',
                 builder: (context, state) => const RoleAwareView(
                   studentView: ResponsiveView(
@@ -205,7 +187,7 @@ GoRouter createAppRouter(AuthService authService) {
             ],
           ),
 
-          // Branch 2: Library
+          // Branch 1: Library/Content Manager
           StatefulShellBranch(
             navigatorKey: _libraryShellNavigatorKey,
             routes: <RouteBase>[
@@ -222,12 +204,10 @@ GoRouter createAppRouter(AuthService authService) {
                   ),
                 ),
                 routes: [
-                  // Sub-routes accessible from the Library tab
                   GoRoute(
                     path: 'summary/:id',
                     name: 'library-summary',
-                    parentNavigatorKey:
-                        _rootNavigatorKey, // Show without nav bar
+                    parentNavigatorKey: _rootNavigatorKey,
                     builder: (context, state) {
                       try {
                         final summary = state.extra is LocalSummary
@@ -249,8 +229,7 @@ GoRouter createAppRouter(AuthService authService) {
                   GoRoute(
                     path: 'quiz/:id',
                     name: 'library-quiz',
-                    parentNavigatorKey:
-                        _rootNavigatorKey, // Show without nav bar
+                    parentNavigatorKey: _rootNavigatorKey,
                     builder: (context, state) {
                       try {
                         final quiz = state.extra is LocalQuiz
@@ -272,8 +251,7 @@ GoRouter createAppRouter(AuthService authService) {
                   GoRoute(
                     path: 'flashcards/:id',
                     name: 'library-flashcards',
-                    parentNavigatorKey:
-                        _rootNavigatorKey, // Show without nav bar
+                    parentNavigatorKey: _rootNavigatorKey,
                     builder: (context, state) {
                       try {
                         final set = state.extra is FlashcardSet
@@ -292,10 +270,10 @@ GoRouter createAppRouter(AuthService authService) {
                       }
                     },
                   ),
-                    GoRoute(
-                      path: 'results-view/:folderId',
-                      name: 'results-view',
-                      parentNavigatorKey: _rootNavigatorKey,
+                  GoRoute(
+                    path: 'results-view/:folderId',
+                    name: 'results-view',
+                    parentNavigatorKey: _rootNavigatorKey,
                     builder: (context, state) {
                       try {
                         final folderId = state.pathParameters['folderId'];
@@ -328,89 +306,72 @@ GoRouter createAppRouter(AuthService authService) {
             ],
           ),
 
-          // Branch 3: Create
+          // Branch 2: Create (Shared)
           StatefulShellBranch(
             navigatorKey: _createShellNavigatorKey,
             routes: <RouteBase>[
               GoRoute(
-                  path: '/create',
-                  builder: (context, state) => const ResponsiveView(
-                        mobile: CreateContentScreen(),
-                        desktop: CreateContentScreenWeb(),
-                      ),
-                  routes: [
-                    GoRoute(
-                      path: 'extraction-view',
-                      name: 'extraction-view',
-                      parentNavigatorKey: _rootNavigatorKey,
-                      builder: (context, state) {
-                        final result = ExtractionResultCache.consume();
-                        return ResponsiveView(
-                          mobile: ExtractionViewScreen(result: result),
-                          desktop: ExtractionViewScreenWeb(result: result),
-                        );
-                      },
-                    ),
-                    GoRoute(
-                      path: 'edit-content',
-                      parentNavigatorKey: _rootNavigatorKey,
-                      builder: (context, state) {
-                        if (state.extra is EditableContent) {
-                          final content = state.extra as EditableContent;
-                          if (content.type == 'quiz') {
-                            return EditQuizScreen(content: content);
-                          } else if (content.type == 'flashcards' ||
-                              content.type == 'flashcardSet' ||
-                              content.type == 'flashcard') {
-                            return EditFlashcardsScreen(content: content);
-                          } else if (content.type == 'summary') {
-                            final summary = Summary(
-                              id: content.id,
-                              userId: '',
-                              title: content.title,
-                              content: content.content ?? '',
-                              timestamp: content.timestamp,
-                              tags: content.tags ?? [],
-                            );
-                            return EditScreen(item: summary);
-                          } else {
-                            return const Scaffold(
-                                body: Center(
-                                    child: Text(
-                                        'Unknown Content Type for Editing')));
-                          }
-                        } else {
-                          // Should return a valid widget, like an error screen
-                          return const Scaffold(
-                              body: Center(child: Text('Invalid Content')));
-                        }
-                      },
-                    ),
-                  ]),
+                path: '/create-content',
+                builder: (context, state) => const RoleAwareView(
+                  studentView: ResponsiveView(
+                    mobile: CreateContentScreen(),
+                    desktop: CreateContentScreenWeb(),
+                  ),
+                  creatorView: ResponsiveView(
+                    mobile: ExamCreationScreen(),
+                    desktop: ExamCreationScreenWeb(),
+                  ),
+                ),
+              ),
             ],
           ),
 
-          // Branch 4: Progress
+          // Branch 3: Progress/Analytics
           StatefulShellBranch(
             navigatorKey: _progressShellNavigatorKey,
             routes: <RouteBase>[
               GoRoute(
-                  path: '/progress',
+                path: '/progress',
                 builder: (context, state) => const RoleAwareView(
                   studentView: ResponsiveView(
                     mobile: ProgressScreen(),
                     desktop: ProgressScreenWeb(),
                   ),
                   creatorView: ResponsiveView(
-                    mobile: LibraryScreen(), // Teachers see Library as "Assets" for now
+                    mobile: TeacherDashboardScreen(),
                     desktop: TeacherDashboardWeb(module: 'analytics'),
                   ),
                 ),
-                  routes: []),
+                routes: [],
+              ),
             ],
           ),
 
-          // Branch 5: Profile
+          // Branch 4: Students (Teacher Only)
+          StatefulShellBranch(
+            navigatorKey: _studentsShellNavigatorKey,
+            routes: <RouteBase>[
+              GoRoute(
+                path: '/students',
+                builder: (context, state) =>
+                    const TeacherDashboardWeb(module: 'students'),
+              ),
+            ],
+          ),
+
+          // Branch 5: AI Insights (Teacher Only)
+          StatefulShellBranch(
+            navigatorKey: _feedbackShellNavigatorKey,
+            routes: <RouteBase>[
+              GoRoute(
+                path: '/feedback',
+                builder: (context, state) =>
+                    const TeacherDashboardWeb(module: 'feedback'),
+              ),
+            ],
+          ),
+
+          // Branch 6: Profile (Shared)
           StatefulShellBranch(
             navigatorKey: _profileShellNavigatorKey,
             routes: <RouteBase>[
@@ -421,7 +382,7 @@ GoRouter createAppRouter(AuthService authService) {
             ],
           ),
 
-          // Branch 6: Settings
+          // Branch 7: Settings (Shared)
           StatefulShellBranch(
             navigatorKey: _settingsShellNavigatorKey,
             routes: <RouteBase>[
@@ -457,29 +418,10 @@ GoRouter createAppRouter(AuthService authService) {
               ),
             ],
           ),
-          // Branch 6: Students
-          StatefulShellBranch(
-            navigatorKey: GlobalKey<NavigatorState>(debugLabel: 'StudentsShell'),
-            routes: <RouteBase>[
-              GoRoute(
-                path: '/students',
-                builder: (context, state) => const TeacherDashboardWeb(module: 'students'),
-              ),
-            ],
-          ),
-
-          // Branch 7: AI Feedback
-          StatefulShellBranch(
-            navigatorKey: GlobalKey<NavigatorState>(debugLabel: 'FeedbackShell'),
-            routes: <RouteBase>[
-              GoRoute(
-                path: '/feedback',
-                builder: (context, state) => const TeacherDashboardWeb(module: 'feedback'),
-              ),
-            ],
-          ),
         ],
       ),
+
+      // Standalone routes outside shell
       GoRoute(
         path: '/deck',
         builder: (context, state) {
