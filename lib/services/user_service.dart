@@ -20,8 +20,8 @@ class UserService {
     if (!userDoc.exists) return;
 
     final user = UserModel.fromFirestore(userDoc);
-    final now = DateTime.now();
-    final lastUpdate = user.updatedAt ?? DateTime.now();
+    final now = TimeSyncService.now;
+    final lastUpdate = user.updatedAt ?? TimeSyncService.now;
 
     // Check if it's a new day
     final isSameDay = now.year == lastUpdate.year &&
@@ -85,40 +85,10 @@ class UserService {
     });
   }
 
-  /// Reset weekly uploads (should be called periodically)
-  Future<void> resetWeeklyUploads(String userId) async {
-    await _db.collection('users').doc(userId).update({
-      'weeklyUploads': 0,
-    });
-  }
-
-  /// Check if weekly uploads should be reset and reset if needed
-  Future<void> checkAndResetWeeklyUploads(String userId) async {
-    try {
-      final userDoc = await _db.collection('users').doc(userId).get();
-      if (!userDoc.exists) return;
-
-      final user = UserModel.fromFirestore(userDoc);
-      final now = TimeSyncService.now;
-      final lastReset = user.lastWeeklyReset ?? now;
-
-      // Check if 7 days have passed since last reset
-      if (now.difference(lastReset).inDays >= 7) {
-        await _db.collection('users').doc(userId).update({
-          'weeklyUploads': 0,
-          'lastWeeklyReset': FieldValue.serverTimestamp(),
-        });
-        developer.log('Weekly usage reset for user: $userId',
-            name: 'UserService');
-      }
-    } catch (e) {
-      developer.log('Error checking weekly reset: $e', name: 'UserService');
-    }
-  }
-
   /// Upgrade user to Pro
   Future<void> upgradeToPro(String userId, {Duration? duration}) async {
-    final expiryDate = duration != null ? DateTime.now().add(duration) : null;
+    final expiryDate =
+        duration != null ? TimeSyncService.now.add(duration) : null;
 
     final Map<String, dynamic> updateData = {
       'subscriptionExpiry':

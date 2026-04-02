@@ -12,6 +12,8 @@ class ReferralViewModel extends ChangeNotifier {
   String? _referralCode;
   String? get referralCode => _referralCode;
 
+  bool _isLoaded = false;
+
   Stream<int> get referralCountStream =>
       _referralService.getReferralCount(_authService.currentUser!.uid);
 
@@ -20,15 +22,23 @@ class ReferralViewModel extends ChangeNotifier {
   }
 
   void _init() {
+    if (_isLoaded) return; // Guard: don't reload if already loaded
     if (_authService.currentUser != null) {
       _loadReferralCode();
     }
   }
 
   void update(ReferralService newService, AuthService authService) {
+    final userChanged = _authService.currentUser?.uid != authService.currentUser?.uid;
     _referralService = newService;
     _authService = authService;
-    _init();
+
+    if (userChanged) {
+      // Only reload if the actual user changed (e.g. sign-out → sign-in)
+      _isLoaded = false;
+      _referralCode = null;
+      _init();
+    }
     notifyListeners();
   }
 
@@ -36,6 +46,7 @@ class ReferralViewModel extends ChangeNotifier {
     try {
       _referralCode = await _referralService
           .generateReferralCode(_authService.currentUser!.uid);
+      _isLoaded = true;
     } catch (e, s) {
       developer.log(
         'Error loading referral code',

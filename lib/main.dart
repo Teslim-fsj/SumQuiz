@@ -22,6 +22,7 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:sumquiz/router/app_router.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sumquiz/providers/navigation_provider.dart';
+import 'package:sumquiz/providers/create_content_provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:sumquiz/services/iap_service.dart';
@@ -282,6 +283,21 @@ class _MyAppState extends State<MyApp> {
             previous?.update(context.read<ReferralService>(), authService);
             return previous!;
           },
+        ),
+        ChangeNotifierProxyProvider3<ContentExtractionService,
+            EnhancedAIService, LocalDatabaseService, CreateContentProvider>(
+          create: (context) => CreateContentProvider(
+            extractionService: context.read<ContentExtractionService>(),
+            aiService: context.read<EnhancedAIService>(),
+            localDb: context.read<LocalDatabaseService>(),
+          ),
+          update: (context, extraction, ai, localDb, previous) =>
+              previous ??
+              CreateContentProvider(
+                extractionService: extraction,
+                aiService: ai,
+                localDb: localDb,
+              ),
         ),
       ],
       child: Consumer<ThemeProvider>(

@@ -35,7 +35,6 @@ class FirestoreService {
     final userData = user.toFirestore();
 
     // Initialize usage tracking fields if they don't exist
-    userData['weeklyUploads'] = FieldValue.increment(0);
     userData['folderCount'] = FieldValue.increment(0);
     userData['srsCardCount'] = FieldValue.increment(0);
 
@@ -43,20 +42,6 @@ class FirestoreService {
         .collection('users')
         .doc(user.uid)
         .set(userData, SetOptions(merge: true));
-  }
-
-  Future<bool> canGenerate(String uid, String feature) async {
-    DocumentSnapshot<Map<String, dynamic>> doc =
-        await _db.collection('users').doc(uid).get();
-    if (doc.exists) {
-      int dailyCount = doc.data()!['daily_usage'][feature] ?? 0;
-      return dailyCount < 1000;
-    }
-    return false;
-  }
-
-  Future<void> incrementUsage(String uid, String feature) {
-    return _db.collection('users').doc(uid).set({}, SetOptions(merge: true));
   }
 
   Future<void> updateUserRole(String uid, UserRole role) async {

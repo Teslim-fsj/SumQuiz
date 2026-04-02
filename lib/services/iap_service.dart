@@ -7,6 +7,7 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform, kIsWeb;
 import 'package:sumquiz/models/user_model.dart';
+import 'package:sumquiz/services/time_sync_service.dart';
 
 /// IAP Service for handling Play Store purchases
 /// Direct Play Store integration for subscription management
@@ -145,7 +146,7 @@ class IAPService {
   Future<void> _handleSuccessfulPurchase(
       String uid, PurchaseDetails purchaseDetails) async {
     try {
-      final now = DateTime.now();
+      final now = TimeSyncService.now;
       final bool isTrial = purchaseDetails.productID == _proTrialId;
 
       DateTime? expiryDate;

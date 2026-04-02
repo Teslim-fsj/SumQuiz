@@ -28,10 +28,8 @@ class UserModel {
   final String preferredStudyTime; // "HH:mm" format, default "09:00"
 
   // Freemium Usage Tracking
-  final int weeklyUploads;
   final int folderCount;
   final int srsCardCount;
-  final DateTime? lastWeeklyReset;
   final UserRole role;
 
   // Trial & Creator Logic (stored fields)
@@ -40,11 +38,19 @@ class UserModel {
   final bool hasLinkedCard;
   final bool hasUsedTrial;
   final String? currentProduct; // Selected subscription product ID
-  final String?
-      subscriptionType; // e.g. 'monthly', 'yearly', 'lifetime' - for manual management
 
-  // Referral
+  // Referral Fields
   final String? referralCode;
+  final String? appliedReferralCode;
+  final String? referredBy;
+  final DateTime? referralAppliedAt;
+  final int totalReferrals;
+  final int referrals; // Pending referral count
+  final int referralRewards;
+
+  // Purchase Verification
+  final DateTime? lastVerified;
+  final String? purchaseToken;
 
   // Creator Profile
   final Map<String, dynamic> creatorProfile;
@@ -63,22 +69,27 @@ class UserModel {
     this.preferredStudyTime = "09:00",
     this.dailyGoal = 5,
     this.itemsCompletedToday = 0,
-    this.weeklyUploads = 0,
     this.folderCount = 0,
     this.srsCardCount = 0,
-    this.lastWeeklyReset,
     this.dailyDecksGenerated = 0,
     this.totalDecksGenerated = 0,
     this.totalUploads = 0,
     this.lastDeckGenerationDate,
     this.updatedAt,
-     bool isTrial = false,
+    bool isTrial = false,
     this.isCreatorPro = false,
     this.hasLinkedCard = false,
     this.hasUsedTrial = false,
     this.currentProduct,
-    this.subscriptionType,
     this.referralCode,
+    this.appliedReferralCode,
+    this.referredBy,
+    this.referralAppliedAt,
+    this.totalReferrals = 0,
+    this.referrals = 0,
+    this.referralRewards = 0,
+    this.lastVerified,
+    this.purchaseToken,
     this.creatorProfile = const {},
     this.photoUrl,
     this.isEmailVerified = false,
@@ -128,10 +139,8 @@ class UserModel {
       preferredStudyTime: data['preferredStudyTime'] ?? "09:00",
       dailyGoal: data['dailyGoal'] ?? 5,
       itemsCompletedToday: data['itemsCompletedToday'] ?? 0,
-      weeklyUploads: data['weeklyUploads'] ?? 0,
       folderCount: data['folderCount'] ?? 0,
       srsCardCount: data['srsCardCount'] ?? 0,
-      lastWeeklyReset: (data['lastWeeklyReset'] as Timestamp?)?.toDate(),
       dailyDecksGenerated: data['dailyDecksGenerated'] ?? 0,
       totalDecksGenerated: data['totalDecksGenerated'] ?? 0,
       totalUploads: data['totalUploads'] ?? 0,
@@ -142,13 +151,20 @@ class UserModel {
         (e) => e.name == (data['role'] ?? 'student'),
         orElse: () => UserRole.student,
       ),
-       isTrial: data['isTrial'] ?? false,
+      isTrial: data['isTrial'] ?? false,
       isCreatorPro: data['isCreatorPro'] ?? false,
       hasLinkedCard: data['hasLinkedCard'] ?? false,
       hasUsedTrial: data['hasUsedTrial'] ?? false,
       currentProduct: data['currentProduct'],
-      subscriptionType: data['subscriptionType'],
       referralCode: data['referralCode'],
+      appliedReferralCode: data['appliedReferralCode'],
+      referredBy: data['referredBy'],
+      referralAppliedAt: (data['referralAppliedAt'] as Timestamp?)?.toDate(),
+      totalReferrals: data['totalReferrals'] ?? 0,
+      referrals: data['referrals'] ?? 0,
+      referralRewards: data['referralRewards'] ?? 0,
+      lastVerified: (data['lastVerified'] as Timestamp?)?.toDate(),
+      purchaseToken: data['purchaseToken'],
       creatorProfile: data['creatorProfile'] ?? {},
       photoUrl: data['photoUrl'] ?? data['photoURL'],
       isEmailVerified: data['isEmailVerified'] ?? false,
@@ -169,7 +185,6 @@ class UserModel {
       'preferredStudyTime': preferredStudyTime,
       'dailyGoal': dailyGoal,
       'itemsCompletedToday': itemsCompletedToday,
-      'weeklyUploads': weeklyUploads,
       'folderCount': folderCount,
       'srsCardCount': srsCardCount,
       'dailyDecksGenerated': dailyDecksGenerated,
@@ -177,16 +192,23 @@ class UserModel {
       'totalUploads': totalUploads,
       if (lastDeckGenerationDate != null)
         'lastDeckGenerationDate': Timestamp.fromDate(lastDeckGenerationDate!),
-      if (lastWeeklyReset != null)
-        'lastWeeklyReset': Timestamp.fromDate(lastWeeklyReset!),
       if (updatedAt != null) 'updatedAt': Timestamp.fromDate(updatedAt!),
-       'isTrial': _isTrialUser, // Store the private field
+      'isTrial': _isTrialUser,
       'isCreatorPro': isCreatorPro,
       'hasLinkedCard': hasLinkedCard,
       'hasUsedTrial': hasUsedTrial,
       'currentProduct': currentProduct,
-      'subscriptionType': subscriptionType,
       if (referralCode != null) 'referralCode': referralCode,
+      if (appliedReferralCode != null) 'appliedReferralCode': appliedReferralCode,
+      if (referredBy != null) 'referredBy': referredBy,
+      if (referralAppliedAt != null)
+        'referralAppliedAt': Timestamp.fromDate(referralAppliedAt!),
+      'totalReferrals': totalReferrals,
+      'referrals': referrals,
+      'referralRewards': referralRewards,
+      if (lastVerified != null)
+        'lastVerified': Timestamp.fromDate(lastVerified!),
+      if (purchaseToken != null) 'purchaseToken': purchaseToken,
       'creatorProfile': creatorProfile,
       'photoUrl': photoUrl,
       'isEmailVerified': isEmailVerified,
@@ -205,23 +227,28 @@ class UserModel {
     String? preferredStudyTime,
     int? dailyGoal,
     int? itemsCompletedToday,
-    int? weeklyUploads,
     int? folderCount,
     int? srsCardCount,
     int? dailyDecksGenerated,
     int? totalDecksGenerated,
     int? totalUploads,
     DateTime? lastDeckGenerationDate,
-    DateTime? lastWeeklyReset,
     DateTime? updatedAt,
     UserRole? role,
-     bool? isTrial,
+    bool? isTrial,
     bool? isCreatorPro,
     bool? hasLinkedCard,
     bool? hasUsedTrial,
     String? currentProduct,
-    String? subscriptionType,
     String? referralCode,
+    String? appliedReferralCode,
+    String? referredBy,
+    DateTime? referralAppliedAt,
+    int? totalReferrals,
+    int? referrals,
+    int? referralRewards,
+    DateTime? lastVerified,
+    String? purchaseToken,
     Map<String, dynamic>? creatorProfile,
     String? photoUrl,
     bool? isEmailVerified,
@@ -240,7 +267,6 @@ class UserModel {
       preferredStudyTime: preferredStudyTime ?? this.preferredStudyTime,
       dailyGoal: dailyGoal ?? this.dailyGoal,
       itemsCompletedToday: itemsCompletedToday ?? this.itemsCompletedToday,
-      weeklyUploads: weeklyUploads ?? this.weeklyUploads,
       folderCount: folderCount ?? this.folderCount,
       srsCardCount: srsCardCount ?? this.srsCardCount,
       dailyDecksGenerated: dailyDecksGenerated ?? this.dailyDecksGenerated,
@@ -248,15 +274,21 @@ class UserModel {
       totalUploads: totalUploads ?? this.totalUploads,
       lastDeckGenerationDate:
           lastDeckGenerationDate ?? this.lastDeckGenerationDate,
-      lastWeeklyReset: lastWeeklyReset ?? this.lastWeeklyReset,
       updatedAt: updatedAt ?? this.updatedAt,
-       isTrial: isTrial ?? _isTrialUser,
+      isTrial: isTrial ?? _isTrialUser,
       isCreatorPro: isCreatorPro ?? this.isCreatorPro,
       hasLinkedCard: hasLinkedCard ?? this.hasLinkedCard,
       hasUsedTrial: hasUsedTrial ?? this.hasUsedTrial,
       currentProduct: currentProduct ?? this.currentProduct,
-      subscriptionType: subscriptionType ?? this.subscriptionType,
       referralCode: referralCode ?? this.referralCode,
+      appliedReferralCode: appliedReferralCode ?? this.appliedReferralCode,
+      referredBy: referredBy ?? this.referredBy,
+      referralAppliedAt: referralAppliedAt ?? this.referralAppliedAt,
+      totalReferrals: totalReferrals ?? this.totalReferrals,
+      referrals: referrals ?? this.referrals,
+      referralRewards: referralRewards ?? this.referralRewards,
+      lastVerified: lastVerified ?? this.lastVerified,
+      purchaseToken: purchaseToken ?? this.purchaseToken,
       creatorProfile: creatorProfile ?? this.creatorProfile,
       photoUrl: photoUrl ?? this.photoUrl,
       isEmailVerified: isEmailVerified ?? this.isEmailVerified,

@@ -5,6 +5,7 @@ import 'package:sumquiz/services/referral_service.dart';
 import 'package:sumquiz/services/notification_service.dart';
 import 'package:sumquiz/services/notification_manager.dart';
 import 'package:sumquiz/services/local_database_service.dart';
+import 'package:sumquiz/services/time_sync_service.dart';
 
 class UsageConfig {
   static const int freeDecksPerDay = 2; // Text/General daily limit
@@ -26,7 +27,7 @@ class UsageService {
       final user = UserModel.fromFirestore(userDoc);
 
       // Check daily reset
-      final now = DateTime.now();
+      final now = TimeSyncService.now;
       final lastGen = user.lastDeckGenerationDate;
       bool isNewDay = lastGen == null ||
           now.year != lastGen.year ||
@@ -87,7 +88,7 @@ class UsageService {
         if (!userDoc.exists) return null;
         final user = UserModel.fromFirestore(userDoc);
 
-        final now = DateTime.now();
+        final now = TimeSyncService.now;
         final lastGen = user.lastDeckGenerationDate;
         bool isNewDay = lastGen == null ||
             now.year != lastGen.year ||
@@ -98,7 +99,9 @@ class UsageService {
         int newTotalCount = user.totalDecksGenerated + 1;
 
         // Check for weekly reset (7 days since last reset)
-        final lastWeeklyReset = user.lastWeeklyReset;
+        // Read lastWeeklyReset from raw Firestore data for backward compat
+        final data = userDoc.data() as Map<String, dynamic>;
+        final lastWeeklyReset = (data['lastWeeklyReset'] as Timestamp?)?.toDate();
         bool isNewWeek = lastWeeklyReset == null ||
             now.difference(lastWeeklyReset).inDays >= 7;
 
@@ -151,13 +154,12 @@ class UsageService {
   Future<bool> canPerformAction(String uid, String action) async {
     if (action == 'upload') {
       final userDoc = await _db.collection('users').doc(uid).get();
-      final data = userDoc.data();
-      if (data == null) return false;
+      if (!userDoc.exists) return false;
 
-      final isPro = data['isPro'] as bool? ?? false;
-      if (isPro) return true;
+      final user = UserModel.fromFirestore(userDoc);
+      if (user.isPro) return true;
 
-      final totalUploads = data['totalUploads'] as int? ?? 0;
+      final totalUploads = user.totalUploads;
       final lifetimeOk = totalUploads < UsageConfig.freeUploadsLifetime;
       
       if (!lifetimeOk) return false;

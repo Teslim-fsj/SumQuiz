@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import 'package:sumquiz/services/notification_service.dart';
 import 'package:sumquiz/services/notification_manager.dart';
 import 'package:sumquiz/services/local_database_service.dart';
+import 'package:sumquiz/services/time_sync_service.dart';
 
 /// A production-grade service for handling a referral system in Flutter and Firebase.
 ///
@@ -120,7 +121,7 @@ class ReferralService {
             : <String, dynamic>{};
         final currentNewUserExpiry =
             (newUserData['subscriptionExpiry'] as Timestamp?)?.toDate() ??
-                DateTime.now();
+                TimeSyncService.now;
         final newExpiryDateForNewUser =
             currentNewUserExpiry.add(const Duration(days: 7));
 
@@ -290,9 +291,9 @@ class ReferralService {
 
         DateTime currentExpiry =
             (data['subscriptionExpiry'] as Timestamp?)?.toDate() ??
-                DateTime.now();
-        if (currentExpiry.isBefore(DateTime.now())) {
-          currentExpiry = DateTime.now();
+                TimeSyncService.now;
+        if (currentExpiry.isBefore(TimeSyncService.now)) {
+          currentExpiry = TimeSyncService.now;
         }
 
         // Cap rewards to avoid abuse (e.g., 20 successful referrals)

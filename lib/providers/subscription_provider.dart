@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import '../models/user_model.dart';
 import '../services/iap_service.dart';
+import '../services/time_sync_service.dart';
 
 class SubscriptionProvider with ChangeNotifier {
   IAPService? _iapService;
@@ -48,7 +49,7 @@ class SubscriptionProvider with ChangeNotifier {
   bool get isActive =>
       _isSubscribed &&
       (_subscriptionExpiry == null ||
-          _subscriptionExpiry!.isAfter(DateTime.now()));
+          _subscriptionExpiry!.isAfter(TimeSyncService.now));
 
   // Initialize and listen to user changes
   void _initialize() {
@@ -210,7 +211,7 @@ class SubscriptionProvider with ChangeNotifier {
   bool isExpiringSoon() {
     if (_subscriptionExpiry == null) return false;
 
-    final now = DateTime.now();
+    final now = TimeSyncService.now;
     final difference = _subscriptionExpiry!.difference(now);
 
     return difference.inDays <= 3 && difference.inDays >= 0;
@@ -220,7 +221,7 @@ class SubscriptionProvider with ChangeNotifier {
   String? getFormattedExpiry() {
     if (_subscriptionExpiry == null) return null;
 
-    final now = DateTime.now();
+    final now = TimeSyncService.now;
     final difference = _subscriptionExpiry!.difference(now);
 
     if (difference.inDays > 0) {

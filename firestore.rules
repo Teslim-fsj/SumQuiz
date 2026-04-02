@@ -16,15 +16,14 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isOwner(userId);
       allow create: if isOwner(userId);
+      // Allow owner updates but block ghost fields that should never be stored
+      // and isCreatorPro which should only be granted by server-side logic.
+      // Note: subscriptionExpiry and currentProduct are allowed because they are
+      // written by IAPService and ReferralService from the client.
+      // TODO: Move subscription writes to Cloud Functions for full security.
       allow update: if isOwner(userId) 
-        && (
-          // Allow setting these fields if they don't exist yet (initial setup)
-          !resource.data.keys().hasAny(['subscriptionExpiry', 'isPro'])
-          || 
-          // Otherwise, block modifications to prevent self-upgrading
-          !request.resource.data.diff(resource.data).affectedKeys()
-            .hasAny(['isPro', 'isPremium', 'subscriptionExpiry', 'currentProduct'])
-        );
+        && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['isPro', 'isPremium', 'isCreatorPro']);
     }
 
     // Payments Collection

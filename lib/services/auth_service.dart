@@ -7,7 +7,6 @@ import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/providers/sync_provider.dart';
 import 'package:sumquiz/services/firestore_service.dart';
 import 'package:sumquiz/services/referral_service.dart';
-import 'package:sumquiz/services/user_service.dart';
 import 'package:sumquiz/services/notification_integration.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,7 +17,6 @@ class AuthService {
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
   final FirestoreService _firestoreService = FirestoreService();
   final ReferralService _referralService = ReferralService();
-  final UserService _userService = UserService();
   static const String _authTokenKey = 'auth_token';
   static const String _userIdKey = 'user_id';
   static const String _userDisplayNameKey = 'user_display_name';
@@ -133,9 +131,6 @@ class AuthService {
         // Save authentication state for offline access
         await _saveAuthState(user);
 
-        // Check and reset weekly uploads if needed
-        await _userService.checkAndResetWeeklyUploads(user.uid);
-
         if (context.mounted) {
           await Provider.of<SyncProvider>(context, listen: false).syncData();
         }
@@ -163,11 +158,9 @@ class AuthService {
             displayName: user.displayName ?? '',
             email: user.email ?? '',
             role: role,
-            isTrial: false,
-            subscriptionExpiry: null,
           );
           await _firestoreService.saveUserData(newUser);
-          developer.log('Trial granted and user profile created for ${user.uid}');
+          developer.log('User profile created for ${user.uid}');
 
           if (referralCode != null && referralCode.isNotEmpty) {
             try {
@@ -308,8 +301,6 @@ class AuthService {
           displayName: fullName,
           email: email,
           role: role,
-          isTrial: false,
-          subscriptionExpiry: null,
         );
         await _firestoreService.saveUserData(newUser);
 
