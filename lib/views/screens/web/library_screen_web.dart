@@ -11,17 +11,8 @@ import 'package:sumquiz/services/local_database_service.dart';
 import 'package:sumquiz/view_models/library_view_model.dart';
 import 'package:sumquiz/view_models/quiz_view_model.dart';
 import 'package:sumquiz/services/sync_service.dart';
-import 'package:sumquiz/services/auth_service.dart';
-
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-import 'package:sumquiz/models/local_flashcard_set.dart';
-import 'package:sumquiz/models/local_summary.dart';
-import 'package:sumquiz/models/local_quiz.dart';
-import 'package:sumquiz/models/local_flashcard.dart';
-import 'package:sumquiz/models/flashcard_set.dart';
-import 'package:sumquiz/models/flashcard.dart';
 import 'package:sumquiz/views/widgets/enter_code_dialog.dart';
 
 class LibraryScreenWeb extends StatefulWidget {
@@ -79,23 +70,24 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
   Widget build(BuildContext context) {
     final user = Provider.of<UserModel?>(context);
     final theme = Theme.of(context);
+    final viewModel = _viewModel;
 
     if (user == null) {
       return Scaffold(body: _buildLoginPrompt());
     }
 
-    if (_viewModel == null) {
+    if (viewModel == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return ChangeNotifierProvider.value(
-      value: _viewModel!,
+      value: viewModel,
       child: Stack(
         children: [
           Consumer<LibraryViewModel>(
             builder: (context, viewModel, child) {
               return Scaffold(
-                backgroundColor: theme.colorScheme.background,
+                backgroundColor: theme.colorScheme.surface,
                 body: Column(
                   children: [
                     _buildModernHeader(user, viewModel),
@@ -109,7 +101,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
           ),
           if (_isNavigating)
             Container(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: Colors.black.withOpacity(0.3),
               child: Center(
                 child: Container(
                   padding: const EdgeInsets.all(32),
@@ -147,7 +139,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
         children: [
           Icon(Icons.lock_person,
               size: 60,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+              color: theme.colorScheme.onSurface.withOpacity(0.5)),
           const SizedBox(height: 20),
           Text(
             "Please Log In to View Library",
@@ -177,7 +169,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
       height: 90,
       padding: const EdgeInsets.symmetric(horizontal: 40),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.8),
+        color: Colors.white.withOpacity(0.8),
         border: const Border(bottom: BorderSide(color: WebColors.border)),
       ),
       child: Row(
@@ -313,7 +305,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
                 backgroundColor: Theme.of(context)
                     .colorScheme
                     .primary
-                    .withValues(alpha: 0.1),
+                    .withOpacity(0.1),
                 foregroundColor: Theme.of(context).colorScheme.primary,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -433,14 +425,146 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
     return StreamBuilder<List<LibraryItem>>(
       stream: viewModel.allRecentlyViewed$,
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return _buildLoading();
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
         final items = snapshot.data ?? [];
         if (items.isEmpty) {
-          return _buildEmptyState('No recent activity',
-              'Things you view or create will appear here');
+          return _buildEmptyState('No Recent Items',
+              'The materials you viewed recently will appear here');
         }
-        return _buildContentGrid(items, userId, viewModel);
+        return GridView.builder(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 4,
+            crossAxisSpacing: 20,
+            mainAxisSpacing: 20,
+            childAspectRatio: 1.4,
+          ),
+          itemCount: items.length,
+          itemBuilder: (context, index) => _buildRecentlyViewedItem(items[index]),
+        );
       },
+    );
+  }
+
+  Widget _buildRecentlyViewedItem(LibraryItem item) {
+    IconData icon;
+    Color bgColor;
+    Color textColor;
+    String typeName;
+    String badge;
+
+    switch (item.type) {
+      case LibraryItemType.summary:
+        icon = Icons.article_rounded;
+        bgColor = const Color(0xFF6366F1).withValues(alpha: 0.1);
+        textColor = const Color(0xFF6366F1);
+        typeName = 'Summary';
+        badge = 'Refined';
+        break;
+      case LibraryItemType.quiz:
+        icon = Icons.quiz_rounded;
+        bgColor = const Color(0xFF10B981).withValues(alpha: 0.1);
+        textColor = const Color(0xFF10B981);
+        typeName = 'Quiz';
+        badge = '${((item.score ?? 0) * 100).round()}% Score';
+        break;
+      case LibraryItemType.flashcards:
+        icon = Icons.style_rounded;
+        bgColor = const Color(0xFFEC4899).withValues(alpha: 0.1);
+        textColor = const Color(0xFFEC4899);
+        typeName = 'Flashcards';
+        badge = '${item.itemCount ?? 0} Cards';
+        break;
+      case LibraryItemType.exam:
+        icon = Icons.assignment_rounded;
+        bgColor = const Color(0xFFF59E0B).withValues(alpha: 0.1);
+        textColor = const Color(0xFFF59E0B);
+        typeName = 'Exam';
+        badge = '${item.itemCount ?? 0} Questions';
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: WebColors.border),
+        boxShadow: WebColors.subtleShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: textColor, size: 20),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  badge,
+                  style: GoogleFonts.outfit(
+                    color: textColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          Text(
+            item.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.outfit(
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Text(
+                typeName,
+                style: GoogleFonts.outfit(
+                  color: WebColors.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                width: 3,
+                height: 3,
+                decoration: const BoxDecoration(
+                  color: WebColors.border,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                _getRelativeTime(item.timestamp),
+                style: GoogleFonts.outfit(
+                  color: WebColors.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -487,7 +611,6 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
   }
 
   Widget _buildLibraryTabs() {
-    final theme = Theme.of(context);
     return Container(
       height: 48,
       decoration: BoxDecoration(
@@ -502,7 +625,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: WebColors.primary.withValues(alpha: 0.3),
+              color: WebColors.primary.withOpacity(0.3),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -541,7 +664,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
       switch (item.type) {
         case LibraryItemType.summary:
           icon = Icons.description_outlined;
-          bgColor = WebColors.secondary.withValues(alpha: 0.1);
+          bgColor = WebColors.secondary.withOpacity(0.1);
           textColor = WebColors.secondary;
           typeName = 'SUMMARY';
           badge = item.itemCount != null
@@ -550,7 +673,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
           break;
         case LibraryItemType.quiz:
           icon = Icons.quiz_outlined;
-          bgColor = WebColors.accentOrange.withValues(alpha: 0.1);
+          bgColor = WebColors.accentOrange.withOpacity(0.1);
           textColor = WebColors.accentOrange;
           typeName = 'QUIZ';
           badge = item.score != null
@@ -559,14 +682,14 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
           break;
         case LibraryItemType.flashcards:
           icon = Icons.style_outlined;
-          bgColor = WebColors.pinkAccent.withValues(alpha: 0.1);
+          bgColor = WebColors.pinkAccent.withOpacity(0.1);
           textColor = WebColors.pinkAccent;
           typeName = 'FLASHCARDS';
           badge = '${item.itemCount ?? 0} Cards';
           break;
         case LibraryItemType.exam:
           icon = Icons.assignment_outlined;
-          bgColor = WebColors.purplePrimary.withValues(alpha: 0.1);
+          bgColor = WebColors.purplePrimary.withOpacity(0.1);
           textColor = WebColors.purplePrimary;
           typeName = 'EXAM';
           badge = item.score != null
@@ -603,6 +726,20 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
     ));
 
     return _buildMasonryGrid(cardData);
+  }
+
+  String _getRelativeTime(Timestamp timestamp) {
+    final difference = DateTime.now().difference(timestamp.toDate());
+    if (difference.inDays > 7) {
+      return '${(difference.inDays / 7).floor()}w ago';
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
+    }
+    return 'Just now';
   }
 
   String _getDescriptionForType(LibraryItem item) {
@@ -667,8 +804,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
             color: Colors.transparent,
             child: InkWell(
               onTap: card.onTap,
-              hoverColor: card.textColor.withValues(alpha: 0.05),
-              splashColor: card.textColor.withValues(alpha: 0.1),
+              hoverColor: card.textColor.withOpacity(0.05),
+              splashColor: card.textColor.withOpacity(0.1),
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Column(
@@ -680,7 +817,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: card.textColor.withValues(alpha: 0.1),
+                            color: card.textColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child:
@@ -691,7 +828,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
-                              color: card.textColor.withValues(alpha: 0.1),
+                              color: card.textColor.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(

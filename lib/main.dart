@@ -159,7 +159,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _router = createRouter();
+    _router = createRouter(widget.authService);
   }
 
   Future<void> _scheduleNotificationsOnLaunch(BuildContext context) async {

@@ -97,11 +97,8 @@ final _studentsShellNavigatorKey =
 final _feedbackShellNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'FeedbackShell');
 
-GoRouter createRouter() {
-  final authStream = Provider.of<AuthService>(
-    _rootNavigatorKey.currentContext!,
-    listen: false,
-  ).authStateChanges;
+GoRouter createRouter(AuthService authService) {
+  final authStream = authService.authStateChanges;
 
   return GoRouter(
     initialLocation: '/',
@@ -128,7 +125,7 @@ GoRouter createRouter() {
         if (isAuthRoute || isLanding || isSplash || isOnboarding) {
           return null;
         }
-        return '/landing';
+        return '/Educators';
       }
 
       if (isAuthRoute || isLanding || isSplash || isOnboarding) {

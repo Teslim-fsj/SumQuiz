@@ -358,7 +358,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
                       'Automate your study sessions. Turn any lecture or textbook into interactive flashcards, quizzes, and summaries to ace your next exam.',
                       style: TextStyle(
                         fontSize: 20,
-                        color: Colors.white.withOpacity(0.9),
+        color: Colors.white.withValues(alpha: 0.9),
                         height: 1.6,
                       ),
                     )
@@ -431,9 +431,9 @@ class _LandingPageWebState extends State<LandingPageWeb>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -494,7 +494,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
         foregroundColor: Colors.white,
-        side: BorderSide(color: Colors.white.withOpacity(0.5)),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
