@@ -47,6 +47,9 @@ class CreateContentProvider with ChangeNotifier {
   int _selectedCount = 15;
   int get selectedCount => _selectedCount;
 
+  List<String> _selectedQuestionTypes = ['Multiple Choice'];
+  List<String> get selectedQuestionTypes => _selectedQuestionTypes;
+
   String _progressMessage = '';
   String get progressMessage => _progressMessage;
 
@@ -73,9 +76,21 @@ class CreateContentProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void updateConfig({String? difficulty, int? count}) {
+  void updateConfig({String? difficulty, int? count, List<String>? questionTypes}) {
     if (difficulty != null) _selectedDifficulty = difficulty;
     if (count != null) _selectedCount = count;
+    if (questionTypes != null) _selectedQuestionTypes = questionTypes;
+    notifyListeners();
+  }
+
+  void toggleQuestionType(String type) {
+    if (_selectedQuestionTypes.contains(type)) {
+      if (_selectedQuestionTypes.length > 1) {
+        _selectedQuestionTypes.remove(type);
+      }
+    } else {
+      _selectedQuestionTypes.add(type);
+    }
     notifyListeners();
   }
 
@@ -91,6 +106,7 @@ class CreateContentProvider with ChangeNotifier {
     _errorMessage = '';
     _generatedFolderId = '';
     _isCancelled = false;
+    _selectedQuestionTypes = ['Multiple Choice'];
     notifyListeners();
   }
 
@@ -127,6 +143,7 @@ class CreateContentProvider with ChangeNotifier {
               localDb: _localDb,
               depth: _selectedDifficulty,
               cardCount: _selectedCount,
+              questionTypes: _selectedQuestionTypes,
               onProgress: (msg) {
                 _progressMessage = msg;
                 notifyListeners();
@@ -194,6 +211,7 @@ class CreateContentProvider with ChangeNotifier {
         difficulty: _selectedDifficulty,
         questionCount: _selectedCount,
         cardCount: _selectedCount,
+        questionTypes: _selectedQuestionTypes,
         onProgress: (msg) {
           _progressMessage = msg;
           notifyListeners();

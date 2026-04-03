@@ -7,12 +7,17 @@ class ConfigSelector extends StatelessWidget {
   final ValueChanged<String> onDifficultyChanged;
   final ValueChanged<int> onCountChanged;
 
+  final List<String> selectedQuestionTypes;
+  final ValueChanged<String> onToggleType;
+
   const ConfigSelector({
     super.key,
     required this.selectedDifficulty,
     required this.selectedCount,
+    required this.selectedQuestionTypes,
     required this.onDifficultyChanged,
     required this.onCountChanged,
+    required this.onToggleType,
   });
 
   @override
@@ -30,6 +35,10 @@ class ConfigSelector extends StatelessWidget {
         _buildSectionTitle(context, 'Number of Items'),
         const SizedBox(height: 12),
         _buildCountOptions(context),
+        const SizedBox(height: 28),
+        _buildSectionTitle(context, 'Quiz Format'),
+        const SizedBox(height: 12),
+        _buildQuizTypeOptions(context),
       ],
     );
   }
@@ -137,6 +146,56 @@ class ConfigSelector extends StatelessWidget {
                   color: isSelected ? Colors.white : colorScheme.onSurface,
                 ),
               ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+  Widget _buildQuizTypeOptions(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final types = [
+      ('Multiple Choice', Icons.list_rounded),
+      ('True or False', Icons.check_circle_outline_rounded),
+      ('Short Answer', Icons.short_text_rounded),
+    ];
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: types.map((type) {
+        final isSelected = selectedQuestionTypes.contains(type.$1);
+        return GestureDetector(
+          onTap: () => onToggleType(type.$1),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: isSelected ? colorScheme.tertiary : theme.cardColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isSelected ? colorScheme.tertiary : colorScheme.onSurface.withValues(alpha: 0.1),
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  type.$2,
+                  color: isSelected ? Colors.white : colorScheme.onSurfaceVariant,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  type.$1,
+                  style: GoogleFonts.outfit(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: isSelected ? Colors.white : colorScheme.onSurface,
+                  ),
+                ),
+              ],
             ),
           ),
         );

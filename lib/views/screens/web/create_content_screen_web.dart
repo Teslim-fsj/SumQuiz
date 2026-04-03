@@ -354,8 +354,10 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
                 ConfigSelector(
                   selectedDifficulty: provider.selectedDifficulty,
                   selectedCount: provider.selectedCount,
+                  selectedQuestionTypes: provider.selectedQuestionTypes,
                   onDifficultyChanged: (v) => provider.updateConfig(difficulty: v),
                   onCountChanged: (v) => provider.updateConfig(count: v),
+                  onToggleType: (v) => provider.toggleQuestionType(v),
                 ),
                 const SizedBox(height: 48),
                 SizedBox(

@@ -301,6 +301,7 @@ class EnhancedAIService {
     String difficulty = 'intermediate',
     int questionCount = 10,
     int cardCount = 15,
+    List<String>? questionTypes,
     CancellationToken? cancelToken,
   }) async {
     developer.log(
@@ -366,6 +367,7 @@ class EnhancedAIService {
                   userId: userId,
                   questionCount: questionCount,
                   difficulty: difficulty,
+                  questionTypes: questionTypes,
                   cancelToken: cancelToken);
               if (quiz.id.isEmpty) {
                 quiz.id = const Uuid().v4();
@@ -438,6 +440,7 @@ class EnhancedAIService {
     required LocalDatabaseService localDb,
     String depth = 'intermediate',
     int cardCount = 15,
+    List<String>? questionTypes,
     void Function(String)? onProgress,
     CancellationToken? cancelToken,
   }) async {
@@ -452,6 +455,7 @@ class EnhancedAIService {
         topic: topic,
         depth: depth,
         cardCount: cardCount,
+        questionTypes: questionTypes,
         cancelToken: cancelToken,
       );
 

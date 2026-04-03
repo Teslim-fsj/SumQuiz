@@ -391,8 +391,10 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
           ConfigSelector(
             selectedDifficulty: provider.selectedDifficulty,
             selectedCount: provider.selectedCount,
+            selectedQuestionTypes: provider.selectedQuestionTypes,
             onDifficultyChanged: (v) => provider.updateConfig(difficulty: v),
             onCountChanged: (v) => provider.updateConfig(count: v),
+            onToggleType: (v) => provider.toggleQuestionType(v),
           ),
           const SizedBox(height: 48),
           ElevatedButton(

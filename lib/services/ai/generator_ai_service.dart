@@ -370,12 +370,13 @@ Text: $text''';
                       'options': Schema.array(items: Schema.string()),
                       'correctAnswer': Schema.string(),
                       'explanation': Schema.string(),
+                      'questionType': Schema.string(),
                     },
                     requiredProperties: [
                       'question',
-                      'options',
                       'correctAnswer',
-                      'explanation'
+                      'explanation',
+                      'questionType'
                     ],
                   ),
                 ),
