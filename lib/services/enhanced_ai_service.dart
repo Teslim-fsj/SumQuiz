@@ -4,6 +4,9 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 
 import 'dart:developer' as developer;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:sumquiz/models/user_model.dart';
+import 'package:sumquiz/services/user_service.dart';
 
 import 'package:sumquiz/models/local_flashcard_set.dart';
 import 'package:sumquiz/models/local_quiz.dart';
@@ -165,9 +168,23 @@ class EnhancedAIService {
     void Function(String)? onProgress,
     CancellationToken? cancelToken,
   }) async {
+    // 1. Check Usage Limits
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    if (userDoc.exists) {
+      final user = UserModel.fromFirestore(userDoc);
+      // Teachers (creators) who are NOT Pro have a lifetime limit of 3 exams
+      if (user.role == UserRole.creator && !user.isPro && user.examsGenerated >= 3) {
+        throw EnhancedAIServiceException(
+          'You have reached your lifetime limit of 3 free exams. Upgrade to Pro for unlimited generation.',
+          code: 'EXAM_LIMIT_REACHED',
+        );
+      }
+    }
+
     await _checkUsageLimits(userId);
     onProgress?.call('Generating formal exam paper...');
-    return _generatorService.generateExam(
+
+    final result = await _generatorService.generateExam(
       text: text,
       title: title,
       subject: subject,
@@ -180,6 +197,14 @@ class EnhancedAIService {
       userId: userId,
       cancelToken: cancelToken,
     );
+
+    // 2. Increment Exams Generated Count on success
+    await UserService().incrementExamsGenerated(userId).catchError((e) {
+      developer.log('Failed to increment exams generated count',
+          name: 'EnhancedAIService', error: e);
+    });
+
+    return result;
   }
 
   Future<Result<ExtractionResult>> analyzeContentFromUrl({

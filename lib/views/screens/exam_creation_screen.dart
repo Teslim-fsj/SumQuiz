@@ -59,7 +59,8 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
     final user = Provider.of<UserModel?>(context, listen: false);
 
     // Check if user has Pro access
-    if (user != null && !user.isPro) {
+    // Check if user has Pro access OR has trial exams remaining
+    if (user != null && !user.isPro && user.examsGenerated >= 3) {
       // Show upgrade dialog if user is not Pro
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted) {
@@ -167,7 +168,46 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
+                  if (user != null && !user.isPro) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      margin: const EdgeInsets.only(bottom: 24),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.2)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.auto_awesome, color: theme.colorScheme.primary, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Free Trial: ${user.examsGenerated}/3 Exams Used',
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.onPrimaryContainer,
+                                  ),
+                                ),
+                                Text(
+                                  'Upgrade to Pro for unlimited generation.',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else ...[
+                    const SizedBox(height: 24),
+                  ],
 
                   // Basic Info Section
                   _buildSectionCard(
@@ -560,24 +600,28 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
                   SizedBox(
                     width: double.infinity,
                     height: 56,
-                    child: ElevatedButton.icon(
-                      onPressed: _sourceMaterial.isNotEmpty
-                          ? _generateDraftExam
-                          : null,
-                      icon: const Icon(Icons.auto_awesome),
-                      label: const Text(
-                        'Generate Draft Exam',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w600),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.colorScheme.primary,
-                        foregroundColor: theme.colorScheme.onPrimary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        disabledBackgroundColor: theme.disabledColor,
-                      ),
+                    child: Consumer<UserModel?>(
+                      builder: (context, user, child) {
+                        final bool isLimitReached = user != null && !user.isPro && user.examsGenerated >= 3;
+                        
+                        return ElevatedButton.icon(
+                          onPressed: (isLimitReached || _sourceMaterial.isEmpty)
+                              ? (isLimitReached ? () => context.push('/settings/subscription') : null)
+                              : _generateDraftExam,
+                          icon: Icon(isLimitReached ? Icons.workspace_premium : Icons.auto_awesome),
+                          label: Text(
+                            isLimitReached ? 'Upgrade to Pro' : 'Generate Draft Exam',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isLimitReached ? theme.colorScheme.tertiary : theme.colorScheme.primary,
+                            foregroundColor: isLimitReached ? theme.colorScheme.onTertiary : theme.colorScheme.onPrimary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(height: 8),

@@ -20,6 +20,7 @@ class UserModel {
   final int dailyDecksGenerated;
   final int totalDecksGenerated;
   final int totalUploads;
+  final int examsGenerated;
   final DateTime? lastDeckGenerationDate;
   final DateTime? updatedAt;
   final double momentumDecayRate; // Default 0.05 (5% daily)
@@ -74,6 +75,7 @@ class UserModel {
     this.dailyDecksGenerated = 0,
     this.totalDecksGenerated = 0,
     this.totalUploads = 0,
+    this.examsGenerated = 0,
     this.lastDeckGenerationDate,
     this.updatedAt,
     bool isTrial = false,
@@ -144,6 +146,7 @@ class UserModel {
       dailyDecksGenerated: data['dailyDecksGenerated'] ?? 0,
       totalDecksGenerated: data['totalDecksGenerated'] ?? 0,
       totalUploads: data['totalUploads'] ?? 0,
+      examsGenerated: data['examsGenerated'] ?? 0,
       lastDeckGenerationDate:
           (data['lastDeckGenerationDate'] as Timestamp?)?.toDate(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
@@ -190,6 +193,7 @@ class UserModel {
       'dailyDecksGenerated': dailyDecksGenerated,
       'totalDecksGenerated': totalDecksGenerated,
       'totalUploads': totalUploads,
+      'examsGenerated': examsGenerated,
       if (lastDeckGenerationDate != null)
         'lastDeckGenerationDate': Timestamp.fromDate(lastDeckGenerationDate!),
       if (updatedAt != null) 'updatedAt': Timestamp.fromDate(updatedAt!),
@@ -232,6 +236,7 @@ class UserModel {
     int? dailyDecksGenerated,
     int? totalDecksGenerated,
     int? totalUploads,
+    int? examsGenerated,
     DateTime? lastDeckGenerationDate,
     DateTime? updatedAt,
     UserRole? role,
@@ -272,6 +277,7 @@ class UserModel {
       dailyDecksGenerated: dailyDecksGenerated ?? this.dailyDecksGenerated,
       totalDecksGenerated: totalDecksGenerated ?? this.totalDecksGenerated,
       totalUploads: totalUploads ?? this.totalUploads,
+      examsGenerated: examsGenerated ?? this.examsGenerated,
       lastDeckGenerationDate:
           lastDeckGenerationDate ?? this.lastDeckGenerationDate,
       updatedAt: updatedAt ?? this.updatedAt,

@@ -25,6 +25,7 @@ class _AuthScreenState extends State<AuthScreen>
   final _fullNameController = TextEditingController();
   final _referralCodeController = TextEditingController();
   AuthMode _authMode = AuthMode.login;
+  UserRole _signUpRole = UserRole.student;
   bool _isLoading = false;
 
   @override
@@ -62,6 +63,10 @@ class _AuthScreenState extends State<AuthScreen>
           _passwordController.text.trim(),
         );
       } else {
+        // Save intended role before sign up
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('intended_role', _signUpRole.name);
+        
         await authService.signUpWithEmailAndPassword(
           context,
           _emailController.text.trim(),
@@ -148,11 +153,15 @@ class _AuthScreenState extends State<AuthScreen>
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
+      
+      // Save intended role for new Google sign-ups
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('intended_role', _signUpRole.name);
+
       await authService.signInWithGoogle(context,
           referralCode: _referralCodeController.text.trim());
       
       // Check if new user to show role picker
-      final prefs = await SharedPreferences.getInstance();
       if (prefs.getBool('is_new_user') ?? false) {
         if (mounted) {
           await _showRolePickerDialog();
@@ -530,6 +539,8 @@ class _AuthScreenState extends State<AuthScreen>
             validator: null,
             theme: theme,
           ),
+          const SizedBox(height: 16),
+          _buildRoleSelector(theme),
           const SizedBox(height: 32),
           _buildAuthButton('Sign Up', _submit, theme),
           const SizedBox(height: 16),
@@ -672,6 +683,45 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
+  Widget _buildRoleSelector(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'I am joining as a:',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _RoleOption(
+                label: 'Student',
+                icon: Icons.school_outlined,
+                isSelected: _signUpRole == UserRole.student,
+                onTap: () => setState(() => _signUpRole = UserRole.student),
+                theme: theme,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _RoleOption(
+                label: 'Teacher',
+                icon: Icons.assignment_ind_outlined,
+                isSelected: _signUpRole == UserRole.creator,
+                onTap: () => setState(() => _signUpRole = UserRole.creator),
+                theme: theme,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Future<void> _showRolePickerDialog() async {
     final theme = Theme.of(context);
     final authService = Provider.of<AuthService>(context, listen: false);
@@ -733,6 +783,59 @@ class _AuthScreenState extends State<AuthScreen>
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RoleOption extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final ThemeData theme;
+
+  const _RoleOption({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+    required this.theme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? theme.colorScheme.primary : theme.cardColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? theme.colorScheme.primary : theme.dividerColor.withValues(alpha: 0.2),
+            width: 1.5,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.primary,
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
         ),
       ),
     );

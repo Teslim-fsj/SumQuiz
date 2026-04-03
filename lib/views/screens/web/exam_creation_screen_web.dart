@@ -623,7 +623,8 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
     final theme = Theme.of(context);
     final user = Provider.of<UserModel?>(context);
 
-    if (user != null && !user.isPro) {
+    // Only block if they are at the limit AND not Pro
+    if (user != null && !user.isPro && user.examsGenerated >= 3) {
       return _buildUpgradeScreen();
     }
 
@@ -864,6 +865,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
 
   Widget _buildWizardHeader() {
     final theme = Theme.of(context);
+    final user = Provider.of<UserModel?>(context);
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -884,6 +886,30 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                   color: theme.colorScheme.onSurface,
                 ),
               ),
+              if (user != null && !user.isPro) ...[
+                const SizedBox(width: 24),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.auto_awesome, size: 14, color: theme.colorScheme.primary),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${user.examsGenerated}/3 Free Exams Used',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 32),
@@ -993,13 +1019,33 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
               child: const Text('Next Step'),
             )
           else
-            ElevatedButton(
-              onPressed: _sourceMaterial.isEmpty ? null : _generateQuestions,
-              style: ElevatedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              ),
-              child: const Text('Generate Paper'),
+            Consumer<UserModel?>(
+              builder: (context, user, child) {
+                final theme = Theme.of(context);
+                final bool isLimitReached = user != null && !user.isPro && user.examsGenerated >= 3;
+                
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (isLimitReached)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: Text(
+                          'Limit Reached',
+                          style: TextStyle(color: theme.colorScheme.error, fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ElevatedButton(
+                      onPressed: (_sourceMaterial.isEmpty || isLimitReached) ? null : _generateQuestions,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                        backgroundColor: isLimitReached ? theme.colorScheme.outline : null,
+                      ),
+                      child: Text(isLimitReached ? 'Upgrade to Pro' : 'Generate Paper'),
+                    ),
+                  ],
+                );
+              },
             ),
         ],
       ),
