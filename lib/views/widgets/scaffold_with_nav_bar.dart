@@ -153,19 +153,20 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                 padding: const EdgeInsets.only(left: 20),
                                 child: Image.asset(
                                   'assets/images/sumquiz_logo.png',
-                                width: 32,
-                                height: 32,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      gradient: WebColors.HeroGradient,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: const Icon(Icons.school,
-                                        color: Colors.white, size: 24),
-                                  );
-                                },
+                                  width: 32,
+                                  height: 32,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        gradient: WebColors.HeroGradient,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Icon(Icons.school,
+                                          color: Colors.white, size: 24),
+                                    );
+                                  },
+                                ),
                               ),
                               const SizedBox(width: 12),
                               Text(
@@ -177,26 +178,26 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                   letterSpacing: -0.5,
                                 ),
                               ),
-                                const Spacer(),
-                              ],
-                              Padding(
-                                padding: EdgeInsets.only(
-                                    right: _isExpanded ? 20 : 0),
-                                child: IconButton(
-                                  onPressed: () =>
-                                      setState(() => _isExpanded = !_isExpanded),
-                                  icon: Icon(
-                                    _isExpanded
-                                        ? Icons.menu_open_rounded
-                                        : Icons.menu_rounded,
-                                    color: theme.colorScheme.onSurface
-                                        .withValues(alpha: 0.6),
-                                    size: 24,
-                                  ),
-                                  tooltip: _isExpanded ? 'Collapse' : 'Expand',
-                                ),
-                              ),
+                              const Spacer(),
                             ],
+                            Padding(
+                              padding: EdgeInsets.only(
+                                  right: _isExpanded ? 20 : 0),
+                              child: IconButton(
+                                onPressed: () =>
+                                    setState(() => _isExpanded = !_isExpanded),
+                                icon: Icon(
+                                  _isExpanded
+                                      ? Icons.menu_open_rounded
+                                      : Icons.menu_rounded,
+                                  color: theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.6),
+                                  size: 24,
+                                ),
+                                tooltip: _isExpanded ? 'Collapse' : 'Expand',
+                              ),
+                            ),
+                          ],
                           ),
                         ),
 

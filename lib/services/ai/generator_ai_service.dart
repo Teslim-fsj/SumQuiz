@@ -97,7 +97,10 @@ Text: $text''';
       {String? userId,
       int questionCount = 10,
       String difficulty = 'intermediate',
+      List<String>? questionTypes,
       CancellationToken? cancelToken}) async {
+    final types = questionTypes ?? ['Multiple Choice'];
+    final typesStr = types.join(', ');
     developer.log(
         'Generating $difficulty quiz ($questionCount questions) for text length: ${text.length}',
         name: 'GeneratorAIService');
@@ -111,17 +114,20 @@ Text: $text''';
               properties: {
                 'question': Schema.string(description: 'Exam-style question'),
                 'options': Schema.array(
-                    items: Schema.string(), description: '4 distinct options'),
+                    items: Schema.string(),
+                    description: '4 options (only for Multiple Choice or True/False)'),
                 'correctAnswer': Schema.string(
-                    description: 'The exact matching correct option'),
+                    description: 'The exact matching correct option or answer'),
                 'explanation': Schema.string(
                     description: 'Detailed explanation of the correct answer'),
+                'questionType': Schema.string(
+                    description: 'Specific type from: $typesStr'),
               },
               requiredProperties: [
                 'question',
-                'options',
                 'correctAnswer',
-                'explanation'
+                'explanation',
+                'questionType'
               ],
             ),
           ),
@@ -131,14 +137,15 @@ Text: $text''';
     );
 
     final prompt =
-        '''Generate a challenging $questionCount-question multiple-choice quiz based on this text.
+        '''Generate a professional $questionCount-question quiz using these formats: ($typesStr).
 TARGET DIFFICULTY: $difficulty
 
 QUIZ RULES:
-1. Questions must require understanding/application, not just simple name/date recall.
-2. Options must be plausible distractors related to the topic.
-3. Do NOT use "All of the above" or "None of the above" more than once.
-4. Explanations must be thorough, explaining WHY the answer is correct and briefly why others are incorrect if applicable.
+1. Variety: Use the requested question types correctly.
+2. Quality: Questions must require understanding/application, not just simple name/date recall.
+3. For Multiple Choice / True-False: Options must be plausible distractors related to the topic.
+4. For Short Answer: Ensure the correctAnswer is concise (1-5 words).
+5. Explanations must be thorough, explaining WHY the answer is correct and briefly why others are incorrect if applicable.
 
 Text: $text''';
 
@@ -170,7 +177,7 @@ Text: $text''';
               options: options,
               correctAnswer: q['correctAnswer']?.toString() ?? '',
               explanation: q['explanation']?.toString(),
-              questionType: 'Multiple Choice',
+              questionType: q['questionType']?.toString() ?? 'Multiple Choice',
             ));
           }
         }
@@ -313,8 +320,11 @@ Text: $text''';
     required String topic,
     String depth = 'intermediate',
     int cardCount = 15,
+    List<String>? questionTypes,
     CancellationToken? cancelToken,
   }) async {
+    final types = questionTypes ?? ['Multiple Choice'];
+    final typesStr = types.join(', ');
     developer.log(
         'Generating from topic: $topic (depth: $depth, cards: $cardCount)',
         name: 'GeneratorAIService');
@@ -334,7 +344,7 @@ Text: $text''';
     GENERATE:
     1. **TITLE**: Engaging title.
     2. **SUMMARY**: Structured sections with bullet points.
-    3. **QUIZ**: 15 mcqs with 4 options, correctAnswer (exact string), and explanation.
+    3. **QUIZ**: 15 distinct questions from these types: ($typesStr). For each, provide question, options (if MC/TF), correctAnswer, explanation, and questionType.
     4. **FLASHCARDS**: $cardCount question-answer pairs.''';
 
     try {

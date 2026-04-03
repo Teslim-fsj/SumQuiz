@@ -37,7 +37,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   final _durationController = TextEditingController(text: '60');
 
   // state variables
-  String _selectedLevel = 'JSS1';
+  String _selectedLevel = 'High School / Secondary';
   int _numberOfQuestions = 20;
   final double _difficultyValue = 0.5;
   bool _includeMultipleChoice = true;
@@ -48,6 +48,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   bool _focusWeakAreas = false;
 
   String _sourceMaterial = '';
+  final List<String> _processedFileNames = [];
   bool _isProcessingSource = false;
   bool _isGeneratingQuestions = false;
   String _processingMessage = '';
@@ -98,11 +99,6 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Future<void> _pickSource(String type) async {
-    setState(() {
-      _isProcessingSource = true;
-      _processingMessage = 'Selecting $type...';
-    });
-
     try {
       FilePickerResult? result;
       if (type == 'PDF') {
@@ -110,11 +106,13 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           type: FileType.custom,
           allowedExtensions: ['pdf'],
           withData: true,
+          allowMultiple: true,
         );
       } else if (type == 'Image') {
         result = await FilePicker.platform.pickFiles(
           type: FileType.image,
           withData: true,
+          allowMultiple: true,
         );
       }
 
@@ -122,15 +120,13 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
 
       if (type == 'Notes') {
         _showNotesInputDialog();
-        setState(() => _isProcessingSource = false);
         return;
       }
 
-      if (result != null && result.files.single.bytes != null) {
-        final bytes = result.files.single.bytes!;
-        final name = result.files.single.name;
-
-        setState(() => _processingMessage = 'Extracting content from $name...');
+      if (result != null && result.files.isNotEmpty) {
+        setState(() {
+          _isProcessingSource = true;
+        });
 
         final enhancedAiService =
             Provider.of<EnhancedAIService>(context, listen: false);
@@ -138,25 +134,58 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
         final user = Provider.of<UserModel?>(context, listen: false);
 
         _cancelToken = CancellationToken();
-        final res = await extractionService.extractContent(
-          type: type.toLowerCase(),
-          input: bytes,
-          userId: user?.uid,
-          mimeType: type == 'PDF' ? 'application/pdf' : 'image/jpeg',
-          onProgress: (msg) => setState(() => _processingMessage = msg),
-          cancelToken: _cancelToken,
-        );
+
+        final files = result.files;
+        for (int i = 0; i < files.length; i++) {
+          final file = files[i];
+          final bytes = file.bytes;
+          final name = file.name;
+
+          if (bytes == null) continue;
+
+          setState(() {
+            _processingMessage =
+                'Extracting [${i + 1}/${files.length}]: $name...';
+          });
+
+          try {
+            final res = await extractionService.extractContent(
+              type: type.toLowerCase(),
+              input: bytes,
+              userId: user?.uid,
+              mimeType: type == 'PDF'
+                  ? 'application/pdf'
+                  : (name.toLowerCase().endsWith('.png')
+                      ? 'image/png'
+                      : 'image/jpeg'),
+              onProgress: (msg) => setState(() => _processingMessage =
+                  '[${i + 1}/${files.length}] $msg'),
+              cancelToken: _cancelToken,
+            );
+
+            setState(() {
+              if (_sourceMaterial.isNotEmpty) {
+                _sourceMaterial += '\n\n--- Source: $name ---\n\n';
+              }
+              _sourceMaterial += res.text;
+              _processedFileNames.add(name);
+            });
+          } catch (e) {
+            _showError('Failed to extract $name: $e');
+          }
+        }
 
         setState(() {
-          _sourceMaterial = res.text;
           _isProcessingSource = false;
+          _processingMessage = '';
         });
-      } else {
-        setState(() => _isProcessingSource = false);
       }
     } catch (e) {
-      setState(() => _isProcessingSource = false);
-      _showError('Error extracting source: $e');
+      setState(() {
+        _isProcessingSource = false;
+        _processingMessage = '';
+      });
+      _showError('Error selecting source: $e');
     }
   }
 
@@ -267,11 +296,23 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
       await firestore.publishDeck(publicDeck);
 
       final pdf = await _generatePdfDocument(shareCode);
+      final bytes = await pdf.save();
 
+      // Desktop/Mobile/Browser standard print
       await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => pdf.save(),
+        onLayout: (PdfPageFormat format) async => bytes,
         name: '${_titleController.text}.pdf',
       );
+
+      // Web specific download fallback if printing is blocked
+      try {
+        await Printing.sharePdf(
+          bytes: bytes,
+          filename: '${_titleController.text}.pdf',
+        );
+      } catch (e) {
+        debugPrint('Web download fallback error: $e');
+      }
 
       setState(() => _isGeneratingQuestions = false);
     } catch (e) {
@@ -312,33 +353,26 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
             _pdfSectionTitle(
                 'SECTION A – OBJECTIVE (${sectionA.length * _marksA} MARKS)'),
             pw.SizedBox(height: 8),
-            pw.ListView.builder(
-              itemCount: sectionA.length,
-              itemBuilder: (context, index) =>
-                  _pdfQuestionItem(sectionA[index], index + 1, _marksA),
-            ),
+            for (int i = 0; i < sectionA.length; i++)
+              _pdfQuestionItem(sectionA[i], i + 1, _marksA),
             pw.SizedBox(height: 15),
           ],
           if (sectionB.isNotEmpty) ...[
             _pdfSectionTitle(
                 'SECTION B – SHORT ANSWER (${sectionB.length * _marksB} MARKS)'),
             pw.SizedBox(height: 8),
-            pw.ListView.builder(
-              itemCount: sectionB.length,
-              itemBuilder: (context, index) => _pdfQuestionItem(
-                  sectionB[index], index + sectionA.length + 1, _marksB),
-            ),
+            for (int i = 0; i < sectionB.length; i++)
+              _pdfQuestionItem(
+                  sectionB[i], i + sectionA.length + 1, _marksB),
             pw.SizedBox(height: 15),
           ],
           if (sectionC.isNotEmpty) ...[
             _pdfSectionTitle(
                 'SECTION C – THEORY / ESSAY (${sectionC.length * _marksC} MARKS)'),
             pw.SizedBox(height: 8),
-            pw.ListView.builder(
-              itemCount: sectionC.length,
-              itemBuilder: (context, index) => _pdfQuestionItem(sectionC[index],
-                  index + sectionA.length + sectionB.length + 1, _marksC),
-            ),
+            for (int i = 0; i < sectionC.length; i++)
+              _pdfQuestionItem(sectionC[i],
+                  i + sectionA.length + sectionB.length + 1, _marksC),
           ],
         ],
       ),
@@ -353,94 +387,77 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
       build: (pw.Context context) => [
         _pdfSectionTitle('MARKING SCHEME & ANSWER KEY'),
         pw.SizedBox(height: 10),
-        if (sectionA.isNotEmpty) ...[
-          pw.Text('SECTION A - OBJECTIVE',
-              style:
-                  pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
-          pw.SizedBox(height: 8),
-          pw.ListView.builder(
-            itemCount: sectionA.length,
-            itemBuilder: (context, index) {
-              final q = sectionA[index];
-              int optIndex = q.options.indexOf(q.correctAnswer);
-              String letter =
-                  optIndex >= 0 ? String.fromCharCode(65 + optIndex) : '';
-              return pw.Padding(
+          if (sectionA.isNotEmpty) ...[
+            pw.Text('SECTION A - OBJECTIVE',
+                style:
+                    pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+            pw.SizedBox(height: 8),
+            for (int i = 0; i < sectionA.length; i++)
+              pw.Padding(
                 padding: const pw.EdgeInsets.only(bottom: 4),
-                child: pw.Text('${index + 1}. $letter - ${q.correctAnswer}',
+                child: pw.Text(
+                    '${i + 1}. ${sectionA[i].options.contains(sectionA[i].correctAnswer) ? String.fromCharCode(65 + sectionA[i].options.indexOf(sectionA[i].correctAnswer)) : ""} - ${sectionA[i].correctAnswer}',
                     style: const pw.TextStyle(fontSize: 10)),
-              );
-            },
-          ),
-          pw.SizedBox(height: 15),
-        ],
-        if (sectionB.isNotEmpty) ...[
-          pw.Text('SECTION B - SHORT ANSWER',
-              style:
-                  pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
-          pw.SizedBox(height: 8),
-          pw.ListView.builder(
-            itemCount: sectionB.length,
-            itemBuilder: (context, index) {
-              final q = sectionB[index];
-              return pw.Padding(
+              ),
+            pw.SizedBox(height: 15),
+          ],
+          if (sectionB.isNotEmpty) ...[
+            pw.Text('SECTION B - SHORT ANSWER',
+                style:
+                    pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+            pw.SizedBox(height: 8),
+            for (int i = 0; i < sectionB.length; i++)
+              pw.Padding(
                   padding: const pw.EdgeInsets.only(bottom: 6),
                   child: pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
                         pw.Text(
-                            '${index + sectionA.length + 1}. ${q.correctAnswer}',
+                            '${i + sectionA.length + 1}. ${sectionB[i].correctAnswer}',
                             style: const pw.TextStyle(
                                 fontSize: 10, color: PdfColors.green700)),
-                        if (q.explanation != null &&
-                            q.explanation!.isNotEmpty) ...[
+                        if (sectionB[i].explanation != null &&
+                            sectionB[i].explanation!.isNotEmpty) ...[
                           pw.SizedBox(height: 2),
-                          pw.Text('Explanation: ${q.explanation}',
+                          pw.Text('Explanation: ${sectionB[i].explanation}',
                               style: pw.TextStyle(
                                   fontSize: 9,
                                   fontStyle: pw.FontStyle.italic,
                                   color: PdfColors.grey700)),
                         ]
-                      ]));
-            },
-          ),
-          pw.SizedBox(height: 15),
-        ],
-        if (sectionC.isNotEmpty) ...[
-          pw.Text('SECTION C - THEORY / ESSAY',
-              style:
-                  pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
-          pw.SizedBox(height: 8),
-          pw.ListView.builder(
-            itemCount: sectionC.length,
-            itemBuilder: (context, index) {
-              final q = sectionC[index];
-              return pw.Padding(
+                      ])),
+            pw.SizedBox(height: 15),
+          ],
+          if (sectionC.isNotEmpty) ...[
+            pw.Text('SECTION C - THEORY / ESSAY',
+                style:
+                    pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+            pw.SizedBox(height: 8),
+            for (int i = 0; i < sectionC.length; i++)
+              pw.Padding(
                   padding: const pw.EdgeInsets.only(bottom: 8),
                   child: pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
                         pw.Text(
-                            '${index + sectionA.length + sectionB.length + 1}. Expected Answer/Points:',
+                            '${i + sectionA.length + sectionB.length + 1}. Expected Answer/Points:',
                             style: pw.TextStyle(
                                 fontSize: 10, fontWeight: pw.FontWeight.bold)),
                         pw.SizedBox(height: 2),
-                        pw.Text(q.correctAnswer,
+                        pw.Text(sectionC[i].correctAnswer,
                             style: const pw.TextStyle(
                                 fontSize: 10, color: PdfColors.green700)),
-                        if (q.explanation != null &&
-                            q.explanation!.isNotEmpty) ...[
+                        if (sectionC[i].explanation != null &&
+                            sectionC[i].explanation!.isNotEmpty) ...[
                           pw.SizedBox(height: 2),
-                          pw.Text('Marking Guide: ${q.explanation}',
+                          pw.Text('Marking Guide: ${sectionC[i].explanation}',
                               style: pw.TextStyle(
                                   fontSize: 9,
                                   fontStyle: pw.FontStyle.italic,
                                   color: PdfColors.grey700)),
                         ]
-                      ]));
-            },
-          ),
-        ],
+                      ])),
+          ],
       ],
     ));
 
@@ -770,7 +787,6 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Widget _buildExamPreview() {
-    final theme = Theme.of(context);
     return Column(
       children: [
         _buildPreviewHeader(),
@@ -779,7 +795,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
             padding: const EdgeInsets.all(32),
             itemCount: _generatedQuestions.length,
             itemBuilder: (context, index) =>
-                _buildPreviewQuestion(_generatedQuestions[index], index + 1),
+                _editablePaperQuestion(_generatedQuestions[index], index + 1),
           ),
         ),
       ],
@@ -844,78 +860,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
     );
   }
 
-  Widget _buildPreviewQuestion(LocalQuizQuestion q, int number) {
-    final theme = Theme.of(context);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(16),
-        border:
-            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('$number. ',
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-              Expanded(
-                child: Text(
-                  q.question,
-                  style: GoogleFonts.outfit(
-                      fontWeight: FontWeight.w600, fontSize: 15),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color:
-                      theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  (q.questionType ?? '').toUpperCase(),
-                  style: GoogleFonts.outfit(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w800,
-                      color: theme.colorScheme.primary),
-                ),
-              ),
-            ],
-          ),
-          if (q.questionType == 'Multiple Choice') ...[
-            const SizedBox(height: 16),
-            ...q.options.asMap().entries.map((entry) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                                color: theme.colorScheme.outline
-                                    .withValues(alpha: 0.1))),
-                        child: Center(
-                            child: Text(String.fromCharCode(65 + entry.key),
-                                style: const TextStyle(fontSize: 10))),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(entry.value,
-                          style: GoogleFonts.outfit(fontSize: 14)),
-                    ],
-                  ),
-                )),
-          ],
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildWizardHeader() {
     final theme = Theme.of(context);
@@ -1022,7 +967,6 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Widget _buildWizardFooter() {
-    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Row(
@@ -1074,7 +1018,6 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Widget _buildStep1() {
-    final theme = Theme.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -1107,18 +1050,19 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                       decoration:
                           const InputDecoration(border: OutlineInputBorder()),
                       items: [
-                        'JSS1',
-                        'JSS2',
-                        'JSS3',
-                        'SS1',
-                        'SS2',
-                        'SS3',
-                        'Tertiary'
+                        'Primary / Elementary',
+                        'Middle School',
+                        'High School / Secondary',
+                        'Vocational / Technical',
+                        'Undergraduate (University)',
+                        'Postgraduate (Masters/PhD)',
+                        'Professional Certification',
+                        'Corporate Training'
                       ]
                           .map(
-                              (l) => DropdownMenuItem(value: l, child: Text(l)))
+                              (l) => DropdownMenuItem<String>(value: l, child: Text(l)))
                           .toList(),
-                      onChanged: (v) => setState(() => _selectedLevel = v!),
+                      onChanged: (v) => setState(() => _selectedLevel = v ?? 'High School / Secondary'),
                     ),
                   ],
                 ),
@@ -1136,7 +1080,6 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Widget _buildStep2() {
-    final theme = Theme.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -1246,7 +1189,6 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Widget _buildStep4() {
-    final theme = Theme.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -1289,103 +1231,6 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
     );
   }
 
-  Widget _buildPreviewToolBar() {
-    final theme = Theme.of(context);
-    return Container(
-      height: 80,
-      padding: const EdgeInsets.symmetric(horizontal: 40),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-            bottom: BorderSide(
-                color: theme.colorScheme.outline.withValues(alpha: 0.1))),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.visibility_outlined, color: theme.colorScheme.tertiary),
-          const SizedBox(width: 16),
-          Text(
-            'PAPER PREVIEW',
-            style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 13,
-                color: theme.colorScheme.onSurface,
-                letterSpacing: 1),
-          ),
-          const Spacer(),
-          ElevatedButton.icon(
-            onPressed: _exportExam,
-            icon: const Icon(Icons.picture_as_pdf),
-            label: const Text('Download PDF'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF10B981),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPaperLook() {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(60),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 40,
-              offset: const Offset(0, 20))
-        ],
-        border:
-            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Text(
-              _schoolNameController.text.toUpperCase(),
-              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 48),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _paperHeaderRow('SUBJECT', _subjectController.text),
-                  _paperHeaderRow('CLASS', _selectedLevel),
-                  _paperHeaderRow('TIME', '${_durationController.text} MINS'),
-                ],
-              ),
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                    border: Border.all(
-                        color:
-                            theme.colorScheme.outline.withValues(alpha: 0.1)),
-                    borderRadius: BorderRadius.circular(8)),
-                child: const Center(child: Icon(Icons.qr_code_2, size: 64)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
-          const Divider(thickness: 2, color: Colors.black87),
-          const SizedBox(height: 48),
-          for (int i = 0; i < _generatedQuestions.length; i++)
-            _editablePaperQuestion(_generatedQuestions[i], i + 1),
-        ],
-      ),
-    );
-  }
-
   Widget _editablePaperQuestion(LocalQuizQuestion q, int index) {
     final theme = Theme.of(context);
     int marks =
@@ -1407,6 +1252,17 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Expanded(
+                child: TextField(
+                  controller: qCtrl,
+                  onChanged: (v) => q.question = v,
+                  style:
+                      const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  decoration: const InputDecoration(
+                      border: InputBorder.none, isCollapsed: true),
+                ),
+              ),
+              const SizedBox(width: 8),
               Text('($marks Marks)',
                   style: TextStyle(
                       fontStyle: FontStyle.italic,
@@ -1417,10 +1273,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                 onPressed: () {
                   setState(() {
                     _generatedQuestions.removeAt(index - 1);
-                    // Cleanup controllers
                     _qTitleControllers.remove(index);
-                    // Note: Indices shift after removal, so we might need a more robust key-based system
-                    // but for this simple list it works if we clear and let it rebuild.
                     _qTitleControllers.clear();
                     _optControllers.clear();
                   });
@@ -1568,27 +1421,69 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           border: Border.all(color: const Color(0xFFDCFCE7)),
           borderRadius: BorderRadius.circular(16)),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Icon(Icons.check_circle, color: theme.colorScheme.tertiary),
               const SizedBox(width: 16),
               const Expanded(
-                  child: Text('Source Material Extracted',
+                  child: Text('Content Ingested Successfully',
                       style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF166534)))),
               IconButton(
-                  onPressed: () => setState(() => _sourceMaterial = ''),
-                  icon: const Icon(Icons.delete_outline, color: Colors.red)),
+                  tooltip: 'Clear All Sources',
+                  onPressed: () => setState(() {
+                        _sourceMaterial = '';
+                        _processedFileNames.clear();
+                      }),
+                  icon: const Icon(Icons.delete_sweep_outlined,
+                      color: Colors.red)),
             ],
           ),
           const SizedBox(height: 16),
+          if (_processedFileNames.isNotEmpty) ...[
+            Text('Processed Files:',
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.tertiary)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _processedFileNames
+                  .map((name) => Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFDCFCE7)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.insert_drive_file_outlined,
+                                size: 12, color: Color(0xFF166534)),
+                            const SizedBox(width: 6),
+                            Text(name,
+                                style: const TextStyle(
+                                    fontSize: 10, color: Color(0xFF166534))),
+                          ],
+                        ),
+                      ))
+                  .toList(),
+            ),
+            const SizedBox(height: 16),
+          ],
           Text(
-            _sourceMaterial.length > 200
-                ? '${_sourceMaterial.substring(0, 200)}...'
+            _sourceMaterial.length > 300
+                ? '${_sourceMaterial.substring(0, 300)}...'
                 : _sourceMaterial,
-            style: const TextStyle(fontSize: 12, color: Color(0xFF166534)),
+            style: const TextStyle(
+                fontSize: 11, color: Color(0xFF166534), height: 1.5),
           ),
         ],
       ),
@@ -1660,17 +1555,6 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
     );
   }
 
-  Widget _paperHeaderRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text(value.toUpperCase()),
-        ],
-      ),
-    );
-  }
 
   Widget _buildOverlayLoading() {
     return Container(
