@@ -28,6 +28,7 @@ import 'package:sumquiz/services/spaced_repetition_service.dart';
 import 'package:sumquiz/services/sync_service.dart';
 import 'package:sumquiz/models/local_quiz_question.dart';
 import 'package:sumquiz/models/local_flashcard.dart';
+import 'package:sumquiz/providers/create_content_provider.dart';
 export 'ai/ai_types.dart';
 
 // --- EXCEPTIONS moved to ai_types.dart ---
@@ -114,12 +115,16 @@ class EnhancedAIService {
     required String text,
     required String userId,
     String difficulty = 'intermediate',
+    StudyArchetype archetype = StudyArchetype.architect,
     void Function(String)? onProgress,
     CancellationToken? cancelToken,
   }) async {
     onProgress?.call('Generating summary...');
     return _generatorService.generateSummary(text,
-        userId: userId, difficulty: difficulty, cancelToken: cancelToken);
+        userId: userId,
+        difficulty: difficulty,
+        archetype: archetype,
+        cancelToken: cancelToken);
   }
 
   Future<LocalQuiz> generateQuiz({
@@ -324,6 +329,7 @@ class EnhancedAIService {
     required LocalDatabaseService localDb,
     required void Function(String message) onProgress,
     String difficulty = 'intermediate',
+    StudyArchetype archetype = StudyArchetype.architect,
     int questionCount = 10,
     int cardCount = 15,
     List<String>? questionTypes,
@@ -380,6 +386,7 @@ class EnhancedAIService {
               final summary = await _generatorService.generateSummary(text,
                   userId: userId,
                   difficulty: difficulty,
+                  archetype: archetype,
                   cancelToken: cancelToken);
               if (summary.id.isEmpty) {
                 summary.id = const Uuid().v4();
@@ -464,6 +471,7 @@ class EnhancedAIService {
     required String userId,
     required LocalDatabaseService localDb,
     String depth = 'intermediate',
+    StudyArchetype archetype = StudyArchetype.architect,
     int cardCount = 15,
     List<String>? questionTypes,
     void Function(String)? onProgress,
@@ -479,6 +487,7 @@ class EnhancedAIService {
       final data = await _generatorService.generateFromTopic(
         topic: topic,
         depth: depth,
+        archetype: archetype,
         cardCount: cardCount,
         questionTypes: questionTypes,
         cancelToken: cancelToken,

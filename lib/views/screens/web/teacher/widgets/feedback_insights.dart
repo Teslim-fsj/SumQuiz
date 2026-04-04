@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sumquiz/models/public_deck.dart';
 import 'package:sumquiz/models/teacher_models.dart';
 import 'package:sumquiz/theme/web_theme.dart';
-import 'shared_teacher_widgets.dart';
 
 class FeedbackInsights extends StatelessWidget {
   final String? feedbackInsight;
@@ -32,230 +30,304 @@ class FeedbackInsights extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: SharedTeacherWidgets.moduleHeader('AI Feedback Engine',
-                    'Identify hard questions and improvement opportunities'),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   Text('Class Intelligence', style: GoogleFonts.outfit(fontSize: 42, fontWeight: FontWeight.w900, color: const Color(0xFF1F1F1F), letterSpacing: -1)),
+                   const SizedBox(height: 8),
+                   Text('Synthesizing recent data points into actionable insights for your class.', style: GoogleFonts.outfit(fontSize: 18, color: const Color(0xFF6B7280))),
+                ],
               ),
               ElevatedButton.icon(
                 onPressed: isGeneratingFeedback ? null : onGenerateFeedback,
-                icon: isGeneratingFeedback
-                    ? const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.auto_awesome, size: 16),
-                label:
-                    Text(isGeneratingFeedback ? 'Analyzing...' : 'Generate Insights'),
-                style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 14)),
+                icon: isGeneratingFeedback ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: WebColors.purplePrimary)) : const Icon(Icons.auto_awesome),
+                label: Text(isGeneratingFeedback ? 'Analyzing...' : (feedbackInsight == null ? 'Generate Insights' : 'Refresh Insights')),
               ),
             ],
           ),
-          const SizedBox(height: 32),
-          // AI Insight Box
-          if (feedbackInsight != null)
-            _buildAiInsightBox()
-          else
-            SharedTeacherWidgets.emptyCard('No insights yet',
-                'Click "Generate Insights" above. AI will analyze your students\' attempts and identify the most difficult questions and commonly missed concepts.'),
-          const SizedBox(height: 32),
-          // Per-content hard questions
-          _buildHardQuestionsList(),
+          const SizedBox(height: 40),
+          
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(flex: 2, child: _buildCriticalStrugglePoints()),
+              const SizedBox(width: 24),
+              Expanded(flex: 1, child: _buildPerformanceMix()),
+            ],
+          ),
+          
+          const SizedBox(height: 40),
+          _buildCurriculumMastery(),
+          
+          const SizedBox(height: 40),
+          _buildTargetedInterventions(),
         ],
       ),
     );
   }
 
-  Widget _buildAiInsightBox() {
+  Widget _buildCriticalStrugglePoints() {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(28),
+      padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            WebColors.purplePrimary.withValues(alpha: 0.08),
-            WebColors.blueInfo.withValues(alpha: 0.05),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-            color: WebColors.purplePrimary.withValues(alpha: 0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: WebColors.purplePrimary.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        boxShadow: WebColors.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: WebColors.purplePrimary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.auto_awesome,
-                    color: WebColors.purplePrimary, size: 20),
-              ),
+              const Icon(Icons.timeline, color: WebColors.purplePrimary),
               const SizedBox(width: 12),
-              Text('AI-Generated Teaching Insights',
-                  style: GoogleFonts.outfit(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: WebColors.purplePrimary)),
+              Text('AI FEEDBACK SYNTHESIS', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: WebColors.purplePrimary, letterSpacing: 1.5)),
             ],
           ),
-          const SizedBox(height: 20),
-          Text(feedbackInsight!,
-              style: GoogleFonts.outfit(
-                  fontSize: 15,
-                  height: 1.8,
-                  color: WebColors.textPrimary)),
-          const SizedBox(height: 20),
-          _buildActionItem('Review the specific questions below to identify gaps.'),
+          const SizedBox(height: 24),
+          Text('Critical Struggle Points', style: GoogleFonts.outfit(fontSize: 28, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 24),
+          
+          if (feedbackInsight == null)
+             Text('Run the AI generator to discover deep learning patterns and struggles.', style: TextStyle(color: Colors.grey[500]))
+          else
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: WebColors.purplePrimary.withOpacity(0.1)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text('AI Insight Highlight', style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold)),
+                      const SizedBox(width: 12),
+                      Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFF3E8FF), borderRadius: BorderRadius.circular(20)), child: Text('High Priority', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: WebColors.purplePrimary))),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(feedbackInsight!, style: GoogleFonts.outfit(fontSize: 14, color: Colors.grey[700], height: 1.5)),
+                  const SizedBox(height: 16),
+                  Text('Review Topic Strategy →', style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.bold, color: WebColors.purplePrimary)),
+                ],
+              ),
+            ),
         ],
       ),
-    ).animate().fadeIn().slideY(begin: 0.05);
-  }
-
-  Widget _buildActionItem(String text) {
-    return Row(
-      children: [
-        const Icon(Icons.lightbulb_outline_rounded, size: 16, color: WebColors.accentOrange),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(text, 
-            style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w600, color: WebColors.textSecondary)
-          ),
-        ),
-      ],
     );
   }
 
-  Widget _buildHardQuestionsList() {
-    final contentWithData = analytics.values
-        .where((a) => a.hardQuestions.isNotEmpty)
-        .toList();
-
-    if (contentWithData.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Hard Question Analysis',
-            style: GoogleFonts.outfit(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: WebColors.textPrimary)),
-        const SizedBox(height: 20),
-        ...contentWithData.map((a) => _hardQuestionsCard(a)),
-      ],
-    );
-  }
-
-  Widget _hardQuestionsCard(ContentAnalytics a) {
+  Widget _buildPerformanceMix() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: WebColors.border),
+        color: WebColors.purplePrimary,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: WebColors.cardShadow,
       ),
-      child: Theme(
-        data: ThemeData().copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          title: Text(a.contentTitle,
-              style: GoogleFonts.outfit(
-                  fontSize: 14, fontWeight: FontWeight.w800)),
-          subtitle: Text('${a.hardQuestions.length} problem areas detected',
-              style: GoogleFonts.outfit(
-                  fontSize: 12, color: WebColors.textTertiary)),
-          children: a.hardQuestions.map((q) => _questionInsightTile(a, q)).toList(),
-        ),
-      ),
-    );
-  }
-
-  Widget _questionInsightTile(ContentAnalytics a, QuestionInsight q) {
-    final failColor = q.failureRate > 60
-        ? WebColors.error
-        : q.failureRate > 40
-            ? WebColors.accentOrange
-            : WebColors.yellowTip;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: WebColors.border))),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: failColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(Icons.warning_amber_rounded, color: failColor, size: 18),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Q${q.questionIndex + 1}: ${q.questionText}',
-                    style: GoogleFonts.outfit(
-                        fontSize: 13, fontWeight: FontWeight.w700),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 6),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: q.failureRate / 100,
-                    backgroundColor: WebColors.backgroundAlt,
-                    valueColor: AlwaysStoppedAnimation(failColor),
-                    minHeight: 4,
-                  ),
+          Text('PERFORMANCE MIX', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white70, letterSpacing: 1.5)),
+          const Spacer(),
+          Center(
+            child: Container(
+              width: 180,
+              height: 180,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withOpacity(0.2), width: 12),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('72%', style: GoogleFonts.outfit(fontSize: 48, fontWeight: FontWeight.w900, color: Colors.white)),
+                    Text('AVERAGE MASTERY', style: GoogleFonts.outfit(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white70, letterSpacing: 1)),
+                  ],
                 ),
-                const SizedBox(height: 6),
-                Text(
-                    '${q.failureRate.toStringAsFixed(0)}% of students answered incorrectly',
-                    style: GoogleFonts.outfit(
-                        fontSize: 11, color: WebColors.textTertiary)),
+              ),
+            ),
+          ),
+          const Spacer(),
+          _mixRow('Conceptual', '68%'),
+          const SizedBox(height: 16),
+          _mixRow('Practical', '76%'),
+        ],
+      ),
+    );
+  }
+  
+  Widget _mixRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.white54, shape: BoxShape.circle)),
+            const SizedBox(width: 12),
+            Text(label, style: GoogleFonts.outfit(fontSize: 14, color: Colors.white)),
+          ],
+        ),
+        Text(value, style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
+      ],
+    );
+  }
+
+  Widget _buildCurriculumMastery() {
+    return Container(
+      padding: const EdgeInsets.all(40),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: WebColors.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('SUBJECT TOPIC BREAKDOWN', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[500], letterSpacing: 1.5)),
+          const SizedBox(height: 16),
+          Text('Curriculum Mastery', style: GoogleFonts.outfit(fontSize: 28, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 40),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+               _topicBar('LINEAR VARIABLES', 0.42, Colors.red[400]!),
+               _topicBar('HISTORICAL CONTEXT', 0.88, const Color(0xFFC4B5FD)),
+               _topicBar('VARIABLE ANALYSIS', 0.65, WebColors.purplePrimary),
+               _topicBar('STATISTICAL LOGIC', 0.94, const Color(0xFF4C1D95)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _topicBar(String label, double heightPerc, Color color) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(child: Text(label, style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey[600]), overflow: TextOverflow.ellipsis)),
+                Text('${(heightPerc*100).toInt()}%', style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w700)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+               height: 120 * heightPerc,
+               width: double.infinity,
+               decoration: BoxDecoration(
+                 color: color,
+                 borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTargetedInterventions() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: WebColors.cardShadow,
+      ),
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Targeted Interventions', style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 32),
+          Row(
+            children: [
+              Expanded(flex: 2, child: Text('STUDENT', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[500], letterSpacing: 1))),
+              Expanded(flex: 1, child: Text('PERFORMANCE CLUSTER', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[500], letterSpacing: 1))),
+              Expanded(flex: 3, child: Text('AI INSIGHT', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[500], letterSpacing: 1))),
+              Expanded(flex: 1, child: Text('INTERVENTION', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[500], letterSpacing: 1))),
+              const Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child: Text('ACTION', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.transparent)))),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1, color: Color(0xFFF3F4F6)),
+          const SizedBox(height: 16),
+          _interventionRow('AM', 'Alex Murphy', 'Declining', 'High effort, low retention in quantitative reasoning.', 'GUIDED PRACTICE', 'Email Parent', WebColors.purplePrimary),
+          _interventionRow('ST', 'Sarah Tan', 'Top Tier', 'Ready for advanced variable integration modules.', 'EXTENSION TASK', 'Assign Task', Colors.grey[300]!, textCol: Colors.black87),
+          _interventionRow('JP', 'James Park', 'Steady', 'Inconsistent terminology usage in written responses.', 'VOCAB REVIEW', 'Note AI', Colors.grey[300]!, textCol: Colors.black87),
+        ],
+      ),
+    );
+  }
+  
+  Widget _interventionRow(String initials, String name, String cluster, String insight, String intervention, String action, Color actionBtnColor, {Color textCol = Colors.white}) {
+    final clusterColor = cluster == 'Declining' ? Colors.red[100] : (cluster == 'Top Tier' ? Colors.green[100] : Colors.grey[200]);
+    final clusterTextInfo = cluster == 'Declining' ? Colors.red[800] : (cluster == 'Top Tier' ? Colors.green[800] : Colors.grey[700]);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Row(
+              children: [
+                CircleAvatar(backgroundColor: const Color(0xFFF3E8FF), child: Text(initials, style: const TextStyle(color: WebColors.purplePrimary, fontWeight: FontWeight.bold))),
+                const SizedBox(width: 16),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name, style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.bold)),
+                    Text('Class A', style: GoogleFonts.outfit(fontSize: 11, color: Colors.grey[500])),
+                  ],
+                ),
               ],
             ),
           ),
-          const SizedBox(width: 16),
-          Column(
-            children: [
-              SharedTeacherWidgets.badge('${q.failureRate.toStringAsFixed(0)}% fail', failColor),
-              const SizedBox(height: 8),
-              TextButton.icon(
-                onPressed: () {
-                  final deck = content.firstWhere((d) => d.id == a.contentId);
-                  onEditDeck(deck);
-                },
-                icon: const Icon(Icons.build_circle_outlined, size: 16),
-                label: const Text('Fix'),
-                style: TextButton.styleFrom(
-                  foregroundColor: WebColors.purplePrimary,
-                  textStyle: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.bold),
-                ),
+          Expanded(
+            flex: 1,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: clusterColor, borderRadius: BorderRadius.circular(12)),
+                child: Text(cluster, style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: clusterTextInfo)),
               ),
-            ],
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text('"$insight"', style: GoogleFonts.outfit(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.grey[700])),
+          ),
+          Expanded(
+            flex: 1,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(color: const Color(0xFFF3E8FF), borderRadius: BorderRadius.circular(12)),
+              child: Text(intervention, style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: WebColors.purplePrimary)),
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(backgroundColor: actionBtnColor, foregroundColor: textCol, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
+                child: Text(action, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+              ),
+            ),
           ),
         ],
       ),

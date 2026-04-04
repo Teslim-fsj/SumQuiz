@@ -322,6 +322,14 @@ class LocalDatabaseService {
         .toList();
   }
 
+  Future<String?> getParentFolderId(String contentId) async {
+    await init();
+    for (final cf in _contentFoldersBox.values) {
+      if (cf.contentId == contentId) return cf.folderId;
+    }
+    return null;
+  }
+
   // --- SPACED REPETITION & MISSIONS ---
 
   Box<SpacedRepetitionItem> getSpacedRepetitionBox() {

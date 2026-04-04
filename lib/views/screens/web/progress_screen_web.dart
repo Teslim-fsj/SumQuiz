@@ -8,7 +8,10 @@ import 'package:sumquiz/models/local_summary.dart';
 import 'package:sumquiz/models/local_quiz.dart';
 import 'package:sumquiz/models/local_flashcard_set.dart';
 import 'package:sumquiz/services/progress_service.dart';
-import 'package:go_router/go_router.dart';
+import 'package:sumquiz/views/widgets/web/web_progress_header.dart';
+import 'package:sumquiz/views/widgets/web/web_stats_grid.dart';
+import 'package:sumquiz/views/widgets/web/web_xp_card.dart';
+import 'package:sumquiz/views/widgets/web/web_consistency_map.dart';
 
 class ProgressScreenWeb extends StatefulWidget {
   const ProgressScreenWeb({super.key});
@@ -137,33 +140,65 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
     final user = Provider.of<UserModel?>(context);
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: const Color(0xFFF8FAFC),
       body: _isLoading
           ? Center(
-              child:
-                  CircularProgressIndicator(color: theme.colorScheme.primary))
+              child: CircularProgressIndicator(color: theme.colorScheme.primary))
           : Column(
               children: [
-                _buildModernHeader(user),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 40, vertical: 32),
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
                     child: Center(
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1100),
+                        constraints: const BoxConstraints(maxWidth: 1200),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildTopHeader(user),
-                            const SizedBox(height: 32),
-                            _buildStatsRow(),
-                            const SizedBox(height: 32),
-                            _buildMainContent(),
-                            const SizedBox(height: 32),
-                            _buildAchievementsSection(),
-                            const SizedBox(height: 40),
+                            WebProgressHeader(
+                              userName: user?.displayName.split(' ').first ?? 'Scholar',
+                              weeklyGoalPercentage: 15, // Sample value
+                              onDownloadReport: () {},
+                            ),
+                            const SizedBox(height: 48),
+                            WebStatsGrid(
+                              dayStreak: _dayStreak,
+                              itemsToday: _itemsToday,
+                              dailyGoal: _dailyGoal,
+                              totalItems: _itemsCreated,
+                              studyTimeHours: _studyTime,
+                            ),
+                            const SizedBox(height: 48),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(flex: 3, child: _buildWeeklyActivity()),
+                                const SizedBox(width: 24),
+                                Expanded(
+                                  flex: 2,
+                                  child: Column(
+                                    children: [
+                                      WebXPCard(
+                                        tierName: _milestoneTitle,
+                                        currentXP: (_milestoneProgress * 10).toInt(), // 10 XP per item
+                                        nextLevelXP: (_milestoneGoal * 10).toInt(),
+                                      ),
+                                      const SizedBox(height: 24),
+                                      _buildAchievementsGrid(),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 48),
+                            WebConsistencyMap(
+                              engagementData: List.generate(168, (i) => i % 5), // Sample data
+                            ),
+                            const SizedBox(height: 48),
+                            _buildAICoachTip(),
+                            const SizedBox(height: 60),
                             _buildFooter(),
+                            const SizedBox(height: 40),
                           ],
                         ),
                       ),
@@ -175,443 +210,79 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
     );
   }
 
-  Widget _buildModernHeader(UserModel? user) {
-    final theme = Theme.of(context);
-    return Container(
-      height: 90,
-      padding: const EdgeInsets.symmetric(horizontal: 40),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.8),
-        border: Border(
-            bottom: BorderSide(
-                color: theme.colorScheme.outline.withValues(alpha: 0.1))),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Progress & Analytics',
-            style: GoogleFonts.outfit(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_none_rounded),
-                onPressed: () {},
-                style: IconButton.styleFrom(
-                  backgroundColor: theme.colorScheme.surface,
-                  padding: const EdgeInsets.all(12),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [
-                    theme.colorScheme.primary,
-                    theme.colorScheme.tertiary
-                  ]),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10)
-                  ],
-                ),
-                child: const Icon(Icons.person_rounded, color: Colors.white),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTopHeader(UserModel? user) {
-    final theme = Theme.of(context);
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Keep it up, ${user?.displayName.split(' ').first ?? 'Student'}! 👏',
-                style: GoogleFonts.outfit(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w800,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'You\'re on track to hit your weekly learning goals.',
-                style: GoogleFonts.outfit(
-                  fontSize: 16,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                    color: theme.colorScheme.outline.withValues(alpha: 0.1)),
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 20,
-                      offset: const Offset(0, 4))
-                ],
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.calendar_today,
-                      size: 16,
-                      color:
-                          theme.colorScheme.onSurface.withValues(alpha: 0.5)),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Last 7 Days',
-                    style: GoogleFonts.outfit(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF475569),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
-            InkWell(
-              onTap: () => context.go('/library'),
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [
-                    theme.colorScheme.primary,
-                    theme.colorScheme.tertiary
-                  ]),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.colorScheme.primaryContainer
-                          .withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Text(
-                  'Start New Quiz',
-                  style: GoogleFonts.outfit(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatsRow() {
-    final theme = Theme.of(context);
-    return Row(
-      children: [
-        Expanded(child: _buildStreakCard()),
-        const SizedBox(width: 24),
-        Expanded(child: _buildGoalCompletionCard()),
-      ],
-    );
-  }
-
-  Widget _buildStreakCard() {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color:
-            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(24),
-        border:
-            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 4))
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEF08A).withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(Icons.local_fire_department,
-                    color: Color(0xFFEAB308), size: 24),
-              ),
-              const Spacer(),
-              Row(
-                children: List.generate(
-                  4,
-                  (index) => Container(
-                    margin: const EdgeInsets.only(left: 4),
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: index < 3
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).dividerColor,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Text(
-            '$_dayStreak',
-            style: GoogleFonts.outfit(
-              fontSize: 48,
-              fontWeight: FontWeight.w800,
-              color: theme.colorScheme.onSurface,
-              letterSpacing: -2,
-            ),
-          ),
-          Text(
-            'DAY STREAK',
-            style: GoogleFonts.outfit(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              color: const Color(0xFFEAB308),
-              letterSpacing: 1.5,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'You\'re in the top 5% of learners this week! Keep the flame alive.',
-            style: GoogleFonts.outfit(
-              fontSize: 14,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGoalCompletionCard() {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(24),
-        border:
-            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 4))
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withAlpha(26),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              'ITEMS COMPLETED TODAY',
-              style: GoogleFonts.outfit(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: Theme.of(context).colorScheme.primary,
-                letterSpacing: 1.2,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Daily Goal Completion',
-            style: GoogleFonts.outfit(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Text(
-                '${(_itemsToday / _dailyGoal * 100).round()}% Complete',
-                style: GoogleFonts.outfit(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '$_itemsToday/$_dailyGoal',
-                style: GoogleFonts.outfit(
-                  fontSize: 16,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: (_itemsToday / _dailyGoal).clamp(0.0, 1.0),
-              backgroundColor: theme.colorScheme.outline.withValues(alpha: 0.1),
-              color: theme.colorScheme.primary,
-              minHeight: 12,
-            ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              _buildMetricBox(
-                  'Total Created', '$_itemsCreated', Icons.edit, Colors.blue),
-              const SizedBox(width: 16),
-              _buildMetricBox(
-                  'Study Time',
-                  '${_studyTime.toStringAsFixed(1)}hrs',
-                  Icons.access_time,
-                  Colors.orange),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMetricBox(
-      String label, String value, IconData icon, Color color) {
-    final theme = Theme.of(context);
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withAlpha(26),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withAlpha(51)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 20, color: color),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: GoogleFonts.outfit(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: GoogleFonts.outfit(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMainContent() {
-    final theme = Theme.of(context);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(flex: 2, child: _buildWeeklyActivity()),
-        const SizedBox(width: 24),
-        Expanded(
-          child: Column(
-            children: [
-              _buildMilestoneCard(),
-              const SizedBox(height: 24),
-              _buildQuickTipCard(),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+  // --- Removed legacy builders ---
 
   Widget _buildWeeklyActivity() {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(24),
-        border:
-            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 4))
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Weekly Activity',
-            style: GoogleFonts.outfit(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: theme.colorScheme.onSurface,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Weekly Activity',
+                    style: GoogleFonts.outfit(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Items created per day',
+                    style: GoogleFonts.outfit(
+                      fontSize: 16,
+                      color: const Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE2E8F0),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      'Last 7 Days',
+                      style: GoogleFonts.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF475569),
+                      ),
+                    ),
+                    const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF475569), size: 18),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 48),
           SizedBox(
-            height: 200,
+            height: 300,
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
-                maxY: (_weeklyActivity.reduce((a, b) => a > b ? a : b) + 1)
-                    .toDouble(),
+                maxY: (_weeklyActivity.reduce((a, b) => a > b ? a : b) + 2).toDouble(),
                 barTouchData: BarTouchData(enabled: true),
                 titlesData: FlTitlesData(
                   show: true,
@@ -619,43 +290,26 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                     sideTitles: SideTitles(
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
-                        const days = [
-                          'Mon',
-                          'Tue',
-                          'Wed',
-                          'Thu',
-                          'Fri',
-                          'Sat',
-                          'Sun'
-                        ];
+                        const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
                         final now = DateTime.now();
-                        final date =
-                            now.subtract(Duration(days: 6 - value.toInt()));
+                        final date = now.subtract(Duration(days: 6 - value.toInt()));
                         return Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
+                          padding: const EdgeInsets.only(top: 16.0),
                           child: Text(
                             days[date.weekday - 1],
                             style: GoogleFonts.outfit(
                               fontSize: 12,
-                              color: value.toInt() == 6
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.4),
-                              fontWeight: value.toInt() == 6
-                                  ? FontWeight.w800
-                                  : FontWeight.w500,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF94A3B8),
                             ),
                           ),
                         );
                       },
                     ),
                   ),
-                  leftTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                 ),
                 gridData: const FlGridData(show: false),
                 borderData: FlBorderData(show: false),
@@ -665,13 +319,9 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                     barRods: [
                       BarChartRodData(
                         toY: _weeklyActivity[i].toDouble(),
-                        color: i == 6
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.primaryContainer
-                                .withValues(alpha: 0.2),
-                        width: 16,
-                        borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(6)),
+                        color: i == 6 ? const Color(0xFF6366F1) : const Color(0xFFE2E8F0),
+                        width: 48,
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ],
                   );
@@ -684,137 +334,112 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
     );
   }
 
-  Widget _buildMilestoneCard() {
-    final theme = Theme.of(context);
+  Widget _buildAchievementsGrid() {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(24),
-        border:
-            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 4))
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: 10,
-            top: 10,
-            child: Opacity(
-              opacity: 0.1,
-              child: Transform.rotate(
-                angle: 0.3,
-                child: const Icon(Icons.emoji_events, size: 80),
-              ),
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.emoji_events_outlined,
-                      color: theme.colorScheme.primary, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    'NEXT MILESTONE',
-                    style: GoogleFonts.outfit(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: theme.colorScheme.primary,
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                _milestoneTitle,
-                style: GoogleFonts.outfit(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _milestoneProgress >= _milestoneGoal
-                    ? 'Congratulations! You reached this milestone. Keep going for the next one.'
-                    : 'Complete ${(_milestoneGoal - _milestoneProgress).toInt()} more items to unlock this badge.',
-                style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: LinearProgressIndicator(
-                  value: (_milestoneProgress / _milestoneGoal).clamp(0.0, 1.0),
-                  backgroundColor:
-                      theme.colorScheme.outline.withValues(alpha: 0.1),
-                  color: theme.colorScheme.primary,
-                  minHeight: 10,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '$_milestoneProgress/$_milestoneGoal Items',
-                style: GoogleFonts.outfit(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                ),
-              ),
-            ],
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildQuickTipCard() {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFEF3C7).withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFFDE68A)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Icon(Icons.lightbulb_outline,
-                  color: Color(0xFFD97706), size: 20),
-              const SizedBox(width: 8),
               Text(
-                'Quick Tip',
+                'Achievements',
                 style: GoogleFonts.outfit(
-                  fontSize: 14,
+                  fontSize: 20,
                   fontWeight: FontWeight.w800,
-                  color: const Color(0xFFD97706),
-                  letterSpacing: 1.2,
+                  color: const Color(0xFF0F172A),
+                ),
+              ),
+              Text(
+                'VIEW ALL',
+                style: GoogleFonts.outfit(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF6366F1),
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            _currentTip,
-            style: GoogleFonts.outfit(
-              fontSize: 15,
-              color: const Color(0xFF92400E),
-              height: 1.6,
-              fontWeight: FontWeight.w500,
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildAchievementBadge(Icons.auto_awesome_rounded, const Color(0xFFC7D2FE), true),
+              _buildAchievementBadge(Icons.speed_rounded, const Color(0xFFC7D2FE), true),
+              _buildAchievementBadge(Icons.school_rounded, const Color(0xFFC7D2FE), true),
+              _buildAchievementBadge(Icons.lock_rounded, const Color(0xFFF1F5F9), false),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAchievementBadge(IconData icon, Color color, bool unlocked) {
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, color: unlocked ? const Color(0xFF4F46E5) : const Color(0xFF94A3B8), size: 24),
+    );
+  }
+
+  Widget _buildAICoachTip() {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEEF2FF),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: const Color(0xFFC7D2FE)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+            child: const Icon(Icons.lightbulb_rounded, color: Color(0xFF6366F1), size: 24),
+          ),
+          const SizedBox(width: 24),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'AI LEARNING COACH',
+                  style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF6366F1),
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _currentTip,
+                  style: GoogleFonts.outfit(
+                    fontSize: 16,
+                    color: const Color(0xFF0F172A),
+                    height: 1.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -822,111 +447,9 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
     );
   }
 
-  Widget _buildAchievementsSection() {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Recent Achievements',
-          style: GoogleFonts.outfit(
-            fontSize: 24,
-            fontWeight: FontWeight.w900,
-            color: theme.colorScheme.onSurface,
-            letterSpacing: -0.5,
-          ),
-        ),
-        const SizedBox(height: 20),
-        _buildRecentAchievements(),
-      ],
-    );
-  }
+  // --- Removed legacy builders ---
 
-  Widget _buildRecentAchievements() {
-    final theme = Theme.of(context);
-    final user = Provider.of<UserModel?>(context);
-    final totalItems = user?.totalDecksGenerated ?? 0;
-    final streak = user?.missionCompletionStreak ?? 0;
-
-    return Row(
-      children: [
-        _buildAchievementCard(
-          totalItems >= 50 ? 'Knowledge Master' : 'Scholar in Training',
-          '$totalItems items curated',
-          Icons.school,
-          totalItems >= 50 ? Colors.amber : Colors.blueGrey,
-        ),
-        const SizedBox(width: 16),
-        _buildAchievementCard(
-          _studyTime >= 10 ? 'Deep Learner' : 'Consistent Learner',
-          '${_studyTime.toStringAsFixed(1)} hours study',
-          Icons.timer_outlined,
-          _studyTime >= 10 ? Colors.orange : Colors.blue,
-        ),
-        const SizedBox(width: 16),
-        _buildAchievementCard(
-          streak >= 7 ? 'Legendary Streak' : 'Rising Star',
-          '$streak day streak',
-          Icons.bolt,
-          streak >= 7 ? Colors.purple : Colors.teal,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAchievementCard(
-      String title, String subtitle, IconData icon, Color color) {
-    final theme = Theme.of(context);
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-              color: theme.colorScheme.outline.withValues(alpha: 0.1)),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 20,
-                offset: const Offset(0, 4))
-          ],
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(icon, color: color, size: 28),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: GoogleFonts.outfit(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: theme.colorScheme.onSurface,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              subtitle,
-              style: GoogleFonts.outfit(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // --- Removed legacy builders ---
 
   Widget _buildFooter() {
     final theme = Theme.of(context);

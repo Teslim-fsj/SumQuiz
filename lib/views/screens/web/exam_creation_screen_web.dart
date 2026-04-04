@@ -18,6 +18,10 @@ import 'package:sumquiz/services/firestore_service.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
 import 'package:sumquiz/utils/share_code_generator.dart';
 
+import '../../widgets/create_content/web_exam_setup_step.dart';
+import '../../widgets/create_content/web_exam_config_step.dart';
+import '../../widgets/create_content/web_exam_review_step.dart';
+
 class ExamCreationScreenWeb extends StatefulWidget {
   const ExamCreationScreenWeb({super.key});
 
@@ -629,22 +633,267 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
     }
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: const Color(0xFFF1F5F9), // Light grayish-blue background
       body: Stack(
         children: [
           Row(
             children: [
-              // Left Panel (Steps & Forms)
-              _buildWizardPanel(),
-              const VerticalDivider(width: 1),
-              // Right Panel (Live Preview)
-              Expanded(child: _buildPreviewPanel()),
+              // Left Sidebar (ExamArchitect)
+              _buildSidebar(),
+              
+              // Main Content Area
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildTopNav(),
+                    Expanded(
+                      child: PageView(
+                        controller: _pageController,
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: [
+                          // STEP 1: SETUP
+                          WebExamSetupStep(
+                            titleController: _titleController,
+                            subjectController: _subjectController,
+                            selectedLevel: _selectedLevel,
+                            onLevelChanged: (v) => setState(() => _selectedLevel = v ?? _selectedLevel),
+                            onPickSourcePdf: () => _pickSource('PDF'),
+                            onPickSourceNotes: () => _pickSource('Notes'),
+                            onNext: _nextStep,
+                            hasSource: _sourceMaterial.isNotEmpty,
+                            uploadStatusMessage: _processedFileNames.isNotEmpty ? 'Processed: ${_processedFileNames.join(", ")}' : 'Material Ready',
+                          ),
+                          // STEP 2: CONFIGURATION
+                          WebExamConfigStep(
+                            numberOfQuestions: _numberOfQuestions,
+                            onQuestionsChanged: (v) => setState(() => _numberOfQuestions = v.round()),
+                            easyCount: (_numberOfQuestions * (1.0 - _difficultyValue) * 0.7).floor(),
+                            mediumCount: (_numberOfQuestions * _difficultyValue).round(),
+                            hardCount: (_numberOfQuestions * (1.0 - _difficultyValue) * 0.3).ceil(),
+                            onEasyChanged: (v) {}, // Mocked for UI, ideally update a complex state
+                            onHardChanged: (v) {},
+                            includeMultipleChoice: _includeMultipleChoice,
+                            includeTrueFalse: _includeTrueFalse,
+                            includeTheory: _includeTheory,
+                            includeFillInBlank: _includeShortAnswer,
+                            onTypeToggled: (type, val) {
+                              setState(() {
+                                if (type == 'mcq') _includeMultipleChoice = val;
+                                if (type == 'tf') _includeTrueFalse = val;
+                                if (type == 'theory') _includeTheory = val;
+                                if (type == 'fib') _includeShortAnswer = val;
+                              });
+                            },
+                            evenTopicCoverage: _evenTopicCoverage,
+                            focusWeakAreas: _focusWeakAreas,
+                            onRuleToggled: (rule, val) {
+                              setState(() {
+                                if (rule == 'even') _evenTopicCoverage = val;
+                                if (rule == 'weak') _focusWeakAreas = val;
+                              });
+                            },
+                            onFinalize: () {
+                              _generateQuestions();
+                              _nextStep();
+                            },
+                            isGenerating: _isGeneratingQuestions,
+                          ),
+                          // STEP 3: REVIEW
+                          WebExamReviewStep(
+                            questions: _generatedQuestions,
+                            onRegenerate: (index) {
+                              // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Regenerate specific AI feature coming soon.')));
+                              setState(() {
+                                _generatedQuestions.removeAt(index);
+                              });
+                            },
+                            onSaveLibrary: () {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved to Library.')));
+                              context.go('/library');
+                            },
+                            onPdfExport: _exportExam,
+                            onPublish: () {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Publishing to Class...')));
+                            },
+                            easyCount: _generatedQuestions.where((q) => q.question.length < 50).length, // Fake mockup stats
+                            mediumCount: _generatedQuestions.where((q) => q.question.length >= 50 && q.question.length < 100).length,
+                            hardCount: _generatedQuestions.where((q) => q.question.length >= 100).length,
+                            topicCounts: {'Metabolism': 8, 'Cell Structures': 12, 'Genetics': 5},
+                          ),
+                        ],
+                      ),
+                    ),
+                    _buildStepIndicators(),
+                  ],
+                ),
+              ),
             ],
           ),
-          if (_isGeneratingQuestions || _isProcessingSource)
-            _buildOverlayLoading(),
+          if (_isProcessingSource) _buildOverlayLoading(),
         ],
       ),
+    );
+  }
+
+  Widget _buildSidebar() {
+    return Container(
+      width: 280,
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'ExamActor',
+                style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w900, color: const Color(0xFF4F46E5)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Academic Session 2024',
+            style: GoogleFonts.outfit(fontSize: 12, color: const Color(0xFF94A3B8)),
+          ),
+          const SizedBox(height: 48),
+          
+          _sidebarItem(Icons.settings_rounded, 'STEP 1: SETUP', _currentStep == 0),
+          _sidebarItem(Icons.upload_file_rounded, 'STEP 2: CONFIG', _currentStep == 1),
+          _sidebarItem(Icons.rule_rounded, 'STEP 3: REVIEW', _currentStep == 2),
+          
+          const SizedBox(height: 48),
+          Text('ASSETS', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: const Color(0xFF94A3B8))),
+          const SizedBox(height: 16),
+          _sidebarItem(Icons.text_snippet_rounded, 'TEMPLATES', false, true),
+          _sidebarItem(Icons.tune_rounded, 'SETTINGS', false, true),
+          
+          const Spacer(),
+          if (_currentStep == 2)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4F46E5),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Finalize Draft', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _sidebarItem(IconData icon, String label, bool isActive, [bool isDimmed = false]) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      decoration: BoxDecoration(
+        color: isActive ? const Color(0xFF4F46E5) : Colors.transparent,
+        borderRadius: BorderRadius.circular(24), // Pill shape 
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: isActive ? Colors.white : (isDimmed ? const Color(0xFF64748B) : const Color(0xFF1E293B))),
+          const SizedBox(width: 16),
+          Text(
+            label,
+            style: GoogleFonts.outfit(
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+              letterSpacing: 1,
+              color: isActive ? Colors.white : (isDimmed ? const Color(0xFF64748B) : const Color(0xFF1E293B)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopNav() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 24),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text('Dashboard', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF94A3B8), fontSize: 16)),
+              const SizedBox(width: 32),
+              Column(
+                children: [
+                  Text('Exams', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF4F46E5), fontSize: 16)),
+                  const SizedBox(height: 8),
+                  Container(height: 3, width: 40, color: const Color(0xFF4F46E5)),
+                ],
+              ),
+              const SizedBox(width: 32),
+              Text('Question Bank', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF94A3B8), fontSize: 16)),
+              const SizedBox(width: 32),
+              Text('Analytics', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF94A3B8), fontSize: 16)),
+            ],
+          ),
+          Row(
+            children: [
+              const Icon(Icons.notifications_none_rounded, color: Color(0xFF475569)),
+              const SizedBox(width: 24),
+              const Icon(Icons.help_outline_rounded, color: Color(0xFF475569)),
+              const SizedBox(width: 24),
+              const CircleAvatar(
+                radius: 16,
+                backgroundColor: Color(0xFF1E293B),
+                child: Icon(Icons.person, color: Colors.white, size: 20),
+              ),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStepIndicators() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 32),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          _bottomIndicator('01', 'SETUP', _currentStep >= 0),
+          const SizedBox(width: 48),
+          _bottomIndicator('02', 'QUESTIONS', _currentStep >= 1),
+          const SizedBox(width: 48),
+          _bottomIndicator('03', 'FINALIZE', _currentStep >= 2),
+        ],
+      ),
+    );
+  }
+
+  Widget _bottomIndicator(String numStr, String label, bool isActive) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          numStr,
+          style: GoogleFonts.outfit(
+            fontSize: 32,
+            fontWeight: FontWeight.w900,
+            color: isActive ? const Color(0xFFE2E8F0) : const Color(0xFFF1F5F9), // Light color for numbers
+          ),
+        ),
+        Text(
+          label,
+          style: GoogleFonts.outfit(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 2,
+            color: isActive ? const Color(0xFF4F46E5) : const Color(0xFFCBD5E1),
+          ),
+        ),
+      ],
     );
   }
 
@@ -697,910 +946,6 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
       ),
     );
   }
-
-  Widget _buildWizardPanel() {
-    final theme = Theme.of(context);
-    return Container(
-      width: 500,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        border: Border(
-            right: BorderSide(
-                color: theme.colorScheme.outline.withValues(alpha: 0.1))),
-      ),
-      child: Column(
-        children: [
-          _buildWizardHeader(),
-          const Divider(height: 1),
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _buildStep1(),
-                _buildStep2(),
-                _buildStep3(),
-                _buildStep4(),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          _buildWizardFooter(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPreviewPanel() {
-    final theme = Theme.of(context);
-    return Container(
-      color: theme.colorScheme.surface,
-      child: Center(
-        child: Container(
-          width: 800,
-          margin: const EdgeInsets.all(40),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest
-                .withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-                color: theme.colorScheme.outline.withValues(alpha: 0.1)),
-            boxShadow: [
-              BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 20,
-                  offset: const Offset(0, 4))
-            ],
-          ),
-          child: _generatedQuestions.isEmpty
-              ? _buildEmptyPreview()
-              : _buildExamPreview(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyPreview() {
-    final theme = Theme.of(context);
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.description_outlined,
-            size: 80,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
-        const SizedBox(height: 24),
-        Text(
-          'No Exam Generated Yet',
-          style: GoogleFonts.outfit(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          'Generate your exam on the left to see the live preview here.',
-          style: GoogleFonts.outfit(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildExamPreview() {
-    return Column(
-      children: [
-        _buildPreviewHeader(),
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(32),
-            itemCount: _generatedQuestions.length,
-            itemBuilder: (context, index) =>
-                _editablePaperQuestion(_generatedQuestions[index], index + 1),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPreviewHeader() {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(
-            bottom: BorderSide(
-                color: theme.colorScheme.outline.withValues(alpha: 0.1))),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [
-                    theme.colorScheme.primary,
-                    theme.colorScheme.tertiary
-                  ]),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.remove_red_eye_rounded,
-                    color: Colors.white, size: 20),
-              ),
-              const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Live Preview',
-                    style: GoogleFonts.outfit(
-                        fontWeight: FontWeight.bold, fontSize: 18),
-                  ),
-                  Text(
-                    'Dynamic update as you edit',
-                    style: GoogleFonts.outfit(
-                        fontSize: 12,
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.6)),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          TextButton.icon(
-            onPressed: _exportExam,
-            icon: const Icon(Icons.download_rounded),
-            label: const Text('Export PDF'),
-          ),
-        ],
-      ),
-    );
-  }
-
-
-
-  Widget _buildWizardHeader() {
-    final theme = Theme.of(context);
-    final user = Provider.of<UserModel?>(context);
-    return Padding(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              IconButton(
-                onPressed: () => context.go('/'),
-                icon: const Icon(Icons.close),
-              ),
-              const SizedBox(width: 16),
-              Text(
-                'Exam Builder',
-                style: GoogleFonts.outfit(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-              if (user != null && !user.isPro) ...[
-                const SizedBox(width: 24),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.auto_awesome, size: 14, color: theme.colorScheme.primary),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${user.examsGenerated}/3 Free Exams Used',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 32),
-          Row(
-            children: [
-              _stepIndicator(0, 'Context'),
-              _stepConnector(),
-              _stepIndicator(1, 'Source'),
-              _stepConnector(),
-              _stepIndicator(2, 'Rules'),
-              _stepConnector(),
-              _stepIndicator(3, 'Finalize'),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _stepIndicator(int step, String label) {
-    final theme = Theme.of(context);
-    bool isActive = _currentStep == step;
-    bool isDone = _currentStep > step;
-
-    return Column(
-      children: [
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: isDone
-                ? theme.colorScheme.tertiary
-                : (isActive
-                    ? theme.colorScheme.error
-                    : theme.colorScheme.surface),
-            border: Border.all(
-                color: isActive
-                    ? theme.colorScheme.tertiary
-                    : theme.colorScheme.outline.withValues(alpha: 0.1)),
-          ),
-          child: Center(
-            child: isDone
-                ? const Icon(Icons.check, color: Colors.white, size: 16)
-                : Text(
-                    '${step + 1}',
-                    style: TextStyle(
-                      color: isActive
-                          ? Colors.white
-                          : theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-            color: isActive
-                ? theme.colorScheme.tertiary
-                : theme.colorScheme.onSurface.withValues(alpha: 0.4),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _stepConnector() {
-    final theme = Theme.of(context);
-    return Expanded(
-      child: Container(
-        height: 2,
-        margin: const EdgeInsets.only(bottom: 18, left: 8, right: 8),
-        color: theme.colorScheme.outline.withValues(alpha: 0.1),
-      ),
-    );
-  }
-
-  Widget _buildWizardFooter() {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          if (_currentStep > 0)
-            OutlinedButton(
-              onPressed: _prevStep,
-              style: OutlinedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              ),
-              child: const Text('Back'),
-            )
-          else
-            const SizedBox(),
-          if (_currentStep < 3)
-            ElevatedButton(
-              onPressed: _canGoNext() ? _nextStep : null,
-              style: ElevatedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              ),
-              child: const Text('Next Step'),
-            )
-          else
-            Consumer<UserModel?>(
-              builder: (context, user, child) {
-                final theme = Theme.of(context);
-                final bool isLimitReached = user != null && !user.isPro && user.examsGenerated >= 3;
-                
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (isLimitReached)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: Text(
-                          'Limit Reached',
-                          style: TextStyle(color: theme.colorScheme.error, fontSize: 12, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ElevatedButton(
-                      onPressed: (_sourceMaterial.isEmpty || isLimitReached) ? null : _generateQuestions,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                        backgroundColor: isLimitReached ? theme.colorScheme.outline : null,
-                      ),
-                      child: Text(isLimitReached ? 'Upgrade to Pro' : 'Generate Paper'),
-                    ),
-                  ],
-                );
-              },
-            ),
-        ],
-      ),
-    );
-  }
-
-  bool _canGoNext() {
-    if (_currentStep == 0) {
-      return _titleController.text.isNotEmpty &&
-          _subjectController.text.isNotEmpty;
-    }
-    if (_currentStep == 1) {
-      return _sourceMaterial.isNotEmpty;
-    }
-    return true;
-  }
-
-  Widget _buildStep1() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _wizardSectionHeader(
-              'CONTEXTUAL DATA', 'Define your institution and class details.'),
-          const SizedBox(height: 32),
-          _titleField('Institution Name', _schoolNameController,
-              'e.g. Oakbridge High School'),
-          const SizedBox(height: 24),
-          _titleField(
-              'Subject', _subjectController, 'e.g. Advanced Mathematics'),
-          const SizedBox(height: 24),
-          _titleField(
-              'Exam Title', _titleController, 'e.g. Mid-Term Assessment'),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Class / Level',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<String>(
-                      initialValue: _selectedLevel,
-                      decoration:
-                          const InputDecoration(border: OutlineInputBorder()),
-                      items: [
-                        'Primary / Elementary',
-                        'Middle School',
-                        'High School / Secondary',
-                        'Vocational / Technical',
-                        'Undergraduate (University)',
-                        'Postgraduate (Masters/PhD)',
-                        'Professional Certification',
-                        'Corporate Training'
-                      ]
-                          .map(
-                              (l) => DropdownMenuItem<String>(value: l, child: Text(l)))
-                          .toList(),
-                      onChanged: (v) => setState(() => _selectedLevel = v ?? 'High School / Secondary'),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 24),
-              Expanded(
-                child: _titleField('Duration (mins)', _durationController, '60',
-                    isNumber: true),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStep2() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _wizardSectionHeader('RESOURCE INGESTION',
-              'Upload the material the AI will use to generate questions.'),
-          const SizedBox(height: 32),
-          if (_sourceMaterial.isEmpty) ...[
-            _sourceUploadCard(
-                'Upload PDF Document',
-                'Highly recommended for textbooks & notes',
-                Icons.picture_as_pdf_outlined,
-                () => _pickSource('PDF')),
-            const SizedBox(height: 16),
-            _sourceUploadCard(
-                'Paste Study Notes',
-                'Copy-paste raw text or syllabus content',
-                Icons.note_alt_outlined,
-                () => _pickSource('Notes')),
-            const SizedBox(height: 16),
-            _sourceUploadCard(
-                'Scan Examination Paper',
-                'OCR extraction from physical papers',
-                Icons.camera_alt_outlined,
-                () => _pickSource('Image')),
-          ] else
-            _uploadedStateCard(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStep3() {
-    final theme = Theme.of(context);
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _wizardSectionHeader(
-              'EXAM STRUCTURE', 'Configure the question mix and difficulty.'),
-          const SizedBox(height: 32),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Weight (Total Questions)',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12)),
-                child: Text('$_numberOfQuestions Items',
-                    style: TextStyle(
-                        color: theme.colorScheme.tertiary,
-                        fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-          Slider(
-            value: _numberOfQuestions.toDouble(),
-            min: 5,
-            max: 50,
-            activeColor: theme.colorScheme.tertiary,
-            onChanged: (v) => setState(() => _numberOfQuestions = v.round()),
-          ),
-          const SizedBox(height: 32),
-          const Text('Question Components',
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          _checkboxTile(
-              'Objective / MCQ',
-              'Includes distractors & correct answer',
-              _includeMultipleChoice,
-              (v) => setState(() => _includeMultipleChoice = v!)),
-          _checkboxTile('True / False', 'Quick conceptual validation',
-              _includeTrueFalse, (v) => setState(() => _includeTrueFalse = v!)),
-          _checkboxTile(
-              'Short Answer',
-              'Fill-in-the-gap or definitions',
-              _includeShortAnswer,
-              (v) => setState(() => _includeShortAnswer = v!)),
-          _checkboxTile(
-              'Theory / Essay',
-              'Long-form responses (marking scheme included)',
-              _includeTheory,
-              (v) => setState(() => _includeTheory = v!)),
-          const SizedBox(height: 32),
-          _wizardSectionHeader(
-              'AI STRATEGY', 'Fine-tune the intelligence behavior.'),
-          const SizedBox(height: 16),
-          _switchTile(
-              'Even Topic Coverage',
-              'Ensure questions are spread across all pages',
-              _evenTopicCoverage,
-              (v) => setState(() => _evenTopicCoverage = v)),
-          _switchTile(
-              'Focus Complex Areas',
-              'Prioritize technical or difficult concepts',
-              _focusWeakAreas,
-              (v) => setState(() => _focusWeakAreas = v)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStep4() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _wizardSectionHeader('MARKS ALLOCATION',
-              'Define how many points each section contributes.'),
-          const SizedBox(height: 32),
-          _marksAllocationRow('Section A (Objective)', 'For MCQs and T/F',
-              _marksA, (v) => setState(() => _marksA = v)),
-          const SizedBox(height: 24),
-          _marksAllocationRow('Section B (Structured)', 'For Short Answers',
-              _marksB, (v) => setState(() => _marksB = v)),
-          const SizedBox(height: 24),
-          _marksAllocationRow('Section C (Continuous)', 'For Theory & Essays',
-              _marksC, (v) => setState(() => _marksC = v)),
-          const SizedBox(height: 48),
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF7ED),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFFFEDD5)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.info_outline, color: Color(0xFFC2410C)),
-                const SizedBox(width: 16),
-                const Expanded(
-                  child: Text(
-                    'AI will generate a high-quality paper based on these rules. You can edit every question individually in the preview pane.',
-                    style: TextStyle(color: Color(0xFF9A3412), fontSize: 13),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _editablePaperQuestion(LocalQuizQuestion q, int index) {
-    final theme = Theme.of(context);
-    int marks =
-        (q.questionType == 'Multiple Choice' || q.questionType == 'True/False')
-            ? _marksA
-            : (q.questionType == 'Short Answer' ? _marksB : _marksC);
-
-    // Get or create controller for question title
-    if (!_qTitleControllers.containsKey(index)) {
-      _qTitleControllers[index] = TextEditingController(text: q.question);
-    }
-    final qCtrl = _qTitleControllers[index]!;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: qCtrl,
-                  onChanged: (v) => q.question = v,
-                  style:
-                      const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  decoration: const InputDecoration(
-                      border: InputBorder.none, isCollapsed: true),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text('($marks Marks)',
-                  style: TextStyle(
-                      fontStyle: FontStyle.italic,
-                      fontSize: 12,
-                      color:
-                          theme.colorScheme.onSurface.withValues(alpha: 0.4))),
-              IconButton(
-                onPressed: () {
-                  setState(() {
-                    _generatedQuestions.removeAt(index - 1);
-                    _qTitleControllers.remove(index);
-                    _qTitleControllers.clear();
-                    _optControllers.clear();
-                  });
-                },
-                icon: const Icon(Icons.delete_outline,
-                    size: 18, color: Colors.redAccent),
-              ),
-            ],
-          ),
-          if (q.questionType == 'Multiple Choice')
-            Padding(
-              padding: const EdgeInsets.only(left: 24, top: 12),
-              child: Column(
-                children: [
-                  for (int i = 0; i < q.options.length; i++) ...[
-                    Builder(builder: (context) {
-                      final optKey = '${index}_$i';
-                      if (!_optControllers.containsKey(optKey)) {
-                        _optControllers[optKey] =
-                            TextEditingController(text: q.options[i]);
-                      }
-                      final optCtrl = _optControllers[optKey]!;
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                          children: [
-                            Text('(${String.fromCharCode(65 + i)}) ',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w600)),
-                            Expanded(
-                              child: TextField(
-                                controller: optCtrl,
-                                onChanged: (v) => q.options[i] = v,
-                                decoration: const InputDecoration(
-                                    border: InputBorder.none,
-                                    isCollapsed: true),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                  ],
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  // --- Helpers ---
-
-  Widget _wizardSectionHeader(String title, String subtitle) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title,
-            style: TextStyle(
-                color: theme.colorScheme.tertiary,
-                fontWeight: FontWeight.w800,
-                fontSize: 12,
-                letterSpacing: 1.5)),
-        const SizedBox(height: 8),
-        Text(subtitle,
-            style: TextStyle(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                fontSize: 14)),
-      ],
-    );
-  }
-
-  Widget _titleField(String label, TextEditingController ctrl, String hint,
-      {bool isNumber = false}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-        const SizedBox(height: 8),
-        TextField(
-          controller: ctrl,
-          keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-          decoration: InputDecoration(
-              hintText: hint, border: const OutlineInputBorder()),
-        ),
-      ],
-    );
-  }
-
-  Widget _sourceUploadCard(
-      String title, String sub, IconData icon, VoidCallback onTap) {
-    final theme = Theme.of(context);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-            border: Border.all(
-                color: theme.colorScheme.outline.withValues(alpha: 0.1)),
-            borderRadius: BorderRadius.circular(16)),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                  color: theme.colorScheme.tertiary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12)),
-              child: Icon(icon, color: theme.colorScheme.tertiary),
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 15)),
-                  const SizedBox(height: 4),
-                  Text(sub,
-                      style: TextStyle(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.4),
-                          fontSize: 12)),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_forward_ios,
-                size: 14,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _uploadedStateCard() {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-          color: const Color(0xFFF0FDF4),
-          border: Border.all(color: const Color(0xFFDCFCE7)),
-          borderRadius: BorderRadius.circular(16)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.check_circle, color: theme.colorScheme.tertiary),
-              const SizedBox(width: 16),
-              const Expanded(
-                  child: Text('Content Ingested Successfully',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF166534)))),
-              IconButton(
-                  tooltip: 'Clear All Sources',
-                  onPressed: () => setState(() {
-                        _sourceMaterial = '';
-                        _processedFileNames.clear();
-                      }),
-                  icon: const Icon(Icons.delete_sweep_outlined,
-                      color: Colors.red)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (_processedFileNames.isNotEmpty) ...[
-            Text('Processed Files:',
-                style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.tertiary)),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _processedFileNames
-                  .map((name) => Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: const Color(0xFFDCFCE7)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.insert_drive_file_outlined,
-                                size: 12, color: Color(0xFF166534)),
-                            const SizedBox(width: 6),
-                            Text(name,
-                                style: const TextStyle(
-                                    fontSize: 10, color: Color(0xFF166534))),
-                          ],
-                        ),
-                      ))
-                  .toList(),
-            ),
-            const SizedBox(height: 16),
-          ],
-          Text(
-            _sourceMaterial.length > 300
-                ? '${_sourceMaterial.substring(0, 300)}...'
-                : _sourceMaterial,
-            style: const TextStyle(
-                fontSize: 11, color: Color(0xFF166534), height: 1.5),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _checkboxTile(
-      String title, String sub, bool val, Function(bool?) onChange) {
-    final theme = Theme.of(context);
-    return CheckboxListTile(
-      title: Text(title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-      subtitle: Text(sub, style: const TextStyle(fontSize: 12)),
-      value: val,
-      onChanged: onChange,
-      activeColor: theme.colorScheme.tertiary,
-      contentPadding: EdgeInsets.zero,
-    );
-  }
-
-  Widget _switchTile(
-      String title, String sub, bool val, Function(bool) onChange) {
-    final theme = Theme.of(context);
-    return SwitchListTile(
-      title: Text(title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-      subtitle: Text(sub, style: const TextStyle(fontSize: 12)),
-      value: val,
-      onChanged: onChange,
-      activeThumbColor: theme.colorScheme.tertiary,
-      contentPadding: EdgeInsets.zero,
-    );
-  }
-
-  Widget _marksAllocationRow(
-      String label, String sub, int val, Function(int) onChange) {
-    final theme = Theme.of(context);
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 14)),
-              Text(sub,
-                  style: TextStyle(
-                      fontSize: 12,
-                      color:
-                          theme.colorScheme.onSurface.withValues(alpha: 0.4))),
-            ],
-          ),
-        ),
-        SizedBox(
-          width: 80,
-          child: TextField(
-            textAlign: TextAlign.center,
-            keyboardType: TextInputType.number,
-            onChanged: (v) => onChange(int.tryParse(v) ?? 1),
-            decoration: InputDecoration(
-              hintText: '$val',
-              suffixText: 'pts',
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
 
   Widget _buildOverlayLoading() {
     return Container(

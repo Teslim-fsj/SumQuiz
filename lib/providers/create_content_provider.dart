@@ -11,6 +11,8 @@ import 'package:sumquiz/utils/cancellation_token.dart';
 
 enum CreationPhase { source, config, processing, success, error }
 
+enum StudyArchetype { sprinter, architect }
+
 class CreateContentProvider with ChangeNotifier {
   final ContentExtractionService _extractionService;
   final EnhancedAIService _aiService;
@@ -50,6 +52,9 @@ class CreateContentProvider with ChangeNotifier {
   List<String> _selectedQuestionTypes = ['Multiple Choice'];
   List<String> get selectedQuestionTypes => _selectedQuestionTypes;
 
+  StudyArchetype _selectedArchetype = StudyArchetype.architect;
+  StudyArchetype get selectedArchetype => _selectedArchetype;
+
   String _progressMessage = '';
   String get progressMessage => _progressMessage;
 
@@ -76,10 +81,11 @@ class CreateContentProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void updateConfig({String? difficulty, int? count, List<String>? questionTypes}) {
+  void updateConfig({String? difficulty, int? count, List<String>? questionTypes, StudyArchetype? archetype}) {
     if (difficulty != null) _selectedDifficulty = difficulty;
     if (count != null) _selectedCount = count;
     if (questionTypes != null) _selectedQuestionTypes = questionTypes;
+    if (archetype != null) _selectedArchetype = archetype;
     notifyListeners();
   }
 
@@ -107,6 +113,7 @@ class CreateContentProvider with ChangeNotifier {
     _generatedFolderId = '';
     _isCancelled = false;
     _selectedQuestionTypes = ['Multiple Choice'];
+    _selectedArchetype = StudyArchetype.architect;
     notifyListeners();
   }
 

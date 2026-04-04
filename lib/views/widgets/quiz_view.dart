@@ -23,9 +23,16 @@ const _essayTypes = {
   'structured',
   'long_answer',
   'descriptive',
+  'open-ended',
+  'response',
+  'free response',
+  'written response',
 };
 
 bool _isEssayQuestion(LocalQuizQuestion q) {
+  // If options are empty but we have a correct answer, it's likely a theory question
+  if (q.options.isEmpty && q.correctAnswer.isNotEmpty) return true;
+  
   if (q.questionType == null) return false;
   return _essayTypes.contains(q.questionType!.toLowerCase().trim());
 }

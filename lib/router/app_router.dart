@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -111,9 +112,11 @@ GoRouter createRouter(AuthService authService) {
       final isSplash = state.matchedLocation == '/splash';
       final isOnboarding = state.matchedLocation == '/onboarding';
 
-      final user = Provider.of<UserModel?>(context);
+      final userModel = Provider.of<UserModel?>(context);
+      final firebaseUser = authService.currentUser;
 
-      if (user != null && !user.isEmailVerified && user.role == UserRole.creator) {
+      // [FIX] Handle email verification for creators
+      if (userModel != null && !userModel.isEmailVerified && userModel.role == UserRole.creator) {
         return null;
       }
 
@@ -121,13 +124,27 @@ GoRouter createRouter(AuthService authService) {
         return null;
       }
 
-      if (user == null) {
+      // [PHASE 1] Handle Unauthenticated Users
+      if (firebaseUser == null) {
         if (isAuthRoute || isLanding || isSplash || isOnboarding) {
           return null;
         }
-        return '/Educators';
+        // Platform-specific default landing
+        return kIsWeb ? '/landing' : '/onboarding';
       }
 
+      // [PHASE 1] Handle Authenticated Users with missing Firestore Profile
+      // If we have a Firebase User but no UserModel yet, don't redirect to landing.
+      // This prevents the sign-in loop where users are stuck on the landing page after login.
+      if (userModel == null) {
+        if (isAuthRoute || isLanding || isSplash || isOnboarding) {
+          // Allow progress to main shell so dashboard can show loading state
+          return '/';
+        }
+        return null; // Stay where you are while loading
+      }
+
+      // [PHASE 2] Handle fully authenticated users on landing/auth routes
       if (isAuthRoute || isLanding || isSplash || isOnboarding) {
         return '/';
       }
@@ -274,6 +291,9 @@ GoRouter createRouter(AuthService authService) {
                     builder: (context, state) {
                       try {
                         final folderId = state.pathParameters['folderId'];
+                        final tabParam = state.uri.queryParameters['tab'];
+                        final initialTab = int.tryParse(tabParam ?? '') ?? 0;
+
                         if (folderId == null || folderId.isEmpty) {
                           debugPrint('Missing folderId in results-view route');
                           return Scaffold(
@@ -285,7 +305,8 @@ GoRouter createRouter(AuthService authService) {
                         }
                         return ResponsiveView(
                           mobile: ResultsViewScreen(folderId: folderId),
-                          desktop: ResultsViewScreenWeb(folderId: folderId),
+                          desktop: ResultsViewScreenWeb(
+                              folderId: folderId, initialTab: initialTab),
                         );
                       } catch (e) {
                         debugPrint('Error in results-view route: $e');

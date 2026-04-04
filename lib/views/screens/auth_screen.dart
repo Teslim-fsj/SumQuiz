@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:sumquiz/services/auth_service.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sumquiz/models/user_model.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 enum AuthMode { login, signUp }
 
@@ -17,8 +19,7 @@ class AuthScreen extends StatefulWidget {
   State<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen>
-    with SingleTickerProviderStateMixin {
+class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -39,19 +40,14 @@ class _AuthScreenState extends State<AuthScreen>
 
   void _switchAuthMode() {
     setState(() {
-      _authMode =
-          _authMode == AuthMode.login ? AuthMode.signUp : AuthMode.login;
+      _authMode = _authMode == AuthMode.login ? AuthMode.signUp : AuthMode.login;
     });
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate() || _isLoading) {
-      return;
-    }
+    if (!_formKey.currentState!.validate() || _isLoading) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
     final theme = Theme.of(context);
 
     try {
@@ -63,7 +59,6 @@ class _AuthScreenState extends State<AuthScreen>
           _passwordController.text.trim(),
         );
       } else {
-        // Save intended role before sign up
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('intended_role', _signUpRole.name);
         
@@ -74,346 +69,209 @@ class _AuthScreenState extends State<AuthScreen>
           _fullNameController.text.trim(),
           _referralCodeController.text.trim(),
         );
-        if (mounted) {
-          await _showRolePickerDialog();
-        }
+        if (mounted) developer.log('Sign-Up successful, user document creation initiated with role: ${_signUpRole.name}');
       }
     } on FirebaseAuthException catch (e) {
-      String errorMessage = 'Authentication failed. Please try again.';
-
-      switch (e.code) {
-        case 'invalid-email':
-          errorMessage = 'Invalid email address format.';
-          break;
-        case 'user-disabled':
-          errorMessage = 'This account has been disabled.';
-          break;
-        case 'user-not-found':
-          errorMessage = 'No account found with this email.';
-          break;
-        case 'wrong-password':
-          errorMessage = 'Incorrect password.';
-          break;
-        case 'email-already-in-use':
-          errorMessage = 'An account already exists with this email.';
-          break;
-        case 'operation-not-allowed':
-          errorMessage = 'Email/password accounts are not enabled.';
-          break;
-        case 'weak-password':
-          errorMessage =
-              'Password is too weak. Please use a stronger password.';
-          break;
-        case 'network-request-failed':
-          errorMessage =
-              'Network error. Please check your connection and try again.';
-          break;
-        default:
-          errorMessage = 'Authentication failed. Please try again later.';
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(errorMessage, style: theme.textTheme.bodyMedium)),
-        );
-      }
+      _showError(theme, _getFirebaseErrorMessage(e));
     } catch (e) {
-      // Check if this is a referral-related error
-      String errorMessage = 'Authentication Failed: ${e.toString()}';
-      if (e.toString().toLowerCase().contains('referral')) {
-        errorMessage = e.toString().replaceAll('Exception:', '').trim();
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(errorMessage, style: theme.textTheme.bodyMedium)),
-        );
-      }
+      _showError(theme, _getErrorMessage(e));
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _googleSignIn() async {
     if (_isLoading) return;
 
-    setState(() {
-      _isLoading = true;
-    });
-
-    // Add a small delay to ensure UI updates before starting the flow
+    setState(() => _isLoading = true);
     await Future.delayed(const Duration(milliseconds: 100));
     final theme = Theme.of(context);
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-      
-      // Save intended role for new Google sign-ups
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('intended_role', _signUpRole.name);
 
-      await authService.signInWithGoogle(context,
-          referralCode: _referralCodeController.text.trim());
+      await authService.signInWithGoogle(context, referralCode: _referralCodeController.text.trim());
       
-      // Check if new user to show role picker
       if (prefs.getBool('is_new_user') ?? false) {
-        if (mounted) {
-          await _showRolePickerDialog();
-          await prefs.setBool('is_new_user', false);
-        }
+        developer.log('Google Sign-In successful for new user, role: ${prefs.getString('intended_role')}');
       }
     } catch (e) {
-      String errorMessage = 'Google Sign-In failed. Please try again.';
-
-      // Check for specific error types
-      if (e.toString().contains('network') ||
-          e.toString().contains('connection')) {
-        errorMessage =
-            'Network error. Please check your connection and try again.';
-      } else if (e.toString().contains('cancelled')) {
-        // Don't show an error message if the user cancelled the sign-in
-        errorMessage = '';
-      } else if (e.toString().contains('account disabled')) {
-        errorMessage =
-            'This account has been disabled. Please contact support.';
-      } else if (e.toString().contains('malformed') ||
-          e.toString().contains('expired')) {
-        errorMessage = 'Authentication token is invalid. Please try again.';
-      } else if (e.toString().contains('Google Sign-In is disabled')) {
-        errorMessage =
-            'Google Sign-In is currently disabled. Please try again later.';
-      } else if (e.toString().toLowerCase().contains('referral')) {
-        // Handle referral-related errors
-        errorMessage = e.toString().replaceAll('Exception:', '').trim();
-      } else {
-        // Use the actual error message from the exception
-        errorMessage = e.toString().replaceAll('Exception:', '').trim();
-        if (errorMessage.isEmpty) {
-          errorMessage = 'Google Sign-In failed. Please try again.';
-        }
-      }
-
-      if (mounted && errorMessage.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(errorMessage, style: theme.textTheme.bodyMedium)),
-        );
-      }
+      _showError(theme, _getGoogleErrorMessage(e));
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _showError(ThemeData theme, String message) {
+    if (!mounted || message.isEmpty) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onError)),
+        backgroundColor: theme.colorScheme.error,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  String _getFirebaseErrorMessage(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'invalid-email': return 'Invalid email address format.';
+      case 'user-disabled': return 'This account has been disabled.';
+      case 'user-not-found': return 'No account found with this email.';
+      case 'wrong-password': return 'Incorrect password.';
+      case 'email-already-in-use': return 'An account already exists with this email.';
+      case 'operation-not-allowed': return 'Email/password accounts are not enabled.';
+      case 'weak-password': return 'Password is too weak. Please use a stronger password.';
+      case 'network-request-failed': return 'Network error. Please check your connection and try again.';
+      default: return 'Authentication failed. Please try again later.';
+    }
+  }
+
+  String _getErrorMessage(dynamic e) {
+    String msg = e.toString();
+    if (msg.toLowerCase().contains('referral')) return msg.replaceAll('Exception:', '').trim();
+    return 'Authentication Failed: $msg';
+  }
+
+  String _getGoogleErrorMessage(dynamic e) {
+    String msg = e.toString();
+    if (msg.contains('network') || msg.contains('connection')) return 'Network error. Please check your connection.';
+    if (msg.contains('cancelled')) return '';
+    if (msg.contains('account disabled')) return 'This account is disabled. Please contact support.';
+    if (msg.contains('malformed') || msg.contains('expired')) return 'Token invalid. Please try again.';
+    if (msg.contains('Google Sign-In is disabled')) return 'Google Sign-In is disabled for this app.';
+    if (msg.toLowerCase().contains('referral')) return msg.replaceAll('Exception:', '').trim();
+    return msg.replaceAll('Exception:', '').trim().isEmpty ? 'Google Sign-In failed.' : msg.replaceAll('Exception:', '').trim();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final size = MediaQuery.of(context).size;
+    final isMobile = size.width < 900;
+
     return Scaffold(
-      body: Stack(
+      backgroundColor: theme.colorScheme.surface,
+      body: Row(
         children: [
-          // Animated Background
-          Animate(
-            onPlay: (controller) => controller.repeat(reverse: true),
-            effects: [
-              CustomEffect(
-                duration: 6.seconds,
-                builder: (context, value, child) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: isDark
-                            ? [
-                                theme.colorScheme.surface,
-                                Color.lerp(theme.colorScheme.surface,
-                                    theme.colorScheme.primaryContainer, value)!,
-                              ]
-                            : [
-                                const Color(0xFFF3F4F6), // Light Grey
-                                Color.lerp(
-                                    const Color(0xFFE8EAF6),
-                                    const Color(0xFFC5CAE9),
-                                    value)!, // Pulse Blue
-                              ],
-                      ),
-                    ),
-                    child: child,
-                  );
-                },
-              )
-            ],
-            child: Container(),
-          ),
-
-          // Main Content
-          LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth > 800) {
-                // Desktop / Web Wide Layout
-                return Center(
-                  child: Container(
-                    constraints: const BoxConstraints(maxWidth: 1000),
-                    padding: const EdgeInsets.symmetric(horizontal: 40),
-                    child: Row(
-                      children: [
-                        // Left Side: Illustration / Branding
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                    color: theme.cardColor,
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: theme.colorScheme.primary
-                                            .withValues(alpha: 0.15),
-                                        blurRadius: 20,
-                                        offset: const Offset(0, 10),
-                                      )
-                                    ]),
-                                child: Image.asset(
-                                  'assets/images/sumquiz_logo.png',
-                                  width: 80,
-                                  height: 80,
-                                ),
-                              ).animate().scale(
-                                  duration: 500.ms, curve: Curves.easeOutBack),
-                              const SizedBox(height: 32),
-                              Text(
-                                'Master Your Knowledge.',
-                                style: theme.textTheme.displaySmall?.copyWith(
-                                  fontSize: 42,
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.onSurface,
-                                  height: 1.1,
-                                ),
-                              ).animate().fadeIn().slideX(),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Generate quizzes, flashcards, and summaries instantly with AI.',
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  fontSize: 18,
-                                  color: theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.7),
-                                  height: 1.5,
-                                ),
-                              ).animate().fadeIn(delay: 200.ms).slideX(),
-                            ],
-                          ),
-                        ),
-                        // Right Side: Auth Form
-                        const SizedBox(width: 80),
-                        Expanded(child: _buildAuthCard(theme)),
-                      ],
-                    ),
-                  ),
-                );
-              } else {
-                // Mobile Layout
-                return Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24.0, vertical: 40),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Logo Area
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                              color: theme.cardColor,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: theme.colorScheme.primary
-                                      .withValues(alpha: 0.15),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 10),
-                                )
-                              ]),
-                          child: Image.asset(
-                            'assets/images/sumquiz_logo.png',
-                            width: 60,
-                            height: 60,
-                          ),
-                        )
-                            .animate()
-                            .scale(duration: 500.ms, curve: Curves.easeOutBack),
-
-                        const SizedBox(height: 32),
-
-                        // Glass Card (Constrained for mobile)
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 400),
-                          child: _buildAuthCard(theme),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }
-            },
+          if (!isMobile) Expanded(flex: 5, child: _buildBrandingPanel(theme)),
+          Expanded(
+            flex: 6,
+            child: isMobile 
+              ? SingleChildScrollView(child: _buildAuthPanel(theme, isMobile: true))
+              : _buildAuthPanel(theme, isMobile: false),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildAuthCard(ThemeData theme) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: theme.cardColor.withValues(alpha: 0.8),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-                color: theme.cardColor.withValues(alpha: 0.6), width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 30,
-                offset: const Offset(0, 10),
+  Widget _buildBrandingPanel(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    final bgGradient = isDark
+        ? LinearGradient(colors: [theme.colorScheme.primary.withValues(alpha: 0.1), theme.colorScheme.surface], begin: Alignment.topLeft, end: Alignment.bottomRight)
+        : LinearGradient(colors: [theme.colorScheme.primary, theme.colorScheme.primaryContainer.withValues(alpha: 0.8)], begin: Alignment.topLeft, end: Alignment.bottomRight);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? theme.colorScheme.surface : theme.colorScheme.primary,
+        gradient: bgGradient,
+        border: Border(right: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1))),
+      ),
+      child: Stack(
+        children: [
+          // Subtle decorative graphic
+          Positioned(
+            top: -100,
+            right: -100,
+            child: Container(
+              width: 400,
+              height: 400,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: theme.colorScheme.surface.withValues(alpha: 0.1),
               ),
+            ),
+          ).animate().fadeIn(duration: 1.seconds).scale(begin: const Offset(0.8, 0.8)),
+          
+          Padding(
+            padding: const EdgeInsets.all(60.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 30, offset: const Offset(0, 10)),
+                    ]
+                  ),
+                  child: Image.asset('assets/images/sumquiz_logo.png', width: 64, height: 64),
+                ).animate().slideY(begin: 0.2).fadeIn(duration: 600.ms),
+                const SizedBox(height: 40),
+                Text(
+                  'Empower your learning\nwith intelligent logic.',
+                  style: GoogleFonts.outfit(
+                    fontSize: 48,
+                    fontWeight: FontWeight.w900,
+                    height: 1.1,
+                    color: isDark ? theme.colorScheme.onSurface : Colors.white,
+                    letterSpacing: -1,
+                  ),
+                ).animate().slideY(begin: 0.2, delay: 100.ms).fadeIn(),
+                const SizedBox(height: 24),
+                Text(
+                  'Join thousands of educators and students leveraging AI to automate and deepen their study practices.',
+                  style: GoogleFonts.outfit(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w400,
+                    height: 1.5,
+                    color: isDark ? theme.colorScheme.onSurface.withValues(alpha: 0.7) : Colors.white70,
+                  ),
+                ).animate().slideY(begin: 0.2, delay: 200.ms).fadeIn(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAuthPanel(ThemeData theme, {required bool isMobile}) {
+    return Container(
+      color: theme.colorScheme.surface,
+      alignment: Alignment.center,
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 80, vertical: 40),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 440),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (isMobile) ...[
+              Center(child: Image.asset('assets/images/sumquiz_logo.png', width: 48, height: 48)),
+              const SizedBox(height: 32),
             ],
-          ),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 500),
-            switchInCurve: Curves.easeOutQuart,
-            switchOutCurve: Curves.easeInQuart,
-            layoutBuilder: (child, list) => Stack(children: [child!, ...list]),
-            transitionBuilder: (child, animation) {
-              return FadeTransition(
-                  opacity: animation,
-                  child: SizeTransition(sizeFactor: animation, child: child));
-            },
-            child: _authMode == AuthMode.login
-                ? _buildLoginForm(theme)
-                : _buildSignUpForm(theme),
-          ),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(begin: const Offset(0.05, 0), end: Offset.zero).animate(animation),
+                  child: child,
+                ),
+              ),
+              child: _authMode == AuthMode.login ? _buildLoginForm(theme) : _buildSignUpForm(theme),
+            ),
+          ],
         ),
       ),
-    )
-        .animate()
-        .fadeIn(duration: 600.ms, delay: 200.ms)
-        .slideY(begin: 0.1, end: 0);
+    );
   }
 
   Widget _buildLoginForm(ThemeData theme) {
@@ -423,55 +281,44 @@ class _AuthScreenState extends State<AuthScreen>
         key: const ValueKey('loginForm'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Welcome Back',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
+          Text('Welcome back', style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface, letterSpacing: -0.5)),
           const SizedBox(height: 8),
-          Text(
-            'Sign in to your account',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontSize: 14,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-          ),
-          const SizedBox(height: 32),
+          Text('Please enter your details to sign in.', style: GoogleFonts.inter(fontSize: 15, color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+          const SizedBox(height: 40),
           _buildTextField(
             controller: _emailController,
-            labelText: 'Email',
+            label: 'Email Address',
             icon: Icons.email_outlined,
             keyboardType: TextInputType.emailAddress,
-            validator: (value) =>
-                value == null || !value.contains('@') ? 'Invalid email' : null,
+            validator: (val) => val == null || !val.contains('@') ? 'Enter a valid email' : null,
             theme: theme,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           _buildTextField(
             controller: _passwordController,
-            labelText: 'Password',
-            icon: Icons.lock_outline,
+            label: 'Password',
+            icon: Icons.lock_outline_rounded,
             obscureText: true,
-            validator: (value) =>
-                value == null || value.isEmpty ? 'Enter password' : null,
+            validator: (val) => val == null || val.isEmpty ? 'Enter your password' : null,
             theme: theme,
           ),
-          const SizedBox(height: 32),
-          _buildAuthButton('Sign In', _submit, theme),
-          const SizedBox(height: 16),
-          _buildGoogleButton(theme),
-          const SizedBox(height: 24),
-          _buildSwitchAuthModeButton(
-            'Don\'t have an account? ',
-            'Sign Up',
-            _switchAuthMode,
-            theme,
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () {},
+              style: TextButton.styleFrom(visualDensity: VisualDensity.compact, foregroundColor: theme.colorScheme.primary),
+              child: Text('Forgot password?', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13)),
+            ),
           ),
+          const SizedBox(height: 24),
+          _buildAuthButton('Sign In', _submit, theme),
+          const SizedBox(height: 24),
+          _buildSocialDivider(theme),
+          const SizedBox(height: 24),
+          _buildGoogleButton(theme),
+          const SizedBox(height: 32),
+          _buildSwitchAuthModeButton('Don\'t have an account?', 'Sign up', _switchAuthMode, theme),
         ],
       ),
     );
@@ -484,74 +331,52 @@ class _AuthScreenState extends State<AuthScreen>
         key: const ValueKey('signUpForm'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Create Account',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
+          Text('Create an account', style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface, letterSpacing: -0.5)),
           const SizedBox(height: 8),
-          Text(
-            'Join SumQuiz for free',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontSize: 14,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-          ),
+          Text('Start your journey with SumQuiz today.', style: GoogleFonts.inter(fontSize: 15, color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
           const SizedBox(height: 32),
+          _buildRoleSelector(theme),
+          const SizedBox(height: 24),
           _buildTextField(
             controller: _fullNameController,
-            labelText: 'Full Name',
+            label: 'Full Name',
             icon: Icons.person_outline,
-            validator: (value) =>
-                value == null || value.isEmpty ? 'Enter full name' : null,
+            validator: (val) => val == null || val.isEmpty ? 'Enter full name' : null,
             theme: theme,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           _buildTextField(
             controller: _emailController,
-            labelText: 'Email',
+            label: 'Email Address',
             icon: Icons.email_outlined,
             keyboardType: TextInputType.emailAddress,
-            validator: (value) =>
-                value == null || !value.contains('@') ? 'Invalid email' : null,
+            validator: (val) => val == null || !val.contains('@') ? 'Enter a valid email' : null,
             theme: theme,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           _buildTextField(
             controller: _passwordController,
-            labelText: 'Password',
-            icon: Icons.lock_outline,
+            label: 'Password',
+            icon: Icons.lock_outline_rounded,
             obscureText: true,
-            validator: (value) =>
-                value == null || value.length < 6 ? 'Min 6 characters' : null,
+            validator: (val) => val == null || val.length < 6 ? 'Min 6 characters required' : null,
             theme: theme,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           _buildTextField(
             controller: _referralCodeController,
-            labelText: 'Referral Code (Optional)',
+            label: 'Referral Code (Optional)',
             icon: Icons.card_giftcard,
-            validator: null,
             theme: theme,
           ),
-          const SizedBox(height: 16),
-          _buildRoleSelector(theme),
           const SizedBox(height: 32),
-          _buildAuthButton('Sign Up', _submit, theme),
-          const SizedBox(height: 16),
-          _buildGoogleButton(theme),
+          _buildAuthButton('Create Account', _submit, theme),
           const SizedBox(height: 24),
-          _buildSwitchAuthModeButton(
-            'Already have an account? ',
-            'Sign In',
-            _switchAuthMode,
-            theme,
-          ),
+          _buildSocialDivider(theme),
+          const SizedBox(height: 24),
+          _buildGoogleButton(theme),
+          const SizedBox(height: 32),
+          _buildSwitchAuthModeButton('Already have an account?', 'Log in', _switchAuthMode, theme),
         ],
       ),
     );
@@ -559,124 +384,36 @@ class _AuthScreenState extends State<AuthScreen>
 
   Widget _buildTextField({
     required TextEditingController controller,
-    required String labelText,
+    required String label,
     required IconData icon,
     required ThemeData theme,
     bool obscureText = false,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
   }) {
-    return TextFormField(
-      controller: controller,
-      style: theme.textTheme.bodyMedium
-          ?.copyWith(fontSize: 15, color: theme.colorScheme.onSurface),
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      validator: validator,
-      decoration: InputDecoration(
-        labelText: labelText,
-        labelStyle: TextStyle(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-            fontSize: 14),
-        prefixIcon: Icon(icon,
-            color: theme.colorScheme.primary.withValues(alpha: 0.7), size: 20),
-        filled: true,
-        fillColor: theme.cardColor,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide:
-              BorderSide(color: theme.dividerColor.withValues(alpha: 0.2)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 1),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAuthButton(
-      String text, VoidCallback onPressed, ThemeData theme) {
-    return SizedBox(
-      height: 52,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: theme.colorScheme.primary,
-          foregroundColor: theme.colorScheme.onPrimary,
-          elevation: 4,
-          shadowColor: theme.colorScheme.primary.withValues(alpha: 0.4),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        ),
-        child: _isLoading
-            ? SizedBox(
-                height: 24,
-                width: 24,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2.5, color: theme.colorScheme.onPrimary))
-            : Text(
-                text,
-                style: theme.textTheme.titleMedium?.copyWith(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onPrimary),
-              ),
-      ),
-    );
-  }
-
-  Widget _buildGoogleButton(ThemeData theme) {
-    return SizedBox(
-      height: 52,
-      child: OutlinedButton.icon(
-        onPressed: _isLoading ? null : _googleSignIn,
-        icon: SvgPicture.asset('assets/icons/google_logo.svg', height: 22),
-        label: Text(
-          'Continue with Google',
-          style: theme.textTheme.titleMedium?.copyWith(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface),
-        ),
-        style: OutlinedButton.styleFrom(
-          backgroundColor: theme.cardColor,
-          side: BorderSide(color: theme.dividerColor),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSwitchAuthModeButton(
-      String text, String buttonText, VoidCallback onPressed, ThemeData theme) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    final isDark = theme.brightness == Brightness.dark;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(text,
-            style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                fontSize: 14)),
-        GestureDetector(
-          onTap: onPressed,
-          child: Text(
-            buttonText,
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
+        Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface.withValues(alpha: 0.8))),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          obscureText: obscureText,
+          keyboardType: keyboardType,
+          validator: validator,
+          style: GoogleFonts.inter(fontSize: 15, color: theme.colorScheme.onSurface),
+          decoration: InputDecoration(
+            hintText: 'Enter your ${label.toLowerCase()}',
+            hintStyle: GoogleFonts.inter(fontSize: 14, color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+            prefixIcon: Icon(icon, size: 20, color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+            filled: true,
+            fillColor: isDark ? theme.colorScheme.surfaceContainerHighest : Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1))),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? theme.dividerColor.withValues(alpha: 0.05) : const Color(0xFFE5E7EB))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: theme.colorScheme.primary, width: 2)),
+            errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: theme.colorScheme.error)),
           ),
         ),
       ],
@@ -684,206 +421,131 @@ class _AuthScreenState extends State<AuthScreen>
   }
 
   Widget _buildRoleSelector(ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'I am joining as a:',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-            fontWeight: FontWeight.w600,
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.brightness == Brightness.dark ? theme.colorScheme.surfaceContainerHighest : const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
+      ),
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        children: [
+          Expanded(
+            child: _RolePill(
+              label: 'Student',
+              isSelected: _signUpRole == UserRole.student,
+              onTap: () => setState(() => _signUpRole = UserRole.student),
+              theme: theme,
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _RoleOption(
-                label: 'Student',
-                icon: Icons.school_outlined,
-                isSelected: _signUpRole == UserRole.student,
-                onTap: () => setState(() => _signUpRole = UserRole.student),
-                theme: theme,
-              ),
+          Expanded(
+            child: _RolePill(
+              label: 'Educator',
+              isSelected: _signUpRole == UserRole.creator,
+              onTap: () => setState(() => _signUpRole = UserRole.creator),
+              theme: theme,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _RoleOption(
-                label: 'Teacher',
-                icon: Icons.assignment_ind_outlined,
-                isSelected: _signUpRole == UserRole.creator,
-                onTap: () => setState(() => _signUpRole = UserRole.creator),
-                theme: theme,
-              ),
-            ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAuthButton(String text, VoidCallback onPressed, ThemeData theme) {
+    return SizedBox(
+      height: 54,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: theme.colorScheme.primary,
+          foregroundColor: theme.colorScheme.onPrimary,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
+        child: _isLoading
+            ? SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2.5, color: theme.colorScheme.onPrimary))
+            : Text(text, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+
+  Widget _buildGoogleButton(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    return SizedBox(
+      height: 54,
+      child: OutlinedButton.icon(
+        onPressed: _isLoading ? null : _googleSignIn,
+        icon: SvgPicture.asset('assets/icons/google_logo.svg', height: 20),
+        label: Text(
+          'Sign in with Google',
+          style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
+        ),
+        style: OutlinedButton.styleFrom(
+          backgroundColor: isDark ? Colors.transparent : Colors.white,
+          side: BorderSide(color: isDark ? theme.dividerColor.withValues(alpha: 0.3) : const Color(0xFFE5E7EB)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSocialDivider(ThemeData theme) {
+    return Row(
+      children: [
+        Expanded(child: Divider(color: theme.dividerColor.withValues(alpha: 0.2))),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text('OR', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface.withValues(alpha: 0.4))),
+        ),
+        Expanded(child: Divider(color: theme.dividerColor.withValues(alpha: 0.2))),
       ],
     );
   }
 
-  Future<void> _showRolePickerDialog() async {
-    final theme = Theme.of(context);
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final user = authService.currentUser;
-    if (user == null) return;
-
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => PopScope(
-        canPop: false,
-        child: Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          child: Container(
-            padding: const EdgeInsets.all(32),
-            constraints: const BoxConstraints(maxWidth: 500),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Welcome to SumQuiz!',
-                  style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'How do you plan to use SumQuiz?',
-                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.7)),
-                ),
-                const SizedBox(height: 32),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _RoleCard(
-                        title: 'Student',
-                        description: 'I want to study, create quizzes and flashcards for myself.',
-                        icon: Icons.school_outlined,
-                        color: theme.colorScheme.primary,
-                        onTap: () async {
-                          await authService.updateUserRole(user.uid, UserRole.student);
-                          if (context.mounted) Navigator.pop(context);
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _RoleCard(
-                        title: 'Teacher',
-                        description: 'I want to create exams and materials for my students.',
-                        icon: Icons.assignment_ind_outlined,
-                        color: Colors.purple,
-                        onTap: () async {
-                          await authService.updateUserRole(user.uid, UserRole.creator);
-                          if (context.mounted) Navigator.pop(context);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+  Widget _buildSwitchAuthModeButton(String text, String highlight, VoidCallback onTap, ThemeData theme) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(text, style: GoogleFonts.inter(fontSize: 14, color: theme.colorScheme.onSurface.withValues(alpha: 0.7))),
+        const SizedBox(width: 4),
+        InkWell(
+          onTap: onTap,
+          child: Text(highlight, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
         ),
-      ),
+      ],
     );
   }
 }
 
-class _RoleOption extends StatelessWidget {
+class _RolePill extends StatelessWidget {
   final String label;
-  final IconData icon;
   final bool isSelected;
   final VoidCallback onTap;
   final ThemeData theme;
 
-  const _RoleOption({
-    required this.label,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-    required this.theme,
-  });
+  const _RolePill({required this.label, required this.isSelected, required this.onTap, required this.theme});
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? theme.colorScheme.primary : theme.cardColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? theme.colorScheme.primary : theme.dividerColor.withValues(alpha: 0.2),
-            width: 1.5,
+          color: isSelected ? theme.colorScheme.surface : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: isSelected ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))] : [],
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            color: isSelected ? theme.colorScheme.onSurface : theme.colorScheme.onSurface.withValues(alpha: 0.6),
           ),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.primary,
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _RoleCard extends StatelessWidget {
-  final String title;
-  final String description;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _RoleCard({
-    required this.title,
-    required this.description,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          border: Border.all(color: color.withOpacity(0.3), width: 2),
-          borderRadius: BorderRadius.circular(16),
-          color: color.withOpacity(0.05),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 40, color: color),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              description,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, color: Colors.black54),
-            ),
-          ],
         ),
       ),
     );

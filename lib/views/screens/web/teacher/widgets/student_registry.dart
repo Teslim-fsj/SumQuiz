@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:sumquiz/models/teacher_models.dart';
 import 'package:sumquiz/theme/web_theme.dart';
-import 'shared_teacher_widgets.dart';
 
 class StudentRegistry extends StatefulWidget {
   final List<StudentLink> students;
@@ -23,9 +23,10 @@ class _StudentRegistryState extends State<StudentRegistry> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredStudents = widget.students.where((s) =>
-        s.studentName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-        s.studentEmail.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+    final filtered = widget.students.where((s) {
+      return s.studentName.toLowerCase().contains(_searchQuery.toLowerCase()) || 
+             s.studentEmail.toLowerCase().contains(_searchQuery.toLowerCase());
+    }).toList();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(40),
@@ -33,37 +34,52 @@ class _StudentRegistryState extends State<StudentRegistry> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: SharedTeacherWidgets.moduleHeader('Students',
-                    'Registry of all students engaging with your content'),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Student Roster', style: GoogleFonts.outfit(fontSize: 42, fontWeight: FontWeight.w900, color: const Color(0xFF1F1F1F), letterSpacing: -1)),
+                  const SizedBox(height: 8),
+                  Text('Overview of all active students and their engagement trends.', style: GoogleFonts.outfit(fontSize: 18, color: const Color(0xFF6B7280))),
+                ],
               ),
-              _buildSearchBar(),
-              const SizedBox(width: 24),
-              ElevatedButton.icon(
-                onPressed: widget.onInviteStudent,
-                icon: const Icon(Icons.person_add_outlined, size: 18),
-                label: const Text('Invite Student'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: WebColors.purplePrimary,
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
+              Row(
+                children: [
+                  _buildSearchBar(),
+                  const SizedBox(width: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(border: Border.all(color: WebColors.border), borderRadius: BorderRadius.circular(12)),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.filter_list, size: 18),
+                        const SizedBox(width: 8),
+                        Text('Classes', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 13)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(border: Border.all(color: WebColors.border), shape: BoxShape.circle), child: const Icon(Icons.sort, size: 18)),
+                  const SizedBox(width: 12),
+                  ElevatedButton.icon(
+                    onPressed: widget.onInviteStudent,
+                    icon: const Icon(Icons.person_add, size: 18),
+                    label: const Text('Add Student'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: WebColors.purplePrimary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  )
+                ],
+              )
             ],
           ),
-          const SizedBox(height: 32),
-          if (filteredStudents.isEmpty)
-            SharedTeacherWidgets.emptyCard(
-                _searchQuery.isEmpty ? 'No students yet' : 'No students found',
-                _searchQuery.isEmpty 
-                  ? 'Share your content with students to see them here.'
-                  : 'Try adjusting your search query.')
-          else
-            _buildStudentTable(filteredStudents),
+          const SizedBox(height: 40),
+          _buildTable(filtered),
         ],
       ),
     );
@@ -71,7 +87,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
 
   Widget _buildSearchBar() {
     return Container(
-      width: 300,
+      width: 250,
       height: 48,
       decoration: BoxDecoration(
         color: Colors.white,
@@ -81,22 +97,30 @@ class _StudentRegistryState extends State<StudentRegistry> {
       child: TextField(
         onChanged: (v) => setState(() => _searchQuery = v),
         decoration: InputDecoration(
-          hintText: 'Search students...',
+          hintText: 'Search student...',
           hintStyle: GoogleFonts.outfit(fontSize: 14, color: WebColors.textTertiary),
-          prefixIcon: const Icon(Icons.search, size: 20, color: WebColors.textTertiary),
+          prefixIcon: const Icon(Icons.search, size: 18, color: WebColors.textTertiary),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(vertical: 14),
         ),
       ),
     );
   }
 
-  Widget _buildStudentTable(List<StudentLink> students) {
+  Widget _buildTable(List<StudentLink> students) {
+    if (students.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(40),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: WebColors.border)),
+        child: const Center(child: Text('No students found.')),
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: WebColors.border),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -104,62 +128,49 @@ class _StudentRegistryState extends State<StudentRegistry> {
             offset: const Offset(0, 4),
           ),
         ],
+        border: Border.all(color: WebColors.border),
       ),
-      child: Column(
-        children: [
-          // Header Row
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            decoration: const BoxDecoration(
-              color: WebColors.backgroundAlt,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+              color: const Color(0xFFF9FAFB),
+              child: Row(
+                children: [
+                   Expanded(flex: 3, child: Text('STUDENT NAME', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[600], letterSpacing: 1))),
+                   Expanded(flex: 2, child: Text('CLASS', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[600], letterSpacing: 1))),
+                   Expanded(flex: 2, child: Text('LAST ACTIVE', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[600], letterSpacing: 1))),
+                   Expanded(flex: 2, child: Text('AVERAGE', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[600], letterSpacing: 1))),
+                   Expanded(flex: 2, child: Text('ACTIVITY', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[600], letterSpacing: 1))),
+                   const SizedBox(width: 40),
+                ],
               ),
             ),
-            child: Row(
-              children: [
-                _tableHeader('Student', flex: 3),
-                _tableHeader('Last Active', flex: 2),
-                _tableHeader('Attempts'),
-                _tableHeader('Avg Score'),
-                _tableHeader('Completion'),
-              ],
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: students.length,
+              separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF3F4F6)),
+              itemBuilder: (context, i) {
+                final student = students[i];
+                return _buildTableRow(student, i);
+              },
             ),
-          ),
-          // Rows
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: students.length,
-            itemBuilder: (context, index) => _studentRow(students[index]),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _tableHeader(String text, {int flex = 1}) {
-    return Expanded(
-      flex: flex,
-      child: Text(text,
-          style: GoogleFonts.outfit(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: WebColors.textSecondary,
-              letterSpacing: 0.5)),
-    );
-  }
-
-  Widget _studentRow(StudentLink s) {
-    final isActive = s.lastActiveAt != null &&
-        s.lastActiveAt!.isAfter(DateTime.now().subtract(const Duration(days: 7)));
+  Widget _buildTableRow(StudentLink student, int index) {
+    final isActive = student.lastActiveAt != null &&
+        student.lastActiveAt!.isAfter(DateTime.now().subtract(const Duration(days: 7)));
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: WebColors.border)),
-      ),
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
       child: Row(
         children: [
           Expanded(
@@ -168,93 +179,83 @@ class _StudentRegistryState extends State<StudentRegistry> {
               children: [
                 CircleAvatar(
                   radius: 18,
-                  backgroundColor:
-                      WebColors.purplePrimary.withValues(alpha: 0.1),
+                  backgroundColor: const Color(0xFFF3E8FF),
                   child: Text(
-                    s.studentName.isNotEmpty ? s.studentName[0].toUpperCase() : '?',
+                    student.studentName.isNotEmpty ? student.studentName[0].toUpperCase() : '?',
                     style: GoogleFonts.outfit(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
                         color: WebColors.purplePrimary),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(s.studentName,
-                          style: GoogleFonts.outfit(
-                              fontSize: 13, fontWeight: FontWeight.w700),
-                          overflow: TextOverflow.ellipsis),
-                      if (s.studentEmail.isNotEmpty)
-                        Text(s.studentEmail,
-                            style: GoogleFonts.outfit(
-                                fontSize: 11, color: WebColors.textTertiary),
-                            overflow: TextOverflow.ellipsis),
-                    ],
-                  ),
+                const SizedBox(width: 16),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(student.studentName, style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF1F1F1F))),
+                    if (student.studentEmail.isNotEmpty)
+                      Text(student.studentEmail, style: GoogleFonts.outfit(fontSize: 11, color: Colors.grey[500])),
+                  ],
                 ),
               ],
             ),
           ),
           Expanded(
             flex: 2,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(12)),
+                child: Text('Default Class', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[800])),
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text(
+              student.lastActiveAt != null ? DateFormat.MMMEd().format(student.lastActiveAt!) : 'Never',
+              style: GoogleFonts.outfit(fontSize: 13, color: Colors.grey[700]),
+            ),
+          ),
+          Expanded(
+            flex: 2,
             child: Row(
               children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: isActive ? WebColors.success : WebColors.border,
-                    shape: BoxShape.circle,
+                Text('${student.averageScore.toStringAsFixed(1)}%', style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF1F1F1F))),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: student.averageScore / 100,
+                      backgroundColor: const Color(0xFFF3F4F6),
+                      valueColor: const AlwaysStoppedAnimation(WebColors.purplePrimary),
+                      minHeight: 6,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  s.lastActiveAt != null
-                      ? SharedTeacherWidgets.relativeTime(s.lastActiveAt!)
-                      : 'Never',
-                  style: GoogleFonts.outfit(
-                      fontSize: 12, color: WebColors.textSecondary),
-                ),
+                const SizedBox(width: 16),
               ],
             ),
           ),
           Expanded(
-              child: Text('${s.totalAttempts}',
-                  style: GoogleFonts.outfit(
-                      fontSize: 13, fontWeight: FontWeight.w700))),
-          Expanded(
-            child: SharedTeacherWidgets.scoreChip(s.averageScore),
-          ),
-          Expanded(
-            child: _progressBar(s.completionRate / 100),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _progressBar(double value) {
-    return Row(
-      children: [
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: value.clamp(0.0, 1.0),
-              minHeight: 6,
-              backgroundColor: WebColors.backgroundAlt,
-              valueColor: AlwaysStoppedAnimation(WebColors.blueInfo),
+            flex: 2,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: isActive ? const Color(0xFFDCFCE7) : const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(12)),
+                child: Text(isActive ? 'Active Learner' : 'Inactive', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: isActive ? const Color(0xFF166534) : Colors.grey[600])),
+              ),
             ),
           ),
-        ),
-        const SizedBox(width: 8),
-        Text('${(value * 100).toStringAsFixed(0)}%',
-            style: GoogleFonts.outfit(
-                fontSize: 11, color: WebColors.textSecondary)),
-      ],
+          IconButton(
+            icon: const Icon(Icons.more_horiz, color: Colors.grey),
+            onPressed: () {},
+          )
+        ],
+      ),
     );
   }
 }

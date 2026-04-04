@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 import 'package:sumquiz/models/public_deck.dart';
 import 'package:sumquiz/models/teacher_models.dart';
+import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/theme/web_theme.dart';
-import 'shared_teacher_widgets.dart';
 
 class DashboardOverview extends StatelessWidget {
   final TeacherStats? stats;
@@ -22,224 +23,477 @@ class DashboardOverview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<UserModel?>(context);
+    final name = user?.displayName.split(' ').first ?? 'Educator';
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.all(40),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SharedTeacherWidgets.moduleHeader(
-            'Dashboard',
-            'Live overview of your teaching activity',
-          ),
-          const SizedBox(height: 32),
-          _buildStatsRow(),
+          Text(
+            'Hello, Dr. $name',
+            style: GoogleFonts.outfit(
+              fontSize: 42,
+              fontWeight: FontWeight.w900,
+              color: const Color(0xFF1F1F1F),
+              letterSpacing: -1,
+            ),
+          ).animate().fadeIn().slideY(begin: 0.1),
+          const SizedBox(height: 8),
+          Text(
+            'Keep building momentum. Knowledge is flowing.',
+            style: GoogleFonts.outfit(
+              fontSize: 18,
+              color: const Color(0xFF6B7280),
+              fontWeight: FontWeight.w400,
+            ),
+          ).animate().fadeIn().slideY(begin: 0.1, delay: 50.ms),
+          
           const SizedBox(height: 40),
+          
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                flex: 5,
+                child: _buildEngagementOverview(),
+              ),
+              const SizedBox(width: 24),
+              Expanded(
+                flex: 2,
+                child: Column(
+                  children: [
+                    Expanded(child: _buildActiveStudentsCard()),
+                    const SizedBox(height: 24),
+                    Expanded(child: _buildContentRatingCard()),
+                  ],
+                ),
+              ),
+            ],
+          ).animate().fadeIn().slideY(begin: 0.1, delay: 100.ms),
+
+          const SizedBox(height: 24),
+          
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(flex: 3, child: _buildActivityFeed()),
+              Expanded(flex: 3, child: _buildClassroomCodes()),
               const SizedBox(width: 24),
-              Expanded(flex: 2, child: _buildQuickInsights()),
+              Expanded(flex: 4, child: _buildStudentSentiment()),
+            ],
+          ).animate().fadeIn().slideY(begin: 0.1, delay: 150.ms),
+
+          const SizedBox(height: 40),
+          
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Active Content Decks',
+                style: GoogleFonts.outfit(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF1F1F1F),
+                ),
+              ),
+              TextButton(
+                onPressed: () {},
+                child: const Text('View all decks', style: TextStyle(color: WebColors.purplePrimary, fontWeight: FontWeight.bold)),
+              ),
             ],
           ),
+          const SizedBox(height: 20),
+          _buildActiveDecksTable(),
         ],
       ),
     );
   }
 
-  Widget _buildStatsRow() {
-    final s = stats;
-    return Row(
-      children: [
-        _statCard('Exams Created', '${s?.totalExams ?? 0}',
-            Icons.assignment_outlined, WebColors.purplePrimary, 0),
-        const SizedBox(width: 16),
-        _statCard('Study Packs', '${s?.totalStudyPacks ?? 0}',
-            Icons.library_books_outlined, WebColors.secondary, 1),
-        const SizedBox(width: 16),
-        _statCard('Total Students', '${s?.totalStudents ?? 0}',
-            Icons.people_outline, WebColors.blueInfo, 2),
-        const SizedBox(width: 16),
-        _statCard('Active (7d)', '${s?.activeStudents ?? 0}',
-            Icons.bolt_rounded, WebColors.success, 3),
-        const SizedBox(width: 16),
-        _statCard('Avg Score', '${s?.averageScore.toStringAsFixed(0) ?? 0}%',
-            Icons.star_outline_rounded, WebColors.accentOrange, 4),
-        const SizedBox(width: 16),
-        _statCard('Total Attempts', '${s?.totalAttempts ?? 0}',
-            Icons.timeline_rounded, WebColors.error, 5),
-      ],
-    );
-  }
-
-  Widget _statCard(String label, String value, IconData icon, Color color, int index) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: WebColors.glassDecoration(
-          blur: 15,
-          opacity: 0.1,
-          color: WebColors.surface,
-          borderRadius: 16,
-        ).copyWith(
-          boxShadow: WebColors.cardShadow,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(icon, color: color, size: 18),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(value,
-                style: GoogleFonts.outfit(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: WebColors.textPrimary)),
-            Text(label,
-                style: GoogleFonts.outfit(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: WebColors.textTertiary)),
-          ],
-        ),
-      ).animate().fadeIn(delay: (100 * index).ms).slideY(begin: 0.1, curve: Curves.easeOutQuad),
-    );
-  }
-
-  Widget _buildActivityFeed() {
-    return SharedTeacherWidgets.sectionCard(
-      title: 'Recent Activity',
-      icon: Icons.rss_feed_rounded,
-      child: Column(
-        children: activity.isEmpty
-            ? [
-                SharedTeacherWidgets.emptyHint(
-                    'No activity yet. Share your content with students!'),
-              ]
-            : activity.map((item) => _activityTile(item)).toList(),
+  Widget _buildEngagementOverview() {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: WebColors.cardShadow,
       ),
-    );
-  }
-
-  Widget _activityTile(ActivityItem item) {
-    final iconData = item.type == 'attempt'
-        ? Icons.play_circle_outline_rounded
-        : item.type == 'creation'
-            ? Icons.add_circle_outline_rounded
-            : Icons.warning_amber_rounded;
-    final color = item.type == 'attempt'
-        ? WebColors.blueInfo
-        : item.type == 'creation'
-            ? WebColors.success
-            : WebColors.accentOrange;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(iconData, color: color, size: 16),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(item.title,
-                    style: GoogleFonts.outfit(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: WebColors.textPrimary)),
-                Text(
-                  '${item.subtitle} • ${SharedTeacherWidgets.relativeTime(item.timestamp)}',
-                  style: GoogleFonts.outfit(
-                      fontSize: 11, color: WebColors.textTertiary),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   Text('Engagement Overview', style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w800)),
+                   const SizedBox(height: 4),
+                   Text('Quiz performance trends', style: GoogleFonts.outfit(fontSize: 13, color: Colors.grey[600])),
+                ],
+              ),
+              Container(
+                decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(20)),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]),
+                      child: Text('WEEKLY', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold)),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Text('MONTHLY', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+                    ),
+                  ],
                 ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 40),
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _barChartColumn('MON', 40, 30),
+                _barChartColumn('TUE', 55, 45),
+                _barChartColumn('WED', 80, 60),
+                _barChartColumn('THU', 100, 90),
+                _barChartColumn('FRI', 65, 50),
+                _barChartColumn('SAT', 35, 20),
+                _barChartColumn('SUN', 25, 15),
               ],
             ),
           ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Container(width: 10, height: 10, decoration: BoxDecoration(color: const Color(0xFFE5E7EB), shape: BoxShape.circle)),
+              const SizedBox(width: 8),
+              Text('Started', style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w600)),
+              const SizedBox(width: 24),
+              Container(width: 10, height: 10, decoration: BoxDecoration(color: WebColors.purplePrimary, shape: BoxShape.circle)),
+              const SizedBox(width: 8),
+              Text('Completed', style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w600)),
+            ],
+          )
         ],
       ),
     );
   }
 
-  Widget _buildQuickInsights() {
-    final lowEngagement = content
-        .where((c) =>
-            (analytics[c.id]?.engagementRate ?? 0) < 30 &&
-            analytics.containsKey(c.id))
-        .take(3)
-        .toList();
-    final topContent = content
-        .where((c) =>
-            (analytics[c.id]?.averageScore ?? 0) > 70 &&
-            analytics.containsKey(c.id))
-        .take(3)
-        .toList();
-
+  Widget _barChartColumn(String day, double height1, double height2) {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        SharedTeacherWidgets.sectionCard(
-          title: 'Top Content',
-          icon: Icons.emoji_events_outlined,
-          child: topContent.isEmpty
-              ? SharedTeacherWidgets.emptyHint(
-                  'No analytics yet. Generate activity to see top performers.')
-              : Column(
-                  children: topContent.map((d) {
-                    final a = analytics[d.id]!;
-                    return _insightRow(d.title,
-                        '${a.averageScore.toStringAsFixed(0)}% avg', Colors.green);
-                  }).toList(),
-                ),
+        Container(
+          width: 48,
+          height: height1 * 1.5,
+          decoration: BoxDecoration(
+            color: const Color(0xFFE5E7EB),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          alignment: Alignment.bottomCenter,
+          child: Container(
+            width: 48,
+            height: height2 * 1.5,
+            decoration: BoxDecoration(
+              color: WebColors.purplePrimary,
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
         ),
-        const SizedBox(height: 16),
-        SharedTeacherWidgets.sectionCard(
-          title: 'Needs Attention',
-          icon: Icons.report_problem_outlined,
-          child: lowEngagement.isEmpty
-              ? SharedTeacherWidgets.emptyHint('All content is performing well.')
-              : Column(
-                  children: lowEngagement.map((d) {
-                    return _insightRow(
-                        d.title, 'Low engagement', WebColors.accentOrange);
-                  }).toList(),
+        const SizedBox(height: 12),
+        Text(day, style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.grey[600])),
+      ],
+    );
+  }
+
+  Widget _buildActiveStudentsCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: WebColors.purplePrimary,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('ACTIVE STUDENTS', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white70, letterSpacing: 1)),
+          const SizedBox(height: 12),
+          Text('${stats?.activeStudents ?? 0}', style: GoogleFonts.outfit(fontSize: 48, fontWeight: FontWeight.w900, color: Colors.white)),
+          const SizedBox(height: 12),
+          Text('+${activity.where((e) => e.type == "attempt").length} students joined recently', style: GoogleFonts.outfit(fontSize: 12, color: Colors.white70)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContentRatingCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: WebColors.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('CONTENT RATING', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[600], letterSpacing: 1)),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Text(((stats?.averageScore ?? 0) / 20).clamp(0.0, 5.0).toStringAsFixed(1), style: GoogleFonts.outfit(fontSize: 40, fontWeight: FontWeight.w900, color: const Color(0xFF1F1F1F))),
+              const SizedBox(width: 12),
+              Row(
+                children: List.generate(5, (index) => const Icon(Icons.star, color: WebColors.purplePrimary, size: 20)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text('Based on ${stats?.totalAttempts ?? 0} student evaluations this semester.', style: GoogleFonts.outfit(fontSize: 12, color: Colors.grey[600], height: 1.5)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildClassroomCodes() {
+    final publicPacks = content.take(2).toList();
+    
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: WebColors.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Classroom Codes', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800)),
+              const Icon(Icons.qr_code_2, color: WebColors.purplePrimary),
+            ],
+          ),
+          const SizedBox(height: 24),
+          if (publicPacks.isEmpty)
+            Text('No public packs available.', style: TextStyle(color: Colors.grey[500]))
+          else
+            ...publicPacks.map((pack) => Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(12)),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(pack.title.toUpperCase(), style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey[600])),
+                        const SizedBox(height: 4),
+                        Text(pack.shareCode, style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w900, color: WebColors.purplePrimary, letterSpacing: 2)),
+                      ],
+                    ),
+                    Container(padding: const EdgeInsets.all(8), decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle), child: const Icon(Icons.copy, size: 16)),
+                  ],
                 ),
+              ),
+            )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStudentSentiment() {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: WebColors.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+               Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFFF3E8FF), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.psychology, color: WebColors.purplePrimary, size: 24)),
+               const SizedBox(width: 16),
+               Column(
+                 crossAxisAlignment: CrossAxisAlignment.start,
+                 children: [
+                   Text('Student Sentiment', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800)),
+                   Text('Real-time feedback analysis', style: GoogleFonts.outfit(fontSize: 13, color: Colors.grey[600])),
+                 ],
+               ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  children: [
+                    _sentimentProgress('Clarity of Content', 0.94),
+                    const SizedBox(height: 20),
+                    _sentimentProgress('Difficulty Balance', 0.82),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 32),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(16)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('"The AI-generated insights on the Molecular Deck were incredibly helpful for my exam prep last night."', style: GoogleFonts.outfit(fontSize: 13, fontStyle: FontStyle.italic, color: Colors.grey[700], height: 1.5)),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          const CircleAvatar(radius: 12, backgroundColor: Colors.teal),
+                          const SizedBox(width: 8),
+                          Text('Student #A203', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold)),
+                        ],
+                      )
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _sentimentProgress(String label, double val) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w700)),
+            Text('${(val*100).toInt()}%', style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.bold, color: WebColors.purplePrimary)),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: LinearProgressIndicator(
+            value: val,
+            backgroundColor: const Color(0xFFE5E7EB),
+            valueColor: const AlwaysStoppedAnimation(WebColors.purplePrimary),
+            minHeight: 8,
+          ),
         ),
       ],
     );
   }
 
-  Widget _insightRow(String title, String tag, Color color) {
+  Widget _buildActiveDecksTable() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: WebColors.cardShadow,
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+            child: Row(
+              children: [
+                Expanded(flex: 3, child: Text('DECK NAME', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[500], letterSpacing: 1))),
+                Expanded(flex: 1, child: Text('STATUS', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[500], letterSpacing: 1))),
+                Expanded(flex: 2, child: Text('COMPLETION RATE', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[500], letterSpacing: 1))),
+                const Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child: Text('ACTIONS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.transparent)))),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: Color(0xFFF3F4F6)),
+          if (content.isEmpty)
+             const Padding(padding: EdgeInsets.all(32), child: Text("No content yet.", style: TextStyle(color: Colors.grey)))
+          else 
+            ...content.take(4).map((deck) => _buildDeckRow(deck)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeckRow(PublicDeck deck) {
+    final a = analytics[deck.id];
+    final completionRate = a?.engagementRate ?? 0;
+    
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
       child: Row(
         children: [
           Expanded(
-            child: Text(title,
-                style: GoogleFonts.outfit(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: WebColors.textPrimary),
-                overflow: TextOverflow.ellipsis),
+            flex: 3,
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: const Color(0xFFF3E8FF), borderRadius: BorderRadius.circular(8)),
+                  child: const Icon(Icons.science_outlined, color: WebColors.purplePrimary, size: 18),
+                ),
+                const SizedBox(width: 16),
+                Expanded(child: Text(deck.title, style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF1F1F1F)), overflow: TextOverflow.ellipsis)),
+              ],
+            ),
           ),
-          SharedTeacherWidgets.badge(tag, color),
+          Expanded(
+            flex: 1,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(20)),
+                child: Text('LIVE', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFF166534))),
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Row(
+              children: [
+                Text('${completionRate.toStringAsFixed(0)}%', style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w700)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: LinearProgressIndicator(
+                      value: completionRate / 100,
+                      backgroundColor: const Color(0xFFE5E7EB),
+                      valueColor: const AlwaysStoppedAnimation(WebColors.purplePrimary),
+                      minHeight: 6,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 24),
+              ],
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(icon: const Icon(Icons.more_vert, color: Colors.grey), onPressed: () {}),
+            ),
+          ),
         ],
       ),
     );

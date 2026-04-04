@@ -14,6 +14,9 @@ import 'package:sumquiz/services/sync_service.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sumquiz/views/widgets/enter_code_dialog.dart';
+import 'package:sumquiz/views/widgets/web/web_library_header.dart';
+import 'package:sumquiz/views/widgets/web/web_library_empty_state.dart';
+import 'package:sumquiz/views/widgets/web/web_feature_info_cards.dart';
 
 class LibraryScreenWeb extends StatefulWidget {
   const LibraryScreenWeb({super.key});
@@ -29,14 +32,13 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
   final TextEditingController _searchController = TextEditingController();
 
   String _searchQuery = '';
-  final String _activeSidebarSection = 'All Content';
   LibraryViewModel? _viewModel;
   bool _isNavigating = false;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 7, vsync: this);
     _searchController.addListener(_onSearchChanged);
     _localDb.init();
   }
@@ -69,7 +71,6 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<UserModel?>(context);
-    final theme = Theme.of(context);
     final viewModel = _viewModel;
 
     if (user == null) {
@@ -82,51 +83,86 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
 
     return ChangeNotifierProvider.value(
       value: viewModel,
-      child: Stack(
-        children: [
-          Consumer<LibraryViewModel>(
-            builder: (context, viewModel, child) {
-              return Scaffold(
-                backgroundColor: theme.colorScheme.surface,
+      child: Consumer<LibraryViewModel>(
+        builder: (context, viewModel, child) {
+          return Stack(
+            children: [
+              Scaffold(
+                backgroundColor: const Color(0xFFF8FAFC),
                 body: Column(
                   children: [
-                    _buildModernHeader(user, viewModel),
+                    // Modern Header
+                    WebLibraryHeader(
+                      searchController: _searchController,
+                      onImport: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => const EnterCodeDialog(),
+                        );
+                      },
+                      onNotifications: () {},
+                      onProfile: () => context.push('/profile'),
+                    ),
+                    
+                    // Content Area
                     Expanded(
-                      child: _buildMainContent(user, viewModel),
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Hero Section
+                            _buildHeroSection(viewModel),
+                            const SizedBox(height: 32),
+                            
+                            // Category Filters (Pill Tabs)
+                            _buildCategoryFilters(),
+                            const SizedBox(height: 48),
+                            
+                            // Main Content
+                            _buildDynamicContent(user.uid, viewModel),
+                            
+                            const SizedBox(height: 80),
+                            // Feature Information Cards
+                            const WebFeatureInfoCards(),
+                            const SizedBox(height: 60),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),
-              );
-            },
-          ),
-          if (_isNavigating)
-            Container(
-              color: Colors.black.withOpacity(0.3),
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const CircularProgressIndicator(),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Preparing Content...',
-                        style: GoogleFonts.outfit(
-                          fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.onSurface,
-                        ),
+              ),
+              if (_isNavigating)
+                Container(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                    ],
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const CircularProgressIndicator(),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Preparing Content...',
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF0F172A),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -164,203 +200,141 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
     );
   }
 
-  Widget _buildModernHeader(UserModel user, LibraryViewModel viewModel) {
-    return Container(
-      height: 90,
-      padding: const EdgeInsets.symmetric(horizontal: 40),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.8),
-        border: const Border(bottom: BorderSide(color: WebColors.border)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildHeader(viewModel),
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_none_rounded),
-                onPressed: () {},
-                style: IconButton.styleFrom(
-                  backgroundColor: WebColors.backgroundAlt,
-                  padding: const EdgeInsets.all(12),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  gradient: WebColors.AccentGradient,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                  boxShadow: WebColors.subtleShadow,
-                ),
-                child: const Icon(Icons.person_rounded, color: Colors.white),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMainContent(UserModel user, LibraryViewModel viewModel) {
-    return Padding(
-      padding: const EdgeInsets.all(40),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildLibraryTabs(),
-          const SizedBox(height: 24),
-          Expanded(
-            child: _activeSidebarSection == 'Recently Viewed'
-                ? _buildRecentlyViewedGrid(user.uid, viewModel)
-                : _activeSidebarSection == 'Favorites'
-                    ? _buildEmptyState('No Favorites yet',
-                        'Tap the heart icon on any item to save it here')
-                    : TabBarView(
-                        controller: _tabController,
-                        physics: const NeverScrollableScrollPhysics(),
-                        children: [
-                          _buildCombinedGrid(user.uid, viewModel),
-                          _buildLibraryGrid(user.uid, 'summaries', viewModel),
-                          _buildQuizGrid(user.uid, viewModel),
-                          _buildLibraryGrid(user.uid, 'exams', viewModel),
-                          _buildLibraryGrid(user.uid, 'flashcards', viewModel),
-                        ],
-                      ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader(LibraryViewModel viewModel) {
-    final selectedFolder = viewModel.selectedFolder;
-    return Row(
+  Widget _buildHeroSection(LibraryViewModel viewModel) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _activeSidebarSection == 'Recently Viewed'
-                    ? 'Recently Viewed'
-                    : _activeSidebarSection == 'Favorites'
-                        ? 'Favorites'
-                        : selectedFolder != null
-                            ? selectedFolder.name
-                            : 'Content Library',
-                style: GoogleFonts.outfit(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w800,
-                  color: Theme.of(context).textTheme.titleLarge?.color,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _activeSidebarSection == 'Recently Viewed'
-                    ? 'Your most recent activity across all categories.'
-                    : _activeSidebarSection == 'Favorites'
-                        ? 'Keep your most important materials here for quick access.'
-                        : selectedFolder != null
-                            ? 'Viewing contents of ${selectedFolder.name}'
-                            : 'Manage and access your generated learning materials.',
-                style: GoogleFonts.outfit(
-                  fontSize: 16,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ],
-          ),
-        ),
         Row(
           children: [
-            if (viewModel.isSyncing)
-              const Padding(
-                padding: EdgeInsets.only(right: 16.0),
-                child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2)),
-              ),
-            IconButton(
-              icon: Icon(Icons.sync,
-                  color: Theme.of(context).colorScheme.primary),
-              onPressed: viewModel.syncAllData,
-              tooltip: 'Sync Data',
-            ),
-            const SizedBox(width: 16),
-            ElevatedButton.icon(
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => const EnterCodeDialog(),
-                );
-              },
-              icon: const Icon(Icons.qr_code_scanner, size: 18),
-              label: const Text('Import'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context)
-                    .colorScheme
-                    .primary
-                    .withOpacity(0.1),
-                foregroundColor: Theme.of(context).colorScheme.primary,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            Text(
+              'Content Library',
+              style: GoogleFonts.outfit(
+                fontSize: 48,
+                fontWeight: FontWeight.w900,
+                color: const Color(0xFF0F172A),
+                letterSpacing: -1,
               ),
             ),
-            const SizedBox(width: 16),
-            Container(
-              width: 300,
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Theme.of(context).dividerColor),
-              ),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search Library...',
-                  prefixIcon: Icon(Icons.search,
-                      color: Theme.of(context).colorScheme.primary),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-              ),
-            ),
+            if (viewModel.isSyncing) ...[
+              const SizedBox(width: 24),
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF6366F1)),
+              ).animate().fadeIn(),
+            ],
           ],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Manage and access your generated learning materials. All your study packs, quizzes, and exams in one place.',
+          style: GoogleFonts.outfit(
+            fontSize: 18,
+            color: const Color(0xFF64748B),
+            fontWeight: FontWeight.w400,
+          ),
         ),
       ],
     );
   }
 
-  // --- Grid Builders ---
+  Widget _buildCategoryFilters() {
+    final categories = [
+      {'label': 'All Content', 'icon': Icons.grid_view_rounded},
+      {'label': 'Recents', 'icon': Icons.history_rounded},
+      {'label': 'Starred', 'icon': Icons.star_rounded},
+      {'label': 'Summaries', 'icon': Icons.description_rounded},
+      {'label': 'Quizzes', 'icon': Icons.quiz_rounded},
+      {'label': 'Exams', 'icon': Icons.assignment_rounded},
+      {'label': 'Flashcards', 'icon': Icons.style_rounded},
+    ];
 
-  Widget _buildCombinedGrid(String userId, LibraryViewModel viewModel) {
-    final stream = viewModel.selectedFolder == null
-        ? viewModel.allItems$
-        : viewModel.getFolderItemsStream(viewModel.selectedFolder!.id);
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: List.generate(categories.length, (index) {
+          final isSelected = _tabController.index == index;
+          return Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: InkWell(
+              onTap: () {
+                setState(() => _tabController.animateTo(index));
+              },
+              borderRadius: BorderRadius.circular(20),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFF0F172A) : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected ? Colors.transparent : const Color(0xFFE2E8F0),
+                  ),
+                  boxShadow: isSelected
+                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4))]
+                      : [],
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      categories[index]['icon'] as IconData,
+                      size: 18,
+                      color: isSelected ? Colors.white : const Color(0xFF64748B),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      categories[index]['label'] as String,
+                      style: GoogleFonts.outfit(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: isSelected ? Colors.white : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildDynamicContent(String userId, LibraryViewModel viewModel) {
+    if (_tabController.index == 1) {
+      return _buildRecentlyViewedGrid(userId, viewModel);
+    }
+    
+    final stream = switch (_tabController.index) {
+      0 => viewModel.allItems$,
+      2 => viewModel.allItems$.map((items) => items.where((i) => false).toList()), // TODO: Add isFavorite to LibraryItem
+      3 => viewModel.allSummaries$,
+      4 => viewModel.allQuizzes$,
+      5 => viewModel.allExams$,
+      6 => viewModel.allFlashcards$,
+      _ => viewModel.allItems$,
+    };
+
     return StreamBuilder<List<LibraryItem>>(
       stream: stream,
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return _buildLoading();
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: Padding(
+            padding: EdgeInsets.all(100.0),
+            child: CircularProgressIndicator(),
+          ));
+        }
+        
         final items = snapshot.data ?? [];
         final filtered = items
             .where((i) => i.title.toLowerCase().contains(_searchQuery))
             .toList();
 
         if (filtered.isEmpty) {
-          if (_searchQuery.isNotEmpty) {
-            return _buildEmptyState(
-                'No results found', 'Try adjusting your search query');
-          }
-          return _buildEmptyState('Your library is empty',
-              'Start creating content to populate your library');
+          return WebLibraryEmptyState(
+            onBuildPack: () => context.push('/create'),
+            onCreateNew: () => context.push('/create-content'),
+          );
         }
 
         return _buildContentGrid(filtered, userId, viewModel);
@@ -368,58 +342,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
     );
   }
 
-  Widget _buildLibraryGrid(
-      String userId, String type, LibraryViewModel viewModel) {
-    final selectedFolder = viewModel.selectedFolder;
-    late Stream<List<LibraryItem>> stream;
-
-    if (type == 'summaries') {
-      stream = selectedFolder == null
-          ? viewModel.allSummaries$
-          : viewModel.getFolderSummariesStream(selectedFolder.id);
-    } else if (type == 'exams') {
-      stream = selectedFolder == null
-          ? viewModel.allExams$
-          : viewModel.getFolderExamsStream(selectedFolder.id);
-    } else {
-      stream = selectedFolder == null
-          ? viewModel.allFlashcards$
-          : viewModel.getFolderFlashcardsStream(selectedFolder.id);
-    }
-
-    return StreamBuilder<List<LibraryItem>>(
-      stream: stream,
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) return _buildLoading();
-        final items = snapshot.data ?? [];
-        if (items.isEmpty) {
-          return _buildEmptyState(
-              'No $type yet', 'Create your first $type now');
-        }
-        return _buildContentGrid(items, userId, viewModel);
-      },
-    );
-  }
-
-  Widget _buildQuizGrid(String userId, LibraryViewModel viewModel) {
-    final selectedFolder = viewModel.selectedFolder;
-    final stream = selectedFolder == null
-        ? viewModel.allQuizzes$
-        : viewModel.getFolderQuizzesStream(selectedFolder.id);
-
-    return StreamBuilder<List<LibraryItem>>(
-      stream: stream,
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) return _buildLoading();
-        final items = snapshot.data ?? [];
-        if (items.isEmpty) {
-          return _buildEmptyState(
-              'No quizzes yet', 'Generate a quiz from any content');
-        }
-        return _buildContentGrid(items, userId, viewModel);
-      },
-    );
-  }
+  // --- Grid Builders ---
 
   Widget _buildRecentlyViewedGrid(String userId, LibraryViewModel viewModel) {
     return StreamBuilder<List<LibraryItem>>(
@@ -568,10 +491,6 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
     );
   }
 
-  Widget _buildLoading() {
-    return Center(child: CircularProgressIndicator(color: WebColors.primary));
-  }
-
   Widget _buildEmptyState(String title, String subtitle) {
     return Center(
       child: Column(
@@ -607,48 +526,6 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
           ),
         ],
       ).animate().fadeIn(delay: 200.ms),
-    );
-  }
-
-  Widget _buildLibraryTabs() {
-    return Container(
-      height: 48,
-      decoration: BoxDecoration(
-        color: WebColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: WebColors.border),
-      ),
-      child: TabBar(
-        controller: _tabController,
-        indicator: BoxDecoration(
-          color: WebColors.primary,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: WebColors.primary.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        indicatorSize: TabBarIndicatorSize.tab,
-        dividerColor: Colors.transparent,
-        labelColor: Colors.white,
-        unselectedLabelColor: WebColors.textSecondary,
-        labelStyle:
-            GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 14),
-        unselectedLabelStyle:
-            GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 14),
-        tabs: const [
-          Tab(text: 'All Items', icon: Icon(Icons.grid_view, size: 18)),
-          Tab(
-              text: 'Summaries',
-              icon: Icon(Icons.description_outlined, size: 18)),
-          Tab(text: 'Quizzes', icon: Icon(Icons.quiz_outlined, size: 18)),
-          Tab(text: 'Exams', icon: Icon(Icons.assignment_outlined, size: 18)),
-          Tab(text: 'Flashcards', icon: Icon(Icons.style_outlined, size: 18)),
-        ],
-      ),
     );
   }
 
@@ -925,9 +802,19 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
 
       // Navigate to ResultsViewScreenWeb for all content types
       debugPrint('🚀 Navigating to results view screen...');
+      
+      int tab = 0;
+      switch (item.type) {
+        case LibraryItemType.summary: tab = 0; break;
+        case LibraryItemType.quiz: 
+        case LibraryItemType.exam: tab = 1; break;
+        case LibraryItemType.flashcards: tab = 2; break;
+      }
+
       context.pushNamed(
         'results-view',
         pathParameters: {'folderId': item.id},
+        queryParameters: {'tab': tab.toString()},
       );
     } catch (e) {
       debugPrint('❌ Navigation error: $e');

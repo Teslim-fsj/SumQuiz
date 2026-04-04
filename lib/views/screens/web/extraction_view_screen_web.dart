@@ -11,6 +11,7 @@ import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
 import 'package:sumquiz/services/auth_service.dart';
 import 'package:sumquiz/models/extraction_result.dart';
+import 'package:sumquiz/views/widgets/generation_loading_overlay.dart';
 
 class ExtractionViewScreenWeb extends StatefulWidget {
   final ExtractionResult? result;
@@ -180,7 +181,9 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
     final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
+      body: Stack(
+        children: [
+          SafeArea(
         child: Column(
           children: [
             _buildHeader(),
@@ -593,10 +596,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                             const Spacer(),
 
                             // Generate button
-                            if (_isLoading)
-                              _buildLoadingIndicator()
-                            else
-                              Container(
+                            Container(
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(colors: [
                                     theme.colorScheme.primary,
@@ -613,7 +613,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                                   ],
                                 ),
                                 child: ElevatedButton(
-                                  onPressed: _handleGenerate,
+                                  onPressed: _isLoading ? null : _handleGenerate,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.transparent,
                                     shadowColor: Colors.transparent,
@@ -652,6 +652,16 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
             ),
           ],
         ),
+      ),
+          if (_isLoading)
+            GenerationLoadingOverlay(
+              message: 'Generating Content...',
+              subMessage: _loadingMessage,
+              onCancel: () {
+                setState(() => _isLoading = false);
+              },
+            ),
+        ],
       ),
     );
   }
@@ -739,60 +749,4 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
     );
   }
 
-  Widget _buildLoadingIndicator() {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .surfaceContainerHighest
-            .withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).dividerColor),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 32,
-            height: 32,
-            child: CircularProgressIndicator(
-              color: theme.colorScheme.primary,
-              strokeWidth: 3,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            _loadingMessage,
-            style: GoogleFonts.outfit(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Processing with AI...',
-            style: GoogleFonts.outfit(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextButton.icon(
-            onPressed: () {
-              setState(() => _isLoading = false);
-            },
-            icon: const Icon(Icons.close, color: Colors.redAccent),
-            label: const Text(
-              'Cancel',
-              style: TextStyle(color: Colors.redAccent),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

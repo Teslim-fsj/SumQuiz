@@ -1,9 +1,10 @@
 import 'dart:ui';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:sumquiz/views/widgets/generation_loading_overlay.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -1239,52 +1240,11 @@ class _CreateContentScreenState extends State<CreateContentScreen>
   }
 
   Widget _buildLoadingOverlay() {
-    return Positioned.fill(
-      child: Container(
-        color: Colors.black.withValues(alpha: 0.85),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(
-                  width: 70,
-                  height: 70,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
-                    backgroundColor: Colors.white10,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                Text(
-                  'Transmuting Concepts...',
-                  style: GoogleFonts.outfit(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                  ),
-                )
-                    .animate(onPlay: (c) => c.repeat())
-                    .shimmer(duration: 2.seconds),
-                const SizedBox(height: 12),
-                Text(
-                  _currentOperation.isEmpty
-                      ? 'Harnessing neural networks'
-                      : _currentOperation,
-                  style: GoogleFonts.outfit(
-                    color: Colors.white.withValues(alpha: 0.5),
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return GenerationLoadingOverlay(
+      message: 'Transmuting Concepts...',
+      subMessage: _currentOperation.isEmpty
+          ? 'Harnessing neural networks'
+          : _currentOperation,
     );
   }
 

@@ -1,6 +1,5 @@
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -9,29 +8,33 @@ import 'package:sumquiz/models/local_flashcard_set.dart';
 import 'package:sumquiz/models/local_quiz.dart';
 import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
-import '../../widgets/summary_view.dart';
-import '../../widgets/quiz_view.dart';
-import '../../widgets/flashcards_view.dart';
-import '../../../services/export_service.dart';
-import '../../../services/local_database_service.dart';
-import '../../../models/local_summary.dart';
-import '../../../models/local_quiz_question.dart';
-import '../../../models/local_flashcard.dart';
-import '../../../services/auth_service.dart';
-import '../../../services/progress_service.dart';
-import '../../../services/spaced_repetition_service.dart';
+import 'package:sumquiz/services/spaced_repetition_service.dart';
+import 'package:sumquiz/services/local_database_service.dart';
+import 'package:sumquiz/services/auth_service.dart';
+import 'package:sumquiz/services/progress_service.dart';
+import 'package:sumquiz/models/local_summary.dart';
+import 'package:sumquiz/views/widgets/web/web_summary_view.dart';
+import 'package:sumquiz/views/widgets/web/web_quiz_view.dart';
+import 'package:sumquiz/views/widgets/web/web_flashcards_view.dart';
+import 'package:sumquiz/services/enhanced_ai_service.dart';
+import 'package:sumquiz/theme/web_theme.dart';
 
 class ResultsViewScreenWeb extends StatefulWidget {
   final String folderId;
+  final int initialTab;
 
-  const ResultsViewScreenWeb({super.key, required this.folderId});
+  const ResultsViewScreenWeb({
+    super.key,
+    required this.folderId,
+    this.initialTab = 0,
+  });
 
   @override
   State<ResultsViewScreenWeb> createState() => _ResultsViewScreenWebState();
 }
 
 class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
-  int _selectedTab = 0;
+  late int _selectedTab;
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -49,31 +52,48 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
   @override
   void initState() {
     super.initState();
+    _selectedTab = widget.initialTab;
     _loadData();
   }
 
   Future<void> _loadData() async {
     try {
       final db = context.read<LocalDatabaseService>();
-      final contents = await db.getFolderContents(widget.folderId);
+      String targetFolderId = widget.folderId;
 
-      for (var content in contents) {
-        if (content.contentType == 'summary') {
-          _summary = await db.getSummary(content.contentId);
-        } else if (content.contentType == 'quiz') {
-          _quiz = await db.getQuiz(content.contentId);
-        } else if (content.contentType == 'flashcardSet') {
-          _flashcardSet = await db.getFlashcardSet(content.contentId);
+      // Check if the provided ID is a folder or a content ID
+      final folder = await db.getFolder(targetFolderId);
+      if (folder == null) {
+        // Not a direct folder, check if it's a content item
+        final parentId = await db.getParentFolderId(targetFolderId);
+        if (parentId != null) {
+          targetFolderId = parentId;
         }
       }
 
-      // Auto-select first available tab if default (0) is empty
-      if (_summary == null) {
-        if (_quiz != null) {
-          _selectedTab = 1;
-        } else if (_flashcardSet != null) {
-          _selectedTab = 2;
+      final contents = await db.getFolderContents(targetFolderId);
+
+      // If still no contents, try to load as standalone content
+      if (contents.isEmpty) {
+        _summary = await db.getSummary(targetFolderId);
+        _quiz = await db.getQuiz(targetFolderId);
+        _flashcardSet = await db.getFlashcardSet(targetFolderId);
+      } else {
+        for (var content in contents) {
+          if (content.contentType == 'summary') {
+            _summary = await db.getSummary(content.contentId);
+          } else if (content.contentType == 'quiz') {
+            _quiz = await db.getQuiz(content.contentId);
+          } else if (content.contentType == 'flashcardSet') {
+            _flashcardSet = await db.getFlashcardSet(content.contentId);
+          }
         }
+      }
+
+      // Final tab selection safety check
+      if (_selectedTab == 0 && _summary == null) {
+        if (_quiz != null) _selectedTab = 1;
+        else if (_flashcardSet != null) _selectedTab = 2;
       }
     } catch (e) {
       _errorMessage = 'Failed to load results: $e';
@@ -99,7 +119,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.white),
+            const Icon(Icons.check_circle, color: Colors.white),
             const SizedBox(width: 12),
             const Text('Content saved to your library!'),
           ],
@@ -170,182 +190,133 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
 
   Widget _buildHeader() {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Container(
-      margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 24),
       decoration: BoxDecoration(
-        color:
-            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(24),
-        border:
-            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 4))
-        ],
+        color: isDark ? const Color(0xFF0F172A) : Colors.white,
+        border: Border(bottom: BorderSide(color: WebColors.border.withValues(alpha: 0.5))),
       ),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf_outlined, size: 20),
-            onPressed: () {
-              final user = context.read<UserModel?>();
-              if (user != null && !user.isPro) {
-                showDialog(
-                  context: context,
-                  builder: (context) =>
-                      const UpgradeDialog(featureName: 'PDF Export'),
-                );
-                return;
-              }
-
-              final summary = _summary;
-              if (summary == null) return;
-
-              // Construct models same as mobile
-              final localSummary = LocalSummary(
-                  id: 'temp',
-                  title: summary.title,
-                  content: summary.content,
-                  tags: [],
-                  timestamp: DateTime.now(),
-                  userId: user?.uid ?? '',
-                  isSynced: false);
-
-              final localQuiz = LocalQuiz(
-                  id: 'temp',
-                  title: summary.title,
-                  questions: _quiz?.questions
-                          .map((q) => LocalQuizQuestion(
-                              question: q.question,
-                              options: q.options,
-                              correctAnswer: q.correctAnswer))
-                          .toList() ??
-                      [],
-                  timestamp: DateTime.now(),
-                  userId: user?.uid ?? '',
-                  isSynced: false);
-
-              final localFlash = LocalFlashcardSet(
-                  id: 'temp',
-                  title: summary.title,
-                  flashcards: _flashcardSet?.flashcards
-                          .map((f) => LocalFlashcard(
-                              question: f.question, answer: f.answer))
-                          .toList() ??
-                      [],
-                  timestamp: DateTime.now(),
-                  userId: user?.uid ?? '',
-                  isSynced: false);
-
-              ExportService().exportPdf(context,
-                  summary: localSummary,
-                  quiz: localQuiz,
-                  flashcardSet: localFlash);
-            },
-            style: IconButton.styleFrom(
-              backgroundColor: theme.colorScheme.surface,
-              padding: const EdgeInsets.all(12),
-            ),
-          ),
-          const SizedBox(width: 16),
-          IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-            onPressed: () => context.pop(),
-            style: IconButton.styleFrom(
-              backgroundColor: theme.colorScheme.surface,
-              padding: const EdgeInsets.all(12),
-            ),
-          ),
-          const SizedBox(width: 24),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Content Ready',
-                  style: GoogleFonts.outfit(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    color: theme.colorScheme.onSurface,
-                  ),
+          // Logo
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: WebColors.PremiumGradient,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                Text(
-                  'Your AI-generated learning materials',
-                  style: GoogleFonts.outfit(
-                    fontSize: 16,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
+                child: const Icon(Icons.menu_book_rounded, color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: 16),
+              Text(
+                'SumQuiz',
+                style: GoogleFonts.outfit(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  color: isDark ? Colors.white : WebColors.primary,
+                  letterSpacing: -0.5,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+          
+          const Spacer(),
+
+          // Navigation Links (Placeholder)
+          _buildTopNavLink('Home'),
+          _buildTopNavLink('Library'),
+          _buildTopNavLink('Stats'),
+
+          const Spacer(),
+
+          // AI Badge
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: theme.colorScheme.secondary.withValues(alpha: 0.1),
+              color: WebColors.backgroundAlt,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                  color: theme.colorScheme.secondary.withValues(alpha: 0.2)),
             ),
             child: Row(
               children: [
-                Icon(Icons.auto_awesome_rounded,
-                    size: 14, color: theme.colorScheme.secondary),
-                const SizedBox(width: 6),
+                const Icon(Icons.auto_awesome_rounded, size: 14, color: WebColors.primary),
+                const SizedBox(width: 8),
                 Text(
                   'AI GENERATED',
                   style: GoogleFonts.outfit(
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
-                    color: theme.colorScheme.secondary,
+                    color: WebColors.primary,
                     letterSpacing: 1,
                   ),
                 ),
               ],
             ),
           ),
+          
           const SizedBox(width: 24),
+          
+          // Theme Toggle (Icon only for now)
+              IconButton(
+                icon: const Icon(Icons.dark_mode_outlined, size: 20),
+                onPressed: () {
+                  // TODO: Toggle app-wide theme via provider
+                },
+                color: WebColors.textPrimary,
+              ),
+
+          const SizedBox(width: 12),
+
+          // Save to Library Button
           Container(
+            height: 48,
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [
-                theme.colorScheme.primary,
-                theme.colorScheme.tertiary
-              ]),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              gradient: WebColors.PremiumGradient,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: WebColors.subtleShadow,
             ),
             child: ElevatedButton.icon(
               onPressed: _saveToLibrary,
-              icon:
-                  const Icon(Icons.bookmark_added_rounded, color: Colors.white),
+              icon: const Icon(Icons.bookmark_add_rounded, color: Colors.white, size: 18),
               label: Text(
                 'Save to Library',
-                style: GoogleFonts.outfit(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                ),
+                style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: Colors.white),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.transparent,
                 shadowColor: Colors.transparent,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
-          ).animate().shimmer(delay: 2.seconds, duration: 1.5.seconds),
+          ),
+          
+          const SizedBox(width: 16),
+
+          // Profile
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: WebColors.backgroundAlt,
+            child: const Icon(Icons.person_rounded, color: WebColors.textSecondary),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTopNavLink(String label) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Text(
+        label,
+        style: GoogleFonts.outfit(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: WebColors.textSecondary,
+        ),
       ),
     );
   }
@@ -353,206 +324,159 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
   Widget _buildSidebar() {
     final theme = Theme.of(context);
     return Container(
-      width: 280,
-      decoration: BoxDecoration(
-        color:
-            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(24),
-        border:
-            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 4))
-        ],
-      ),
+      width: 320,
+      padding: const EdgeInsets.fromLTRB(0, 24, 24, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              border: Border(
-                  bottom: BorderSide(
-                      color: theme.colorScheme.outline.withValues(alpha: 0.1))),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: [
-                      theme.colorScheme.primary,
-                      theme.colorScheme.tertiary
-                    ]),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(Icons.menu_book, color: Colors.white, size: 20),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Contents',
-                  style: GoogleFonts.outfit(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_summary != null)
-                    _buildNavItem(0, 'Summary Notes', Icons.article_rounded,
-                        theme.colorScheme.primary),
-                  const SizedBox(height: 12),
-                  if (_quiz != null)
-                    _buildNavItem(1, 'Practice Quiz', Icons.quiz_rounded,
-                        theme.colorScheme.secondary),
-                  const SizedBox(height: 12),
-                  if (_flashcardSet != null)
-                    _buildNavItem(2, 'Flashcards Deck', Icons.style_rounded,
-                        theme.colorScheme.error),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primaryContainer
-                          .withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                          color:
-                              theme.colorScheme.primary.withValues(alpha: 0.2)),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.tips_and_updates_rounded,
-                            color: theme.colorScheme.primary, size: 20),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Review the summary first, then master it with the quiz and flashcards.',
-                            style: GoogleFonts.outfit(
-                                fontSize: 13,
-                                color: theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.6),
-                                fontWeight: FontWeight.w500,
-                                height: 1.4),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          // Navigation Group
+          _buildSidebarItem(0, 'Summary Notes', Icons.article_rounded),
+          const SizedBox(height: 8),
+          _buildSidebarItem(1, 'Practice Quiz', Icons.quiz_rounded),
+          const SizedBox(height: 8),
+          _buildSidebarItem(2, 'Flashcards Deck', Icons.style_rounded, showCheck: true),
+
+          const Spacer(),
+
+          // AI Insights Card (New)
+          _buildAiInsightsCard(),
+
+          const SizedBox(height: 48),
+
+          // Settings / Support (New)
+          _buildSecondaryMenuItem('SETTINGS', Icons.settings_rounded),
+          const SizedBox(height: 12),
+          _buildSecondaryMenuItem('SUPPORT', Icons.help_outline_rounded),
         ],
       ),
     );
   }
 
-  Widget _buildNavItem(int index, String label, IconData icon, Color color) {
-    final theme = Theme.of(context);
+  Widget _buildSidebarItem(int index, String label, IconData icon, {bool showCheck = false}) {
     final isSelected = _selectedTab == index;
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () {
-          // Log previous session if exists
-          _finalizeCurrentSession();
-
-          setState(() {
-            _selectedTab = index;
-            if (index == 1 || index == 2) {
-              _sessionStartTime = DateTime.now();
-              _correctAnswers = 0;
-              _totalQuestionsAnswered = 0;
-              _knewCardsCount = 0;
-              _totalCardsReviewed = 0;
-            } else {
-              _sessionStartTime = null;
-            }
-          });
-        },
-        child: AnimatedContainer(
-          duration: 200.ms,
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-          decoration: BoxDecoration(
-            color:
-                isSelected ? color.withValues(alpha: 0.1) : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected
-                  ? color
-                  : theme.colorScheme.outline.withValues(alpha: 0.2),
-              width: isSelected ? 2 : 1,
+    return InkWell(
+      onTap: () => setState(() => _selectedTab = index),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? WebColors.primary.withValues(alpha: 0.08) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? WebColors.primary : WebColors.textSecondary,
+              size: 22,
             ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                color: isSelected
-                    ? color
-                    : theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                size: 24,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  label,
-                  style: GoogleFonts.outfit(
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                    color: isSelected
-                        ? color
-                        : theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                    fontSize: 15,
-                  ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                label,
+                style: GoogleFonts.outfit(
+                  fontSize: 16,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                  color: isSelected ? WebColors.primary : WebColors.textSecondary,
                 ),
               ),
-              if (isSelected) Icon(Icons.check_circle, color: color, size: 20),
-            ],
-          ),
+            ),
+            if (showCheck && isSelected)
+              const Icon(Icons.check_circle_rounded, color: WebColors.primary, size: 18),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildContentArea() {
-    final theme = Theme.of(context);
+  Widget _buildAiInsightsCard() {
     return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color:
-            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.05),
+        gradient: WebColors.PremiumGradient,
         borderRadius: BorderRadius.circular(24),
-        border:
-            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 4))
+        boxShadow: WebColors.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.insights_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
+              Text(
+                'AI Flashcard Insights',
+                style: GoogleFonts.outfit(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Key terms extracted for ${_summary?.title ?? "your content"}:',
+            style: GoogleFonts.outfit(
+              fontSize: 13,
+              color: Colors.white.withValues(alpha: 0.8),
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: (_summary?.tags ?? ['Scanning content...'])
+                .map((tag) => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        tag,
+                        style: GoogleFonts.outfit(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ))
+                .toList(),
+          ),
         ],
       ),
-      child: _buildSelectedTabView()
-          .animate(key: ValueKey(_selectedTab))
-          .fadeIn(duration: 300.ms)
-          .slideX(begin: 0.1, end: 0, curve: Curves.easeOut),
     );
   }
 
+  Widget _buildSecondaryMenuItem(String label, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, color: WebColors.textSecondary, size: 18),
+        const SizedBox(width: 12),
+        Text(
+          label,
+          style: GoogleFonts.outfit(
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+            color: WebColors.textSecondary,
+            letterSpacing: 1,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContentArea() {
+    return _buildSelectedTabView()
+        .animate(key: ValueKey(_selectedTab))
+        .fadeIn(duration: 400.ms)
+        .slideY(begin: 0.05, end: 0, curve: Curves.easeOut);
+  }
+
   Widget _buildSelectedTabView() {
-    final theme = Theme.of(context);
     switch (_selectedTab) {
       case 0:
         return _buildSummaryTab();
@@ -563,6 +487,91 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
       default:
         return _buildEmptyTab();
     }
+  }
+
+  Widget _buildSummaryTab() {
+    if (_summary == null) return _buildEmptyTab();
+
+    return WebSummaryView(
+      title: _summary!.title,
+      content: _summary!.content,
+      tags: _summary!.tags,
+      flashcardCount: _flashcardSet?.flashcards.length ?? 0,
+      onReviewList: () => setState(() => _selectedTab = 2),
+    );
+  }
+
+  Widget _buildQuizzesTab() {
+    if (_quiz == null) return _buildEmptyTab();
+    final aiService = context.read<EnhancedAIService>();
+
+    return WebQuizView(
+      title: _quiz!.title,
+      subtitle: _summary?.title, // Use summary title as subtitle
+      questions: _quiz!.questions,
+      summaryContent: _summary?.content,
+      aiService: aiService,
+      onAnswer: (isCorrect) {
+        _totalQuestionsAnswered++;
+        if (isCorrect) _correctAnswers++;
+        
+        final auth = context.read<AuthService>();
+        if (auth.currentUser != null) {
+          ProgressService().logAccuracy(auth.currentUser!.uid, isCorrect ? 1.0 : 0.0);
+        }
+      },
+      onShowSummary: () => setState(() => _selectedTab = 0),
+      onFinish: () {
+        _finalizeCurrentSession();
+        _sessionStartTime = null;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Quiz completed! Progress saved.')),
+        );
+      },
+    );
+  }
+
+  Widget _buildFlashcardsTab() {
+    if (_flashcardSet == null) return _buildEmptyTab();
+
+    final flashcards = _flashcardSet!.flashcards
+        .map((f) => Flashcard(
+              id: f.id,
+              question: f.question,
+              answer: f.answer,
+            ))
+        .toList();
+
+    return WebFlashcardsView(
+      title: _flashcardSet!.title,
+      subtitle: _summary?.title,
+      flashcards: flashcards,
+      onReview: (index, knewIt) {
+        _totalCardsReviewed++;
+        if (knewIt) _knewCardsCount++;
+
+        final auth = context.read<AuthService>();
+        if (auth.currentUser != null) {
+          final srs = SpacedRepetitionService(context
+              .read<LocalDatabaseService>()
+              .getSpacedRepetitionBox());
+          srs.updateFlashcardProgress(auth.currentUser!.uid,
+              _flashcardSet!.id, flashcards[index].id, knewIt);
+        }
+      },
+      onFinish: () {
+        _finalizeCurrentSession();
+        _sessionStartTime = null;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Flashcard session complete!')),
+        );
+        setState(() {
+          _selectedTab = 0;
+          _sessionStartTime = null;
+        });
+      },
+    );
   }
 
   void _finalizeCurrentSession() {
@@ -592,133 +601,15 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
   }
 
   Widget _buildEmptyTab() {
-    final theme = Theme.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.inbox, size: 64, color: Colors.grey[300]),
+          const Icon(Icons.inbox, size: 64, color: Colors.grey),
           const SizedBox(height: 16),
-          Text('No content available',
-              style: TextStyle(color: Colors.grey[500], fontSize: 18)),
+          const Text('No content available',
+              style: TextStyle(color: Colors.grey, fontSize: 18)),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryTab() {
-    final theme = Theme.of(context);
-    if (_summary == null) return _buildEmptyTab();
-
-    return Padding(
-      padding: const EdgeInsets.all(40),
-      child: SummaryView(
-        title: _summary!.title,
-        content: _summary!.content,
-        tags: _summary!.tags,
-        showActions: true,
-        onCopy: () {
-          Clipboard.setData(ClipboardData(text: _summary!.content));
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text('Summary copied to clipboard'),
-                behavior: SnackBarBehavior.floating,
-                width: 300),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildQuizzesTab() {
-    final theme = Theme.of(context);
-    if (_quiz == null) return _buildEmptyTab();
-
-    return Padding(
-      padding: const EdgeInsets.all(40),
-      child: QuizView(
-        title: _quiz!.title,
-        questions: _quiz!.questions,
-        onAnswer: (isCorrect) {
-          _totalQuestionsAnswered++;
-          if (isCorrect) _correctAnswers++;
-
-          // Log incremental progress in background
-          final auth = context.read<AuthService>();
-          if (auth.currentUser != null) {
-            ProgressService()
-                .logAccuracy(auth.currentUser!.uid, isCorrect ? 1.0 : 0.0);
-          }
-        },
-        onFinish: () {
-          _finalizeCurrentSession();
-          _sessionStartTime = null; // Prevent double logging
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Quiz completed! Progress saved.'),
-              backgroundColor: theme.colorScheme.secondary,
-              behavior: SnackBarBehavior.floating,
-              width: 300,
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildFlashcardsTab() {
-    final theme = Theme.of(context);
-    if (_flashcardSet == null) return _buildEmptyTab();
-
-    final flashcards = _flashcardSet!.flashcards
-        .map((f) => Flashcard(
-              id: f.id,
-              question: f.question,
-              answer: f.answer,
-            ))
-        .toList();
-
-    return Padding(
-      padding: const EdgeInsets.all(40),
-      child: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxHeight: 700),
-          child: FlashcardsView(
-            title: _flashcardSet!.title,
-            flashcards: flashcards,
-            onReview: (index, knewIt) {
-              _totalCardsReviewed++;
-              if (knewIt) _knewCardsCount++;
-
-              final auth = context.read<AuthService>();
-              if (auth.currentUser != null) {
-                final srs = SpacedRepetitionService(context
-                    .read<LocalDatabaseService>()
-                    .getSpacedRepetitionBox());
-                srs.updateFlashcardProgress(auth.currentUser!.uid,
-                    _flashcardSet!.id, flashcards[index].id, knewIt);
-              }
-            },
-            onFinish: () {
-              _finalizeCurrentSession();
-              _sessionStartTime = null; // Prevent double logging
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Flashcard session complete!'),
-                  backgroundColor: theme.colorScheme.secondary,
-                  behavior: SnackBarBehavior.floating,
-                  width: 300,
-                ),
-              );
-              setState(() {
-                _selectedTab = 0; // Back to summary
-                _sessionStartTime = null;
-              });
-            },
-          ),
-        ),
       ),
     );
   }

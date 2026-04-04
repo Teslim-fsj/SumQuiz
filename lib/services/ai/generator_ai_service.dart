@@ -8,6 +8,7 @@ import 'package:sumquiz/utils/cancellation_token.dart';
 import 'package:uuid/uuid.dart';
 import 'ai_config.dart';
 import 'ai_base_service.dart';
+import 'package:sumquiz/providers/create_content_provider.dart';
 
 import 'dart:developer' as developer;
 
@@ -15,6 +16,7 @@ class GeneratorAIService extends AIBaseService {
   Future<LocalSummary> generateSummary(String text,
       {String? userId,
       String difficulty = 'intermediate',
+      StudyArchetype archetype = StudyArchetype.architect,
       CancellationToken? cancelToken}) async {
     developer.log(
         'Generating $difficulty summary for text length: ${text.length}',
@@ -36,6 +38,7 @@ class GeneratorAIService extends AIBaseService {
     final prompt =
         '''Create a comprehensive, EXAM-FOCUSED study guide from the provided text.
 TARGET DIFFICULTY: $difficulty (Scale your depth and terminology complexity accordingly).
+STUDY ARCHETYPE: ${archetype == StudyArchetype.sprinter ? "The Sprinter (High-intensity, condensed, rapid review style)" : "The Architect (Structural mastery, core concepts, deep mental models)"}.
 
 OUTPUT REQUIREMENTS:
 1. **Title**: A professional, topic-focused title.
@@ -319,6 +322,7 @@ Text: $text''';
   Future<Map<String, dynamic>> generateFromTopic({
     required String topic,
     String depth = 'intermediate',
+    StudyArchetype archetype = StudyArchetype.architect,
     int cardCount = 15,
     List<String>? questionTypes,
     CancellationToken? cancelToken,
@@ -340,6 +344,7 @@ Text: $text''';
     final prompt = '''Create comprehensive study materials for the topic.
     TOPIC: $topic
     LEVEL: $depthInstruction
+    STUDY ARCHETYPE: ${archetype == StudyArchetype.sprinter ? "The Sprinter (High-intensity, condensed, rapid review style)" : "The Architect (Structural mastery, core concepts, deep mental models)"}
 
     GENERATE:
     1. **TITLE**: Engaging title.
