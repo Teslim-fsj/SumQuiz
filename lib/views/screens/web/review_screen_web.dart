@@ -8,6 +8,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../theme/web_theme.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/local_database_service.dart';
 import '../../../services/spaced_repetition_service.dart';
@@ -506,24 +507,22 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                           color: theme.colorScheme.onSurface, fontSize: 18)))
               : SingleChildScrollView(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
+                      const EdgeInsets.symmetric(horizontal: 48, vertical: 36),
                   child: Center(
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1200),
+                      constraints: const BoxConstraints(maxWidth: 1280),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildHeader(user),
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 28),
                           _buildSrsBanner(context),
                           const SizedBox(height: 24),
-                          _buildStatsOverview(user),
-                          const SizedBox(height: 24),
+                          // Three stat cards in a row
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
-                                flex: 2,
                                 child: ActiveMissionCard(
                                   mission: _dailyMission,
                                   onStart: _fetchAndStartMission,
@@ -532,31 +531,30 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                                   },
                                 ),
                               ),
-                              const SizedBox(width: 24),
+                              const SizedBox(width: 20),
                               Expanded(
-                                flex: 1,
-                                child: Column(
-                                  children: [
-                                    StreakCard(
-                                        streakDays:
-                                            user?.missionCompletionStreak ?? 0),
-                                    const SizedBox(height: 24),
-                                    AccuracyCard(
-                                      accuracy: _accuracy,
-                                      highestAccuracy: _accuracy,
-                                      lowestAccuracy: _accuracy,
-                                    ),
-                                  ],
+                                child: AccuracyCard(
+                                  accuracy: _accuracy,
+                                  highestAccuracy: _accuracy,
+                                  lowestAccuracy: _accuracy,
+                                ),
+                              ),
+                              const SizedBox(width: 20),
+                              Expanded(
+                                child: DailyGoalCard(
+                                  goalMinutes: _dailyGoalMinutes,
+                                  timeSpentMinutes: _timeSpentMinutes,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 28),
+                          // Bottom: Curriculums + Right rail
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
-                                flex: 2,
+                                flex: 3,
                                 child: ReviewListCard(
                                   dueCount: _dueCount,
                                   dueItems: _dueFlashcardSets,
@@ -568,62 +566,56 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                               ),
                               const SizedBox(width: 24),
                               Expanded(
-                                flex: 1,
-                                child: DailyGoalCard(
-                                  goalMinutes: _dailyGoalMinutes,
-                                  timeSpentMinutes: _timeSpentMinutes,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 24),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                flex: 1,
-                                child: FocusTimerCard(),
-                              ),
-                              const SizedBox(width: 24),
-                              Expanded(
                                 flex: 2,
-                                child: InteractivePreviewCard(
-                                  question: _previewQuestion,
-                                  onClipPressed: () {
-                                    Clipboard.setData(
-                                        ClipboardData(text: _previewQuestion));
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                            'Question copied to clipboard!'),
-                                        backgroundColor:
-                                            theme.colorScheme.tertiaryContainer,
-                                      ),
-                                    );
-                                  },
-                                  onStartSession: () async {
-                                    // Start session with first set if available
-                                    final localDb =
-                                        Provider.of<LocalDatabaseService>(
-                                            context,
-                                            listen: false);
-                                    final authService =
-                                        Provider.of<AuthService>(context,
-                                            listen: false);
-                                    final sets =
-                                        await localDb.getAllFlashcardSets(
-                                            authService.currentUser?.uid ?? '');
-                                    if (sets.isNotEmpty) {
-                                      _startSetReview(sets.first);
-                                    } else {
-                                      if (context.mounted) {
+                                child: Column(
+                                  children: [
+                                    InteractivePreviewCard(
+                                      question: _previewQuestion,
+                                      onClipPressed: () {
+                                        Clipboard.setData(ClipboardData(
+                                            text: _previewQuestion));
                                         ScaffoldMessenger.of(context)
-                                            .showSnackBar(const SnackBar(
-                                                content: Text(
-                                                    'No study sets found. Create one first!')));
-                                      }
-                                    }
-                                  },
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                                'Question copied to clipboard!'),
+                                            backgroundColor: theme.colorScheme
+                                                .tertiaryContainer,
+                                          ),
+                                        );
+                                      },
+                                      onStartSession: () async {
+                                        final localDb =
+                                            Provider.of<LocalDatabaseService>(
+                                                context,
+                                                listen: false);
+                                        final authService =
+                                            Provider.of<AuthService>(context,
+                                                listen: false);
+                                        final sets =
+                                            await localDb.getAllFlashcardSets(
+                                                authService.currentUser?.uid ??
+                                                    '');
+                                        if (sets.isNotEmpty) {
+                                          _startSetReview(sets.first);
+                                        } else {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(const SnackBar(
+                                                    content: Text(
+                                                        'No study sets found. Create one first!')));
+                                          }
+                                        }
+                                      },
+                                    ),
+                                    const SizedBox(height: 20),
+                                    FocusTimerCard(),
+                                    const SizedBox(height: 20),
+                                    StreakCard(
+                                        streakDays:
+                                            user?.missionCompletionStreak ??
+                                                0),
+                                  ],
                                 ),
                               ),
                             ],
@@ -644,24 +636,69 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
   }
 
   Widget _buildHeader(UserModel? user) {
-    final theme = Theme.of(context);
+    final streak = user?.missionCompletionStreak ?? 0;
+    final accuracyPct = (_accuracy * 100).toInt();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '${_getGreeting()}, ${user?.displayName.split(' ').first ?? 'Scholar'}!',
-          style: GoogleFonts.outfit(
-            fontSize: 32,
-            fontWeight: FontWeight.w900,
-            color: theme.colorScheme.onSurface,
-          ),
+        Row(
+          children: [
+            Text(
+              '${_getGreeting()}, ${user?.displayName.split(' ').first ?? 'Scholar'}!',
+              style: GoogleFonts.outfit(
+                fontSize: 32,
+                fontWeight: FontWeight.w900,
+                color: WebColors.textPrimary,
+              ),
+            ),
+            const SizedBox(width: 16),
+            if (streak > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: WebColors.purpleUltraLight,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: WebColors.purplePrimary.withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.local_fire_department_rounded,
+                        color: WebColors.purplePrimary, size: 18),
+                    const SizedBox(width: 6),
+                    Text(
+                      '$streak-Day Streak',
+                      style: GoogleFonts.outfit(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: WebColors.purplePrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 8),
-        Text(
-          'You\'re on a ${user?.missionCompletionStreak ?? 0}-day learning streak. Keep it up!',
-          style: GoogleFonts.outfit(
-            fontSize: 16,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+        Text.rich(
+          TextSpan(
+            style: GoogleFonts.outfit(
+              fontSize: 16,
+              color: WebColors.textSecondary,
+            ),
+            children: [
+              const TextSpan(
+                  text: 'Ready to master your knowledge today? You\'re performing at '),
+              TextSpan(
+                text: '$accuracyPct%',
+                style: GoogleFonts.outfit(
+                  fontWeight: FontWeight.w700,
+                  color: WebColors.textPrimary,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+              const TextSpan(text: ' accuracy this week.'),
+            ],
           ),
         ),
       ],
@@ -946,7 +983,6 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
   }
 
   Widget _buildSrsBanner(BuildContext context) {
-    final theme = Theme.of(context);
     bool isDue = _dueCount > 0;
     String timeText = "";
 
@@ -964,129 +1000,31 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
       decoration: BoxDecoration(
-        color: isDue ? Colors.amber[50] : Colors.blue[50],
+        gradient: const LinearGradient(
+          colors: [Color(0xFF4C3BCF), Color(0xFF6B5CE7), Color(0xFF7C6FF0)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-            color:
-                isDue ? Colors.amber.withAlpha(77) : Colors.blue.withAlpha(77)),
-      ),
-      child: Row(
-        children: [
-          Icon(isDue ? Icons.notifications_active : Icons.timer,
-              color: isDue ? Colors.amber[700] : Colors.blue[700], size: 32),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isDue ? '$_dueCount Reviews Due Now' : 'All Caught Up! ✓',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: isDue ? Colors.amber[900] : Colors.blue[900],
-                  ),
-                ),
-                Text(
-                  isDue
-                      ? 'Review these items now to maintain long-term retention.'
-                      : 'Your next scheduled review is $timeText.',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: isDue ? Colors.amber[800] : Colors.blue[800],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (isDue)
-            ElevatedButton(
-              onPressed: () {
-                context.push('/spaced-repetition');
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.amber[700],
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('Review Now',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatsOverview(UserModel? user) {
-    final theme = Theme.of(context);
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            icon: Icons.checklist_rounded,
-            value: '${user?.itemsCompletedToday ?? 0}',
-            label: 'Items Completed Today',
-            color: theme.colorScheme.secondary,
-          ),
-        ),
-        const SizedBox(width: 24),
-        Expanded(
-          child: _buildStatCard(
-            icon: Icons.timeline_rounded,
-            value: '${user?.currentMomentum.toStringAsFixed(0)}',
-            label: 'Momentum Score',
-            color: const Color(0xFF6366F1),
-          ),
-        ),
-        const SizedBox(width: 24),
-        Expanded(
-          child: _buildStatCard(
-            icon: Icons.schedule_rounded,
-            value: '${_timeSpentMinutes}m',
-            label: 'Study Time Today',
-            color: const Color(0xFFEC4899),
-          ),
-        ),
-      ],
-    ).animate().fadeIn(delay: 200.ms);
-  }
-
-  Widget _buildStatCard({
-    required IconData icon,
-    required String value,
-    required String label,
-    required Color color,
-  }) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border:
-            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(5),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF6B5CE7).withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
+              color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(icon, color: color, size: 32),
+            child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 28),
           ),
           const SizedBox(width: 20),
           Expanded(
@@ -1094,29 +1032,55 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: theme.colorScheme.onSurface,
+                  isDue
+                      ? '$_dueCount Items Due for Review'
+                      : 'All Caught Up! ✓',
+                  style: GoogleFonts.outfit(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  label,
-                  style: TextStyle(
+                  isDue
+                      ? 'Keep your streak alive! Consistent reviews improve long-term retention by 300%.'
+                      : 'Your next scheduled review is $timeText.',
+                  style: GoogleFonts.outfit(
                     fontSize: 14,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                    fontWeight: FontWeight.w500,
+                    color: Colors.white.withOpacity(0.85),
+                    height: 1.4,
                   ),
                 ),
               ],
             ),
           ),
+          const SizedBox(width: 20),
+          OutlinedButton(
+            onPressed: () {
+              context.push('/spaced-repetition');
+            },
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.white,
+              side: const BorderSide(color: Colors.white, width: 1.5),
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
+            ),
+            child: Text(
+              isDue ? 'Review\nAll' : 'Browse',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.outfit(
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+              ),
+            ),
+          ),
         ],
       ),
-    );
+    ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.05);
   }
+
 
   String _formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, "0");

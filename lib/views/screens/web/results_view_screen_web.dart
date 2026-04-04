@@ -61,10 +61,8 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
       final db = context.read<LocalDatabaseService>();
       String targetFolderId = widget.folderId;
 
-      // Check if the provided ID is a folder or a content ID
       final folder = await db.getFolder(targetFolderId);
       if (folder == null) {
-        // Not a direct folder, check if it's a content item
         final parentId = await db.getParentFolderId(targetFolderId);
         if (parentId != null) {
           targetFolderId = parentId;
@@ -73,7 +71,6 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
 
       final contents = await db.getFolderContents(targetFolderId);
 
-      // If still no contents, try to load as standalone content
       if (contents.isEmpty) {
         _summary = await db.getSummary(targetFolderId);
         _quiz = await db.getQuiz(targetFolderId);
@@ -90,10 +87,12 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
         }
       }
 
-      // Final tab selection safety check
       if (_selectedTab == 0 && _summary == null) {
-        if (_quiz != null) _selectedTab = 1;
-        else if (_flashcardSet != null) _selectedTab = 2;
+        if (_quiz != null) {
+          _selectedTab = 1;
+        } else if (_flashcardSet != null) {
+          _selectedTab = 2;
+        }
       }
     } catch (e) {
       _errorMessage = 'Failed to load results: $e';
@@ -114,17 +113,16 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
       return;
     }
 
-    final theme = Theme.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(
+        content: const Row(
           children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 12),
-            const Text('Content saved to your library!'),
+            Icon(Icons.check_circle, color: Colors.white),
+            SizedBox(width: 12),
+            Text('Content saved to your library!'),
           ],
         ),
-        backgroundColor: theme.colorScheme.secondary,
+        backgroundColor: WebColors.purplePrimary,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         width: 400,
@@ -135,32 +133,18 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: _isLoading
-            ? Center(
-                child:
-                    CircularProgressIndicator(color: theme.colorScheme.primary))
+            ? const Center(child: CircularProgressIndicator(color: WebColors.purplePrimary))
             : _errorMessage != null
                 ? Center(child: _buildErrorState())
                 : Column(
                     children: [
-                      _buildHeader(),
-                      const SizedBox(height: 24),
+                      _buildInlineHeader(),
                       Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 40),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildSidebar(),
-                              const SizedBox(width: 32),
-                              Expanded(child: _buildContentArea()),
-                            ],
-                          ),
-                        ),
+                        child: _buildContentArea(),
                       ),
                     ],
                   ),
@@ -168,223 +152,155 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
     );
   }
 
-  Widget _buildErrorState() {
-    final theme = Theme.of(context);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
-        const SizedBox(height: 16),
-        Text(
-          _errorMessage!,
-          style: TextStyle(fontSize: 18, color: theme.colorScheme.onSurface),
-        ),
-        const SizedBox(height: 24),
-        OutlinedButton(
-          onPressed: () => context.go('/library'),
-          child: const Text('Return to Library'),
-        ),
-      ],
-    );
-  }
+  Widget _buildInlineHeader() {
+    final title = _summary?.title ?? _quiz?.title ?? _flashcardSet?.title ?? 'Study Pack';
 
-  Widget _buildHeader() {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F172A) : Colors.white,
+        color: Colors.white,
         border: Border(bottom: BorderSide(color: WebColors.border.withValues(alpha: 0.5))),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Logo
+          // Title row with actions
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  gradient: WebColors.PremiumGradient,
-                  borderRadius: BorderRadius.circular(12),
+              // Back button
+              IconButton(
+                onPressed: () => context.canPop() ? context.pop() : context.go('/library'),
+                icon: const Icon(Icons.arrow_back_rounded, color: WebColors.textPrimary),
+                tooltip: 'Back',
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.outfit(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: WebColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                child: const Icon(Icons.menu_book_rounded, color: Colors.white, size: 24),
+              ),
+              // AI Badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: WebColors.backgroundAlt,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.auto_awesome_rounded, size: 14, color: WebColors.purplePrimary),
+                    const SizedBox(width: 8),
+                    Text(
+                      'AI GENERATED',
+                      style: GoogleFonts.outfit(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: WebColors.purplePrimary,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(width: 16),
-              Text(
-                'SumQuiz',
-                style: GoogleFonts.outfit(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  color: isDark ? Colors.white : WebColors.primary,
-                  letterSpacing: -0.5,
+              // Save button
+              ElevatedButton.icon(
+                onPressed: _saveToLibrary,
+                icon: const Icon(Icons.bookmark_add_rounded, size: 18),
+                label: Text('Save to Library', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: WebColors.purplePrimary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
                 ),
               ),
             ],
           ),
-          
-          const Spacer(),
+          const SizedBox(height: 16),
 
-          // Navigation Links (Placeholder)
-          _buildTopNavLink('Home'),
-          _buildTopNavLink('Library'),
-          _buildTopNavLink('Stats'),
-
-          const Spacer(),
-
-          // AI Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: WebColors.backgroundAlt,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.auto_awesome_rounded, size: 14, color: WebColors.primary),
-                const SizedBox(width: 8),
-                Text(
-                  'AI GENERATED',
-                  style: GoogleFonts.outfit(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: WebColors.primary,
-                    letterSpacing: 1,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          const SizedBox(width: 24),
-          
-          // Theme Toggle (Icon only for now)
-              IconButton(
-                icon: const Icon(Icons.dark_mode_outlined, size: 20),
-                onPressed: () {
-                  // TODO: Toggle app-wide theme via provider
-                },
-                color: WebColors.textPrimary,
-              ),
-
-          const SizedBox(width: 12),
-
-          // Save to Library Button
-          Container(
-            height: 48,
-            decoration: BoxDecoration(
-              gradient: WebColors.PremiumGradient,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: WebColors.subtleShadow,
-            ),
-            child: ElevatedButton.icon(
-              onPressed: _saveToLibrary,
-              icon: const Icon(Icons.bookmark_add_rounded, color: Colors.white, size: 18),
-              label: Text(
-                'Save to Library',
-                style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: Colors.white),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-          ),
-          
-          const SizedBox(width: 16),
-
-          // Profile
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: WebColors.backgroundAlt,
-            child: const Icon(Icons.person_rounded, color: WebColors.textSecondary),
+          // Tab pills
+          Row(
+            children: [
+              _buildTabPill(0, 'Summary Notes', Icons.article_rounded),
+              const SizedBox(width: 8),
+              _buildTabPill(1, 'Practice Quiz', Icons.quiz_rounded),
+              const SizedBox(width: 8),
+              _buildTabPill(2, 'Flashcards', Icons.style_rounded),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTopNavLink(String label) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Text(
-        label,
-        style: GoogleFonts.outfit(
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-          color: WebColors.textSecondary,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSidebar() {
-    final theme = Theme.of(context);
-    return Container(
-      width: 320,
-      padding: const EdgeInsets.fromLTRB(0, 24, 24, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Navigation Group
-          _buildSidebarItem(0, 'Summary Notes', Icons.article_rounded),
-          const SizedBox(height: 8),
-          _buildSidebarItem(1, 'Practice Quiz', Icons.quiz_rounded),
-          const SizedBox(height: 8),
-          _buildSidebarItem(2, 'Flashcards Deck', Icons.style_rounded, showCheck: true),
-
-          const Spacer(),
-
-          // AI Insights Card (New)
-          _buildAiInsightsCard(),
-
-          const SizedBox(height: 48),
-
-          // Settings / Support (New)
-          _buildSecondaryMenuItem('SETTINGS', Icons.settings_rounded),
-          const SizedBox(height: 12),
-          _buildSecondaryMenuItem('SUPPORT', Icons.help_outline_rounded),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSidebarItem(int index, String label, IconData icon, {bool showCheck = false}) {
+  Widget _buildTabPill(int index, String label, IconData icon) {
     final isSelected = _selectedTab == index;
     return InkWell(
       onTap: () => setState(() => _selectedTab = index),
       borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? WebColors.primary.withValues(alpha: 0.08) : Colors.transparent,
+          color: isSelected ? WebColors.purplePrimary.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? WebColors.purplePrimary.withValues(alpha: 0.3) : Colors.transparent,
+          ),
         ),
         child: Row(
           children: [
-            Icon(
-              icon,
-              color: isSelected ? WebColors.primary : WebColors.textSecondary,
-              size: 22,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                label,
-                style: GoogleFonts.outfit(
-                  fontSize: 16,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                  color: isSelected ? WebColors.primary : WebColors.textSecondary,
-                ),
+            Icon(icon, size: 18, color: isSelected ? WebColors.purplePrimary : WebColors.textSecondary),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: GoogleFonts.outfit(
+                fontSize: 14,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                color: isSelected ? WebColors.purplePrimary : WebColors.textSecondary,
               ),
             ),
-            if (showCheck && isSelected)
-              const Icon(Icons.check_circle_rounded, color: WebColors.primary, size: 18),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildContentArea() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 40),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Main content
+          Expanded(
+            flex: 3,
+            child: _buildSelectedTabView()
+                .animate(key: ValueKey(_selectedTab))
+                .fadeIn(duration: 400.ms)
+                .slideY(begin: 0.05, end: 0, curve: Curves.easeOut),
+          ),
+          // AI Insights sidebar (only show if summary exists)
+          if (_summary != null) ...[
+            const SizedBox(width: 24),
+            SizedBox(
+              width: 300,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(top: 24),
+                child: _buildAiInsightsCard(),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -394,9 +310,19 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: WebColors.PremiumGradient,
+        gradient: const LinearGradient(
+          colors: [Color(0xFF4C3BCF), Color(0xFF6B5CE7)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(24),
-        boxShadow: WebColors.cardShadow,
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF4C3BCF).withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -406,7 +332,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
               const Icon(Icons.insights_rounded, color: Colors.white, size: 20),
               const SizedBox(width: 12),
               Text(
-                'AI Flashcard Insights',
+                'AI Insights',
                 style: GoogleFonts.outfit(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -417,7 +343,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Key terms extracted for ${_summary?.title ?? "your content"}:',
+            'Key terms extracted for "${_summary?.title ?? "your content"}":',
             style: GoogleFonts.outfit(
               fontSize: 13,
               color: Colors.white.withValues(alpha: 0.8),
@@ -448,32 +374,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSecondaryMenuItem(String label, IconData icon) {
-    return Row(
-      children: [
-        Icon(icon, color: WebColors.textSecondary, size: 18),
-        const SizedBox(width: 12),
-        Text(
-          label,
-          style: GoogleFonts.outfit(
-            fontSize: 13,
-            fontWeight: FontWeight.w800,
-            color: WebColors.textSecondary,
-            letterSpacing: 1,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildContentArea() {
-    return _buildSelectedTabView()
-        .animate(key: ValueKey(_selectedTab))
-        .fadeIn(duration: 400.ms)
-        .slideY(begin: 0.05, end: 0, curve: Curves.easeOut);
+    ).animate().fadeIn(delay: 300.ms).slideX(begin: 0.1);
   }
 
   Widget _buildSelectedTabView() {
@@ -491,7 +392,6 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
 
   Widget _buildSummaryTab() {
     if (_summary == null) return _buildEmptyTab();
-
     return WebSummaryView(
       title: _summary!.title,
       content: _summary!.content,
@@ -504,17 +404,15 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
   Widget _buildQuizzesTab() {
     if (_quiz == null) return _buildEmptyTab();
     final aiService = context.read<EnhancedAIService>();
-
     return WebQuizView(
       title: _quiz!.title,
-      subtitle: _summary?.title, // Use summary title as subtitle
+      subtitle: _summary?.title,
       questions: _quiz!.questions,
       summaryContent: _summary?.content,
       aiService: aiService,
       onAnswer: (isCorrect) {
         _totalQuestionsAnswered++;
         if (isCorrect) _correctAnswers++;
-        
         final auth = context.read<AuthService>();
         if (auth.currentUser != null) {
           ProgressService().logAccuracy(auth.currentUser!.uid, isCorrect ? 1.0 : 0.0);
@@ -533,15 +431,9 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
 
   Widget _buildFlashcardsTab() {
     if (_flashcardSet == null) return _buildEmptyTab();
-
     final flashcards = _flashcardSet!.flashcards
-        .map((f) => Flashcard(
-              id: f.id,
-              question: f.question,
-              answer: f.answer,
-            ))
+        .map((f) => Flashcard(id: f.id, question: f.question, answer: f.answer))
         .toList();
-
     return WebFlashcardsView(
       title: _flashcardSet!.title,
       subtitle: _summary?.title,
@@ -549,20 +441,15 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
       onReview: (index, knewIt) {
         _totalCardsReviewed++;
         if (knewIt) _knewCardsCount++;
-
         final auth = context.read<AuthService>();
         if (auth.currentUser != null) {
-          final srs = SpacedRepetitionService(context
-              .read<LocalDatabaseService>()
-              .getSpacedRepetitionBox());
-          srs.updateFlashcardProgress(auth.currentUser!.uid,
-              _flashcardSet!.id, flashcards[index].id, knewIt);
+          final srs = SpacedRepetitionService(context.read<LocalDatabaseService>().getSpacedRepetitionBox());
+          srs.updateFlashcardProgress(auth.currentUser!.uid, _flashcardSet!.id, flashcards[index].id, knewIt);
         }
       },
       onFinish: () {
         _finalizeCurrentSession();
         _sessionStartTime = null;
-
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Flashcard session complete!')),
         );
@@ -576,11 +463,8 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
 
   void _finalizeCurrentSession() {
     if (_sessionStartTime == null) return;
-
-    final durationSeconds =
-        DateTime.now().difference(_sessionStartTime!).inSeconds;
-    if (durationSeconds < 5) return; // Ignore very short sessions
-
+    final durationSeconds = DateTime.now().difference(_sessionStartTime!).inSeconds;
+    if (durationSeconds < 5) return;
     final auth = context.read<AuthService>();
     final user = auth.currentUser;
     if (user == null) return;
@@ -600,6 +484,22 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
     );
   }
 
+  Widget _buildErrorState() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+        const SizedBox(height: 16),
+        Text(_errorMessage!, style: const TextStyle(fontSize: 18)),
+        const SizedBox(height: 24),
+        OutlinedButton(
+          onPressed: () => context.go('/library'),
+          child: const Text('Return to Library'),
+        ),
+      ],
+    );
+  }
+
   Widget _buildEmptyTab() {
     return Center(
       child: Column(
@@ -607,8 +507,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
         children: [
           const Icon(Icons.inbox, size: 64, color: Colors.grey),
           const SizedBox(height: 16),
-          const Text('No content available',
-              style: TextStyle(color: Colors.grey, fontSize: 18)),
+          const Text('No content available', style: TextStyle(color: Colors.grey, fontSize: 18)),
         ],
       ),
     );

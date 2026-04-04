@@ -28,6 +28,7 @@ class ExamCreationScreen extends StatefulWidget {
 class _ExamCreationScreenState extends State<ExamCreationScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _subjectController = TextEditingController();
+  final TextEditingController _customLevelController = TextEditingController();
   String _selectedLevel = 'JSS1';
   int _numberOfQuestions = 20;
   String _duration = '60';
@@ -50,6 +51,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
     _cancelToken?.cancel();
     _titleController.dispose();
     _subjectController.dispose();
+    _customLevelController.dispose();
     super.dispose();
   }
 
@@ -250,6 +252,16 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
                             });
                           },
                         ),
+                        if (_selectedLevel == 'Custom') ...[
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: _customLevelController,
+                            decoration: const InputDecoration(
+                              labelText: 'Specify Custom Class / Level',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 16),
                         TextField(
                           controller: _subjectController,
@@ -738,43 +750,52 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
         type: fileType,
         allowedExtensions: allowedExtensions,
         withData: true, // Important for web and direct bytes access
+        allowMultiple: true, 
       );
 
       if (!mounted) return;
 
-      if (result != null) {
-        final file = result.files.single;
-        final bytes = file.bytes; // Works for web and if withData is true
-        final name = file.name;
+      if (result != null && result.files.isNotEmpty) {
+        setState(() => _isProcessing = true);
+        final user = Provider.of<UserModel?>(context, listen: false);
+        final enhancedAiService = Provider.of<EnhancedAIService>(context, listen: false);
+        final extractionService = ContentExtractionService(enhancedAiService);
+        _cancelToken = CancellationToken();
 
-        if (bytes != null) {
-          setState(
-              () => _processingMessage = 'Extracting content from $name...');
+        String combinedText = '';
 
-          final user = Provider.of<UserModel?>(context, listen: false);
-          final enhancedAiService =
-              Provider.of<EnhancedAIService>(context, listen: false);
-          final extractionService = ContentExtractionService(enhancedAiService);
-          _cancelToken = CancellationToken();
+        for (int i = 0; i < result.files.length; i++) {
+          final file = result.files[i];
+          final bytes = file.bytes;
+          final name = file.name;
 
-          final extractionResult = await extractionService.extractContent(
-            type: type.toLowerCase(),
-            input: bytes,
-            userId: user?.uid,
-            mimeType: type == 'PDF' ? 'application/pdf' : 'image/jpeg',
-            onProgress: (msg) {
-              if (mounted) setState(() => _processingMessage = msg);
-            },
-            cancelToken: _cancelToken,
-          );
+          if (bytes != null) {
+            setState(() => _processingMessage = 'Extracting content from $name (${i + 1}/${result!.files.length})...');
+            
+            final extractionResult = await extractionService.extractContent(
+              type: type.toLowerCase(),
+              input: bytes,
+              userId: user?.uid,
+              mimeType: type == 'PDF' ? 'application/pdf' : 'image/jpeg',
+              onProgress: (msg) {
+                if (mounted) setState(() => _processingMessage = msg);
+              },
+              cancelToken: _cancelToken,
+            );
 
-          if (!mounted) return;
-
-          setState(() {
-            _sourceMaterial = extractionResult.text;
-            _isProcessing = false;
-          });
+            if (!mounted) return;
+            if (combinedText.isNotEmpty) {
+               combinedText += '\n\n--- Source: $name ---\n\n';
+            }
+            combinedText += extractionResult.text;
+          }
         }
+
+        if (!mounted) return;
+        setState(() {
+          _sourceMaterial = combinedText;
+          _isProcessing = false;
+        });
       } else {
         setState(() => _isProcessing = false);
       }
@@ -867,7 +888,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
         text: _sourceMaterial,
         title: _titleController.text,
         subject: _subjectController.text,
-        level: _selectedLevel,
+        level: _selectedLevel == 'Custom' ? _customLevelController.text : _selectedLevel,
         questionCount: _numberOfQuestions,
         questionTypes: questionTypes,
         difficultyMix: _difficultyValue,
@@ -897,7 +918,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
             builder: (context) => QuestionEditorScreen(
               examTitle: _titleController.text,
               subject: _subjectController.text,
-              classLevel: _selectedLevel,
+              classLevel: _selectedLevel == 'Custom' ? _customLevelController.text : _selectedLevel,
               numberOfQuestions: _numberOfQuestions,
               duration: int.tryParse(_duration) ?? 60,
               questionTypes: questionTypes,
@@ -2018,10 +2039,20 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
             }));
       }
 
+      final bytes = await doc.save();
       await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => doc.save(),
+        onLayout: (PdfPageFormat format) async => bytes,
         name: '${widget.examTitle.replaceAll(' ', '_')}_Exam_Paper.pdf',
       );
+
+      try {
+        await Printing.sharePdf(
+          bytes: bytes,
+          filename: '${widget.examTitle.replaceAll(' ', '_')}_Exam_Paper.pdf',
+        );
+      } catch (e) {
+        debugPrint('Web download fallback error: $e');
+      }
 
       if (mounted) setState(() => _isProcessing = false);
     } catch (e) {

@@ -18,278 +18,166 @@ class ActiveMissionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (mission == null) {
-      return _buildEmptyState(context);
-    }
+    if (mission == null) return _buildEmptyState();
 
-    // Calculate progress
     final total = mission!.flashcardIds.length;
     final int done = mission!.isCompleted ? total : 0;
-    final double overflowProgress = total > 0 ? done / total : 0.0;
+    final double progress = total > 0 ? done / total : 0.0;
 
     return Container(
-      height: 320,
-      decoration: WebColors.glassDecoration(
-        blur: 15,
-        opacity: 0.05,
-        color: WebColors.surface,
-        borderRadius: 24,
-      ).copyWith(
-        boxShadow: WebColors.cardShadow,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: WebColors.border),
+        boxShadow: WebColors.subtleShadow,
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: Row(
-          children: [
-            // Left Feature Image Area (Purple Gradient in design)
-            Expanded(
-              flex: 4,
-              child: Container(
-                decoration: const BoxDecoration(
-                  gradient: WebColors.AccentGradient,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: WebColors.purpleUltraLight,
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Abstract glowing sphere logic
-                    Positioned(
-                      bottom: -80,
-                      child: Container(
-                        width: 250,
-                        height: 150,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEAB308).withOpacity(0.3), // WebColors.yellowTip
-                          borderRadius: BorderRadius.circular(100),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFFEAB308).withOpacity(0.4),
-                              blurRadius: 80,
-                              spreadRadius: 20,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                child: const Icon(Icons.shield_rounded,
+                    color: WebColors.purplePrimary, size: 24),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: WebColors.purpleUltraLight,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'ACTIVE TASK',
+                  style: GoogleFonts.outfit(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: WebColors.purplePrimary,
+                    letterSpacing: 1.0,
+                  ),
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Daily Challenge',
+            style: GoogleFonts.outfit(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: WebColors.textPrimary,
             ),
-
-            // Right Content Area
-            Expanded(
-              flex: 5,
-              child: Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: WebColors.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            'ACTIVE MISSION',
-                            style: GoogleFonts.outfit(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: WebColors.purplePrimary,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text.rich(
-                              TextSpan(
-                                  text: '$done/$total',
-                                  style: GoogleFonts.outfit(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w800,
-                                    color: WebColors.purplePrimary,
-                                  ),
-                                children: [
-                                  TextSpan(
-                                    text: '\nSETS DONE',
-                                    style: GoogleFonts.outfit(
-                                        fontSize: 10,
-                                        color: WebColors.textTertiary,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                              textAlign: TextAlign.end,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    Text(
-                      mission!.title,
-                      style: GoogleFonts.outfit(
-                        fontSize: 28,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Review $total sets to unlock today\'s reward bundle.',
+            style: GoogleFonts.outfit(
+              fontSize: 14,
+              color: WebColors.textSecondary,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '$done/$total complete',
+                style: GoogleFonts.outfit(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: WebColors.textPrimary,
+                ),
+              ),
+              Text(
+                '+50 XP',
+                style: GoogleFonts.outfit(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: WebColors.purplePrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: progress,
+              backgroundColor: WebColors.purpleUltraLight,
+              color: WebColors.purplePrimary,
+              minHeight: 8,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: WebColors.backgroundAlt,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: WebColors.border),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Consistency',
+                    style: GoogleFonts.outfit(
+                        fontSize: 13, color: WebColors.textSecondary)),
+                Text('Master',
+                    style: GoogleFonts.outfit(
+                        fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: WebColors.textPrimary,
-                        height: 1.1,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Complete all $total quiz sets today to hit your XP target and maintain your streak.',
-                      style: GoogleFonts.outfit(
-                        fontSize: 16,
-                        color: WebColors.textSecondary,
-                      ),
-                    ),
-                    const Spacer(),
-
-                    // Goal Progress
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Goal Progress',
-                          style: GoogleFonts.outfit(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: WebColors.textPrimary,
-                          ),
-                        ),
-                        Text(
-                          '${(overflowProgress * 100).toInt()}%',
-                          style: GoogleFonts.outfit(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: WebColors.textPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: overflowProgress,
-                        backgroundColor: WebColors.backgroundAlt,
-                        color: WebColors.purplePrimary,
-                        minHeight: 12,
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Buttons
-                    Row(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: ElevatedButton(
-                            onPressed: onStart,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: WebColors.purplePrimary,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 20),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 0,
-                              textStyle: GoogleFonts.outfit(
-                                  fontWeight: FontWeight.w700, fontSize: 16),
-                            ),
-                            child: const Text('Continue Mission'),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 1,
-                          child: OutlinedButton(
-                            onPressed: onDetails ?? () {},
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: WebColors.textPrimary,
-                              side: const BorderSide(color: WebColors.border),
-                              padding: const EdgeInsets.symmetric(vertical: 20),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text('Details'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+                        color: WebColors.textPrimary)),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     )
         .animate()
-        .fadeIn(duration: 500.ms)
-        .slideY(begin: 0.1, curve: Curves.easeOut);
+        .fadeIn(duration: 400.ms)
+        .slideY(begin: 0.05, curve: Curves.easeOut);
   }
 
-  Widget _buildEmptyState(BuildContext context) {
+  Widget _buildEmptyState() {
     return Container(
-      height: 320,
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: WebColors.border),
-        boxShadow: WebColors.cardShadow,
+        boxShadow: WebColors.subtleShadow,
       ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: WebColors.primaryLight,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.rocket_launch_rounded,
-                  size: 48, color: WebColors.primary),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No Active Mission',
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.rocket_launch_rounded,
+              size: 40, color: WebColors.purplePrimary),
+          const SizedBox(height: 12),
+          Text('No Active Mission',
               style: GoogleFonts.outfit(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                color: WebColors.textPrimary,
-              ),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: WebColors.textPrimary)),
+          const SizedBox(height: 12),
+          ElevatedButton(
+            onPressed: onStart,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: WebColors.purplePrimary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Create a new goal to get started!',
-              style: GoogleFonts.outfit(
-                fontSize: 16,
-                color: WebColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: onStart,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: WebColors.primary,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 48, vertical: 20),
-                textStyle: GoogleFonts.outfit(fontWeight: FontWeight.bold),
-              ),
-              child: const Text('Generate Mission'),
-            ),
-          ],
-        ),
+            child: const Text('Generate Mission'),
+          ),
+        ],
       ),
     );
   }

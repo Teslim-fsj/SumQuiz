@@ -4,8 +4,8 @@ import 'package:sumquiz/theme/web_theme.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 class DailyGoalCard extends StatelessWidget {
-  final int goalMinutes; // Daily goal in minutes
-  final int timeSpentMinutes; // Time spent today in minutes
+  final int goalMinutes;
+  final int timeSpentMinutes;
 
   const DailyGoalCard({
     super.key,
@@ -15,108 +15,133 @@ class DailyGoalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress = goalMinutes > 0 ? timeSpentMinutes / goalMinutes : 0.0;
-    final clampedProgress = progress.clamp(0.0, 1.0);
-    final remainingMinutes =
-        (goalMinutes - timeSpentMinutes).clamp(0, goalMinutes);
+    final progress =
+        goalMinutes > 0 ? (timeSpentMinutes / goalMinutes).clamp(0.0, 1.0) : 0.0;
 
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: WebColors.glassDecoration(
-        blur: 12,
-        opacity: 0.05,
-        color: WebColors.surface,
-        borderRadius: 24,
-      ).copyWith(
-        boxShadow: WebColors.cardShadow,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: WebColors.border),
+        boxShadow: WebColors.subtleShadow,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Daily Goal',
-                style: GoogleFonts.outfit(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: WebColors.textPrimary,
+          SizedBox(
+            width: 90,
+            height: 90,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 90,
+                  height: 90,
+                  child: CircularProgressIndicator(
+                    value: 1.0,
+                    strokeWidth: 8,
+                    color: WebColors.purpleUltraLight,
+                  ),
                 ),
-              ),
-              Text(
-                '${goalMinutes}M',
-                style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: WebColors.secondary,
+                SizedBox(
+                  width: 90,
+                  height: 90,
+                  child: CircularProgressIndicator(
+                    value: progress,
+                    strokeWidth: 8,
+                    color: WebColors.purplePrimary,
+                    strokeCap: StrokeCap.round,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Progress bar
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: LinearProgressIndicator(
-              value: clampedProgress,
-              backgroundColor: WebColors.backgroundAlt,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                clampedProgress >= 1.0 ? WebColors.success : WebColors.secondary,
-              ),
-              minHeight: 12,
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '$timeSpentMinutes',
+                      style: GoogleFonts.outfit(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: WebColors.textPrimary,
+                        height: 1.0,
+                      ),
+                    ),
+                    Text(
+                      'MINS',
+                      style: GoogleFonts.outfit(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: WebColors.textSecondary,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-
-          const SizedBox(height: 16),
-
-          // Stats row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              RichText(
-                text: TextSpan(
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Study Goal',
                   style: GoogleFonts.outfit(
-                    fontSize: 14,
-                    color: WebColors.textSecondary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: WebColors.textPrimary,
                   ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'You have studied for $timeSpentMinutes out of $goalMinutes minutes today.',
+                  style: GoogleFonts.outfit(
+                    fontSize: 13,
+                    color: WebColors.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
                   children: [
-                    TextSpan(text: '$timeSpentMinutes'),
-                    TextSpan(
-                      text: 'M SPENT',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: WebColors.textPrimary,
-                      ),
-                    ),
+                    _buildTag('Focus:', 'Deep'),
+                    const SizedBox(width: 12),
+                    _buildTag('Level:', 'High'),
                   ],
                 ),
-              ),
-              RichText(
-                text: TextSpan(
-                  style: GoogleFonts.outfit(
-                    fontSize: 14,
-                    color: WebColors.textSecondary,
-                  ),
-                  children: [
-                    TextSpan(text: '$remainingMinutes'),
-                    TextSpan(
-                      text: 'M LEFT',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: clampedProgress >= 1.0
-                            ? WebColors.success
-                            : WebColors.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.1);
+    )
+        .animate()
+        .fadeIn(duration: 400.ms, delay: 200.ms)
+        .slideY(begin: 0.05, curve: Curves.easeOut);
+  }
+
+  Widget _buildTag(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: WebColors.backgroundAlt,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: WebColors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label,
+              style: GoogleFonts.outfit(
+                  fontSize: 12, color: WebColors.textSecondary)),
+          const SizedBox(width: 4),
+          Text(value,
+              style: GoogleFonts.outfit(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: WebColors.purplePrimary)),
+        ],
+      ),
+    );
   }
 }

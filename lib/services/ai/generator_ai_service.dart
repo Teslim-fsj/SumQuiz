@@ -425,9 +425,41 @@ Text: $text''';
     String? userId,
     CancellationToken? cancelToken,
   }) async {
-    final config = AIConfig.thinkingGenerationConfig;
     final difficultyDesc =
         difficultyMix < 0.4 ? 'Easy' : (difficultyMix > 0.6 ? 'Hard' : 'Mixed');
+
+    final typesStr = questionTypes.join(', ');
+
+    final config = GenerationConfig(
+      responseMimeType: 'application/json',
+      responseSchema: Schema.object(
+        properties: {
+          'questions': Schema.array(
+            items: Schema.object(
+              properties: {
+                'question': Schema.string(description: 'Exam-style question'),
+                'options': Schema.array(
+                    items: Schema.string(),
+                    description: '4 options (only for Multiple Choice or True/False)'),
+                'correctAnswer': Schema.string(
+                    description: 'The exact matching correct option or answer'),
+                'explanation': Schema.string(
+                    description: 'Detailed explanation of the correct answer or marking scheme'),
+                'questionType': Schema.string(
+                    description: 'Specific type from: $typesStr'),
+              },
+              requiredProperties: [
+                'question',
+                'correctAnswer',
+                'explanation',
+                'questionType'
+              ],
+            ),
+          ),
+        },
+        requiredProperties: ['questions'],
+      ),
+    );
 
     final prompt =
         '''Create a formal exam paper named "$title" for $subject ($level).
@@ -482,6 +514,7 @@ Text: $text''';
               options: options,
               correctAnswer: q['correctAnswer']?.toString() ?? '',
               explanation: q['explanation']?.toString(),
+              questionType: q['questionType']?.toString() ?? q['type']?.toString() ?? 'Theory',
             ));
           }
         }

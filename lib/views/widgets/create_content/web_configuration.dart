@@ -15,22 +15,21 @@ class WebConfiguration extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // LEFT COLUMN: MAIN CONFIG
-        Expanded(
-          flex: 2,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.only(right: 60, bottom: 40),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // LEFT COLUMN: MAIN CONFIG
+          Expanded(
+            flex: 2,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 40),
                 Text(
                   'Configure Your Study Pack',
                   style: GoogleFonts.outfit(
-                    fontSize: 48,
+                    fontSize: 42,
                     fontWeight: FontWeight.w800,
                     color: const Color(0xFF1A1A1A),
                   ),
@@ -45,7 +44,7 @@ class WebConfiguration extends StatelessWidget {
                     height: 1.5,
                   ),
                 ).animate().fadeIn(delay: 200.ms),
-                const SizedBox(height: 60),
+                const SizedBox(height: 48),
 
                 // 1. DIFFICULTY LEVEL
                 _buildSectionHeader('1. DIFFICULTY LEVEL'),
@@ -75,7 +74,7 @@ class WebConfiguration extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 60),
+                const SizedBox(height: 48),
 
                 // 2 & 3: COUNTS
                 Row(
@@ -103,7 +102,7 @@ class WebConfiguration extends StatelessWidget {
                           const SizedBox(height: 24),
                           _CountSelector(
                             values: const [10, 20, 30, 50],
-                            selectedValue: 30, // Mocked for now to match UI looks
+                            selectedValue: 30,
                             onChanged: (v) {},
                           ),
                         ],
@@ -112,7 +111,7 @@ class WebConfiguration extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 60),
+                const SizedBox(height: 48),
 
                 // 4. STUDY ARCHETYPE
                 _buildSectionHeader('4. STUDY ARCHETYPE'),
@@ -140,168 +139,193 @@ class WebConfiguration extends StatelessWidget {
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-        ),
 
-        // RIGHT COLUMN: SIDEBAR PREVIEW
-        Container(
-          width: 360,
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF8F9FF),
-            borderRadius: BorderRadius.circular(40),
-            border: Border.all(color: const Color(0xFFE0E6FF)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Summary Preview',
-                style: GoogleFonts.outfit(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF1A1A1A),
-                ),
-              ),
-              const SizedBox(height: 32),
-              _PreviewItem(
-                icon: Icons.electric_bolt_rounded,
-                label: 'DIFFICULTY',
-                value: provider.selectedDifficulty.toUpperCase(),
-              ),
-              _PreviewItem(
-                icon: Icons.quiz_rounded,
-                label: 'CONTENT',
-                value: '${provider.selectedCount} Questions',
-              ),
-              _PreviewItem(
-                icon: Icons.style_rounded,
-                label: 'REVIEW',
-                value: '30 Flashcards',
-              ),
-              _PreviewItem(
-                icon: Icons.psychology_rounded,
-                label: 'ARCHETYPE',
-                value: provider.selectedArchetype == StudyArchetype.sprinter ? 'The Sprinter' : 'The Architect',
-              ),
-              const SizedBox(height: 48),
-              
-              // AI ESTIMATE
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F4FF),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.info_outline_rounded, size: 18, color: Color(0xFF3300FF)),
-                        const SizedBox(width: 8),
-                        Text(
-                          'AI ESTIMATE',
-                          style: GoogleFonts.outfit(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w900,
-                            color: const Color(0xFF3300FF),
-                            letterSpacing: 1.0,
-                          ),
+                const SizedBox(height: 48),
+
+                // GENERATE BUTTON (always visible at bottom of config)
+                Center(
+                  child: Container(
+                    width: 360,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(32),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF3300FF), Color(0xFF7C4DFF)],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF3300FF).withValues(alpha: 0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Estimated study time: 45-60 mins. This pack will focus heavily on conceptual logic and structural definitions.',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: onGenerate,
+                        borderRadius: BorderRadius.circular(32),
+                        child: Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Generate Study Pack',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
+                const SizedBox(height: 40),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 40),
+
+          // RIGHT COLUMN: SUMMARY PREVIEW
+          Container(
+            width: 340,
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F9FF),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: const Color(0xFFE0E6FF)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Summary Preview',
+                  style: GoogleFonts.outfit(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF1A1A1A),
+                  ),
+                ),
+                const SizedBox(height: 28),
+                _PreviewItem(
+                  icon: Icons.electric_bolt_rounded,
+                  label: 'DIFFICULTY',
+                  value: _getDifficultyLabel(provider.selectedDifficulty),
+                ),
+                _PreviewItem(
+                  icon: Icons.quiz_rounded,
+                  label: 'CONTENT',
+                  value: '${provider.selectedCount} Questions',
+                ),
+                const _PreviewItem(
+                  icon: Icons.style_rounded,
+                  label: 'REVIEW',
+                  value: '30 Flashcards',
+                ),
+                _PreviewItem(
+                  icon: Icons.psychology_rounded,
+                  label: 'ARCHETYPE',
+                  value: provider.selectedArchetype == StudyArchetype.sprinter ? 'The Sprinter' : 'The Architect',
+                ),
+                const SizedBox(height: 32),
+
+                // AI ESTIMATE
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F4FF),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.info_outline_rounded, size: 18, color: Color(0xFF3300FF)),
+                          const SizedBox(width: 8),
+                          Text(
+                            'AI ESTIMATE',
+                            style: GoogleFonts.outfit(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF3300FF),
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Estimated study time: 45-60 mins. This pack will focus heavily on conceptual logic and structural definitions.',
+                        style: GoogleFonts.outfit(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF444444),
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Banner
+                Container(
+                  height: 120,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1A0A3E), Color(0xFF3300FF)],
+                      begin: Alignment.bottomLeft,
+                      end: Alignment.topRight,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'YOUR LEARNING\nSPACE IS READY',
+                      textAlign: TextAlign.center,
                       style: GoogleFonts.outfit(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF444444),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: 1.5,
                         height: 1.4,
                       ),
                     ),
-                  ],
-                ),
-              ),
-              
-              const Spacer(),
-              
-              // IMAGE PROMO
-              Container(
-                height: 140,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  image: const DecorationImage(
-                    image: AssetImage('assets/images/ready_banner.png'), // Need to check if exists or use placeholder
-                    fit: BoxFit.cover,
                   ),
                 ),
-              ),
-              
-              const SizedBox(height: 40),
-              
-              // GENERATE BUTTON
-               Container(
-                width: double.infinity,
-                height: 64,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(32),
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF3300FF), Color(0xFF7C4DFF)],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF3300FF).withValues(alpha: 0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: onGenerate,
-                    borderRadius: BorderRadius.circular(32),
-                    child: Center(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Generate Study Pack',
-                            style: GoogleFonts.outfit(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 20),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
+  }
+
+  String _getDifficultyLabel(String difficulty) {
+    switch (difficulty) {
+      case 'beginner': return 'Easy';
+      case 'intermediate': return 'Medium Difficulty';
+      case 'advanced': return 'Hard';
+      default: return 'Medium Difficulty';
+    }
   }
 
   Widget _buildSectionHeader(String title) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          height: 1,
-          width: 60,
-          color: const Color(0xFFE0E6FF),
-        ),
+        Container(height: 1, width: 60, color: const Color(0xFFE0E6FF)),
         const SizedBox(height: 16),
         Text(
           title,
@@ -346,23 +370,13 @@ class _DifficultyCard extends StatelessWidget {
               width: 1.5,
             ),
             boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFF3300FF).withValues(alpha: 0.2),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    )
-                  ]
+                ? [BoxShadow(color: const Color(0xFF3300FF).withValues(alpha: 0.2), blurRadius: 20, offset: const Offset(0, 10))]
                 : [],
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 32,
-                color: isSelected ? Colors.white : const Color(0xFF1A1A1A),
-              ),
+              Icon(icon, size: 32, color: isSelected ? Colors.white : const Color(0xFF1A1A1A)),
               const SizedBox(height: 16),
               Text(
                 label,
@@ -393,26 +407,24 @@ class _CountSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
       children: [
-        ...values.map((v) => Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: ChoiceChip(
-                label: Text('$v'),
-                selected: selectedValue == v,
-                onSelected: (_) => onChanged(v),
-                selectedColor: const Color(0xFFBDC7FF),
-                backgroundColor: const Color(0xFFF4F6FF),
-                labelStyle: GoogleFonts.outfit(
-                  fontWeight: FontWeight.bold,
-                  color: selectedValue == v ? const Color(0xFF3300FF) : const Color(0xFF666666),
-                ),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                side: BorderSide.none,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ...values.map((v) => ChoiceChip(
+              label: Text('$v'),
+              selected: selectedValue == v,
+              onSelected: (_) => onChanged(v),
+              selectedColor: const Color(0xFFBDC7FF),
+              backgroundColor: const Color(0xFFF4F6FF),
+              labelStyle: GoogleFonts.outfit(
+                fontWeight: FontWeight.bold,
+                color: selectedValue == v ? const Color(0xFF3300FF) : const Color(0xFF666666),
               ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              side: BorderSide.none,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             )),
-        const SizedBox(width: 8),
         TextButton.icon(
           onPressed: () {},
           icon: const Icon(Icons.edit_outlined, size: 14),
@@ -460,14 +472,8 @@ class _ArchetypeCard extends StatelessWidget {
             width: 2,
           ),
           boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFF3300FF).withValues(alpha: 0.1),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    )
-                  ]
-                : [],
+              ? [BoxShadow(color: const Color(0xFF3300FF).withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, 10))]
+              : [],
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -486,24 +492,9 @@ class _ArchetypeCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.outfit(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF1A1A1A),
-                    ),
-                  ),
+                  Text(title, style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A1A))),
                   const SizedBox(height: 8),
-                  Text(
-                    description,
-                    style: GoogleFonts.outfit(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF666666),
-                      height: 1.4,
-                    ),
-                  ),
+                  Text(description, style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w500, color: const Color(0xFF666666), height: 1.4)),
                 ],
               ),
             ),
@@ -513,16 +504,10 @@ class _ArchetypeCard extends StatelessWidget {
               height: 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected ? const Color(0xFF3300FF) : const Color(0xFFE0E6FF),
-                  width: 2,
-                ),
+                border: Border.all(color: isSelected ? const Color(0xFF3300FF) : const Color(0xFFE0E6FF), width: 2),
+                color: isSelected ? const Color(0xFF3300FF) : Colors.transparent,
               ),
-              child: isSelected
-                  ? const Center(
-                      child: Icon(Icons.check_rounded, size: 16, color: Color(0xFF3300FF)),
-                    )
-                  : null,
+              child: isSelected ? const Center(child: Icon(Icons.check_rounded, size: 16, color: Colors.white)) : null,
             ),
           ],
         ),
@@ -536,11 +521,7 @@ class _PreviewItem extends StatelessWidget {
   final String label;
   final String value;
 
-  const _PreviewItem({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
+  const _PreviewItem({required this.icon, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -554,12 +535,7 @@ class _PreviewItem extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                )
-              ],
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
             ),
             child: Icon(icon, color: const Color(0xFF3300FF), size: 20),
           ),
@@ -567,24 +543,9 @@ class _PreviewItem extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: GoogleFonts.outfit(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
-                  color: const Color(0xFF999999),
-                  letterSpacing: 1.0,
-                ),
-              ),
+              Text(label, style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.w900, color: const Color(0xFF999999), letterSpacing: 1.0)),
               const SizedBox(height: 2),
-              Text(
-                value,
-                style: GoogleFonts.outfit(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF1A1A1A),
-                ),
-              ),
+              Text(value, style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF1A1A1A))),
             ],
           ),
         ],

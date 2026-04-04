@@ -6,7 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 class InteractivePreviewCard extends StatelessWidget {
   final String question;
   final VoidCallback? onClipPressed;
-  final VoidCallback? onStartSession; // Add this
+  final VoidCallback? onStartSession;
 
   const InteractivePreviewCard({
     super.key,
@@ -21,24 +21,36 @@ class InteractivePreviewCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: WebColors.border),
-        boxShadow: WebColors.cardShadow,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: WebColors.purplePrimary.withOpacity(0.3),
+          width: 1.5,
+        ),
+        boxShadow: WebColors.subtleShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with clip icon
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'INTERACTIVE PREVIEW',
-                style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: WebColors.accent,
-                  letterSpacing: 1.5,
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: WebColors.purpleUltraLight,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: WebColors.purplePrimary.withOpacity(0.2)),
+                ),
+                child: Text(
+                  'INSTANT FLASHCARD',
+                  style: GoogleFonts.outfit(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: WebColors.purplePrimary,
+                    letterSpacing: 1.0,
+                  ),
                 ),
               ),
               InkWell(
@@ -50,58 +62,47 @@ class InteractivePreviewCard extends StatelessWidget {
                     color: WebColors.backgroundAlt,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(
-                    Icons.content_copy_rounded,
-                    size: 20,
-                    color: WebColors.textSecondary,
-                  ),
+                  child: const Icon(Icons.content_copy_rounded,
+                      size: 18, color: WebColors.textSecondary),
                 ),
               ),
             ],
           ),
-
           const SizedBox(height: 20),
-
-          // Question content
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: WebColors.backgroundAlt,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: WebColors.border.withOpacity(0.5)),
-            ),
-            child: Text(
-              question,
-              style: GoogleFonts.outfit(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: WebColors.textPrimary,
-                height: 1.5,
-              ),
+          Text(
+            '"$question"',
+            style: GoogleFonts.outfit(
+              fontSize: 15,
+              fontStyle: FontStyle.italic,
+              color: WebColors.textPrimary,
+              height: 1.5,
             ),
           ),
-
-          const SizedBox(height: 16),
-
-          // Action button
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: onStartSession, // Use here
-              icon: const Icon(Icons.play_arrow_rounded, size: 20),
-              label: const Text('Start Session'),
-              style: TextButton.styleFrom(
-                foregroundColor: WebColors.primary,
-                textStyle: GoogleFonts.outfit(
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: onStartSession,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: WebColors.purplePrimary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'Instant Start',
+                style: GoogleFonts.outfit(
                   fontWeight: FontWeight.w700,
-                  fontSize: 14,
+                  fontSize: 15,
                 ),
               ),
             ),
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1);
+    ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.05);
   }
 }

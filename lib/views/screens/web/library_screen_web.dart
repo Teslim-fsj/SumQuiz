@@ -12,7 +12,6 @@ import 'package:sumquiz/view_models/library_view_model.dart';
 import 'package:sumquiz/view_models/quiz_view_model.dart';
 import 'package:sumquiz/services/sync_service.dart';
 import 'package:intl/intl.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sumquiz/views/widgets/enter_code_dialog.dart';
 import 'package:sumquiz/views/widgets/web/web_library_header.dart';
 import 'package:sumquiz/views/widgets/web/web_library_empty_state.dart';
@@ -25,20 +24,18 @@ class LibraryScreenWeb extends StatefulWidget {
   LibraryScreenWebState createState() => LibraryScreenWebState();
 }
 
-class LibraryScreenWebState extends State<LibraryScreenWeb>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class LibraryScreenWebState extends State<LibraryScreenWeb> {
   final LocalDatabaseService _localDb = LocalDatabaseService();
   final TextEditingController _searchController = TextEditingController();
 
   String _searchQuery = '';
   LibraryViewModel? _viewModel;
   bool _isNavigating = false;
+  int _selectedFilter = 0;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 7, vsync: this);
     _searchController.addListener(_onSearchChanged);
     _localDb.init();
   }
@@ -91,7 +88,6 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
                 backgroundColor: const Color(0xFFF8FAFC),
                 body: Column(
                   children: [
-                    // Modern Header
                     WebLibraryHeader(
                       searchController: _searchController,
                       onImport: () {
@@ -103,27 +99,18 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
                       onNotifications: () {},
                       onProfile: () => context.push('/profile'),
                     ),
-                    
-                    // Content Area
                     Expanded(
                       child: SingleChildScrollView(
                         padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Hero Section
                             _buildHeroSection(viewModel),
                             const SizedBox(height: 32),
-                            
-                            // Category Filters (Pill Tabs)
                             _buildCategoryFilters(),
                             const SizedBox(height: 48),
-                            
-                            // Main Content
                             _buildDynamicContent(user.uid, viewModel),
-                            
                             const SizedBox(height: 80),
-                            // Feature Information Cards
                             const WebFeatureInfoCards(),
                             const SizedBox(height: 60),
                           ],
@@ -173,18 +160,10 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.lock_person,
-              size: 60,
-              color: theme.colorScheme.onSurface.withOpacity(0.5)),
+          Icon(Icons.lock_person, size: 60, color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
           const SizedBox(height: 20),
-          Text(
-            "Please Log In to View Library",
-            style: TextStyle(
-              color: theme.colorScheme.onSurface,
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          Text("Please Log In to View Library",
+              style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.w700)),
           const SizedBox(height: 32),
           ElevatedButton(
             onPressed: () => context.go('/auth'),
@@ -204,12 +183,30 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // AI Generated badge
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: WebColors.purplePrimary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            'AI GENERATED CONTENT',
+            style: GoogleFonts.outfit(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: WebColors.purplePrimary,
+              letterSpacing: 1.0,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
         Row(
           children: [
             Text(
               'Content Library',
               style: GoogleFonts.outfit(
-                fontSize: 48,
+                fontSize: 44,
                 fontWeight: FontWeight.w900,
                 color: const Color(0xFF0F172A),
                 letterSpacing: -1,
@@ -220,14 +217,14 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
               const SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF6366F1)),
+                child: CircularProgressIndicator(strokeWidth: 2, color: WebColors.purplePrimary),
               ).animate().fadeIn(),
             ],
           ],
         ),
         const SizedBox(height: 12),
         Text(
-          'Manage and access your generated learning materials. All your study packs, quizzes, and exams in one place.',
+          'Manage and access your AI-generated learning materials. Everything you\'ve researched, synthesized, and mastered in one place.',
           style: GoogleFonts.outfit(
             fontSize: 18,
             color: const Color(0xFF64748B),
@@ -240,9 +237,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
 
   Widget _buildCategoryFilters() {
     final categories = [
-      {'label': 'All Content', 'icon': Icons.grid_view_rounded},
-      {'label': 'Recents', 'icon': Icons.history_rounded},
-      {'label': 'Starred', 'icon': Icons.star_rounded},
+      {'label': 'All Items', 'icon': Icons.grid_view_rounded},
       {'label': 'Summaries', 'icon': Icons.description_rounded},
       {'label': 'Quizzes', 'icon': Icons.quiz_rounded},
       {'label': 'Exams', 'icon': Icons.assignment_rounded},
@@ -253,25 +248,25 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
       scrollDirection: Axis.horizontal,
       child: Row(
         children: List.generate(categories.length, (index) {
-          final isSelected = _tabController.index == index;
+          final isSelected = _selectedFilter == index;
           return Padding(
             padding: const EdgeInsets.only(right: 12),
             child: InkWell(
               onTap: () {
-                setState(() => _tabController.animateTo(index));
+                setState(() => _selectedFilter = index);
               },
               borderRadius: BorderRadius.circular(20),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFF0F172A) : Colors.white,
+                  color: isSelected ? Colors.white : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSelected ? Colors.transparent : const Color(0xFFE2E8F0),
+                    color: isSelected ? WebColors.purplePrimary : const Color(0xFFE2E8F0),
                   ),
                   boxShadow: isSelected
-                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4))]
+                      ? [BoxShadow(color: WebColors.purplePrimary.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4))]
                       : [],
                 ),
                 child: Row(
@@ -279,7 +274,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
                     Icon(
                       categories[index]['icon'] as IconData,
                       size: 18,
-                      color: isSelected ? Colors.white : const Color(0xFF64748B),
+                      color: isSelected ? WebColors.purplePrimary : const Color(0xFF64748B),
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -287,7 +282,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
                       style: GoogleFonts.outfit(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
-                        color: isSelected ? Colors.white : const Color(0xFF64748B),
+                        color: isSelected ? WebColors.purplePrimary : const Color(0xFF64748B),
                       ),
                     ),
                   ],
@@ -301,17 +296,13 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
   }
 
   Widget _buildDynamicContent(String userId, LibraryViewModel viewModel) {
-    if (_tabController.index == 1) {
-      return _buildRecentlyViewedGrid(userId, viewModel);
-    }
-    
-    final stream = switch (_tabController.index) {
+    // Map filter index to the correct stream
+    final stream = switch (_selectedFilter) {
       0 => viewModel.allItems$,
-      2 => viewModel.allItems$.map((items) => items.where((i) => false).toList()), // TODO: Add isFavorite to LibraryItem
-      3 => viewModel.allSummaries$,
-      4 => viewModel.allQuizzes$,
-      5 => viewModel.allExams$,
-      6 => viewModel.allFlashcards$,
+      1 => viewModel.allSummaries$,
+      2 => viewModel.allQuizzes$,
+      3 => viewModel.allExams$,
+      4 => viewModel.allFlashcards$,
       _ => viewModel.allItems$,
     };
 
@@ -319,12 +310,14 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
       stream: stream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: Padding(
-            padding: EdgeInsets.all(100.0),
-            child: CircularProgressIndicator(),
-          ));
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(100.0),
+              child: CircularProgressIndicator(),
+            ),
+          );
         }
-        
+
         final items = snapshot.data ?? [];
         final filtered = items
             .where((i) => i.title.toLowerCase().contains(_searchQuery))
@@ -342,195 +335,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
     );
   }
 
-  // --- Grid Builders ---
-
-  Widget _buildRecentlyViewedGrid(String userId, LibraryViewModel viewModel) {
-    return StreamBuilder<List<LibraryItem>>(
-      stream: viewModel.allRecentlyViewed$,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final items = snapshot.data ?? [];
-        if (items.isEmpty) {
-          return _buildEmptyState('No Recent Items',
-              'The materials you viewed recently will appear here');
-        }
-        return GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 4,
-            crossAxisSpacing: 20,
-            mainAxisSpacing: 20,
-            childAspectRatio: 1.4,
-          ),
-          itemCount: items.length,
-          itemBuilder: (context, index) => _buildRecentlyViewedItem(items[index]),
-        );
-      },
-    );
-  }
-
-  Widget _buildRecentlyViewedItem(LibraryItem item) {
-    IconData icon;
-    Color bgColor;
-    Color textColor;
-    String typeName;
-    String badge;
-
-    switch (item.type) {
-      case LibraryItemType.summary:
-        icon = Icons.article_rounded;
-        bgColor = const Color(0xFF6366F1).withValues(alpha: 0.1);
-        textColor = const Color(0xFF6366F1);
-        typeName = 'Summary';
-        badge = 'Refined';
-        break;
-      case LibraryItemType.quiz:
-        icon = Icons.quiz_rounded;
-        bgColor = const Color(0xFF10B981).withValues(alpha: 0.1);
-        textColor = const Color(0xFF10B981);
-        typeName = 'Quiz';
-        badge = '${((item.score ?? 0) * 100).round()}% Score';
-        break;
-      case LibraryItemType.flashcards:
-        icon = Icons.style_rounded;
-        bgColor = const Color(0xFFEC4899).withValues(alpha: 0.1);
-        textColor = const Color(0xFFEC4899);
-        typeName = 'Flashcards';
-        badge = '${item.itemCount ?? 0} Cards';
-        break;
-      case LibraryItemType.exam:
-        icon = Icons.assignment_rounded;
-        bgColor = const Color(0xFFF59E0B).withValues(alpha: 0.1);
-        textColor = const Color(0xFFF59E0B);
-        typeName = 'Exam';
-        badge = '${item.itemCount ?? 0} Questions';
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: WebColors.border),
-        boxShadow: WebColors.subtleShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: textColor, size: 20),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  badge,
-                  style: GoogleFonts.outfit(
-                    color: textColor,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const Spacer(),
-          Text(
-            item.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.outfit(
-              fontWeight: FontWeight.w600,
-              fontSize: 15,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Text(
-                typeName,
-                style: GoogleFonts.outfit(
-                  color: WebColors.textSecondary,
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                width: 3,
-                height: 3,
-                decoration: const BoxDecoration(
-                  color: WebColors.border,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                _getRelativeTime(item.timestamp),
-                style: GoogleFonts.outfit(
-                  color: WebColors.textSecondary,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(String title, String subtitle) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Image.asset(
-            'assets/images/web/empty_library.png',
-            width: 200,
-            height: 200,
-          ).animate().scale(duration: 400.ms),
-          const SizedBox(height: 24),
-          Text(
-            title,
-            style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).textTheme.titleLarge?.color),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: TextStyle(fontSize: 16, color: WebColors.textSecondary),
-          ),
-          const SizedBox(height: 32),
-          OutlinedButton(
-            onPressed: () => context.push('/create'),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              side: BorderSide(color: WebColors.primary),
-            ),
-            child:
-                Text('Create New', style: TextStyle(color: WebColors.primary)),
-          ),
-        ],
-      ).animate().fadeIn(delay: 200.ms),
-    );
-  }
-
-  Widget _buildContentGrid(
-      List<LibraryItem> items, String userId, LibraryViewModel viewModel) {
+  Widget _buildContentGrid(List<LibraryItem> items, String userId, LibraryViewModel viewModel) {
     final cardData = items.map((item) {
       IconData icon;
       Color bgColor;
@@ -541,37 +346,31 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
       switch (item.type) {
         case LibraryItemType.summary:
           icon = Icons.description_outlined;
-          bgColor = WebColors.secondary.withOpacity(0.1);
+          bgColor = WebColors.secondary.withValues(alpha: 0.1);
           textColor = WebColors.secondary;
           typeName = 'SUMMARY';
-          badge = item.itemCount != null
-              ? '${item.itemCount} Sections'
-              : 'Detailed Analysis';
+          badge = item.itemCount != null ? '${item.itemCount} Sections' : 'Detailed Analysis';
           break;
         case LibraryItemType.quiz:
           icon = Icons.quiz_outlined;
-          bgColor = WebColors.accentOrange.withOpacity(0.1);
+          bgColor = WebColors.accentOrange.withValues(alpha: 0.1);
           textColor = WebColors.accentOrange;
           typeName = 'QUIZ';
-          badge = item.score != null
-              ? 'Score: ${(item.score! * 100).round()}%'
-              : '${item.itemCount ?? 0} Questions';
+          badge = item.score != null ? 'Score: ${(item.score! * 100).round()}%' : '${item.itemCount ?? 0} Questions';
           break;
         case LibraryItemType.flashcards:
           icon = Icons.style_outlined;
-          bgColor = WebColors.pinkAccent.withOpacity(0.1);
+          bgColor = WebColors.pinkAccent.withValues(alpha: 0.1);
           textColor = WebColors.pinkAccent;
           typeName = 'FLASHCARDS';
           badge = '${item.itemCount ?? 0} Cards';
           break;
         case LibraryItemType.exam:
           icon = Icons.assignment_outlined;
-          bgColor = WebColors.purplePrimary.withOpacity(0.1);
+          bgColor = WebColors.purplePrimary.withValues(alpha: 0.1);
           textColor = WebColors.purplePrimary;
           typeName = 'EXAM';
-          badge = item.score != null
-              ? 'Score: ${(item.score! * 100).round()}%'
-              : '${item.itemCount ?? 0} Questions';
+          badge = item.score != null ? 'Score: ${(item.score! * 100).round()}%' : '${item.itemCount ?? 0} Questions';
           break;
       }
 
@@ -605,20 +404,6 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
     return _buildMasonryGrid(cardData);
   }
 
-  String _getRelativeTime(Timestamp timestamp) {
-    final difference = DateTime.now().difference(timestamp.toDate());
-    if (difference.inDays > 7) {
-      return '${(difference.inDays / 7).floor()}w ago';
-    } else if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    }
-    return 'Just now';
-  }
-
   String _getDescriptionForType(LibraryItem item) {
     if (item.description != null && item.description!.isNotEmpty) {
       return item.description!;
@@ -644,6 +429,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
 
         return GridView.builder(
           padding: const EdgeInsets.only(top: 8, bottom: 40),
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: 32,
@@ -681,8 +468,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
             color: Colors.transparent,
             child: InkWell(
               onTap: card.onTap,
-              hoverColor: card.textColor.withOpacity(0.05),
-              splashColor: card.textColor.withOpacity(0.1),
+              hoverColor: card.textColor.withValues(alpha: 0.05),
+              splashColor: card.textColor.withValues(alpha: 0.1),
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Column(
@@ -694,18 +481,16 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: card.textColor.withOpacity(0.1),
+                            color: card.textColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child:
-                              Icon(card.icon, color: card.textColor, size: 24),
+                          child: Icon(card.icon, color: card.textColor, size: 24),
                         ),
                         if (card.typeName.isNotEmpty)
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
-                              color: card.textColor.withOpacity(0.1),
+                              color: card.textColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -749,9 +534,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
                         Icon(
                           card.typeName == 'QUIZ'
                               ? Icons.emoji_events_outlined
-                              : (card.typeName == 'FLASHCARDS'
-                                  ? Icons.layers_outlined
-                                  : Icons.read_more_outlined),
+                              : (card.typeName == 'FLASHCARDS' ? Icons.layers_outlined : Icons.read_more_outlined),
                           size: 14,
                           color: card.textColor,
                         ),
@@ -765,11 +548,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
                           ),
                         ),
                         const Spacer(),
-                        Icon(
-                          Icons.arrow_forward,
-                          size: 16,
-                          color: card.textColor.withValues(alpha: 0.5),
-                        ),
+                        Icon(Icons.arrow_forward, size: 16, color: card.textColor.withValues(alpha: 0.5)),
                       ],
                     ),
                   ],
@@ -788,9 +567,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
   }
 
   Future<void> _navigateToContent(LibraryItem item) async {
-    debugPrint(
-        '🔍 Navigating to content: ${item.type} - ${item.title} (ID: ${item.id})');
-
+    debugPrint('🔍 Navigating to content: ${item.type} - ${item.title} (ID: ${item.id})');
     setState(() => _isNavigating = true);
 
     try {
@@ -800,13 +577,11 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
         return;
       }
 
-      // Navigate to ResultsViewScreenWeb for all content types
       debugPrint('🚀 Navigating to results view screen...');
-      
       int tab = 0;
       switch (item.type) {
         case LibraryItemType.summary: tab = 0; break;
-        case LibraryItemType.quiz: 
+        case LibraryItemType.quiz:
         case LibraryItemType.exam: tab = 1; break;
         case LibraryItemType.flashcards: tab = 2; break;
       }
@@ -832,7 +607,6 @@ class LibraryScreenWebState extends State<LibraryScreenWeb>
 
   @override
   void dispose() {
-    _tabController.dispose();
     _searchController.dispose();
     super.dispose();
   }

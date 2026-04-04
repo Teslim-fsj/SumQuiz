@@ -1,6 +1,5 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -35,153 +34,17 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
     final user = Provider.of<UserModel?>(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFFFF),
-      body: Row(
-        children: [
-          // SIDEBAR (Simplified for Study Pack Flow)
-          _buildSidebar(context),
-          
-          // MAIN CONTENT
-          Expanded(
-            child: Column(
-              children: [
-                _buildWebHeader(context, provider),
-                Expanded(
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1200),
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 500),
-                        switchInCurve: Curves.easeOutCubic,
-                        switchOutCurve: Curves.easeInCubic,
-                        child: _buildPhaseContent(context, provider, user),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+      backgroundColor: const Color(0xFFFBFBFF),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1280),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 500),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            child: _buildPhaseContent(context, provider, user),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSidebar(BuildContext context) {
-     return Container(
-       width: 280,
-       color: const Color(0xFFFBFBFF),
-       padding: const EdgeInsets.all(32),
-       child: Column(
-         crossAxisAlignment: CrossAxisAlignment.start,
-         children: [
-           Row(
-             children: [
-               Container(
-                 width: 32,
-                 height: 32,
-                 decoration: BoxDecoration(
-                   color: const Color(0xFF3300FF),
-                   borderRadius: BorderRadius.circular(8),
-                 ),
-                 child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 20),
-               ),
-               const SizedBox(width: 12),
-               Text(
-                 'SumQuiz',
-                 style: GoogleFonts.outfit(
-                   fontSize: 22,
-                   fontWeight: FontWeight.w900,
-                   color: const Color(0xFF3300FF),
-                 ),
-               ),
-             ],
-           ),
-           const SizedBox(height: 60),
-           _SidebarItem(icon: Icons.dashboard_rounded, label: 'Dashboard'),
-           _SidebarItem(icon: Icons.library_books_rounded, label: 'Library'),
-           _SidebarItem(icon: Icons.style_rounded, label: 'Study Sets'),
-           _SidebarItem(icon: Icons.quiz_rounded, label: 'Quizzes'),
-           _SidebarItem(icon: Icons.analytics_rounded, label: 'Analytics'),
-           const Spacer(),
-           _SidebarItem(icon: Icons.settings_rounded, label: 'Settings'),
-           _SidebarItem(icon: Icons.help_outline_rounded, label: 'Help'),
-           const SizedBox(height: 24),
-           Container(
-             padding: const EdgeInsets.all(16),
-             decoration: BoxDecoration(
-               color: Colors.white,
-               borderRadius: BorderRadius.circular(16),
-               boxShadow: [
-                 BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10),
-               ],
-             ),
-             child: Row(
-               children: [
-                 const CircleAvatar(
-                   radius: 20,
-                   backgroundImage: AssetImage('assets/images/avatar_placeholder.png'),
-                 ),
-                 const SizedBox(width: 12),
-                 Column(
-                   crossAxisAlignment: CrossAxisAlignment.start,
-                   children: [
-                     Text(
-                       'Alex Rivera',
-                       style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14),
-                     ),
-                     Text(
-                       'Premium Member',
-                       style: GoogleFonts.outfit(fontSize: 10, color: const Color(0xFF999999)),
-                     ),
-                   ],
-                 ),
-               ],
-             ),
-           ),
-         ],
-       ),
-     );
-  }
-
-  Widget _buildWebHeader(BuildContext context, CreateContentProvider provider) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-           const SizedBox(width: 12),
-           const Spacer(),
-           Container(
-             width: 400,
-             height: 48,
-             decoration: BoxDecoration(
-               color: const Color(0xFFF0F2FF),
-               borderRadius: BorderRadius.circular(24),
-             ),
-             padding: const EdgeInsets.symmetric(horizontal: 20),
-             child: Row(
-               children: [
-                 const Icon(Icons.search_rounded, color: Color(0xFF999999), size: 20),
-                 const SizedBox(width: 12),
-                 Expanded(
-                   child: TextField(
-                     decoration: InputDecoration(
-                       hintText: 'Search knowledge...',
-                       hintStyle: GoogleFonts.outfit(color: const Color(0xFF999999), fontSize: 14),
-                       border: InputBorder.none,
-                       isDense: true,
-                     ),
-                   ),
-                 ),
-               ],
-             ),
-           ),
-           const SizedBox(width: 24),
-           const Icon(Icons.notifications_none_rounded, color: Color(0xFF1A1A1A)),
-           const SizedBox(width: 24),
-           const Icon(Icons.account_circle_outlined, color: Color(0xFF1A1A1A)),
-        ],
+        ),
       ),
     );
   }
@@ -195,11 +58,12 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
           onUploadFiles: () => _pickFile(context, provider, user, ['pdf', 'doc', 'docx', 'txt'], 'pdf'),
           onWriteNow: () => _showInputDialog(context, provider, 'Text / Quick Topic', 'Type a topic or paste text...', isTopic: true),
           onImportUrl: () => _showInputDialog(context, provider, 'YouTube / Web Link', 'Paste URL here...', isLink: true),
-          onScanPage: () => _showInputDialog(context, provider, 'Images / Snap', 'This feature is coming soon!', isLink: false),
+          onScanPage: () => _pickFile(context, provider, user, ['jpg', 'jpeg', 'png'], 'image'),
           onListenAndLearn: () => _pickFile(context, provider, user, ['mp3', 'wav', 'm4a'], 'audio'),
         );
       case CreationPhase.config:
         return WebConfiguration(
+          key: ValueKey(provider.phase),
           provider: provider,
           onGenerate: () {
             if (user != null) provider.startGeneration(user.uid);
@@ -270,6 +134,8 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
               }
             },
             style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3300FF),
+              foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -326,34 +192,6 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
                 child: const Text('Try Again'),
               ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SidebarItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _SidebarItem({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 32),
-      child: Row(
-        children: [
-          Icon(icon, color: const Color(0xFF666666), size: 24),
-          const SizedBox(width: 16),
-          Text(
-            label,
-            style: GoogleFonts.outfit(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: const Color(0xFF666666),
-            ),
           ),
         ],
       ),
