@@ -22,21 +22,21 @@ class AnalyticsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(40),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SharedTeacherWidgets.moduleHeader('Analytics',
               'Detailed insights about content and student performance'),
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
           if (content.isEmpty)
             SharedTeacherWidgets.emptyCard('No content to analyze',
                 'Create and share content to generate analytics data.')
           else ...[
             _buildClassOverview(),
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
             _buildTrendSection(),
-            const SizedBox(height: 32),
+            const SizedBox(height: 20),
             _buildContentAnalyticsList(),
           ],
         ],
@@ -46,7 +46,7 @@ class AnalyticsView extends StatelessWidget {
 
   Widget _buildTrendSection() {
     return Container(
-      padding: const EdgeInsets.all(28),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -70,9 +70,9 @@ class AnalyticsView extends StatelessWidget {
           Text('Total student attempts over the last 30 days',
               style: GoogleFonts.outfit(
                   fontSize: 12, color: WebColors.textTertiary)),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           SizedBox(
-            height: 220,
+            height: 180,
             width: double.infinity,
             child: _TrendChart(data: trends),
           ),
@@ -177,8 +177,8 @@ class AnalyticsView extends StatelessWidget {
 
   Widget _contentAnalyticsRow(PublicDeck deck, ContentAnalytics? a) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -229,7 +229,7 @@ class AnalyticsView extends StatelessWidget {
       children: [
         Text(value,
             style: GoogleFonts.outfit(
-                fontSize: 20, fontWeight: FontWeight.w800, color: color)),
+                fontSize: 16, fontWeight: FontWeight.w800, color: color)),
         Text(label,
             style: GoogleFonts.outfit(
                 fontSize: 10,

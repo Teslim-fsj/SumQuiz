@@ -158,7 +158,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
       if (!mounted) return;
 
       final dueIds = await srsService.getDueItems(userId);
-      _dueFlashcardSets = allSets.where((s) => dueIds.contains(s.id)).toList();
+      _dueFlashcardSets = allSets.where((s) => s.flashcards.any((f) => dueIds.contains(f.id))).toList();
 
       // If none are due but we have sets, show some anyway to avoid empty state
       if (_dueFlashcardSets.isEmpty && allSets.isNotEmpty) {
@@ -494,9 +494,9 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
       return _buildStudySession();
     }
 
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      body: _isLoading
+    return Container(
+      color: theme.colorScheme.surface,
+      child: _isLoading
           ? Center(
               child:
                   CircularProgressIndicator(color: theme.colorScheme.primary))
@@ -507,7 +507,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                           color: theme.colorScheme.onSurface, fontSize: 18)))
               : SingleChildScrollView(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 48, vertical: 36),
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 1280),
@@ -515,9 +515,9 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildHeader(user),
-                          const SizedBox(height: 28),
+                          const SizedBox(height: 12),
                           _buildSrsBanner(context),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 12),
                           // Three stat cards in a row
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -531,7 +531,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                                   },
                                 ),
                               ),
-                              const SizedBox(width: 20),
+                              const SizedBox(width: 16),
                               Expanded(
                                 child: AccuracyCard(
                                   accuracy: _accuracy,
@@ -539,7 +539,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                                   lowestAccuracy: _accuracy,
                                 ),
                               ),
-                              const SizedBox(width: 20),
+                              const SizedBox(width: 16),
                               Expanded(
                                 child: DailyGoalCard(
                                   goalMinutes: _dailyGoalMinutes,
@@ -548,7 +548,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 28),
+                          const SizedBox(height: 12),
                           // Bottom: Curriculums + Right rail
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -564,7 +564,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                                   onReviewItem: _startSetReview,
                                 ),
                               ),
-                              const SizedBox(width: 24),
+                              const SizedBox(width: 16),
                               Expanded(
                                 flex: 2,
                                 child: Column(
@@ -608,9 +608,9 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                                         }
                                       },
                                     ),
-                                    const SizedBox(height: 20),
+                                    const SizedBox(height: 16),
                                     FocusTimerCard(),
-                                    const SizedBox(height: 20),
+                                    const SizedBox(height: 12),
                                     StreakCard(
                                         streakDays:
                                             user?.missionCompletionStreak ??
@@ -646,7 +646,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
             Text(
               '${_getGreeting()}, ${user?.displayName.split(' ').first ?? 'Scholar'}!',
               style: GoogleFonts.outfit(
-                fontSize: 32,
+                fontSize: 22,
                 fontWeight: FontWeight.w900,
                 color: WebColors.textPrimary,
               ),
@@ -683,7 +683,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
         Text.rich(
           TextSpan(
             style: GoogleFonts.outfit(
-              fontSize: 16,
+              fontSize: 14,
               color: WebColors.textSecondary,
             ),
             children: [
@@ -707,9 +707,9 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
 
   Widget _buildStudySession() {
     final theme = Theme.of(context);
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
+    return Container(
+      color: Colors.white,
+      child: Stack(
         children: [
           Container(
             decoration: BoxDecoration(

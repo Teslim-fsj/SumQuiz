@@ -16,7 +16,7 @@ class WebConfiguration extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -29,7 +29,7 @@ class WebConfiguration extends StatelessWidget {
                 Text(
                   'Configure Your Study Pack',
                   style: GoogleFonts.outfit(
-                    fontSize: 42,
+                    fontSize: 28,
                     fontWeight: FontWeight.w800,
                     color: const Color(0xFF1A1A1A),
                   ),
@@ -38,17 +38,17 @@ class WebConfiguration extends StatelessWidget {
                 Text(
                   'Tailor your learning experience. Our AI will curate content based on your difficulty preference and study archetype.',
                   style: GoogleFonts.outfit(
-                    fontSize: 18,
+                    fontSize: 15,
                     fontWeight: FontWeight.w400,
                     color: const Color(0xFF666666),
                     height: 1.5,
                   ),
                 ).animate().fadeIn(delay: 200.ms),
-                const SizedBox(height: 48),
+                const SizedBox(height: 24),
 
                 // 1. DIFFICULTY LEVEL
                 _buildSectionHeader('1. DIFFICULTY LEVEL'),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 Row(
                   children: [
                     _DifficultyCard(
@@ -74,7 +74,7 @@ class WebConfiguration extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 48),
+                const SizedBox(height: 24),
 
                 // 2 & 3: COUNTS
                 Row(
@@ -84,26 +84,26 @@ class WebConfiguration extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildSectionHeader('2. QUIZ QUESTIONS'),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16),
                           _CountSelector(
                             values: const [5, 15, 20],
-                            selectedValue: provider.selectedCount,
-                            onChanged: (v) => provider.updateConfig(count: v),
+                            selectedValue: provider.quizCount,
+                            onChanged: (v) => provider.updateConfig(quizCount: v),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 40),
+                    const SizedBox(width: 24),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildSectionHeader('3. FLASHCARDS'),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16),
                           _CountSelector(
                             values: const [10, 20, 30, 50],
-                            selectedValue: 30,
-                            onChanged: (v) {},
+                            selectedValue: provider.flashcardCount,
+                            onChanged: (v) => provider.updateConfig(flashcardCount: v),
                           ),
                         ],
                       ),
@@ -111,11 +111,11 @@ class WebConfiguration extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 48),
+                const SizedBox(height: 24),
 
                 // 4. STUDY ARCHETYPE
                 _buildSectionHeader('4. STUDY ARCHETYPE'),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 Row(
                   children: [
                     Expanded(
@@ -127,7 +127,7 @@ class WebConfiguration extends StatelessWidget {
                         onTap: () => provider.updateConfig(archetype: StudyArchetype.sprinter),
                       ),
                     ),
-                    const SizedBox(width: 24),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: _ArchetypeCard(
                         title: 'The Architect',
@@ -140,15 +140,15 @@ class WebConfiguration extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 48),
+                const SizedBox(height: 32),
 
                 // GENERATE BUTTON (always visible at bottom of config)
                 Center(
                   child: Container(
-                    width: 360,
-                    height: 64,
+                    width: 300,
+                    height: 50,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(32),
+                      borderRadius: BorderRadius.circular(25),
                       gradient: const LinearGradient(
                         colors: [Color(0xFF3300FF), Color(0xFF7C4DFF)],
                       ),
@@ -164,7 +164,7 @@ class WebConfiguration extends StatelessWidget {
                       color: Colors.transparent,
                       child: InkWell(
                         onTap: onGenerate,
-                        borderRadius: BorderRadius.circular(32),
+                        borderRadius: BorderRadius.circular(25),
                         child: Center(
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -191,15 +191,15 @@ class WebConfiguration extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(width: 40),
+          const SizedBox(width: 24),
 
           // RIGHT COLUMN: SUMMARY PREVIEW
           Container(
-            width: 340,
-            padding: const EdgeInsets.all(28),
+            width: 300,
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: const Color(0xFFF8F9FF),
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(color: const Color(0xFFE0E6FF)),
             ),
             child: Column(
@@ -209,12 +209,12 @@ class WebConfiguration extends StatelessWidget {
                 Text(
                   'Summary Preview',
                   style: GoogleFonts.outfit(
-                    fontSize: 22,
+                    fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: const Color(0xFF1A1A1A),
                   ),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 20),
                 _PreviewItem(
                   icon: Icons.electric_bolt_rounded,
                   label: 'DIFFICULTY',
@@ -223,19 +223,19 @@ class WebConfiguration extends StatelessWidget {
                 _PreviewItem(
                   icon: Icons.quiz_rounded,
                   label: 'CONTENT',
-                  value: '${provider.selectedCount} Questions',
+                  value: '${provider.quizCount} Questions',
                 ),
-                const _PreviewItem(
+                _PreviewItem(
                   icon: Icons.style_rounded,
                   label: 'REVIEW',
-                  value: '30 Flashcards',
+                  value: '${provider.flashcardCount} Flashcards',
                 ),
                 _PreviewItem(
                   icon: Icons.psychology_rounded,
                   label: 'ARCHETYPE',
                   value: provider.selectedArchetype == StudyArchetype.sprinter ? 'The Sprinter' : 'The Architect',
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
 
                 // AI ESTIMATE
                 Container(
@@ -326,7 +326,7 @@ class WebConfiguration extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(height: 1, width: 60, color: const Color(0xFFE0E6FF)),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Text(
           title,
           style: GoogleFonts.outfit(
@@ -361,27 +361,27 @@ class _DifficultyCard extends StatelessWidget {
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          height: 140,
+          height: 110,
           decoration: BoxDecoration(
             color: isSelected ? const Color(0xFF3300FF) : Colors.white,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isSelected ? const Color(0xFF3300FF) : const Color(0xFFE0E6FF),
               width: 1.5,
             ),
             boxShadow: isSelected
-                ? [BoxShadow(color: const Color(0xFF3300FF).withValues(alpha: 0.2), blurRadius: 20, offset: const Offset(0, 10))]
+                ? [BoxShadow(color: const Color(0xFF3300FF).withValues(alpha: 0.2), blurRadius: 16, offset: const Offset(0, 8))]
                 : [],
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 32, color: isSelected ? Colors.white : const Color(0xFF1A1A1A)),
-              const SizedBox(height: 16),
+              Icon(icon, size: 24, color: isSelected ? Colors.white : const Color(0xFF1A1A1A)),
+              const SizedBox(height: 12),
               Text(
                 label,
                 style: GoogleFonts.outfit(
-                  fontSize: 20,
+                  fontSize: 16,
                   fontWeight: FontWeight.w800,
                   color: isSelected ? Colors.white : const Color(0xFF1A1A1A),
                 ),
@@ -463,10 +463,10 @@ class _ArchetypeCard extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? const Color(0xFF3300FF) : const Color(0xFFE0E6FF),
             width: 2,
@@ -479,22 +479,22 @@ class _ArchetypeCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: const Color(0xFFF1F4FF),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: const Color(0xFF3300FF), size: 24),
+              child: Icon(icon, color: const Color(0xFF3300FF), size: 20),
             ),
-            const SizedBox(width: 20),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A1A))),
+                  Text(title, style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A1A))),
                   const SizedBox(height: 8),
-                  Text(description, style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w500, color: const Color(0xFF666666), height: 1.4)),
+                  Text(description, style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w500, color: const Color(0xFF666666), height: 1.4)),
                 ],
               ),
             ),
@@ -526,7 +526,7 @@ class _PreviewItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Row(
         children: [
           Container(

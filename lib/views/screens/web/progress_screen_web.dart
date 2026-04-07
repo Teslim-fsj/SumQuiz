@@ -139,16 +139,16 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
     final theme = Theme.of(context);
     final user = Provider.of<UserModel?>(context);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: _isLoading
+    return Container(
+      color: const Color(0xFFF8FAFC),
+      child: _isLoading
           ? Center(
               child: CircularProgressIndicator(color: theme.colorScheme.primary))
           : Column(
               children: [
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     child: Center(
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 1200),
@@ -160,7 +160,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                               weeklyGoalPercentage: 15, // Sample value
                               onDownloadReport: () {},
                             ),
-                            const SizedBox(height: 48),
+                            const SizedBox(height: 16),
                             WebStatsGrid(
                               dayStreak: _dayStreak,
                               itemsToday: _itemsToday,
@@ -168,12 +168,12 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                               totalItems: _itemsCreated,
                               studyTimeHours: _studyTime,
                             ),
-                            const SizedBox(height: 48),
+                            const SizedBox(height: 16),
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Expanded(flex: 3, child: _buildWeeklyActivity()),
-                                const SizedBox(width: 24),
+                                const SizedBox(width: 16),
                                 Expanded(
                                   flex: 2,
                                   child: Column(
@@ -183,22 +183,22 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                                         currentXP: (_milestoneProgress * 10).toInt(), // 10 XP per item
                                         nextLevelXP: (_milestoneGoal * 10).toInt(),
                                       ),
-                                      const SizedBox(height: 24),
+                                      const SizedBox(height: 16),
                                       _buildAchievementsGrid(),
                                     ],
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 48),
+                            const SizedBox(height: 16),
                             WebConsistencyMap(
                               engagementData: List.generate(168, (i) => i % 5), // Sample data
                             ),
-                            const SizedBox(height: 48),
+                            const SizedBox(height: 16),
                             _buildAICoachTip(),
-                            const SizedBox(height: 60),
+                            const SizedBox(height: 24),
                             _buildFooter(),
-                            const SizedBox(height: 40),
+                            const SizedBox(height: 16),
                           ],
                         ),
                       ),

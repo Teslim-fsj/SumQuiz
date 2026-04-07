@@ -21,7 +21,7 @@ class AccuracyCard extends StatelessWidget {
     final highestPerc = (highestAccuracy * 100).toInt();
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -34,7 +34,7 @@ class AccuracyCard extends StatelessWidget {
           Text(
             '$percentage%',
             style: GoogleFonts.outfit(
-              fontSize: 48,
+              fontSize: 32,
               fontWeight: FontWeight.w800,
               color: WebColors.purplePrimary,
               height: 1.0,
@@ -50,7 +50,7 @@ class AccuracyCard extends StatelessWidget {
               letterSpacing: 1.2,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
           Row(
             children: [
               Text('Highest',
@@ -67,7 +67,7 @@ class AccuracyCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(

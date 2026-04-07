@@ -26,7 +26,7 @@ class SourceChoiceCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: theme.cardColor,
           borderRadius: BorderRadius.circular(24),
@@ -46,7 +46,7 @@ class SourceChoiceCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
@@ -54,14 +54,14 @@ class SourceChoiceCard extends StatelessWidget {
               child: Icon(
                 icon,
                 color: primaryColor,
-                size: 28,
+                size: 22,
               ),
             ),
             const Spacer(),
             Text(
               title,
               style: GoogleFonts.outfit(
-                fontSize: 18,
+                fontSize: 15,
                 fontWeight: FontWeight.w800,
                 color: colorScheme.onSurface,
                 height: 1.2,
@@ -73,7 +73,7 @@ class SourceChoiceCard extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.outfit(
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w500,
                 color: colorScheme.onSurfaceVariant,
                 height: 1.4,

@@ -25,7 +25,7 @@ class FeedbackInsights extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(40),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -35,9 +35,9 @@ class FeedbackInsights extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                   Text('Class Intelligence', style: GoogleFonts.outfit(fontSize: 42, fontWeight: FontWeight.w900, color: const Color(0xFF1F1F1F), letterSpacing: -1)),
+                   Text('Class Intelligence', style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w900, color: const Color(0xFF1F1F1F), letterSpacing: -1)),
                    const SizedBox(height: 8),
-                   Text('Synthesizing recent data points into actionable insights for your class.', style: GoogleFonts.outfit(fontSize: 18, color: const Color(0xFF6B7280))),
+                   Text('Synthesizing recent data points into actionable insights for your class.', style: GoogleFonts.outfit(fontSize: 13, color: const Color(0xFF6B7280))),
                 ],
               ),
               ElevatedButton.icon(
@@ -47,7 +47,7 @@ class FeedbackInsights extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 16),
           
           Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -58,10 +58,10 @@ class FeedbackInsights extends StatelessWidget {
             ],
           ),
           
-          const SizedBox(height: 40),
+          const SizedBox(height: 20),
           _buildCurriculumMastery(),
           
-          const SizedBox(height: 40),
+          const SizedBox(height: 20),
           _buildTargetedInterventions(),
         ],
       ),
@@ -86,9 +86,9 @@ class FeedbackInsights extends StatelessWidget {
               Text('AI FEEDBACK SYNTHESIS', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: WebColors.purplePrimary, letterSpacing: 1.5)),
             ],
           ),
-          const SizedBox(height: 24),
-          Text('Critical Struggle Points', style: GoogleFonts.outfit(fontSize: 28, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
+          Text('Critical Struggle Points', style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 12),
           
           if (feedbackInsight == null)
              Text('Run the AI generator to discover deep learning patterns and struggles.', style: TextStyle(color: Colors.grey[500]))
@@ -111,7 +111,7 @@ class FeedbackInsights extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Text(feedbackInsight!, style: GoogleFonts.outfit(fontSize: 14, color: Colors.grey[700], height: 1.5)),
+                  Text(feedbackInsight!, style: GoogleFonts.outfit(fontSize: 13, color: Colors.grey[700], height: 1.5)),
                   const SizedBox(height: 16),
                   Text('Review Topic Strategy →', style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.bold, color: WebColors.purplePrimary)),
                 ],
@@ -137,8 +137,8 @@ class FeedbackInsights extends StatelessWidget {
           const Spacer(),
           Center(
             child: Container(
-              width: 180,
-              height: 180,
+              width: 140,
+              height: 140,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white.withOpacity(0.2), width: 12),
@@ -147,7 +147,7 @@ class FeedbackInsights extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('72%', style: GoogleFonts.outfit(fontSize: 48, fontWeight: FontWeight.w900, color: Colors.white)),
+                    Text('72%', style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white)),
                     Text('AVERAGE MASTERY', style: GoogleFonts.outfit(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white70, letterSpacing: 1)),
                   ],
                 ),
@@ -192,8 +192,8 @@ class FeedbackInsights extends StatelessWidget {
         children: [
           Text('SUBJECT TOPIC BREAKDOWN', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[500], letterSpacing: 1.5)),
           const SizedBox(height: 16),
-          Text('Curriculum Mastery', style: GoogleFonts.outfit(fontSize: 28, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 40),
+          Text('Curriculum Mastery', style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 24),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -225,7 +225,7 @@ class FeedbackInsights extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Container(
-               height: 120 * heightPerc,
+               height: 100 * heightPerc,
                width: double.infinity,
                decoration: BoxDecoration(
                  color: color,
@@ -245,12 +245,12 @@ class FeedbackInsights extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: WebColors.cardShadow,
       ),
-      padding: const EdgeInsets.all(40),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Targeted Interventions', style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 32),
+          Text('Targeted Interventions', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(flex: 2, child: Text('STUDENT', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[500], letterSpacing: 1))),
@@ -276,7 +276,7 @@ class FeedbackInsights extends StatelessWidget {
     final clusterTextInfo = cluster == 'Declining' ? Colors.red[800] : (cluster == 'Top Tier' ? Colors.green[800] : Colors.grey[700]);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         children: [
           Expanded(

@@ -54,25 +54,32 @@ class TeacherService {
     final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
     final activeStudentIds = <String>{};
 
-    for (final deck in content) {
-      final attempts = await _db
-          .collection('attempts')
-          .where('contentId', isEqualTo: deck.id)
-          .get();
+    // Limit to most recent 12 decks for stats calculation to prevent hanging on massive accounts
+    final activeContent = content.take(12).toList();
 
-      for (final a in attempts.docs) {
+    // Parallelize attempt fetching with overall timeout/error handling
+    final snapshots = await Future.wait(activeContent.map((deck) => _db
+        .collection('attempts')
+        .where('contentId', isEqualTo: deck.id)
+        .limit(50) // Don't fetch thousands of attempts for summary stats
+        .get()));
+
+    for (final snap in snapshots) {
+      for (final a in snap.docs) {
         final data = a.data();
         totalAttempts++;
         final sid = data['studentId'] as String? ?? '';
-        studentIds.add(sid);
+        if (sid.isNotEmpty) studentIds.add(sid);
+        
         final score = (data['score'] as num?)?.toDouble();
         if (score != null) {
           totalScore += score;
           scoredAttempts++;
         }
+        
         final ts = (data['attemptedAt'] as Timestamp?)?.toDate();
         if (ts != null && ts.isAfter(sevenDaysAgo)) {
-          activeStudentIds.add(sid);
+          if (sid.isNotEmpty) activeStudentIds.add(sid);
         }
       }
     }
@@ -82,8 +89,7 @@ class TeacherService {
       totalStudyPacks: packs,
       totalStudents: studentIds.length,
       activeStudents: activeStudentIds.length,
-      averageScore:
-          scoredAttempts > 0 ? totalScore / scoredAttempts : 0.0,
+      averageScore: scoredAttempts > 0 ? totalScore / scoredAttempts : 0.0,
       totalAttempts: totalAttempts,
     );
   }
@@ -92,62 +98,72 @@ class TeacherService {
 
   /// Get all unique students with their performance summary across this teacher's content.
   Future<List<StudentLink>> getStudentList(String uid) async {
-    final content = await getTeacherContent(uid);
-    final Map<String, StudentLink> studentMap = {};
+    try {
+      final content = await getTeacherContent(uid);
+      final Map<String, StudentLink> studentMap = {};
 
-    for (final deck in content) {
-      final attempts = await _db
+      // Limit to most recent 20 decks for student list to prevent hanging
+      final activeContent = content.take(20).toList();
+
+      final snapshots = await Future.wait(activeContent.map((deck) => _db
           .collection('attempts')
           .where('contentId', isEqualTo: deck.id)
-          .get();
+          .limit(50)
+          .get()));
 
-      for (final doc in attempts.docs) {
-        final data = doc.data();
-        final sid = data['studentId'] as String? ?? doc.id;
-        final score = (data['score'] as num?)?.toDouble() ?? 0.0;
-        final ts = (data['attemptedAt'] as Timestamp?)?.toDate();
+      for (int i = 0; i < activeContent.length; i++) {
+        final deck = activeContent[i];
+        final snap = snapshots[i];
 
-        if (studentMap.containsKey(sid)) {
-          final existing = studentMap[sid]!;
-          studentMap[sid] = StudentLink(
-            studentId: existing.studentId,
-            studentName: existing.studentName,
-            studentEmail: existing.studentEmail,
-            contentId: existing.contentId,
-            contentTitle: existing.contentTitle,
-            joinedAt: existing.joinedAt,
-            lastActiveAt: ts != null &&
-                    (existing.lastActiveAt == null ||
-                        ts.isAfter(existing.lastActiveAt!))
-                ? ts
-                : existing.lastActiveAt,
-            averageScore: (existing.averageScore * existing.totalAttempts +
-                    score) /
-                (existing.totalAttempts + 1),
-            totalAttempts: existing.totalAttempts + 1,
-            completionRate: existing.completionRate,
-          );
-        } else {
-          studentMap[sid] = StudentLink(
-            studentId: sid,
-            studentName: data['studentName'] ?? 'Anonymous',
-            studentEmail: data['studentEmail'] ?? '',
-            contentId: deck.id,
-            contentTitle: deck.title,
-            joinedAt: ts ?? DateTime.now(),
-            lastActiveAt: ts,
-            averageScore: score,
-            totalAttempts: 1,
-            completionRate: 100.0,
-          );
+        for (final doc in snap.docs) {
+          final data = doc.data();
+          final sid = data['studentId'] as String? ?? doc.id;
+          final score = (data['score'] as num?)?.toDouble() ?? 0.0;
+          final ts = (data['attemptedAt'] as Timestamp?)?.toDate();
+
+          if (studentMap.containsKey(sid)) {
+            final existing = studentMap[sid]!;
+            studentMap[sid] = StudentLink(
+              studentId: existing.studentId,
+              studentName: existing.studentName,
+              studentEmail: existing.studentEmail,
+              contentId: existing.contentId,
+              contentTitle: existing.contentTitle,
+              joinedAt: existing.joinedAt,
+              lastActiveAt: ts != null &&
+                      (existing.lastActiveAt == null ||
+                          ts.isAfter(existing.lastActiveAt!))
+                  ? ts
+                  : existing.lastActiveAt,
+              averageScore: (existing.averageScore * existing.totalAttempts + score) /
+                  (existing.totalAttempts + 1),
+              totalAttempts: existing.totalAttempts + 1,
+              completionRate: existing.completionRate,
+            );
+          } else {
+            studentMap[sid] = StudentLink(
+              studentId: sid,
+              studentName: data['studentName']?.toString() ?? 'Anonymous',
+              studentEmail: data['studentEmail']?.toString() ?? '',
+              contentId: deck.id,
+              contentTitle: deck.title,
+              joinedAt: ts ?? DateTime.now(),
+              lastActiveAt: ts,
+              averageScore: score,
+              totalAttempts: 1,
+              completionRate: 100.0,
+            );
+          }
         }
       }
-    }
 
-    final list = studentMap.values.toList();
-    list.sort((a, b) => (b.lastActiveAt ?? DateTime(0))
-        .compareTo(a.lastActiveAt ?? DateTime(0)));
-    return list;
+      final list = studentMap.values.toList();
+      list.sort((a, b) => (b.lastActiveAt ?? DateTime(0))
+          .compareTo(a.lastActiveAt ?? DateTime(0)));
+      return list;
+    } catch (e) {
+      return []; // Return empty instead of hanging
+    }
   }
 
   /// Manually link a student to a piece of content using its share code.
@@ -261,8 +277,9 @@ class TeacherService {
       ));
     }
 
-    // Recent student attempts across all content
-    for (final deck in content.take(5)) {
+    // Recent student attempts across last 5 items
+    final activeDecks = content.take(5).toList();
+    for (final deck in activeDecks) {
       final attempts = await _db
           .collection('attempts')
           .where('contentId', isEqualTo: deck.id)

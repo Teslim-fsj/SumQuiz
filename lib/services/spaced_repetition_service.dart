@@ -159,7 +159,16 @@ class SpacedRepetitionService {
         .where((item) =>
             item.userId == userId &&
             item.contentType == 'flashcards' &&
-            item.nextReviewDate.isBefore(now))
+            item.nextReviewDate.isBefore(now) || 
+            item.nextReviewDate.isAtSameMomentAs(now))
+        .map((item) => item.contentId)
+        .toList();
+  }
+
+  /// Get all flashcards currently tracked in SRS
+  Future<List<String>> getAllTrackedIds(String userId) async {
+    return _box.values
+        .where((item) => item.userId == userId && item.contentType == 'flashcards')
         .map((item) => item.contentId)
         .toList();
   }

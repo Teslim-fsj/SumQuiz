@@ -103,27 +103,35 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
 
   Future<void> _loadAll() async {
     _uid = Provider.of<AuthService>(context, listen: false).currentUser?.uid;
-    if (_uid == null) return;
+    if (_uid == null) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
     setState(() => _isLoading = true);
 
-    final results = await Future.wait([
-      _svc.getTeacherStats(_uid!),
-      _svc.getTeacherContent(_uid!),
-      _svc.getStudentList(_uid!),
-      _svc.getRecentActivity(_uid!),
-    ]);
+    try {
+      final results = await Future.wait([
+        _svc.getTeacherStats(_uid!),
+        _svc.getTeacherContent(_uid!),
+        _svc.getStudentList(_uid!),
+        _svc.getRecentActivity(_uid!),
+      ]);
 
-    if (!mounted) return;
-    setState(() {
-      _stats = results[0] as TeacherStats;
-      _content = results[1] as List<PublicDeck>;
-      _students = results[2] as List<StudentLink>;
-      _activity = results[3] as List<ActivityItem>;
-      _isLoading = false;
-    });
+      if (!mounted) return;
+      setState(() {
+        _stats = results[0] as TeacherStats;
+        _content = results[1] as List<PublicDeck>;
+        _students = results[2] as List<StudentLink>;
+        _activity = results[3] as List<ActivityItem>;
+      });
 
-    if (_activeModule == _NavModule.analytics) {
-      _loadTrends();
+      if (_activeModule == _NavModule.analytics) {
+        _loadTrends();
+      }
+    } catch (e) {
+      debugPrint('Teacher Dashboard Load Error: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -191,15 +199,39 @@ Format: Use bullet points. Keep it professional and direct. Max 200 words.''';
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final userModel = context.watch<UserModel?>();
     if (userModel != null && !userModel.isPro) return _buildUpgradeView();
 
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _buildModuleContent(),
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_stats == null) {
+      return _buildErrorState();
+    }
+
+    return _buildModuleContent();
+  }
+
+  Widget _buildErrorState() {
+    final theme = Theme.of(context);
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline_rounded, size: 48, color: theme.colorScheme.error),
+          const SizedBox(height: 16),
+          Text(
+            'Failed to load dashboard data',
+            style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: _loadAll,
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -384,63 +416,61 @@ Format: Use bullet points. Keep it professional and direct. Max 200 words.''';
 
   Widget _buildUpgradeView() {
     final theme = Theme.of(context);
-    return Scaffold(
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 600),
-          padding: const EdgeInsets.all(48),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(32),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, 4))],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.school_rounded,
-                    size: 48, color: theme.colorScheme.primary),
+    return Center(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 500),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(32),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, 4))],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
               ),
-              const SizedBox(height: 24),
-              Text('Unlock the Educator Toolkit',
-                  style: GoogleFonts.outfit(
-                      fontSize: 28, fontWeight: FontWeight.w900),
-                  textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              Text(
-                'Get access to the full 5-module teacher dashboard: create exams, track students, view analytics, and AI-powered feedback.',
+              child: Icon(Icons.school_rounded,
+                  size: 32, color: theme.colorScheme.primary),
+            ),
+            const SizedBox(height: 16),
+            Text('Unlock the Educator Toolkit',
                 style: GoogleFonts.outfit(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                    fontSize: 14,
-                    height: 1.6),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 36),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => context.push('/settings/subscription'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.all(20),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
-                  ),
-                  child: const Text('Upgrade to Pro'),
+                    fontSize: 22, fontWeight: FontWeight.w900),
+                textAlign: TextAlign.center),
+            const SizedBox(height: 8),
+            Text(
+              'Get access to the full 5-module teacher dashboard: create exams, track students, view analytics, and AI-powered feedback.',
+              style: GoogleFonts.outfit(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  fontSize: 13,
+                  height: 1.5),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => context.push('/settings/subscription'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.all(16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
                 ),
+                child: const Text('Upgrade to Pro'),
               ),
-              const SizedBox(height: 12),
-              TextButton(
-                  onPressed: () => context.go('/'),
-                  child: const Text('Continue as Student')),
-            ],
-          ),
-        ).animate().fadeIn().scale(),
-      ),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+                onPressed: () => context.go('/'),
+                child: const Text('Continue as Student')),
+          ],
+        ),
+      ).animate().fadeIn().scale(),
     );
   }
 

@@ -27,30 +27,30 @@ class DashboardOverview extends StatelessWidget {
     final name = user?.displayName.split(' ').first ?? 'Educator';
     
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(40),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Hello, Dr. $name',
             style: GoogleFonts.outfit(
-              fontSize: 42,
+              fontSize: 20,
               fontWeight: FontWeight.w900,
               color: const Color(0xFF1F1F1F),
-              letterSpacing: -1,
+              letterSpacing: -0.5,
             ),
           ).animate().fadeIn().slideY(begin: 0.1),
           const SizedBox(height: 8),
           Text(
             'Keep building momentum. Knowledge is flowing.',
             style: GoogleFonts.outfit(
-              fontSize: 18,
+              fontSize: 13,
               color: const Color(0xFF6B7280),
               fontWeight: FontWeight.w400,
             ),
           ).animate().fadeIn().slideY(begin: 0.1, delay: 50.ms),
           
-          const SizedBox(height: 40),
+          const SizedBox(height: 16),
           
           Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -59,13 +59,13 @@ class DashboardOverview extends StatelessWidget {
                 flex: 5,
                 child: _buildEngagementOverview(),
               ),
-              const SizedBox(width: 24),
+              const SizedBox(width: 16),
               Expanded(
                 flex: 2,
                 child: Column(
                   children: [
                     Expanded(child: _buildActiveStudentsCard()),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     Expanded(child: _buildContentRatingCard()),
                   ],
                 ),
@@ -73,18 +73,18 @@ class DashboardOverview extends StatelessWidget {
             ],
           ).animate().fadeIn().slideY(begin: 0.1, delay: 100.ms),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
           
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(flex: 3, child: _buildClassroomCodes()),
-              const SizedBox(width: 24),
+              const SizedBox(width: 16),
               Expanded(flex: 4, child: _buildStudentSentiment()),
             ],
           ).animate().fadeIn().slideY(begin: 0.1, delay: 150.ms),
 
-          const SizedBox(height: 40),
+          const SizedBox(height: 16),
           
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -92,7 +92,7 @@ class DashboardOverview extends StatelessWidget {
               Text(
                 'Active Content Decks',
                 style: GoogleFonts.outfit(
-                  fontSize: 24,
+                  fontSize: 18,
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF1F1F1F),
                 ),
@@ -112,7 +112,7 @@ class DashboardOverview extends StatelessWidget {
 
   Widget _buildEngagementOverview() {
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -127,9 +127,9 @@ class DashboardOverview extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                   Text('Engagement Overview', style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w800)),
+                   Text('Engagement Overview', style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w800)),
                    const SizedBox(height: 4),
-                   Text('Quiz performance trends', style: GoogleFonts.outfit(fontSize: 13, color: Colors.grey[600])),
+                   Text('Quiz performance trends', style: GoogleFonts.outfit(fontSize: 12, color: Colors.grey[600])),
                 ],
               ),
               Container(
@@ -150,7 +150,7 @@ class DashboardOverview extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 16),
           Expanded(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -166,7 +166,7 @@ class DashboardOverview extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           Row(
             children: [
               Container(width: 10, height: 10, decoration: BoxDecoration(color: const Color(0xFFE5E7EB), shape: BoxShape.circle)),
@@ -188,16 +188,16 @@ class DashboardOverview extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         Container(
-          width: 48,
-          height: height1 * 1.5,
+          width: 32,
+          height: height1 * 1.2,
           decoration: BoxDecoration(
             color: const Color(0xFFE5E7EB),
             borderRadius: BorderRadius.circular(8),
           ),
           alignment: Alignment.bottomCenter,
           child: Container(
-            width: 48,
-            height: height2 * 1.5,
+            width: 32,
+            height: height2 * 1.2,
             decoration: BoxDecoration(
               color: WebColors.purplePrimary,
               borderRadius: BorderRadius.circular(8),
@@ -213,7 +213,7 @@ class DashboardOverview extends StatelessWidget {
   Widget _buildActiveStudentsCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: WebColors.purplePrimary,
         borderRadius: BorderRadius.circular(24),
@@ -224,7 +224,7 @@ class DashboardOverview extends StatelessWidget {
         children: [
           Text('ACTIVE STUDENTS', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white70, letterSpacing: 1)),
           const SizedBox(height: 12),
-          Text('${stats?.activeStudents ?? 0}', style: GoogleFonts.outfit(fontSize: 48, fontWeight: FontWeight.w900, color: Colors.white)),
+          Text('${stats?.activeStudents ?? 0}', style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white)),
           const SizedBox(height: 12),
           Text('+${activity.where((e) => e.type == "attempt").length} students joined recently', style: GoogleFonts.outfit(fontSize: 12, color: Colors.white70)),
         ],
@@ -235,7 +235,7 @@ class DashboardOverview extends StatelessWidget {
   Widget _buildContentRatingCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -249,7 +249,7 @@ class DashboardOverview extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              Text(((stats?.averageScore ?? 0) / 20).clamp(0.0, 5.0).toStringAsFixed(1), style: GoogleFonts.outfit(fontSize: 40, fontWeight: FontWeight.w900, color: const Color(0xFF1F1F1F))),
+              Text(((stats?.averageScore ?? 0) / 20).clamp(0.0, 5.0).toStringAsFixed(1), style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w900, color: const Color(0xFF1F1F1F))),
               const SizedBox(width: 12),
               Row(
                 children: List.generate(5, (index) => const Icon(Icons.star, color: WebColors.purplePrimary, size: 20)),
@@ -267,7 +267,7 @@ class DashboardOverview extends StatelessWidget {
     final publicPacks = content.take(2).toList();
     
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -283,7 +283,7 @@ class DashboardOverview extends StatelessWidget {
               const Icon(Icons.qr_code_2, color: WebColors.purplePrimary),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           if (publicPacks.isEmpty)
             Text('No public packs available.', style: TextStyle(color: Colors.grey[500]))
           else
@@ -315,7 +315,7 @@ class DashboardOverview extends StatelessWidget {
 
   Widget _buildStudentSentiment() {
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -337,7 +337,7 @@ class DashboardOverview extends StatelessWidget {
                ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -345,7 +345,7 @@ class DashboardOverview extends StatelessWidget {
                 child: Column(
                   children: [
                     _sentimentProgress('Clarity of Content', 0.94),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
                     _sentimentProgress('Difficulty Balance', 0.82),
                   ],
                 ),
@@ -353,7 +353,7 @@ class DashboardOverview extends StatelessWidget {
               const SizedBox(width: 32),
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(16)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -413,7 +413,7 @@ class DashboardOverview extends StatelessWidget {
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Row(
               children: [
                 Expanded(flex: 3, child: Text('DECK NAME', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[500], letterSpacing: 1))),
@@ -438,7 +438,7 @@ class DashboardOverview extends StatelessWidget {
     final completionRate = a?.engagementRate ?? 0;
     
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Row(
         children: [
           Expanded(

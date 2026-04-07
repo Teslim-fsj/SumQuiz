@@ -66,21 +66,32 @@ class MissionService {
     final dueCardIds = await _srs.getDueFlashcardIds(userId);
     
     List<String> selectedFlashcards = [];
-    int estimatedMinutes = 0;
+    int targetCount = 10;
+    int estimatedMinutes = 6;
     int momentumReward = 100;
 
     if (difficulty <= 1) {
-      selectedFlashcards = dueCardIds.take(5).toList();
+      targetCount = 5;
       estimatedMinutes = 2;
       momentumReward = 50;
     } else if (difficulty >= 5) {
-      selectedFlashcards = dueCardIds.take(20).toList();
+      targetCount = 20;
       estimatedMinutes = 12;
       momentumReward = 150;
-    } else {
-      selectedFlashcards = dueCardIds.take(10).toList();
-      estimatedMinutes = 6;
-      momentumReward = 100;
+    }
+
+    selectedFlashcards = dueCardIds.take(targetCount).toList();
+
+    // FALLBACK: If we don't have enough due cards, pick non-due cards to fill the mission
+    if (selectedFlashcards.length < targetCount) {
+      final allTrackedIds = await _srs.getAllTrackedIds(userId);
+      final nonDueIds = allTrackedIds.where((id) => !selectedFlashcards.contains(id)).toList();
+      
+      // Shuffle non-due cards to provide variety
+      nonDueIds.shuffle();
+      
+      final needed = targetCount - selectedFlashcards.length;
+      selectedFlashcards.addAll(nonDueIds.take(needed));
     }
 
     final mission = DailyMission(

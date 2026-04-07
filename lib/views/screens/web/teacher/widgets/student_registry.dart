@@ -29,7 +29,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
     }).toList();
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(40),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -42,7 +42,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
                 children: [
                   Text('Student Roster', style: GoogleFonts.outfit(fontSize: 42, fontWeight: FontWeight.w900, color: const Color(0xFF1F1F1F), letterSpacing: -1)),
                   const SizedBox(height: 8),
-                  Text('Overview of all active students and their engagement trends.', style: GoogleFonts.outfit(fontSize: 18, color: const Color(0xFF6B7280))),
+                  Text('Overview of all active students and their engagement trends.', style: GoogleFonts.outfit(fontSize: 13, color: const Color(0xFF6B7280))),
                 ],
               ),
               Row(
@@ -70,7 +70,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: WebColors.purplePrimary,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   )
@@ -78,7 +78,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
               )
             ],
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 16),
           _buildTable(filtered),
         ],
       ),
@@ -111,7 +111,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
     if (students.isEmpty) {
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(40),
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: WebColors.border)),
         child: const Center(child: Text('No students found.')),
       );
@@ -135,7 +135,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               color: const Color(0xFFF9FAFB),
               child: Row(
                 children: [
@@ -170,7 +170,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
 
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Row(
         children: [
           Expanded(
@@ -192,7 +192,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(student.studentName, style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF1F1F1F))),
+                    Text(student.studentName, style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF1F1F1F))),
                     if (student.studentEmail.isNotEmpty)
                       Text(student.studentEmail, style: GoogleFonts.outfit(fontSize: 11, color: Colors.grey[500])),
                   ],

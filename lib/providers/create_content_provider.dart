@@ -46,8 +46,11 @@ class CreateContentProvider with ChangeNotifier {
   String _selectedDifficulty = 'intermediate';
   String get selectedDifficulty => _selectedDifficulty;
 
-  int _selectedCount = 15;
-  int get selectedCount => _selectedCount;
+  int _quizCount = 15;
+  int get quizCount => _quizCount;
+
+  int _flashcardCount = 15;
+  int get flashcardCount => _flashcardCount;
 
   List<String> _selectedQuestionTypes = ['Multiple Choice'];
   List<String> get selectedQuestionTypes => _selectedQuestionTypes;
@@ -81,9 +84,10 @@ class CreateContentProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void updateConfig({String? difficulty, int? count, List<String>? questionTypes, StudyArchetype? archetype}) {
+  void updateConfig({String? difficulty, int? quizCount, int? flashcardCount, List<String>? questionTypes, StudyArchetype? archetype}) {
     if (difficulty != null) _selectedDifficulty = difficulty;
-    if (count != null) _selectedCount = count;
+    if (quizCount != null) _quizCount = quizCount;
+    if (flashcardCount != null) _flashcardCount = flashcardCount;
     if (questionTypes != null) _selectedQuestionTypes = questionTypes;
     if (archetype != null) _selectedArchetype = archetype;
     notifyListeners();
@@ -149,7 +153,7 @@ class CreateContentProvider with ChangeNotifier {
               userId: userId,
               localDb: _localDb,
               depth: _selectedDifficulty,
-              cardCount: _selectedCount,
+              cardCount: _flashcardCount,
               questionTypes: _selectedQuestionTypes,
               onProgress: (msg) {
                 _progressMessage = msg;
@@ -216,8 +220,8 @@ class CreateContentProvider with ChangeNotifier {
         userId: userId,
         localDb: _localDb,
         difficulty: _selectedDifficulty,
-        questionCount: _selectedCount,
-        cardCount: _selectedCount,
+        questionCount: _quizCount,
+        cardCount: _flashcardCount,
         questionTypes: _selectedQuestionTypes,
         onProgress: (msg) {
           _progressMessage = msg;

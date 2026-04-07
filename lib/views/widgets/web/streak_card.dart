@@ -14,7 +14,7 @@ class StreakCard extends StatelessWidget {
     final currentDayOfWeek = DateTime.now().weekday; // 1=Mon, 7=Sun
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -33,7 +33,7 @@ class StreakCard extends StatelessWidget {
               letterSpacing: 1.5,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: List.generate(days.length, (index) {
@@ -57,8 +57,8 @@ class StreakCard extends StatelessWidget {
     return Column(
       children: [
         Container(
-          width: 36,
-          height: 36,
+          width: 30,
+          height: 30,
           decoration: BoxDecoration(
             color: isCompleted
                 ? WebColors.purplePrimary

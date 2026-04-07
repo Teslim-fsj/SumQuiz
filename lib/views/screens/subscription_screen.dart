@@ -60,14 +60,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 id: 'sumquiz_pro_monthly',
                 title: 'Monthly Pro',
                 description: 'Standard monthly plan',
-                price: r'US$9.99',
+                price: r'US$7.99',
                 rawPrice: 9.99,
               ),
               _FallbackProductDetails(
                 id: 'sumquiz_pro_yearly',
                 title: 'Annual Pro',
                 description: 'Best value annual plan',
-                price: r'US$59.99',
+                price: r'US$49.99',
                 rawPrice: 59.99,
               ),
             ];
@@ -271,7 +271,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                                 Icons.all_inclusive_rounded,
                                 theme),
                             const SizedBox(height: 16),
-                            if (user != null && !user.isPro && !user.hasUsedTrial)
+                            if (user != null &&
+                                !user.isPro &&
+                                !user.hasUsedTrial)
                               _buildTrialCard(theme),
                             const SizedBox(height: 16),
                             Text(

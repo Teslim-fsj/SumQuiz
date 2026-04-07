@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 class WebExamSetupStep extends StatelessWidget {
   final TextEditingController titleController;
   final TextEditingController subjectController;
+  final TextEditingController schoolNameController;
+  final TextEditingController durationController;
   final String selectedLevel;
   final ValueChanged<String?> onLevelChanged;
   final VoidCallback onPickSourcePdf;
@@ -16,6 +18,8 @@ class WebExamSetupStep extends StatelessWidget {
     super.key,
     required this.titleController,
     required this.subjectController,
+    required this.schoolNameController,
+    required this.durationController,
     required this.selectedLevel,
     required this.onLevelChanged,
     required this.onPickSourcePdf,
@@ -28,14 +32,14 @@ class WebExamSetupStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Step 1: Source & Subject Grounding',
             style: GoogleFonts.outfit(
-              fontSize: 32,
+              fontSize: 20,
               fontWeight: FontWeight.w900,
               color: const Color(0xFF1E293B),
             ),
@@ -44,26 +48,26 @@ class WebExamSetupStep extends StatelessWidget {
           Text(
             'Define the intellectual boundaries of your exam. Upload your course materials and\nestablish the academic context to ensure AI-generated questions align with your curriculum.',
             style: GoogleFonts.outfit(
-              fontSize: 16,
+              fontSize: 13,
               color: const Color(0xFF475569),
               height: 1.5,
             ),
           ),
-          const SizedBox(height: 48),
+          const SizedBox(height: 16),
           Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(child: _buildSourceMaterial(context)),
-              const SizedBox(width: 32),
+              const SizedBox(width: 16),
               Expanded(child: _buildAcademicContext(context)),
             ],
           ),
-          const SizedBox(height: 48),
+          const SizedBox(height: 16),
           Align(
             alignment: Alignment.centerRight,
             child: SizedBox(
-              width: 320,
-              height: 64,
+              width: 240,
+              height: 48,
               child: ElevatedButton(
                 onPressed: hasSource && titleController.text.isNotEmpty && subjectController.text.isNotEmpty ? onNext : null,
                 style: ElevatedButton.styleFrom(
@@ -126,7 +130,7 @@ class WebExamSetupStep extends StatelessWidget {
           )
         ],
       ),
-      padding: const EdgeInsets.all(40),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -138,20 +142,20 @@ class WebExamSetupStep extends StatelessWidget {
                   color: const Color(0xFFEEF2FF),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Icon(Icons.cloud_upload_rounded, color: Color(0xFF4F46E5)),
+                child: const Icon(Icons.cloud_upload_rounded, color: Color(0xFF4F46E5), size: 18),
               ),
               const SizedBox(width: 16),
               Text(
                 'Source Material',
                 style: GoogleFonts.outfit(
-                  fontSize: 22,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFF1E293B),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
           Expanded(
             child: InkWell(
               onTap: onPickSourcePdf,
@@ -177,15 +181,15 @@ class WebExamSetupStep extends StatelessWidget {
                       ),
                       child: Icon(
                         hasSource ? Icons.check_circle_rounded : Icons.upload_file_rounded,
-                        size: 32,
+                        size: 24,
                         color: hasSource ? const Color(0xFF22C55E) : const Color(0xFF4F46E5),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 12),
                     Text(
                       hasSource ? 'Source Material Processed' : 'Syllabus, Textbooks, or PDF',
                       style: GoogleFonts.outfit(
-                        fontSize: 18,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF1E293B),
                       ),
@@ -199,7 +203,7 @@ class WebExamSetupStep extends StatelessWidget {
                         height: 1.5,
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -214,7 +218,7 @@ class WebExamSetupStep extends StatelessWidget {
             ),
           ),
           if (!hasSource) ...[
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
             Center(
               child: TextButton.icon(
                 onPressed: onPickSourceNotes,
@@ -262,7 +266,7 @@ class WebExamSetupStep extends StatelessWidget {
         color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(24),
       ),
-      padding: const EdgeInsets.all(40),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -272,26 +276,34 @@ class WebExamSetupStep extends StatelessWidget {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE2E8F0),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.tune_rounded, color: Color(0xFF1E293B)),
+                child: const Icon(Icons.tune_rounded, color: Color(0xFF1E293B), size: 18),
               ),
               const SizedBox(width: 16),
               Text(
                 'Academic Context',
                 style: GoogleFonts.outfit(
-                  fontSize: 22,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFF1E293B),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 48),
+          const SizedBox(height: 16),
           _buildInputGroup('EXAM TITLE', titleController, 'e.g., Midterm: Cellular Biology'),
-          const SizedBox(height: 32),
-          _buildInputGroup('SUBJECT/DOMAIN', subjectController, 'e.g., Life Sciences', prefixIcon: Icons.school_rounded),
-          const SizedBox(height: 32),
+          const SizedBox(height: 12),
+          _buildInputGroup('SCHOOL / INSTITUTION', schoolNameController, 'e.g., SumQuiz Academy', prefixIcon: Icons.account_balance_rounded),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: _buildInputGroup('SUBJECT/DOMAIN', subjectController, 'e.g., Biology', prefixIcon: Icons.school_rounded)),
+              const SizedBox(width: 12),
+              Expanded(child: _buildInputGroup('DURATION (MINS)', durationController, 'e.g., 60', prefixIcon: Icons.timer_rounded)),
+            ],
+          ),
+          const SizedBox(height: 12),
           Text(
             'ACADEMIC LEVEL',
             style: GoogleFonts.outfit(
@@ -303,7 +315,7 @@ class WebExamSetupStep extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
@@ -384,7 +396,7 @@ class WebExamSetupStep extends StatelessWidget {
           child: TextField(
             controller: controller,
             style: GoogleFonts.outfit(
-              fontSize: 16,
+              fontSize: 14,
               color: const Color(0xFF1E293B),
               fontWeight: FontWeight.w500,
             ),
@@ -398,7 +410,7 @@ class WebExamSetupStep extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
           ),
         ),

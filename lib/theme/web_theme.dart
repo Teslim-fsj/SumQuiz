@@ -161,48 +161,48 @@ class WebTheme {
           letterSpacing: -1.5,
         ),
         displaySmall: TextStyle(
-          fontSize: 40,
-          fontWeight: FontWeight.w700,
-          color: WebColors.textPrimary,
-          letterSpacing: -1.0,
-        ),
-        headlineLarge: TextStyle(
-          fontSize: 32,
+          fontSize: 28,
           fontWeight: FontWeight.w700,
           color: WebColors.textPrimary,
           letterSpacing: -0.5,
         ),
+        headlineLarge: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
+          color: WebColors.textPrimary,
+          letterSpacing: -0.3,
+        ),
         headlineMedium: TextStyle(
-          fontSize: 28,
+          fontSize: 20,
           fontWeight: FontWeight.w600,
           color: WebColors.textPrimary,
         ),
         titleLarge: TextStyle(
-          fontSize: 22,
+          fontSize: 18,
           fontWeight: FontWeight.w700,
           color: WebColors.textPrimary,
-          letterSpacing: -0.2,
+          letterSpacing: -0.1,
         ),
         titleMedium: TextStyle(
-          fontSize: 18,
+          fontSize: 16,
           fontWeight: FontWeight.w600,
           color: WebColors.textPrimary,
         ),
         bodyLarge: TextStyle(
-          fontSize: 18,
+          fontSize: 15,
           color: WebColors.textSecondary,
-          height: 1.65,
+          height: 1.5,
         ),
         bodyMedium: TextStyle(
-          fontSize: 16,
+          fontSize: 14,
           color: WebColors.textSecondary,
-          height: 1.55,
+          height: 1.4,
         ),
         labelLarge: TextStyle(
-          fontSize: 14,
+          fontSize: 12,
           fontWeight: FontWeight.w700,
           color: WebColors.textSecondary,
-          letterSpacing: 1.25,
+          letterSpacing: 1.1,
         ),
       )),
 
@@ -211,7 +211,7 @@ class WebTheme {
           backgroundColor: WebColors.primary,
           foregroundColor: Colors.white,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -223,7 +223,7 @@ class WebTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: WebColors.textPrimary,
           side: const BorderSide(color: WebColors.border, width: 1.5),
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -271,7 +271,7 @@ class WebTheme {
         filled: true,
         fillColor: Colors.white,
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: WebColors.border),

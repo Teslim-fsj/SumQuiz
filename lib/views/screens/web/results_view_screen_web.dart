@@ -133,30 +133,25 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: SafeArea(
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: WebColors.purplePrimary))
-            : _errorMessage != null
-                ? Center(child: _buildErrorState())
-                : Column(
-                    children: [
+    return _isLoading
+        ? const Center(child: CircularProgressIndicator(color: WebColors.purplePrimary))
+        : _errorMessage != null
+            ? Center(child: _buildErrorState())
+            : Column(
+                children: [
                       _buildInlineHeader(),
-                      Expanded(
-                        child: _buildContentArea(),
-                      ),
-                    ],
+                  Expanded(
+                    child: _buildContentArea(),
                   ),
-      ),
-    );
+                ],
+              );
   }
 
   Widget _buildInlineHeader() {
     final title = _summary?.title ?? _quiz?.title ?? _flashcardSet?.title ?? 'Study Pack';
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: WebColors.border.withValues(alpha: 0.5))),
@@ -178,7 +173,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
                 child: Text(
                   title,
                   style: GoogleFonts.outfit(
-                    fontSize: 24,
+                    fontSize: 16,
                     fontWeight: FontWeight.w800,
                     color: WebColors.textPrimary,
                   ),
@@ -188,7 +183,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
               ),
               // AI Badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: WebColors.backgroundAlt,
                   borderRadius: BorderRadius.circular(20),
@@ -218,14 +213,14 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: WebColors.purplePrimary,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Tab pills
           Row(
@@ -249,7 +244,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
       borderRadius: BorderRadius.circular(12),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? WebColors.purplePrimary.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
@@ -277,13 +272,13 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
 
   Widget _buildContentArea() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Main content
           Expanded(
-            flex: 3,
+            flex: 4,
             child: _buildSelectedTabView()
                 .animate(key: ValueKey(_selectedTab))
                 .fadeIn(duration: 400.ms)
@@ -291,11 +286,11 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
           ),
           // AI Insights sidebar (only show if summary exists)
           if (_summary != null) ...[
-            const SizedBox(width: 24),
+            const SizedBox(width: 16),
             SizedBox(
-              width: 300,
+              width: 240,
               child: SingleChildScrollView(
-                padding: const EdgeInsets.only(top: 24),
+                padding: const EdgeInsets.only(top: 16),
                 child: _buildAiInsightsCard(),
               ),
             ),
@@ -308,7 +303,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
   Widget _buildAiInsightsCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF4C3BCF), Color(0xFF6B5CE7)],
@@ -341,7 +336,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             'Key terms extracted for "${_summary?.title ?? "your content"}":',
             style: GoogleFonts.outfit(
@@ -350,7 +345,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
               height: 1.5,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           Wrap(
             spacing: 6,
             runSpacing: 6,

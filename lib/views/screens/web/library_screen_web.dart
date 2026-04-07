@@ -71,11 +71,11 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
     final viewModel = _viewModel;
 
     if (user == null) {
-      return Scaffold(body: _buildLoginPrompt());
+      return _buildLoginPrompt();
     }
 
     if (viewModel == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Center(child: CircularProgressIndicator());
     }
 
     return ChangeNotifierProvider.value(
@@ -84,9 +84,9 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
         builder: (context, viewModel, child) {
           return Stack(
             children: [
-              Scaffold(
-                backgroundColor: const Color(0xFFF8FAFC),
-                body: Column(
+              Container(
+                color: const Color(0xFFF8FAFC),
+                child: Column(
                   children: [
                     WebLibraryHeader(
                       searchController: _searchController,
@@ -101,18 +101,18 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
                     ),
                     Expanded(
                       child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildHeroSection(viewModel),
-                            const SizedBox(height: 32),
+                            const SizedBox(height: 8),
                             _buildCategoryFilters(),
-                            const SizedBox(height: 48),
+                            const SizedBox(height: 12),
                             _buildDynamicContent(user.uid, viewModel),
-                            const SizedBox(height: 80),
+                            const SizedBox(height: 24),
                             const WebFeatureInfoCards(),
-                            const SizedBox(height: 60),
+                            const SizedBox(height: 16),
                           ],
                         ),
                       ),
@@ -185,7 +185,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
       children: [
         // AI Generated badge
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             color: WebColors.purplePrimary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
@@ -200,16 +200,16 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Row(
           children: [
             Text(
               'Content Library',
               style: GoogleFonts.outfit(
-                fontSize: 44,
+                fontSize: 20,
                 fontWeight: FontWeight.w900,
                 color: const Color(0xFF0F172A),
-                letterSpacing: -1,
+                letterSpacing: -0.5,
               ),
             ),
             if (viewModel.isSyncing) ...[
@@ -222,11 +222,11 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
             ],
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Text(
           'Manage and access your AI-generated learning materials. Everything you\'ve researched, synthesized, and mastered in one place.',
           style: GoogleFonts.outfit(
-            fontSize: 18,
+            fontSize: 13,
             color: const Color(0xFF64748B),
             fontWeight: FontWeight.w400,
           ),
@@ -258,7 +258,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
               borderRadius: BorderRadius.circular(20),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: isSelected ? Colors.white : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
@@ -433,9 +433,9 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            crossAxisSpacing: 32,
-            mainAxisSpacing: 32,
-            childAspectRatio: 1.3,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 1.35,
           ),
           itemCount: cards.length,
           itemBuilder: (context, index) {
@@ -458,7 +458,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
           blur: 15,
           opacity: 0.05,
           color: WebColors.surface,
-          borderRadius: 24,
+          borderRadius: 16,
         ).copyWith(
           boxShadow: WebColors.cardShadow,
         ),
@@ -471,7 +471,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
               hoverColor: card.textColor.withValues(alpha: 0.05),
               splashColor: card.textColor.withValues(alpha: 0.1),
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -509,7 +509,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
                     Text(
                       card.title,
                       style: GoogleFonts.outfit(
-                        fontSize: 18,
+                        fontSize: 15,
                         fontWeight: FontWeight.w800,
                         color: WebColors.textPrimary,
                         letterSpacing: -0.5,
@@ -526,9 +526,9 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
                         color: WebColors.textSecondary,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 8),
                     const Divider(height: 1),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         Icon(

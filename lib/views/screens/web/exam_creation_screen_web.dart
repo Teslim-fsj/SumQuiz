@@ -56,6 +56,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   bool _isProcessingSource = false;
   bool _isGeneratingQuestions = false;
   String _processingMessage = '';
+  bool _showPreview = false;
   CancellationToken? _cancelToken;
 
   List<LocalQuizQuestion> _generatedQuestions = [];
@@ -262,7 +263,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
       setState(() {
         _generatedQuestions = quiz.questions;
         _isGeneratingQuestions = false;
-        // _showPreview = true; // This variable is not defined in the provided code.
+        _showPreview = true;
       });
     } catch (e) {
       setState(() => _isGeneratingQuestions = false);
@@ -632,268 +633,160 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
       return _buildUpgradeScreen();
     }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9), // Light grayish-blue background
-      body: Stack(
+    return Container(
+      color: const Color(0xFFF1F5F9), 
+      child: Stack(
         children: [
-          Row(
+          _isProcessingSource ? _buildOverlayLoading() : const SizedBox.shrink(),
+          Column(
             children: [
-              // Left Sidebar (ExamArchitect)
-              _buildSidebar(),
-              
-              // Main Content Area
+              _buildModernStepIndicator(),
               Expanded(
-                child: Column(
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(),
                   children: [
-                    _buildTopNav(),
-                    Expanded(
-                      child: PageView(
-                        controller: _pageController,
-                        physics: const NeverScrollableScrollPhysics(),
-                        children: [
-                          // STEP 1: SETUP
-                          WebExamSetupStep(
-                            titleController: _titleController,
-                            subjectController: _subjectController,
-                            selectedLevel: _selectedLevel,
-                            onLevelChanged: (v) => setState(() => _selectedLevel = v ?? _selectedLevel),
-                            onPickSourcePdf: () => _pickSource('PDF'),
-                            onPickSourceNotes: () => _pickSource('Notes'),
-                            onNext: _nextStep,
-                            hasSource: _sourceMaterial.isNotEmpty,
-                            uploadStatusMessage: _processedFileNames.isNotEmpty ? 'Processed: ${_processedFileNames.join(", ")}' : 'Material Ready',
-                          ),
-                          // STEP 2: CONFIGURATION
-                          WebExamConfigStep(
-                            numberOfQuestions: _numberOfQuestions,
-                            onQuestionsChanged: (v) => setState(() => _numberOfQuestions = v.round()),
-                            easyCount: (_numberOfQuestions * (1.0 - _difficultyValue) * 0.7).floor(),
-                            mediumCount: (_numberOfQuestions * _difficultyValue).round(),
-                            hardCount: (_numberOfQuestions * (1.0 - _difficultyValue) * 0.3).ceil(),
-                            onEasyChanged: (v) {}, // Mocked for UI, ideally update a complex state
-                            onHardChanged: (v) {},
-                            includeMultipleChoice: _includeMultipleChoice,
-                            includeTrueFalse: _includeTrueFalse,
-                            includeTheory: _includeTheory,
-                            includeFillInBlank: _includeShortAnswer,
-                            onTypeToggled: (type, val) {
-                              setState(() {
-                                if (type == 'mcq') _includeMultipleChoice = val;
-                                if (type == 'tf') _includeTrueFalse = val;
-                                if (type == 'theory') _includeTheory = val;
-                                if (type == 'fib') _includeShortAnswer = val;
-                              });
-                            },
-                            evenTopicCoverage: _evenTopicCoverage,
-                            focusWeakAreas: _focusWeakAreas,
-                            onRuleToggled: (rule, val) {
-                              setState(() {
-                                if (rule == 'even') _evenTopicCoverage = val;
-                                if (rule == 'weak') _focusWeakAreas = val;
-                              });
-                            },
-                            onFinalize: () {
-                              _generateQuestions();
-                              _nextStep();
-                            },
-                            isGenerating: _isGeneratingQuestions,
-                          ),
-                          // STEP 3: REVIEW
-                          WebExamReviewStep(
-                            questions: _generatedQuestions,
-                            onRegenerate: (index) {
-                              // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Regenerate specific AI feature coming soon.')));
-                              setState(() {
-                                _generatedQuestions.removeAt(index);
-                              });
-                            },
-                            onSaveLibrary: () {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved to Library.')));
-                              context.go('/library');
-                            },
-                            onPdfExport: _exportExam,
-                            onPublish: () {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Publishing to Class...')));
-                            },
-                            easyCount: _generatedQuestions.where((q) => q.question.length < 50).length, // Fake mockup stats
-                            mediumCount: _generatedQuestions.where((q) => q.question.length >= 50 && q.question.length < 100).length,
-                            hardCount: _generatedQuestions.where((q) => q.question.length >= 100).length,
-                            topicCounts: {'Metabolism': 8, 'Cell Structures': 12, 'Genetics': 5},
-                          ),
-                        ],
-                      ),
+                    // STEP 1: SETUP
+                    WebExamSetupStep(
+                      titleController: _titleController,
+                      subjectController: _subjectController,
+                      schoolNameController: _schoolNameController,
+                      durationController: _durationController,
+                      selectedLevel: _selectedLevel,
+                      onLevelChanged: (v) => setState(() => _selectedLevel = v ?? _selectedLevel),
+                      onPickSourcePdf: () => _pickSource('PDF'),
+                      onPickSourceNotes: () => _pickSource('Notes'),
+                      onNext: _nextStep,
+                      hasSource: _sourceMaterial.isNotEmpty,
+                      uploadStatusMessage: _processedFileNames.isNotEmpty ? 'Processed: ${_processedFileNames.join(", ")}' : 'Material Ready',
                     ),
-                    _buildStepIndicators(),
+                    // STEP 2: CONFIGURATION
+                    WebExamConfigStep(
+                      numberOfQuestions: _numberOfQuestions,
+                      onQuestionsChanged: (v) => setState(() => _numberOfQuestions = v.round()),
+                      easyCount: (_numberOfQuestions * (1.0 - _difficultyValue) * 0.7).floor(),
+                      mediumCount: (_numberOfQuestions * _difficultyValue).round(),
+                      hardCount: (_numberOfQuestions * (1.0 - _difficultyValue) * 0.3).ceil(),
+                      onEasyChanged: (v) {}, // Mocked for UI, ideally update a complex state
+                      onHardChanged: (v) {},
+                      includeMultipleChoice: _includeMultipleChoice,
+                      includeTrueFalse: _includeTrueFalse,
+                      includeTheory: _includeTheory,
+                      includeFillInBlank: _includeShortAnswer,
+                      onTypeToggled: (type, val) {
+                        setState(() {
+                          if (type == 'mcq') _includeMultipleChoice = val;
+                          if (type == 'tf') _includeTrueFalse = val;
+                          if (type == 'theory') _includeTheory = val;
+                          if (type == 'fib') _includeShortAnswer = val;
+                        });
+                      },
+                      evenTopicCoverage: _evenTopicCoverage,
+                      focusWeakAreas: _focusWeakAreas,
+                      onRuleToggled: (rule, val) {
+                        setState(() {
+                          if (rule == 'even') _evenTopicCoverage = val;
+                          if (rule == 'weak') _focusWeakAreas = val;
+                        });
+                      },
+                      onFinalize: () {
+                        _generateQuestions();
+                        _nextStep();
+                      },
+                      isGenerating: _isGeneratingQuestions,
+                    ),
+                    // STEP 3: REVIEW
+                    WebExamReviewStep(
+                      questions: _generatedQuestions,
+                      onRegenerate: (index) {
+                        // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Regenerate specific AI feature coming soon.')));
+                        setState(() {
+                          _generatedQuestions.removeAt(index);
+                        });
+                      },
+                      onSaveLibrary: () {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved to Library.')));
+                        context.go('/library');
+                      },
+                      onPdfExport: _exportExam,
+                      onPublish: () {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Publishing to Class...')));
+                      },
+                      easyCount: _generatedQuestions.where((q) => q.question.length < 50).length, // Fake mockup stats
+                      mediumCount: _generatedQuestions.where((q) => q.question.length >= 50 && q.question.length < 100).length,
+                      hardCount: _generatedQuestions.where((q) => q.question.length >= 100).length,
+                      topicCounts: const {'Metabolism': 8, 'Cell Structures': 12, 'Genetics': 5},
+                    ),
                   ],
                 ),
               ),
             ],
           ),
-          if (_isProcessingSource) _buildOverlayLoading(),
         ],
       ),
     );
   }
 
-  Widget _buildSidebar() {
+  Widget _buildModernStepIndicator() {
     return Container(
-      width: 280,
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'ExamActor',
-                style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w900, color: const Color(0xFF4F46E5)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Academic Session 2024',
-            style: GoogleFonts.outfit(fontSize: 12, color: const Color(0xFF94A3B8)),
-          ),
-          const SizedBox(height: 48),
-          
-          _sidebarItem(Icons.settings_rounded, 'STEP 1: SETUP', _currentStep == 0),
-          _sidebarItem(Icons.upload_file_rounded, 'STEP 2: CONFIG', _currentStep == 1),
-          _sidebarItem(Icons.rule_rounded, 'STEP 3: REVIEW', _currentStep == 2),
-          
-          const SizedBox(height: 48),
-          Text('ASSETS', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: const Color(0xFF94A3B8))),
-          const SizedBox(height: 16),
-          _sidebarItem(Icons.text_snippet_rounded, 'TEMPLATES', false, true),
-          _sidebarItem(Icons.tune_rounded, 'SETTINGS', false, true),
-          
-          const Spacer(),
-          if (_currentStep == 2)
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4F46E5),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text('Finalize Draft', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _sidebarItem(IconData icon, String label, bool isActive, [bool isDimmed = false]) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      height: 64,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF4F46E5) : Colors.transparent,
-        borderRadius: BorderRadius.circular(24), // Pill shape 
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Colors.grey.withOpacity(0.1))),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: isActive ? Colors.white : (isDimmed ? const Color(0xFF64748B) : const Color(0xFF1E293B))),
+          IconButton(
+            icon: const Icon(Icons.close, size: 20),
+            onPressed: () => context.go('/library'),
+          ),
           const SizedBox(width: 16),
-          Text(
-            label,
-            style: GoogleFonts.outfit(
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-              letterSpacing: 1,
-              color: isActive ? Colors.white : (isDimmed ? const Color(0xFF64748B) : const Color(0xFF1E293B)),
+          Text('Formal Exam Architect', style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w900, color: const Color(0xFF4F46E5))),
+          const Spacer(),
+          _stepBubble(0, 'Setup', Icons.settings),
+          _stepLine(),
+          _stepBubble(1, 'Config', Icons.tune),
+          _stepLine(),
+          _stepBubble(2, 'Review', Icons.remove_red_eye),
+          const Spacer(),
+          if (_currentStep < 2) 
+            TextButton(
+              onPressed: _nextStep, 
+              child: Text(_currentStep == 0 ? 'Review Source' : 'Generate Paper', style: const TextStyle(fontWeight: FontWeight.bold))
             ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildTopNav() {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 24),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text('Dashboard', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF94A3B8), fontSize: 16)),
-              const SizedBox(width: 32),
-              Column(
-                children: [
-                  Text('Exams', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF4F46E5), fontSize: 16)),
-                  const SizedBox(height: 8),
-                  Container(height: 3, width: 40, color: const Color(0xFF4F46E5)),
-                ],
-              ),
-              const SizedBox(width: 32),
-              Text('Question Bank', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF94A3B8), fontSize: 16)),
-              const SizedBox(width: 32),
-              Text('Analytics', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF94A3B8), fontSize: 16)),
-            ],
-          ),
-          Row(
-            children: [
-              const Icon(Icons.notifications_none_rounded, color: Color(0xFF475569)),
-              const SizedBox(width: 24),
-              const Icon(Icons.help_outline_rounded, color: Color(0xFF475569)),
-              const SizedBox(width: 24),
-              const CircleAvatar(
-                radius: 16,
-                backgroundColor: Color(0xFF1E293B),
-                child: Icon(Icons.person, color: Colors.white, size: 20),
-              ),
-            ],
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStepIndicators() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 32),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          _bottomIndicator('01', 'SETUP', _currentStep >= 0),
-          const SizedBox(width: 48),
-          _bottomIndicator('02', 'QUESTIONS', _currentStep >= 1),
-          const SizedBox(width: 48),
-          _bottomIndicator('03', 'FINALIZE', _currentStep >= 2),
-        ],
-      ),
-    );
-  }
-
-  Widget _bottomIndicator(String numStr, String label, bool isActive) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _stepBubble(int index, String label, IconData icon) {
+    bool isCompleted = _currentStep > index;
+    bool isActive = _currentStep == index;
+    
+    return Row(
       children: [
-        Text(
-          numStr,
-          style: GoogleFonts.outfit(
-            fontSize: 32,
-            fontWeight: FontWeight.w900,
-            color: isActive ? const Color(0xFFE2E8F0) : const Color(0xFFF1F5F9), // Light color for numbers
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isCompleted ? Colors.green : (isActive ? const Color(0xFF4F46E5) : Colors.grey[200]),
           ),
+          child: Icon(isCompleted ? Icons.check : icon, size: 14, color: isCompleted || isActive ? Colors.white : Colors.grey[500]),
         ),
-        Text(
-          label,
-          style: GoogleFonts.outfit(
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 2,
-            color: isActive ? const Color(0xFF4F46E5) : const Color(0xFFCBD5E1),
-          ),
-        ),
+        const SizedBox(width: 8),
+        Text(label, style: GoogleFonts.outfit(fontSize: 12, fontWeight: isActive ? FontWeight.bold : FontWeight.normal, color: isActive ? Colors.black : Colors.grey[500])),
       ],
+    );
+  }
+
+  Widget _stepLine() {
+    return Container(
+      width: 40,
+      height: 2,
+      margin: const EdgeInsets.symmetric(horizontal: 12),
+      color: Colors.grey[200],
     );
   }
 

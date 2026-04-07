@@ -19,7 +19,7 @@ class DailyGoalCard extends StatelessWidget {
         goalMinutes > 0 ? (timeSpentMinutes / goalMinutes).clamp(0.0, 1.0) : 0.0;
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -29,26 +29,26 @@ class DailyGoalCard extends StatelessWidget {
       child: Row(
         children: [
           SizedBox(
-            width: 90,
-            height: 90,
+            width: 70,
+            height: 70,
             child: Stack(
               alignment: Alignment.center,
               children: [
                 SizedBox(
-                  width: 90,
-                  height: 90,
+                  width: 70,
+                  height: 70,
                   child: CircularProgressIndicator(
                     value: 1.0,
-                    strokeWidth: 8,
+                    strokeWidth: 6,
                     color: WebColors.purpleUltraLight,
                   ),
                 ),
                 SizedBox(
-                  width: 90,
-                  height: 90,
+                  width: 70,
+                  height: 70,
                   child: CircularProgressIndicator(
                     value: progress,
-                    strokeWidth: 8,
+                    strokeWidth: 6,
                     color: WebColors.purplePrimary,
                     strokeCap: StrokeCap.round,
                   ),
@@ -59,7 +59,7 @@ class DailyGoalCard extends StatelessWidget {
                     Text(
                       '$timeSpentMinutes',
                       style: GoogleFonts.outfit(
-                        fontSize: 24,
+                        fontSize: 20,
                         fontWeight: FontWeight.w800,
                         color: WebColors.textPrimary,
                         height: 1.0,
@@ -79,7 +79,7 @@ class DailyGoalCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,7 +87,7 @@ class DailyGoalCard extends StatelessWidget {
                 Text(
                   'Study Goal',
                   style: GoogleFonts.outfit(
-                    fontSize: 18,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: WebColors.textPrimary,
                   ),

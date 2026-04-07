@@ -34,7 +34,7 @@ class _ExamStatsCardState extends State<ExamStatsCard> {
         curve: Curves.easeOut,
         transform: Matrix4.identity()..translate(0.0, _isHovered ? -8.0 : 0.0),
         child: Container(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             gradient: widget.gradient,
             borderRadius: BorderRadius.circular(20),
@@ -59,14 +59,14 @@ class _ExamStatsCardState extends State<ExamStatsCard> {
                 child: Icon(
                   widget.icon,
                   color: Colors.white,
-                  size: 28,
+                  size: 20,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
               Text(
                 widget.value,
                 style: const TextStyle(
-                  fontSize: 36,
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                   height: 1.2,

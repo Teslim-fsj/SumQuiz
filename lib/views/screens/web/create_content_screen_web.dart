@@ -33,17 +33,14 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
     final provider = Provider.of<CreateContentProvider>(context);
     final user = Provider.of<UserModel?>(context);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFBFBFF),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1280),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 500),
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeInCubic,
-            child: _buildPhaseContent(context, provider, user),
-          ),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1280),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 500),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          child: _buildPhaseContent(context, provider, user),
         ),
       ),
     );

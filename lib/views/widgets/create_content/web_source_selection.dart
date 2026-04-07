@@ -23,14 +23,14 @@ class WebSourceSelection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       child: Column(
         children: [
           const SizedBox(height: 20),
           Text(
             'Choose Your Knowledge Source',
             style: GoogleFonts.outfit(
-              fontSize: 44,
+              fontSize: 28,
               fontWeight: FontWeight.w800,
               color: const Color(0xFF1A1A1A),
               height: 1.1,
@@ -41,13 +41,13 @@ class WebSourceSelection extends StatelessWidget {
             'Transform any information into mastery. Select your material to begin\nthe generation process.',
             textAlign: TextAlign.center,
             style: GoogleFonts.outfit(
-              fontSize: 18,
+              fontSize: 15,
               fontWeight: FontWeight.w400,
               color: const Color(0xFF666666),
               height: 1.5,
             ),
           ).animate().fadeIn(delay: 200.ms),
-          const SizedBox(height: 60),
+          const SizedBox(height: 32),
 
           // Top row: 3 cards
           Row(
@@ -63,7 +63,7 @@ class WebSourceSelection extends StatelessWidget {
                   onPressed: onUploadFiles,
                 ),
               ),
-              const SizedBox(width: 24),
+              const SizedBox(width: 16),
               Expanded(
                 child: _SourceCard(
                   title: 'Text / Quick Topic',
@@ -74,7 +74,7 @@ class WebSourceSelection extends StatelessWidget {
                   onPressed: onWriteNow,
                 ),
               ),
-              const SizedBox(width: 24),
+              const SizedBox(width: 16),
               Expanded(
                 child: _SourceCard(
                   title: 'YouTube / Web Link',
@@ -89,7 +89,7 @@ class WebSourceSelection extends StatelessWidget {
             ],
           ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.05, end: 0),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
           // Bottom row: 2 cards
           Row(
@@ -105,7 +105,7 @@ class WebSourceSelection extends StatelessWidget {
                   onPressed: onScanPage,
                 ),
               ),
-              const SizedBox(width: 24),
+              const SizedBox(width: 16),
               Expanded(
                 child: _SourceCard(
                   title: 'Audio',
@@ -116,7 +116,7 @@ class WebSourceSelection extends StatelessWidget {
                   onPressed: onListenAndLearn,
                 ),
               ),
-              const SizedBox(width: 24),
+              const SizedBox(width: 16),
               // Invisible spacer to maintain grid alignment
               const Expanded(child: SizedBox()),
             ],
@@ -206,10 +206,10 @@ class _SourceCardState extends State<_SourceCard> {
         onTap: widget.onPressed,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.all(28),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: _isHovered ? widget.accentColor.withValues(alpha: 0.3) : const Color(0xFFE8ECF4),
             ),
@@ -218,8 +218,8 @@ class _SourceCardState extends State<_SourceCard> {
                 color: _isHovered
                     ? widget.accentColor.withValues(alpha: 0.08)
                     : Colors.black.withValues(alpha: 0.03),
-                blurRadius: _isHovered ? 30 : 20,
-                offset: Offset(0, _isHovered ? 12 : 8),
+                blurRadius: _isHovered ? 24 : 16,
+                offset: Offset(0, _isHovered ? 8 : 4),
               ),
             ],
           ),
@@ -227,19 +227,19 @@ class _SourceCardState extends State<_SourceCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 56,
-                height: 56,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: widget.accentColor.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(widget.icon, color: widget.accentColor, size: 28),
+                child: Icon(widget.icon, color: widget.accentColor, size: 22),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               Text(
                 widget.title,
                 style: GoogleFonts.outfit(
-                  fontSize: 22,
+                  fontSize: 18,
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF1A1A1A),
                 ),
@@ -248,8 +248,8 @@ class _SourceCardState extends State<_SourceCard> {
               Text(
                 widget.description,
                 style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  height: 1.5,
+                  fontSize: 13,
+                  height: 1.4,
                   fontWeight: FontWeight.w400,
                   color: const Color(0xFF666666),
                 ),
@@ -257,7 +257,7 @@ class _SourceCardState extends State<_SourceCard> {
               if (widget.showVideoPreview) ...[
                 const SizedBox(height: 20),
                 Container(
-                  height: 100,
+                  height: 80,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: const Color(0xFF0F0720),
@@ -276,7 +276,7 @@ class _SourceCardState extends State<_SourceCard> {
                   ),
                 ),
               ],
-              const SizedBox(height: 20),
+          const SizedBox(height: 16),
               TextButton(
                 onPressed: widget.onPressed,
                 style: TextButton.styleFrom(

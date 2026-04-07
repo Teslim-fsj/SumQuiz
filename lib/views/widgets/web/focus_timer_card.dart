@@ -139,7 +139,7 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -154,7 +154,7 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
               Text(
                 'FOCUS TIMER',
                 style: GoogleFonts.outfit(
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.w800,
                   color: WebColors.textSecondary,
                   letterSpacing: 1.5,
@@ -163,31 +163,31 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
               InkWell(
                 onTap: _showSettings,
                 child: const Icon(Icons.settings_rounded,
-                    size: 20, color: WebColors.textSecondary),
+                    size: 18, color: WebColors.textSecondary),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           Text(
             '$_minutesStr:$_secondsStr',
             style: GoogleFonts.outfit(
-              fontSize: 48,
+              fontSize: 36,
               fontWeight: FontWeight.w800,
               color: WebColors.textPrimary,
               height: 1.0,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Text(
             'POMODORO PHASE',
             style: GoogleFonts.outfit(
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: FontWeight.w700,
               color: WebColors.purplePrimary,
               letterSpacing: 1.5,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
@@ -196,7 +196,7 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: WebColors.purplePrimary,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -205,7 +205,7 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
                   child: Text(
                     _isRunning ? 'Pause' : 'Start',
                     style: GoogleFonts.outfit(
-                        fontWeight: FontWeight.w700, fontSize: 15),
+                        fontWeight: FontWeight.w700, fontSize: 13),
                   ),
                 ),
               ),
@@ -215,7 +215,7 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
                   onPressed: _resetTimer,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: WebColors.textPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
                     side: const BorderSide(color: WebColors.border),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -224,7 +224,7 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
                   child: Text(
                     'Reset',
                     style: GoogleFonts.outfit(
-                        fontWeight: FontWeight.w700, fontSize: 15),
+                        fontWeight: FontWeight.w700, fontSize: 13),
                   ),
                 ),
               ),

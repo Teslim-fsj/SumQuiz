@@ -1,3 +1,4 @@
+// Screen goal: User should be able to answer a question in under 3 seconds without scrolling. Question and all options must fit on one screen.
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -159,7 +160,7 @@ class _WebQuizViewState extends State<WebQuizView> {
     final progress = (_currentIndex + 1) / widget.questions.length;
 
     return Padding(
-      padding: const EdgeInsets.all(48),
+      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -180,11 +181,11 @@ class _WebQuizViewState extends State<WebQuizView> {
                         letterSpacing: 1.5,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     Text(
                       widget.title,
                       style: GoogleFonts.outfit(
-                        fontSize: 40,
+                        fontSize: 28,
                         fontWeight: FontWeight.w800,
                         color: WebColors.textPrimary,
                         height: 1.1,
@@ -204,13 +205,13 @@ class _WebQuizViewState extends State<WebQuizView> {
             ],
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
 
           // Progress Bar
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Container(
-              height: 10,
+              height: 6,
               width: double.infinity,
               color: WebColors.border.withValues(alpha: 0.5),
               child: FractionallySizedBox(
@@ -227,12 +228,12 @@ class _WebQuizViewState extends State<WebQuizView> {
             ),
           ),
 
-          const SizedBox(height: 48),
+          const SizedBox(height: 20),
 
           // Question Card
           _buildQuestionCard(currentQuestion.question),
 
-          const SizedBox(height: 48),
+          const SizedBox(height: 20),
 
           // Question Content
           if (_isEssay) ...[
@@ -262,7 +263,7 @@ class _WebQuizViewState extends State<WebQuizView> {
             ),
           ],
 
-          const SizedBox(height: 48),
+          const SizedBox(height: 20),
 
           // Action Buttons
           Row(
@@ -281,7 +282,7 @@ class _WebQuizViewState extends State<WebQuizView> {
               ),
               const SizedBox(width: 24),
               Container(
-                height: 56,
+                height: 48,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFF0F172A), Color(0xFF1E3A8A)],
@@ -312,7 +313,7 @@ class _WebQuizViewState extends State<WebQuizView> {
             ],
           ),
 
-          const SizedBox(height: 64),
+          const SizedBox(height: 32),
 
           // Refresher Card
           _buildRefresherCard(),
@@ -337,12 +338,12 @@ class _WebQuizViewState extends State<WebQuizView> {
         controller: _essayController,
         maxLines: 8,
         enabled: !_isAnswered && !_isVerifying,
-        style: GoogleFonts.outfit(fontSize: 18, color: WebColors.textPrimary, height: 1.6),
+        style: GoogleFonts.outfit(fontSize: 15, color: WebColors.textPrimary, height: 1.5),
         decoration: InputDecoration(
           hintText: 'Type your detailed answer here...',
           hintStyle: GoogleFonts.outfit(color: WebColors.textTertiary),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.all(24),
+          contentPadding: const EdgeInsets.all(16),
         ),
         onChanged: (_) => setState(() {}),
       ),
@@ -357,7 +358,7 @@ class _WebQuizViewState extends State<WebQuizView> {
     final Color accentColor = isCorrect ? Colors.green : Colors.orange;
 
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: accentColor.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(20),
@@ -368,11 +369,11 @@ class _WebQuizViewState extends State<WebQuizView> {
         children: [
           Row(
             children: [
-              Icon(isCorrect ? Icons.check_circle_rounded : Icons.info_rounded, color: accentColor, size: 28),
-              const SizedBox(width: 16),
+              Icon(isCorrect ? Icons.check_circle_rounded : Icons.info_rounded, color: accentColor, size: 24),
+              const SizedBox(width: 12),
               Text(
                 'AI Score: $score%',
-                style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w800, color: accentColor),
+                style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w800, color: accentColor),
               ),
               const Spacer(),
               Container(
@@ -388,10 +389,10 @@ class _WebQuizViewState extends State<WebQuizView> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           Text(
             feedback,
-            style: GoogleFonts.outfit(fontSize: 16, color: WebColors.textPrimary, height: 1.6),
+            style: GoogleFonts.outfit(fontSize: 14, color: WebColors.textPrimary, height: 1.5),
           ),
         ],
       ),
@@ -400,7 +401,7 @@ class _WebQuizViewState extends State<WebQuizView> {
 
   Widget _buildReferenceAnswerCard(ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: WebColors.backgroundAlt.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(20),
@@ -419,10 +420,10 @@ class _WebQuizViewState extends State<WebQuizView> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             _currentQuestion.correctAnswer,
-            style: GoogleFonts.outfit(fontSize: 16, color: WebColors.textSecondary, height: 1.6),
+            style: GoogleFonts.outfit(fontSize: 14, color: WebColors.textSecondary, height: 1.5),
           ),
         ],
       ),
@@ -439,7 +440,7 @@ class _WebQuizViewState extends State<WebQuizView> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(48),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -482,7 +483,7 @@ class _WebQuizViewState extends State<WebQuizView> {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Text(
                 insight,
                 style: GoogleFonts.outfit(
@@ -490,16 +491,17 @@ class _WebQuizViewState extends State<WebQuizView> {
                   fontWeight: FontWeight.w600,
                   color: WebColors.primary.withValues(alpha: 0.7),
                   fontStyle: FontStyle.italic,
+                  height: 1.4,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               Text(
                 question,
                 style: GoogleFonts.outfit(
-                  fontSize: 32,
+                  fontSize: 20,
                   fontWeight: FontWeight.w700,
                   color: WebColors.textPrimary,
-                  height: 1.3,
+                  height: 1.2,
                 ),
               ),
             ],
@@ -536,7 +538,7 @@ class _WebQuizViewState extends State<WebQuizView> {
       onTap: () => _onOptionSelected(index),
       child: AnimatedContainer(
         duration: 200.ms,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFF5F3FF).withValues(alpha: 0.5) : Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -549,8 +551,8 @@ class _WebQuizViewState extends State<WebQuizView> {
         child: Row(
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
                 color: letterBg,
                 borderRadius: BorderRadius.circular(8),
@@ -559,18 +561,18 @@ class _WebQuizViewState extends State<WebQuizView> {
               child: Text(
                 letter,
                 style: GoogleFonts.outfit(
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w800,
                   color: letterColor,
                 ),
               ),
             ),
-            const SizedBox(width: 20),
+            const SizedBox(width: 16),
             Expanded(
               child: Text(
                 text,
                 style: GoogleFonts.outfit(
-                  fontSize: 18,
+                  fontSize: 15,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   color: WebColors.textPrimary,
                 ),
@@ -584,7 +586,7 @@ class _WebQuizViewState extends State<WebQuizView> {
 
   Widget _buildRefresherCard() {
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: WebColors.backgroundAlt.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(24),
@@ -592,8 +594,8 @@ class _WebQuizViewState extends State<WebQuizView> {
       child: Row(
         children: [
           Container(
-            width: 200,
-            height: 120,
+            width: 160,
+            height: 100,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               image: const DecorationImage(
@@ -602,10 +604,10 @@ class _WebQuizViewState extends State<WebQuizView> {
               ),
             ),
             child: const Center(
-              child: Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 48),
+              child: Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 40),
             ),
           ),
-          const SizedBox(width: 32),
+          const SizedBox(width: 24),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -613,12 +615,12 @@ class _WebQuizViewState extends State<WebQuizView> {
                 Text(
                   'Need a refresher?',
                   style: GoogleFonts.outfit(
-                    fontSize: 22,
+                    fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: WebColors.primary,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 Text(
                   'The Golgi apparatus acts like a cellular post office, processing molecules and sending them to their final destination.',
                   style: GoogleFonts.outfit(

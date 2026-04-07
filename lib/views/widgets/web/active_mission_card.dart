@@ -25,7 +25,7 @@ class ActiveMissionCard extends StatelessWidget {
     final double progress = total > 0 ? done / total : 0.0;
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -66,11 +66,11 @@ class ActiveMissionCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           Text(
             'Daily Challenge',
             style: GoogleFonts.outfit(
-              fontSize: 20,
+              fontSize: 16,
               fontWeight: FontWeight.w700,
               color: WebColors.textPrimary,
             ),
@@ -84,7 +84,7 @@ class ActiveMissionCard extends StatelessWidget {
               height: 1.4,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -116,7 +116,7 @@ class ActiveMissionCard extends StatelessWidget {
               minHeight: 8,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
@@ -148,7 +148,7 @@ class ActiveMissionCard extends StatelessWidget {
 
   Widget _buildEmptyState() {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),

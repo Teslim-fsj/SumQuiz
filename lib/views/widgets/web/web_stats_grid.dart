@@ -79,8 +79,8 @@ class WebStatsGrid extends StatelessWidget {
   }) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(24),
-        height: 180,
+        padding: const EdgeInsets.all(16),
+        height: 140,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
@@ -118,10 +118,10 @@ class WebStatsGrid extends StatelessWidget {
                 Text(
                   value,
                   style: GoogleFonts.outfit(
-                    fontSize: 40,
+                    fontSize: 28,
                     fontWeight: FontWeight.w800,
                     color: const Color(0xFF0F172A),
-                    letterSpacing: -1,
+                    letterSpacing: -0.5,
                   ),
                 ),
                 if (unit.isNotEmpty) ...[
@@ -137,7 +137,7 @@ class WebStatsGrid extends StatelessWidget {
                 ],
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             if (badge != null)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

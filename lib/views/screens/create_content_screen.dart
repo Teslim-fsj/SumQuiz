@@ -390,10 +390,10 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
           const SizedBox(height: 32),
           ConfigSelector(
             selectedDifficulty: provider.selectedDifficulty,
-            selectedCount: provider.selectedCount,
+            selectedCount: provider.quizCount,
             selectedQuestionTypes: provider.selectedQuestionTypes,
             onDifficultyChanged: (v) => provider.updateConfig(difficulty: v),
-            onCountChanged: (v) => provider.updateConfig(count: v),
+            onCountChanged: (v) => provider.updateConfig(quizCount: v, flashcardCount: v),
             onToggleType: (v) => provider.toggleQuestionType(v),
           ),
           const SizedBox(height: 48),

@@ -43,17 +43,17 @@ class _ContentManagerState extends State<ContentManager> {
     final displayedItems = _showExams ? exams : packs;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(40),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildTopBanner(),
-          const SizedBox(height: 40),
+          const SizedBox(height: 16),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(flex: 1, child: _buildSidebar(packs.length, exams.length)),
-              const SizedBox(width: 40),
+              const SizedBox(width: 24),
               Expanded(
                 flex: 3,
                 child: _buildMainContentArea(displayedItems),
@@ -68,14 +68,14 @@ class _ContentManagerState extends State<ContentManager> {
   Widget _buildTopBanner() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(48),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [const Color(0xFF2E1A47), const Color(0xFF1E112A)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -85,19 +85,19 @@ class _ContentManagerState extends State<ContentManager> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                  child: Text('CURRICULUM INTELLIGENCE', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white70, letterSpacing: 1.5)),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+                  child: Text('CURRICULUM INTELLIGENCE', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white70, letterSpacing: 1.2)),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
                 Text(
-                  'Master Your Academic\nContent Lifecycle.',
-                  style: GoogleFonts.outfit(fontSize: 48, fontWeight: FontWeight.w900, color: Colors.white, height: 1.1),
+                  'Manage Content Lifecycle',
+                  style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white, height: 1.1),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
                 Text(
-                  'Orchestrate comprehensive study pathways. Convert\nlectures into quizzes, flashcards, and formal examinations\nwith AI-driven insights.',
-                  style: GoogleFonts.outfit(fontSize: 16, color: Colors.white70, height: 1.5),
+                  'Orchestrate study pathways. Convert lectures into quizzes and exams with AI insights.',
+                  style: GoogleFonts.outfit(fontSize: 12, color: Colors.white70, height: 1.4),
                 ),
               ],
             ),
@@ -116,19 +116,19 @@ class _ContentManagerState extends State<ContentManager> {
   
   Widget _bannerStatCard(String label, String value) {
     return Container(
-      width: 200,
-      padding: const EdgeInsets.all(24),
+      width: 150,
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white54, letterSpacing: 1)),
-          const SizedBox(height: 8),
-          Text(value, style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white)),
+          Text(label, style: GoogleFonts.outfit(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white54, letterSpacing: 0.8)),
+          const SizedBox(height: 4),
+          Text(value, style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white)),
         ],
       ),
     );
@@ -139,13 +139,13 @@ class _ContentManagerState extends State<ContentManager> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSearchBar(),
-        const SizedBox(height: 32),
+        const SizedBox(height: 24),
         Text('CONTENT ENGINE', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[500], letterSpacing: 1)),
         const SizedBox(height: 16),
         _sidebarMenuButton('Study Packs', packsCount, !_showExams, () => setState(() => _showExams = false)),
         const SizedBox(height: 8),
         _sidebarMenuButton('Exams', examsCount, _showExams, () => setState(() => _showExams = true)),
-        const SizedBox(height: 40),
+        const SizedBox(height: 24),
         
         Text('STATUS FILTER', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[500], letterSpacing: 1)),
         const SizedBox(height: 16),
@@ -153,9 +153,9 @@ class _ContentManagerState extends State<ContentManager> {
         const SizedBox(height: 8),
         _buildCheckbox('Drafts', 0, false),
         
-        const SizedBox(height: 40),
+        const SizedBox(height: 24),
         Container(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: const Color(0xFFF8FAFC),
             borderRadius: BorderRadius.circular(20),
@@ -253,8 +253,8 @@ class _ContentManagerState extends State<ContentManager> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_showExams ? 'Current Exams' : 'Current Study Packs', style: GoogleFonts.outfit(fontSize: 28, fontWeight: FontWeight.w900)),
-                Text('Managing ${displayedItems.length} active academic bundles', style: GoogleFonts.outfit(fontSize: 14, color: Colors.grey[600])),
+                Text(_showExams ? 'Current Exams' : 'Current Study Packs', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w900)),
+                Text('Managing ${displayedItems.length} active bundles', style: GoogleFonts.outfit(fontSize: 12, color: Colors.grey[600])),
               ],
             ),
             Row(
@@ -266,14 +266,14 @@ class _ContentManagerState extends State<ContentManager> {
             ),
           ],
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 24),
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            crossAxisSpacing: 24,
-            mainAxisSpacing: 24,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
             childAspectRatio: 0.95,
           ),
           itemCount: displayedItems.length + 2, // adding creation/AI cards
@@ -298,7 +298,7 @@ class _ContentManagerState extends State<ContentManager> {
         boxShadow: WebColors.cardShadow,
         border: Border.all(color: WebColors.border.withOpacity(0.5)),
       ),
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -324,8 +324,8 @@ class _ContentManagerState extends State<ContentManager> {
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          Text(deck.title, style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w800, height: 1.2), maxLines: 2, overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 16),
+          Text(deck.title, style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800, height: 1.2), maxLines: 2, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 8),
           Text('Updated ${DateFormat.MMMd().format(deck.publishedAt)}', style: GoogleFonts.outfit(fontSize: 12, color: Colors.grey[500])),
           
@@ -395,7 +395,7 @@ class _ContentManagerState extends State<ContentManager> {
         color: const Color(0xFF352554),
         borderRadius: BorderRadius.circular(24),
       ),
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -12,10 +12,10 @@ class WebConsistencyMap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -36,16 +36,16 @@ class WebConsistencyMap extends StatelessWidget {
                   Text(
                     'Consistency Map',
                     style: GoogleFonts.outfit(
-                      fontSize: 24,
+                      fontSize: 18,
                       fontWeight: FontWeight.w800,
                       color: const Color(0xFF0F172A),
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     'Daily engagement over the last 6 months',
                     style: GoogleFonts.outfit(
-                      fontSize: 16,
+                      fontSize: 13,
                       color: const Color(0xFF64748B),
                     ),
                   ),
@@ -54,7 +54,7 @@ class WebConsistencyMap extends StatelessWidget {
               _buildLegend(),
             ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
           _buildHeatmapGrid(),
         ],
       ),
@@ -68,19 +68,19 @@ class WebConsistencyMap extends StatelessWidget {
       child: Row(
         children: List.generate(24, (weekIndex) {
           return Padding(
-            padding: const EdgeInsets.only(right: 6),
+            padding: const EdgeInsets.only(right: 4),
             child: Column(
               children: List.generate(7, (dayIndex) {
                 // Determine color based on intensity
                 final dataIndex = weekIndex * 7 + dayIndex;
                 final intensity = engagementData.length > dataIndex ? engagementData[dataIndex] : 0;
                 return Container(
-                  margin: const EdgeInsets.only(bottom: 6),
-                  width: 24,
-                  height: 24,
+                  margin: const EdgeInsets.only(bottom: 4),
+                  width: 14,
+                  height: 14,
                   decoration: BoxDecoration(
                     color: _getColorForIntensity(intensity),
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(3),
                   ),
                 );
               }),

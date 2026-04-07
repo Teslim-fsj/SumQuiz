@@ -48,7 +48,7 @@ class WebExamConfigStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Stack(
         alignment: Alignment.bottomCenter,
         children: [
@@ -58,7 +58,7 @@ class WebExamConfigStep extends StatelessWidget {
               Text(
                 'Advanced Exam Configuration',
                 style: GoogleFonts.outfit(
-                  fontSize: 32,
+                  fontSize: 20,
                   fontWeight: FontWeight.w900,
                   color: const Color(0xFF1E293B),
                 ),
@@ -67,12 +67,12 @@ class WebExamConfigStep extends StatelessWidget {
               Text(
                 'Fine-tune the intelligence engine. Define your constraints, question variety,\nand difficulty distribution for the Final Architecture exam.',
                 style: GoogleFonts.outfit(
-                  fontSize: 16,
+                  fontSize: 13,
                   color: const Color(0xFF475569),
                   height: 1.5,
                 ),
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 16),
               
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,7 +87,7 @@ class WebExamConfigStep extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 24),
+                  const SizedBox(width: 16),
                   Expanded(
                     flex: 4,
                     child: Column(
@@ -100,15 +100,15 @@ class WebExamConfigStep extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 120), // Bottom padding for floating bar
+              const SizedBox(height: 100), // Bottom padding for floating bar
             ],
           ),
           
           // Floating Action Bar
           Container(
-            height: 90,
-            margin: const EdgeInsets.only(bottom: 24),
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            height: 64,
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(45),
@@ -136,7 +136,7 @@ class WebExamConfigStep extends StatelessWidget {
                             child: CircleAvatar(
                               radius: 16,
                               backgroundColor: const Color(0xFFE2E8F0),
-                              child: Text('+12', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFF475569))),
+                              child: Text('+12', style: GoogleFonts.outfit(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFF475569))),
                             ),
                           ),
                         ],
@@ -145,9 +145,10 @@ class WebExamConfigStep extends StatelessWidget {
                     const SizedBox(width: 16),
                     Text.rich(
                       TextSpan(
+                        style: GoogleFonts.outfit(fontSize: 12),
                         children: [
-                          TextSpan(text: '14 Educators ', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
-                          TextSpan(text: 'recently used these settings for similar courses.', style: GoogleFonts.outfit(color: const Color(0xFF64748B))),
+                          TextSpan(text: '14 Educators ', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                          TextSpan(text: 'recently used these settings.', style: const TextStyle(color: Color(0xFF64748B))),
                         ],
                       ),
                     ),
@@ -158,14 +159,14 @@ class WebExamConfigStep extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4F46E5),
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   ),
                   child: Row(
                     children: [
                       Text(
                         isGenerating ? 'GENERATING...' : 'Generate Draft Exam',
-                        style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(width: 12),
                       if (isGenerating)
@@ -208,7 +209,7 @@ class WebExamConfigStep extends StatelessWidget {
               const Icon(Icons.numbers_rounded, color: Color(0xFFE2E8F0), size: 32),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           Row(
             children: [
               Container(
@@ -221,18 +222,18 @@ class WebExamConfigStep extends StatelessWidget {
                 child: Center(
                   child: Text(
                     numberOfQuestions.toString(),
-                    style: GoogleFonts.outfit(fontSize: 48, fontWeight: FontWeight.w900, color: const Color(0xFF4F46E5)),
+                    style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w900, color: const Color(0xFF4F46E5)),
                   ),
                 ),
               ),
-              const SizedBox(width: 24),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Recommended: 40 - 60', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16, color: const Color(0xFF1E293B))),
-                    const SizedBox(height: 4),
-                    Text('Optimal for a 2-hour session.', style: GoogleFonts.outfit(color: const Color(0xFF64748B))),
+                    Text('Recommended: 40 - 60', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14, color: const Color(0xFF1E293B))),
+                    const SizedBox(height: 2),
+                    Text('Optimal for sessions.', style: GoogleFonts.outfit(fontSize: 11, color: const Color(0xFF64748B))),
                     const SizedBox(height: 16),
                     SliderTheme(
                       data: SliderThemeData(
@@ -267,7 +268,7 @@ class WebExamConfigStep extends StatelessWidget {
             'QUESTION TYPE DISTRIBUTION',
             style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: const Color(0xFF475569)),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
@@ -302,7 +303,7 @@ class WebExamConfigStep extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFF8FAFC) : Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -330,7 +331,7 @@ class WebExamConfigStep extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+                  Text(title, style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
                   const SizedBox(height: 4),
                   Text(subtitle, style: GoogleFonts.outfit(fontSize: 11, color: const Color(0xFF64748B))),
                 ],
@@ -351,7 +352,7 @@ class WebExamConfigStep extends StatelessWidget {
             'DIFFICULTY MIX ENGINE',
             style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: const Color(0xFF475569)),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           // Simple visual representation using sliders - in a real app this would be a custom multi-thumb slider
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -362,7 +363,7 @@ class WebExamConfigStep extends StatelessWidget {
               _buildBadge('${(hardCount/numberOfQuestions*100).round()}% HARD', const Color(0xFFFFE4E6), const Color(0xFFBE123C)),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           
           Text('Easy Ratio', style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.bold)),
           SliderTheme(
@@ -376,7 +377,7 @@ class WebExamConfigStep extends StatelessWidget {
             child: Slider(value: hardCount / numberOfQuestions, min: 0, max: 1, onChanged: onHardChanged),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(child: _buildStatColumn('EASY', easyCount.toString())),
@@ -394,7 +395,7 @@ class WebExamConfigStep extends StatelessWidget {
       children: [
         Text(label, style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1, color: const Color(0xFF64748B))),
         const SizedBox(height: 8),
-        Text(value, style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w900, color: const Color(0xFF1E293B))),
+        Text(value, style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w900, color: const Color(0xFF1E293B))),
       ],
     );
   }
@@ -408,7 +409,7 @@ class WebExamConfigStep extends StatelessWidget {
             'TOPIC COVERAGE RULES',
             style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: const Color(0xFF475569)),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           _buildRuleToggle('Even Coverage', 'Spread questions across all units', Icons.balance_rounded, evenTopicCoverage, (v) => onRuleToggled('even', v)),
           const SizedBox(height: 16),
           const Divider(),
@@ -465,7 +466,7 @@ class WebExamConfigStep extends StatelessWidget {
           )
         ],
       ),
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(16),
       child: child,
     );
   }

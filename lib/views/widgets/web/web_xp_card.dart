@@ -16,7 +16,7 @@ class WebXPCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: const Color(0xFF4338CA),
         borderRadius: BorderRadius.circular(32),
@@ -43,7 +43,7 @@ class WebXPCard extends StatelessWidget {
                   letterSpacing: 1.5,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -51,7 +51,7 @@ class WebXPCard extends StatelessWidget {
                     child: Text(
                       tierName,
                       style: GoogleFonts.outfit(
-                        fontSize: 36,
+                        fontSize: 24,
                         fontWeight: FontWeight.w900,
                         color: Colors.white,
                         height: 1.1,
@@ -64,11 +64,11 @@ class WebXPCard extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.stars_rounded, color: Colors.white, size: 48),
+                    child: const Icon(Icons.stars_rounded, color: Colors.white, size: 32),
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -90,7 +90,7 @@ class WebXPCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               _buildProgressBar(currentXP / nextLevelXP),
             ],
           ),
@@ -101,7 +101,7 @@ class WebXPCard extends StatelessWidget {
 
   Widget _buildProgressBar(double progress) {
     return Container(
-      height: 12,
+      height: 8,
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.2),

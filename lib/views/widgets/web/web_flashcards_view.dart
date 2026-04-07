@@ -1,4 +1,5 @@
 import 'dart:async';
+// Screen goal: User should go through cards rapidly with minimal animation delay and no wasted space. Focus on repetition speed, not visual effects.
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -31,7 +32,6 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
   bool _isFlipped = false;
   GlobalKey<FlipCardState> _cardKey = GlobalKey<FlipCardState>();
   int _knewCount = 0;
-  int _reviewCount = 0;
   final Stopwatch _stopwatch = Stopwatch();
   late Timer _timer;
   String _timeString = '00:00';
@@ -67,7 +67,6 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
     if (knewIt) {
       _knewCount++;
     } else {
-      _reviewCount++;
     }
     
     widget.onReview?.call(_currentIndex, knewIt);
@@ -117,7 +116,7 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
     final progress = (_currentIndex + 1) / widget.flashcards.length;
 
     return Padding(
-      padding: const EdgeInsets.all(48),
+      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -132,13 +131,13 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
                     Text(
                       'Flashcards Deck',
                       style: GoogleFonts.outfit(
-                        fontSize: 32,
+                        fontSize: 24,
                         fontWeight: FontWeight.w800,
                         color: WebColors.textPrimary,
                         height: 1.1,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     Text(
                       widget.subtitle?.toUpperCase() ?? 'KNOWLEDGE RETENTION',
                       style: GoogleFonts.outfit(
@@ -162,7 +161,7 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
                       color: WebColors.primary,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   Container(
                     width: 200,
                     height: 4,
@@ -186,7 +185,7 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
             ],
           ),
 
-          const SizedBox(height: 48),
+          const SizedBox(height: 24),
 
           // Main Content Area with Flip Card
           Expanded(
@@ -201,7 +200,7 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
                     padding: const EdgeInsets.all(16),
                   ),
                 ),
-                const SizedBox(width: 32),
+                const SizedBox(width: 20),
                 Expanded(
                   child: FlipCard(
                     key: _cardKey,
@@ -210,7 +209,7 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
                     back: _buildCardSide(currentCard.answer, 'ANSWER', false),
                   ),
                 ),
-                const SizedBox(width: 32),
+                const SizedBox(width: 20),
                 IconButton(
                   onPressed: _currentIndex < widget.flashcards.length - 1 ? _nextCard : null,
                   icon: const Icon(Icons.arrow_forward_ios_rounded),
@@ -224,7 +223,7 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
             ),
           ),
 
-          const SizedBox(height: 48),
+          const SizedBox(height: 24),
 
           // Action Buttons
           Row(
@@ -236,15 +235,13 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
             ],
           ),
 
-          const SizedBox(height: 64),
+          const SizedBox(height: 32),
 
           // Stats at the Bottom
           Row(
             children: [
               Expanded(child: _buildStatCard('Mastered', '$_knewCount/${widget.flashcards.length}', Icons.check_circle_rounded, const Color(0xFF22C55E))),
-              const SizedBox(width: 24),
-              Expanded(child: _buildStatCard('Review Needed', '$_reviewCount', Icons.replay_rounded, const Color(0xFFF97316))),
-              const SizedBox(width: 24),
+              const SizedBox(width: 16),
               Expanded(child: _buildStatCard('Study Time', _timeString, Icons.timer_rounded, const Color(0xFF6366F1))),
             ],
           ),
@@ -261,7 +258,7 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
         border: Border.all(color: WebColors.border.withValues(alpha: 0.5)),
         boxShadow: WebColors.cardShadow,
       ),
-      padding: const EdgeInsets.all(64),
+      padding: const EdgeInsets.all(32),
       child: Stack(
         children: [
           Positioned(
@@ -290,19 +287,19 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
                     letterSpacing: 3,
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 16),
                 Text(
                   text,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.outfit(
-                    fontSize: 44,
+                    fontSize: 28,
                     fontWeight: FontWeight.w700,
                     color: WebColors.textPrimary,
                     height: 1.2,
                   ),
                 ),
                 if (isFront) ...[
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -329,7 +326,7 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
 
   Widget _buildReviewButton(String label, Color color, VoidCallback onPressed) {
     return Container(
-      height: 64,
+      height: 48,
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
@@ -341,7 +338,7 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
           onTap: onPressed,
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 48),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -351,7 +348,7 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
                 Text(
                   label,
                   style: GoogleFonts.outfit(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: color,
                   ),
@@ -366,7 +363,7 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
 
   Widget _buildStatCard(String label, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -381,9 +378,9 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
               color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: color, size: 24),
+            child: Icon(icon, color: color, size: 20),
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -400,7 +397,7 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
               Text(
                 value,
                 style: GoogleFonts.outfit(
-                  fontSize: 24,
+                  fontSize: 18,
                   fontWeight: FontWeight.w800,
                   color: WebColors.textPrimary,
                 ),

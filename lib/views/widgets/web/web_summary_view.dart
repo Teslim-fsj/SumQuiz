@@ -1,3 +1,4 @@
+// Screen goal: User should scan key points in under 15 seconds, not read long paragraphs. Content must be chunked and partially collapsible.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -29,7 +30,7 @@ class WebSummaryView extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(48),
+      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -41,30 +42,30 @@ class WebSummaryView extends StatelessWidget {
               children: tags.map((tag) => _buildTag(tag, context)).toList(),
             ).animate().fadeIn().slideX(begin: -0.1),
           
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
 
           // Title
           Text(
             title,
             style: GoogleFonts.outfit(
-              fontSize: 40,
+              fontSize: 28,
               fontWeight: FontWeight.w800,
               color: isDark ? Colors.white : WebColors.textPrimary,
-              height: 1.2,
+              height: 1.1,
             ),
           ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
 
           // Share Link Component
           _buildShareLink(context),
           
-          const SizedBox(height: 48),
+          const SizedBox(height: 24),
 
           // Summary Content
           _buildMarkdownContent(context),
 
-          const SizedBox(height: 64),
+          const SizedBox(height: 32),
 
           // Bottom Cards
           Row(
@@ -161,21 +162,21 @@ class WebSummaryView extends StatelessWidget {
       selectable: true,
       styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
         p: GoogleFonts.outfit(
-          fontSize: 18,
-          height: 1.8,
+          fontSize: 15,
+          height: 1.5,
           color: WebColors.textPrimary.withValues(alpha: 0.9),
         ),
         strong: const TextStyle(fontWeight: FontWeight.w800, color: WebColors.primary),
-        h1: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w800, height: 2),
-        h2: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w700, height: 1.8),
-        listBullet: TextStyle(color: WebColors.primary, fontSize: 18),
+        h1: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w800, height: 1.6),
+        h2: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w700, height: 1.5),
+        listBullet: TextStyle(color: WebColors.primary, fontSize: 16),
       ),
     );
   }
 
   Widget _buildKeyTermsCard(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
@@ -188,8 +189,8 @@ class WebSummaryView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.lightbulb_outline_rounded, color: Colors.white, size: 32),
-          const SizedBox(height: 24),
+          const Icon(Icons.lightbulb_outline_rounded, color: Colors.white, size: 24),
+          const SizedBox(height: 16),
           Text(
             'Key Terms Extracted',
             style: GoogleFonts.outfit(
@@ -214,7 +215,7 @@ class WebSummaryView extends StatelessWidget {
               backgroundColor: Colors.white.withValues(alpha: 0.2),
               foregroundColor: Colors.white,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -231,7 +232,7 @@ class WebSummaryView extends StatelessWidget {
 
   Widget _buildVisualContextCard(BuildContext context) {
     return Container(
-      height: 300,
+      height: 220,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         image: const DecorationImage(
@@ -249,7 +250,7 @@ class WebSummaryView extends StatelessWidget {
             end: Alignment.topCenter,
           ),
         ),
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           crossAxisAlignment: CrossAxisAlignment.start,

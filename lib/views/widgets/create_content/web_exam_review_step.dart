@@ -31,7 +31,7 @@ class WebExamReviewStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -46,16 +46,16 @@ class WebExamReviewStep extends StatelessWidget {
                     Text(
                       'Review & Edit Draft',
                       style: GoogleFonts.outfit(
-                        fontSize: 32,
+                        fontSize: 20,
                         fontWeight: FontWeight.w900,
                         color: const Color(0xFF1E293B),
                       ),
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Fine-tune your generated assessment. Edit questions directly or regenerate\nitems to match your desired curriculum depth.',
+                      'Fine-tune your generated assessment. Edit directly or regenerate items.',
                       style: GoogleFonts.outfit(
-                        fontSize: 16,
+                        fontSize: 13,
                         color: const Color(0xFF475569),
                         height: 1.5,
                       ),
@@ -74,7 +74,7 @@ class WebExamReviewStep extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 48),
+          const SizedBox(height: 16),
           
           Expanded(
             child: Row(
@@ -89,7 +89,7 @@ class WebExamReviewStep extends StatelessWidget {
                     itemBuilder: (context, index) => _buildQuestionItem(context, questions[index], index),
                   ),
                 ),
-                const SizedBox(width: 32),
+                const SizedBox(width: 16),
                 // Exam Summary Panel
                 Expanded(
                   flex: 3,
@@ -112,8 +112,8 @@ class WebExamReviewStep extends StatelessWidget {
         backgroundColor: bg,
         foregroundColor: fn,
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
     );
   }
@@ -133,8 +133,8 @@ class WebExamReviewStep extends StatelessWidget {
     String topicLabel = topicCounts.keys.isNotEmpty ? topicCounts.keys.elementAt(index % topicCounts.keys.length).toUpperCase() : 'GENERAL';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      padding: const EdgeInsets.all(32),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -171,24 +171,24 @@ class WebExamReviewStep extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 '${(index + 1).toString().padLeft(2, '0')}',
-                style: GoogleFonts.outfit(fontSize: 48, fontWeight: FontWeight.w900, color: const Color(0xFFE2E8F0), height: 1),
+                style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w900, color: const Color(0xFFE2E8F0), height: 1),
               ),
-              const SizedBox(width: 24),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       q.question,
-                      style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)),
+                      style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 12),
                     if (q.questionType == 'Multiple Choice' || q.questionType == 'True/False') 
                       _buildOptionsGrid(q.options)
                     else if (q.questionType == 'Theory' || q.questionType == 'Essay')
@@ -210,8 +210,8 @@ class WebExamReviewStep extends StatelessWidget {
       runSpacing: 16,
       children: List.generate(options.length, (i) {
         return Container(
-          width: 300,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          width: 280,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
             color: const Color(0xFFF8FAFC),
             border: Border.all(color: const Color(0xFFE2E8F0)),
@@ -260,7 +260,7 @@ class WebExamReviewStep extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, 4))],
       ),
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -276,39 +276,39 @@ class WebExamReviewStep extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Exam Summary', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
-                  Text('REAL-TIME METRICS', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1, color: const Color(0xFF94A3B8))),
+                  Text('Exam Summary', style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+                  Text('REAL-TIME METRICS', style: GoogleFonts.outfit(fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1, color: const Color(0xFF94A3B8))),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Total Questions', style: GoogleFonts.outfit(color: const Color(0xFF475569))),
-              Text('$total', style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w900, color: const Color(0xFF4F46E5))),
+              Text('Total Questions', style: GoogleFonts.outfit(fontSize: 13, color: const Color(0xFF475569))),
+              Text('$total', style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w900, color: const Color(0xFF4F46E5))),
             ],
           ),
-          const SizedBox(height: 32),
-          Text('DIFFICULTY BALANCE', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: const Color(0xFF94A3B8))),
+          const SizedBox(height: 16),
+          Text('DIFFICULTY BALANCE', style: GoogleFonts.outfit(fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: const Color(0xFF94A3B8))),
           const SizedBox(height: 16),
           _buildBalanceBar(total),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('EASY ($easyCount)', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
-              Text('MED ($mediumCount)', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
-              Text('HARD ($hardCount)', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+              Text('EASY ($easyCount)', style: GoogleFonts.outfit(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+              Text('MED ($mediumCount)', style: GoogleFonts.outfit(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+              Text('HARD ($hardCount)', style: GoogleFonts.outfit(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
             ],
           ),
-          const SizedBox(height: 32),
-          Text('TOP TOPICS', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: const Color(0xFF94A3B8))),
+          const SizedBox(height: 16),
+          Text('TOP TOPICS', style: GoogleFonts.outfit(fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: const Color(0xFF94A3B8))),
           const SizedBox(height: 16),
           ...topicCounts.entries.take(3).map((e) => _buildTopicRow(e.key, e.value, total)),
           
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
