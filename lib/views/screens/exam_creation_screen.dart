@@ -17,6 +17,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sumquiz/services/firestore_service.dart';
 import 'package:sumquiz/models/public_deck.dart';
 import 'package:sumquiz/utils/share_code_generator.dart';
+import 'package:sumquiz/services/youtube_service.dart';
 
 class ExamCreationScreen extends StatefulWidget {
   const ExamCreationScreen({super.key});
@@ -323,6 +324,9 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
                             }),
                             _buildUploadOption('Notes', Icons.note_alt, () {
                               _selectSourceMaterial('Notes');
+                            }),
+                            _buildUploadOption('YouTube', Icons.play_circle_fill, () {
+                              _selectSourceMaterial('YouTube');
                             }),
                           ],
                         ),
@@ -730,7 +734,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
 
     try {
       FilePickerResult? result;
-      FileType fileType;
+      FileType fileType = FileType.any;
       List<String>? allowedExtensions;
 
       if (type == 'PDF') {
@@ -738,18 +742,22 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
         allowedExtensions = ['pdf'];
       } else if (type == 'Image') {
         fileType = FileType.image;
-      } else {
-        // Notes / Text not supported via file picker yet
-        // Maybe open a text dialog? For now, keep mock or show dialog
+      } else if (type == 'YouTube') {
+        setState(() => _isProcessing = false);
+        _showYoutubeInputDialog();
+        return;
+      } else if (type == 'Notes') {
         setState(() => _isProcessing = false);
         _showNotesInputDialog();
         return;
+      } else if (type == 'Audio') {
+        fileType = FileType.audio;
       }
 
       result = await FilePicker.platform.pickFiles(
         type: fileType,
         allowedExtensions: allowedExtensions,
-        withData: true, // Important for web and direct bytes access
+        withData: true,
         allowMultiple: true, 
       );
 
@@ -812,36 +820,157 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
   }
 
   void _showNotesInputDialog() {
-    final textController = TextEditingController();
-    showDialog(
+    final TextEditingController notesController =
+        TextEditingController(text: _sourceMaterial);
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Enter Notes'),
-        content: TextField(
-          controller: textController,
-          maxLines: 10,
-          decoration: const InputDecoration(
-            hintText: 'Paste your notes here...',
-            border: OutlineInputBorder(),
-          ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          top: 24,
+          left: 24,
+          right: 24,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                _sourceMaterial = textController.text;
-              });
-              Navigator.pop(context);
-            },
-            child: const Text('Use Notes'),
-          ),
-        ],
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Paste Teaching Notes',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: notesController,
+              maxLines: 12,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Paste your notes or full lesson text here...',
+                filled: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                final text = notesController.text.trim();
+                Navigator.pop(context);
+                if (text.isNotEmpty) {
+                  setState(() => _sourceMaterial = text);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+              ),
+              child: const Text('Done'),
+            ),
+            const SizedBox(height: 32),
+          ],
+        ),
       ),
     );
+  }
+
+  void _showYoutubeInputDialog() {
+    final TextEditingController urlController = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          top: 24,
+          left: 24,
+          right: 24,
+        ),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Enter YouTube Link',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: urlController,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'https://youtube.com/watch?v=...',
+                filled: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                prefixIcon: const Icon(Icons.play_circle_outline_rounded),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () async {
+                final url = urlController.text.trim();
+                if (url.isNotEmpty && url.startsWith('http')) {
+                  Navigator.pop(context);
+                  _extractFromYoutube(url);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+              ),
+              child: const Text('Extract Transcript'),
+            ),
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _extractFromYoutube(String url) async {
+    setState(() {
+      _isProcessing = true;
+      _processingMessage = 'Fetching YouTube transcript...';
+    });
+
+    try {
+      final youtubeService =
+          Provider.of<YoutubeService>(context, listen: false);
+      final transcript = await youtubeService.getTranscript(url);
+
+      if (!mounted) return;
+      setState(() {
+        _sourceMaterial = transcript;
+        _isProcessing = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isProcessing = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('YouTube Error: $e')),
+      );
+    }
   }
 
   Future<void> _generateDraftExam() async {
@@ -981,6 +1110,7 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
   late List<LocalQuizQuestion> _questions;
   bool _isProcessing = false;
   String _processingMessage = '';
+  CancellationToken? _cancelToken;
 
   @override
   void initState() {
@@ -1299,16 +1429,16 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
     });
 
     try {
-      // Simulate AI regeneration process
-      await Future.delayed(const Duration(seconds: 1));
-      if (!mounted) return;
+      final enhancedAIService = Provider.of<EnhancedAIService>(context, listen: false);
+      _cancelToken = CancellationToken();
 
-      // In a real implementation, this would call the AI service to regenerate the specific question
       final oldQuestion = _questions[index];
-      final regeneratedQuestion = LocalQuizQuestion(
-        question: 'Regenerated: ${oldQuestion.question}',
-        options: oldQuestion.options.map((option) => 'New: $option').toList(),
-        correctAnswer: oldQuestion.options.first, // Reset to first option
+      final regeneratedQuestion = await enhancedAIService.regenerateQuestion(
+        sourceText: widget.sourceMaterial,
+        subject: widget.subject,
+        level: widget.classLevel,
+        oldQuestion: oldQuestion,
+        cancelToken: _cancelToken,
       );
 
       setState(() {
@@ -1325,7 +1455,6 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
         );
       }
     } catch (e, stackTrace) {
-      // Log the actual error and stack trace for debugging
       debugPrint('Error regenerating question: $e');
       debugPrint('Stack trace: $stackTrace');
 

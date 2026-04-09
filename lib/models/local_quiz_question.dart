@@ -44,6 +44,22 @@ class LocalQuizQuestion extends HiveObject {
     questionType = null;
   }
 
+  LocalQuizQuestion copyWith({
+    String? question,
+    List<String>? options,
+    String? correctAnswer,
+    String? explanation,
+    String? questionType,
+  }) {
+    return LocalQuizQuestion(
+      question: question ?? this.question,
+      options: options ?? this.options,
+      correctAnswer: correctAnswer ?? this.correctAnswer,
+      explanation: explanation ?? this.explanation,
+      questionType: questionType ?? this.questionType,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'question': question,

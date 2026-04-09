@@ -29,6 +29,7 @@ import 'package:sumquiz/services/iap_service.dart';
 import 'package:sumquiz/services/referral_service.dart';
 import 'package:sumquiz/services/notification_service.dart';
 import 'package:sumquiz/services/user_service.dart';
+import 'package:sumquiz/services/youtube_service.dart';
 import 'package:sumquiz/view_models/referral_view_model.dart';
 import 'package:sumquiz/services/content_extraction_service.dart';
 import 'package:sumquiz/services/spaced_repetition_service.dart';
@@ -37,11 +38,45 @@ import 'package:sumquiz/services/time_sync_service.dart';
 import 'package:sumquiz/services/notification_integration.dart';
 import 'package:sumquiz/widgets/notification_navigator.dart';
 import 'package:sumquiz/theme/web_theme.dart';
+import 'package:workmanager/workmanager.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+
+@pragma('vm:entry-point')
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    if (task == 'notification_task') {
+      final id = inputData!['id'];
+      final title = inputData['title'] ?? 'Notification';
+      final message = inputData['message'] ?? '';
+      final payload = inputData['payload'] ?? '';
+      final category = inputData['category'] ?? 'general';
+
+      try {
+        final notificationService = NotificationService();
+        await notificationService.initialize();
+
+        await notificationService.showImmediateNotification(
+          id: id,
+          title: title,
+          message: message,
+          payload: payload,
+          category: category,
+        );
+      } catch (e) {
+        debugPrint('WorkManager task error: $e');
+        return Future.value(false);
+      }
+    }
+    return Future.value(true);
+  });
+}
 
 void main() async {
   usePathUrlStrategy(); // Remove # from web URLs (sumquiz.xyz/route instead of sumquiz.xyz/#/route)
   WidgetsFlutterBinding.ensureInitialized();
+  if (!kIsWeb) {
+    await Workmanager().initialize(callbackDispatcher, isInDebugMode: kDebugMode);
+  }
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -236,6 +271,7 @@ class _MyAppState extends State<MyApp> {
           update: (context, enhancedAIService, previous) =>
               ContentExtractionService(enhancedAIService),
         ),
+        Provider<YoutubeService>(create: (_) => YoutubeService()),
         Provider<UserService>(create: (_) => UserService()),
         Provider<SyncService>(
           create: (context) =>
@@ -284,19 +320,21 @@ class _MyAppState extends State<MyApp> {
             return previous!;
           },
         ),
-        ChangeNotifierProxyProvider3<ContentExtractionService,
-            EnhancedAIService, LocalDatabaseService, CreateContentProvider>(
+        ChangeNotifierProxyProvider4<ContentExtractionService, EnhancedAIService,
+            LocalDatabaseService, YoutubeService, CreateContentProvider>(
           create: (context) => CreateContentProvider(
             extractionService: context.read<ContentExtractionService>(),
             aiService: context.read<EnhancedAIService>(),
             localDb: context.read<LocalDatabaseService>(),
+            youtubeService: context.read<YoutubeService>(),
           ),
-          update: (context, extraction, ai, localDb, previous) =>
+          update: (context, extraction, ai, localDb, youtube, previous) =>
               previous ??
               CreateContentProvider(
                 extractionService: extraction,
                 aiService: ai,
                 localDb: localDb,
+                youtubeService: youtube,
               ),
         ),
       ],

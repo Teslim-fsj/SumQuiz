@@ -5,6 +5,8 @@ import 'package:sumquiz/models/local_quiz_question.dart';
 class WebExamReviewStep extends StatelessWidget {
   final List<LocalQuizQuestion> questions;
   final Function(int) onRegenerate;
+  final Function(int, LocalQuizQuestion) onQuestionChanged;
+  final VoidCallback onBack;
   final VoidCallback onSaveLibrary;
   final VoidCallback onPdfExport;
   final VoidCallback onPublish;
@@ -19,6 +21,8 @@ class WebExamReviewStep extends StatelessWidget {
     super.key,
     required this.questions,
     required this.onRegenerate,
+    required this.onQuestionChanged,
+    required this.onBack,
     required this.onSaveLibrary,
     required this.onPdfExport,
     required this.onPublish,
@@ -65,6 +69,8 @@ class WebExamReviewStep extends StatelessWidget {
               ),
               Row(
                 children: [
+                  _buildActionButton('Back to Config', Icons.arrow_back, const Color(0xFFF1F5F9), const Color(0xFF64748B), onBack),
+                  const SizedBox(width: 12),
                   _buildActionButton('Save to Library', Icons.save_alt_rounded, const Color(0xFFE2E8F0), const Color(0xFF1E293B), onSaveLibrary),
                   const SizedBox(width: 12),
                   _buildActionButton('PDF Export', Icons.picture_as_pdf_rounded, const Color(0xFFE2E8F0), const Color(0xFF1E293B), onPdfExport),
@@ -176,7 +182,7 @@ class WebExamReviewStep extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${(index + 1).toString().padLeft(2, '0')}',
+                (index + 1).toString().padLeft(2, '0'),
                 style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w900, color: const Color(0xFFE2E8F0), height: 1),
               ),
               const SizedBox(width: 16),
@@ -184,13 +190,21 @@ class WebExamReviewStep extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      q.question,
+                    TextFormField(
+                      initialValue: q.question,
                       style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)),
+                      maxLines: null,
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        hintText: 'Enter question text...',
+                      ),
+                      onChanged: (val) {
+                        onQuestionChanged(index, q.copyWith(question: val));
+                      },
                     ),
                     const SizedBox(height: 12),
                     if (q.questionType == 'Multiple Choice' || q.questionType == 'True/False') 
-                      _buildOptionsGrid(q.options)
+                      _buildOptionsGrid(q, index)
                     else if (q.questionType == 'Theory' || q.questionType == 'Essay')
                       _buildTheoryLine()
                   ],
@@ -203,25 +217,51 @@ class WebExamReviewStep extends StatelessWidget {
     );
   }
 
-  Widget _buildOptionsGrid(List<String> options) {
-    if (options.isEmpty) return const SizedBox();
+  Widget _buildOptionsGrid(LocalQuizQuestion q, int qIndex) {
+    if (q.options.isEmpty) return const SizedBox();
     return Wrap(
       spacing: 16,
       runSpacing: 16,
-      children: List.generate(options.length, (i) {
+      children: List.generate(q.options.length, (i) {
+        bool isCorrect = q.correctAnswer == q.options[i];
         return Container(
           width: 280,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
+            color: isCorrect ? const Color(0xFFF0FDF4) : const Color(0xFFF8FAFC),
+            border: Border.all(color: isCorrect ? const Color(0xFF22C55E) : const Color(0xFFE2E8F0)),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             children: [
+              Radio<String>(
+                value: q.options[i],
+                groupValue: q.correctAnswer,
+                onChanged: (val) {
+                  if (val != null) {
+                    onQuestionChanged(qIndex, q.copyWith(correctAnswer: val));
+                  }
+                },
+                activeColor: const Color(0xFF22C55E),
+              ),
+              const SizedBox(width: 4),
               Text('${String.fromCharCode(65 + i)})', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
-              const SizedBox(width: 12),
-              Expanded(child: Text(options[i], style: GoogleFonts.outfit(color: const Color(0xFF475569)))),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextFormField(
+                  initialValue: q.options[i],
+                  decoration: const InputDecoration(border: InputBorder.none, isDense: true),
+                  style: GoogleFonts.outfit(color: const Color(0xFF475569), fontSize: 13),
+                  onChanged: (val) {
+                    final newOptions = List<String>.from(q.options);
+                    newOptions[i] = val;
+                    // If it was the correct answer, update it as well
+                    String newCorrect = q.correctAnswer;
+                    if (isCorrect) newCorrect = val;
+                    onQuestionChanged(qIndex, q.copyWith(options: newOptions, correctAnswer: newCorrect));
+                  },
+                ),
+              ),
             ],
           ),
         );
@@ -338,7 +378,7 @@ class WebExamReviewStep extends StatelessWidget {
     if (total == 0) return const SizedBox();
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
-      child: Container(
+      child: SizedBox(
         height: 12,
         width: double.infinity,
         child: Row(

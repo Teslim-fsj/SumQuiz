@@ -11,12 +11,24 @@ class TeacherService {
 
   /// Fetch all published decks (exams + study packs) created by this teacher.
   Future<List<PublicDeck>> getTeacherContent(String uid) async {
-    final snap = await _db
-        .collection('public_decks')
-        .where('creatorId', isEqualTo: uid)
-        .orderBy('publishedAt', descending: true)
-        .get();
-    return snap.docs.map((d) => PublicDeck.fromFirestore(d)).toList();
+    try {
+      final snap = await _db
+          .collection('public_decks')
+          .where('creatorId', isEqualTo: uid)
+          .orderBy('publishedAt', descending: true)
+          .get();
+      return snap.docs.map((d) => PublicDeck.fromFirestore(d)).toList();
+    } catch (e) {
+      print('TeacherService.getTeacherContent error (falling back to unsorted): $e');
+      // Fallback to unsorted if index is missing
+      final snap = await _db
+          .collection('public_decks')
+          .where('creatorId', isEqualTo: uid)
+          .get();
+      final list = snap.docs.map((d) => PublicDeck.fromFirestore(d)).toList();
+      list.sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
+      return list;
+    }
   }
 
   /// Delete a piece of content.
@@ -43,55 +55,80 @@ class TeacherService {
 
   /// Aggregate dashboard stats for this teacher.
   Future<TeacherStats> getTeacherStats(String uid) async {
-    final content = await getTeacherContent(uid);
-    final exams = content.where((c) => c.isExam).length;
-    final packs = content.where((c) => !c.isExam).length;
+    try {
+      final content = await getTeacherContent(uid);
+      final exams = content.where((c) => c.isExam).length;
+      final packs = content.where((c) => !c.isExam).length;
 
-    int totalAttempts = 0;
-    double totalScore = 0;
-    int scoredAttempts = 0;
-    final studentIds = <String>{};
-    final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
-    final activeStudentIds = <String>{};
+      int totalAttempts = 0;
+      double totalScore = 0;
+      int scoredAttempts = 0;
+      final studentIds = <String>{};
+      final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
+      final activeStudentIds = <String>{};
 
-    // Limit to most recent 12 decks for stats calculation to prevent hanging on massive accounts
-    final activeContent = content.take(12).toList();
+      // Limit to most recent 12 decks for stats calculation
+      final activeContent = content.take(12).toList();
+      if (activeContent.isEmpty) {
+         return TeacherStats(
+          totalExams: exams,
+          totalStudyPacks: packs,
+          totalStudents: 0,
+          activeStudents: 0,
+          averageScore: 0.0,
+          totalAttempts: 0,
+        );
+      }
 
-    // Parallelize attempt fetching with overall timeout/error handling
-    final snapshots = await Future.wait(activeContent.map((deck) => _db
-        .collection('attempts')
-        .where('contentId', isEqualTo: deck.id)
-        .limit(50) // Don't fetch thousands of attempts for summary stats
-        .get()));
+      // Parallelize attempt fetching with overall timeout/error handling
+      final snapshots = await Future.wait(activeContent.map((deck) => _db
+          .collection('attempts')
+          .where('contentId', isEqualTo: deck.id)
+          .limit(50) 
+          .get().catchError((e) {
+            print('Error fetching attempts for deck ${deck.id}: $e');
+            return null; // Don't crash wait
+          })));
 
-    for (final snap in snapshots) {
-      for (final a in snap.docs) {
-        final data = a.data();
-        totalAttempts++;
-        final sid = data['studentId'] as String? ?? '';
-        if (sid.isNotEmpty) studentIds.add(sid);
-        
-        final score = (data['score'] as num?)?.toDouble();
-        if (score != null) {
-          totalScore += score;
-          scoredAttempts++;
-        }
-        
-        final ts = (data['attemptedAt'] as Timestamp?)?.toDate();
-        if (ts != null && ts.isAfter(sevenDaysAgo)) {
-          if (sid.isNotEmpty) activeStudentIds.add(sid);
+      for (final snap in snapshots) {
+        for (final a in snap.docs) {
+          final data = a.data();
+          totalAttempts++;
+          final sid = data['studentId'] as String? ?? '';
+          if (sid.isNotEmpty) studentIds.add(sid);
+          
+          final score = (data['score'] as num?)?.toDouble();
+          if (score != null) {
+            totalScore += score;
+            scoredAttempts++;
+          }
+          
+          final ts = (data['attemptedAt'] as Timestamp?)?.toDate();
+          if (ts != null && ts.isAfter(sevenDaysAgo)) {
+            if (sid.isNotEmpty) activeStudentIds.add(sid);
+          }
         }
       }
-    }
 
-    return TeacherStats(
-      totalExams: exams,
-      totalStudyPacks: packs,
-      totalStudents: studentIds.length,
-      activeStudents: activeStudentIds.length,
-      averageScore: scoredAttempts > 0 ? totalScore / scoredAttempts : 0.0,
-      totalAttempts: totalAttempts,
-    );
+      return TeacherStats(
+        totalExams: exams,
+        totalStudyPacks: packs,
+        totalStudents: studentIds.length,
+        activeStudents: activeStudentIds.length,
+        averageScore: scoredAttempts > 0 ? totalScore / scoredAttempts : 0.0,
+        totalAttempts: totalAttempts,
+      );
+    } catch (e) {
+      print('TeacherService.getTeacherStats error: $e');
+      return TeacherStats(
+        totalExams: 0,
+        totalStudyPacks: 0,
+        totalStudents: 0,
+        activeStudents: 0,
+        averageScore: 0.0,
+        totalAttempts: 0,
+      );
+    }
   }
 
   // ─── STUDENTS ──────────────────────────────────────────────────────────────
@@ -263,81 +300,99 @@ class TeacherService {
 
   /// Get recent activity items for the activity feed.
   Future<List<ActivityItem>> getRecentActivity(String uid) async {
-    final content = await getTeacherContent(uid);
-    final items = <ActivityItem>[];
+    try {
+      final content = await getTeacherContent(uid);
+      final items = <ActivityItem>[];
 
-    // Recently created content (first 3)
-    for (final deck in content.take(3)) {
-      items.add(ActivityItem(
-        type: 'creation',
-        title: 'Published: ${deck.title}',
-        subtitle: deck.isExam ? 'Exam paper' : 'Study pack',
-        timestamp: deck.publishedAt,
-        contentId: deck.id,
-      ));
-    }
-
-    // Recent student attempts across last 5 items
-    final activeDecks = content.take(5).toList();
-    for (final deck in activeDecks) {
-      final attempts = await _db
-          .collection('attempts')
-          .where('contentId', isEqualTo: deck.id)
-          .orderBy('attemptedAt', descending: true)
-          .limit(3)
-          .get();
-
-      for (final doc in attempts.docs) {
-        final data = doc.data();
-        final score = (data['score'] as num?)?.toDouble() ?? 0.0;
+      // Recently created content (first 3)
+      for (final deck in content.take(3)) {
         items.add(ActivityItem(
-          type: 'attempt',
-          title: '${data['studentName'] ?? 'A student'} attempted ${deck.title}',
-          subtitle: 'Score: ${score.toStringAsFixed(0)}%',
-          timestamp:
-              (data['attemptedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+          type: 'creation',
+          title: 'Published: ${deck.title}',
+          subtitle: deck.isExam ? 'Exam paper' : 'Study pack',
+          timestamp: deck.publishedAt,
           contentId: deck.id,
         ));
       }
-    }
 
-    items.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    return items.take(12).toList();
+      // Recent student attempts across last 5 items
+      final activeDecks = content.take(5).toList();
+      for (final deck in activeDecks) {
+        try {
+          final attempts = await _db
+              .collection('attempts')
+              .where('contentId', isEqualTo: deck.id)
+              .orderBy('attemptedAt', descending: true)
+              .limit(3)
+              .get();
+
+          for (final doc in attempts.docs) {
+            final data = doc.data();
+            final score = (data['score'] as num?)?.toDouble() ?? 0.0;
+            items.add(ActivityItem(
+              type: 'attempt',
+              title: '${data['studentName'] ?? 'A student'} attempted ${deck.title}',
+              subtitle: 'Score: ${score.toStringAsFixed(0)}%',
+              timestamp:
+                  (data['attemptedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+              contentId: deck.id,
+            ));
+          }
+        } catch (e) {
+          print('Error fetching recent attempts for deck ${deck.id}: $e');
+        }
+      }
+
+      items.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      return items.take(12).toList();
+    } catch (e) {
+      print('TeacherService.getRecentActivity error: $e');
+      return [];
+    }
   }
 
   /// Get attempt counts over the last 30 days for trend analysis.
   Future<Map<String, int>> getCompletionTrends(String uid) async {
-    final content = await getTeacherContent(uid);
-    final contentIds = content.map((c) => c.id).toList();
-    if (contentIds.isEmpty) return {};
+    try {
+      final content = await getTeacherContent(uid);
+      final contentIds = content.map((c) => c.id).toList();
+      if (contentIds.isEmpty) return {};
 
-    final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
-    final Map<String, int> trends = {};
+      final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
+      final Map<String, int> trends = {};
 
-    // Initialize map with last 30 days
-    for (int i = 0; i < 30; i++) {
-       final date = DateTime.now().subtract(Duration(days: i));
-       final dayStr = DateFormat('yyyy-MM-dd').format(date);
-       trends[dayStr] = 0;
-    }
+      // Initialize map with last 30 days
+      for (int i = 0; i < 30; i++) {
+        final date = DateTime.now().subtract(Duration(days: i));
+        final dayStr = DateFormat('yyyy-MM-dd').format(date);
+        trends[dayStr] = 0;
+      }
 
-    for (final id in contentIds) {
-      final snap = await _db
-          .collection('attempts')
-          .where('contentId', isEqualTo: id)
-          .where('attemptedAt', isGreaterThanOrEqualTo: Timestamp.fromDate(thirtyDaysAgo))
-          .get();
-      
-      for (final doc in snap.docs) {
-        final ts = (doc.data()['attemptedAt'] as Timestamp?)?.toDate();
-        if (ts != null) {
-          final dayStr = DateFormat('yyyy-MM-dd').format(ts);
-          if (trends.containsKey(dayStr)) {
-            trends[dayStr] = trends[dayStr]! + 1;
+      for (final id in contentIds) {
+        try {
+          final snap = await _db
+              .collection('attempts')
+              .where('contentId', isEqualTo: id)
+              .where('attemptedAt', isGreaterThanOrEqualTo: Timestamp.fromDate(thirtyDaysAgo))
+              .get();
+          
+          for (final doc in snap.docs) {
+            final ts = (doc.data()['attemptedAt'] as Timestamp?)?.toDate();
+            if (ts != null) {
+              final dayStr = DateFormat('yyyy-MM-dd').format(ts);
+              if (trends.containsKey(dayStr)) {
+                trends[dayStr] = trends[dayStr]! + 1;
+              }
+            }
           }
+        } catch (e) {
+          print('Error fetching trends for deck $id: $e');
         }
       }
+      return trends;
+    } catch (e) {
+      print('TeacherService.getCompletionTrends error: $e');
+      return {};
     }
-    return trends;
   }
 }

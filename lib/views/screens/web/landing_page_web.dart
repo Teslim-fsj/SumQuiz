@@ -48,101 +48,127 @@ class _LandingPageWebState extends State<LandingPageWeb>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          _buildTopBar(context),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _buildStudentLanding(),
-                const CreatorTabView(),
-              ],
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: Column(
+          children: [
+            _buildTopBar(context),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _buildStudentLanding(),
+                  const CreatorTabView(),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildTopBar(BuildContext context) {
     bool isEducator = _tabController.index == 1;
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Logo
-          InkWell(
-            onTap: () {
-              if (isEducator) {
-                _tabController.animateTo(0);
-              }
-            },
-            child: Row(
-              children: [
-                Image.asset('assets/images/sumquiz_logo.png', width: 32, height: 32),
-                const SizedBox(width: 12),
-                Text('SumQuiz', style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w800, color: const Color(0xFF1F1F1F), letterSpacing: -0.5)),
-              ],
-            ),
-          ),
-          
-          // Center Links
-          Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final horizontalPadding = constraints.maxWidth < 600 ? 16.0 : 40.0;
+        return Container(
+          color: Colors.white,
+          padding:
+              EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _navLink('Features'),
-              const SizedBox(width: 32),
-              _navLink(isEducator ? 'Solutions' : 'How it Works'),
-              if (isEducator) ...[
-                const SizedBox(width: 32),
-                _navLink('Resources'),
-              ]
-            ],
-          ),
+              // Logo
+              InkWell(
+                onTap: () {
+                  if (isEducator) {
+                    _tabController.animateTo(0);
+                  }
+                },
+                child: Row(
+                  children: [
+                    Image.asset('assets/images/sumquiz_logo.png',
+                        width: 32, height: 32),
+                    const SizedBox(width: 12),
+                    Text('SumQuiz',
+                        style: GoogleFonts.outfit(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF1F1F1F),
+                            letterSpacing: -0.5)),
+                  ],
+                ),
+              ),
 
-          // Actions
-          Row(
-            children: [
-              if (!isEducator) ...[
-                OutlinedButton(
-                  onPressed: () => _tabController.animateTo(1),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF1F1F1F),
-                    side: BorderSide(color: Colors.grey[300]!),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                  ),
-                  child: Text('Switch to Teacher', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13)),
-                ),
-                const SizedBox(width: 16),
-              ],
-              if (isEducator) ...[
-                TextButton(
-                  onPressed: () => context.go('/auth'),
-                  child: Text('Sign In', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.grey[800], fontSize: 14)),
-                ),
-                const SizedBox(width: 16),
-              ],
-              ElevatedButton(
-                onPressed: () => context.go('/auth'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: WebColors.purplePrimary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                ),
-                child: Text('Get Started', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13)),
-              )
+              // Center Links
+              Row(
+                children: [
+                  _navLink('Features'),
+                  const SizedBox(width: 32),
+                  _navLink(isEducator ? 'Solutions' : 'How it Works'),
+                  if (isEducator) ...[
+                    const SizedBox(width: 32),
+                    _navLink('Resources'),
+                  ]
+                ],
+              ),
+
+              // Actions
+              Row(
+                children: [
+                  if (!isEducator) ...[
+                    OutlinedButton(
+                      onPressed: () => _tabController.animateTo(1),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF1F1F1F),
+                        side: BorderSide(color: Colors.grey[300]!),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24)),
+                      ),
+                      child: Text('Switch to Teacher',
+                          style: GoogleFonts.inter(
+                              fontWeight: FontWeight.bold, fontSize: 13)),
+                    ),
+                    const SizedBox(width: 16),
+                  ],
+                  if (isEducator) ...[
+                    TextButton(
+                      onPressed: () => context.go('/auth'),
+                      child: Text('Sign In',
+                          style: GoogleFonts.inter(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[800],
+                              fontSize: 14)),
+                    ),
+                    const SizedBox(width: 16),
+                  ],
+                  ElevatedButton(
+                    onPressed: () => context.go('/auth'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: WebColors.purplePrimary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 16),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24)),
+                    ),
+                    child: Text('Get Started',
+                        style: GoogleFonts.inter(
+                            fontWeight: FontWeight.bold, fontSize: 13)),
+                  )
+                ],
+              ),
             ],
-          )
-        ],
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -170,174 +196,248 @@ class _LandingPageWebState extends State<LandingPageWeb>
   }
 
   Widget _buildStudentHeroSection() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 60),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            flex: 1,
-            child: Column(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 900;
+        final horizontalPadding = isMobile ? 24.0 : 80.0;
+        
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 60),
+          child: isMobile 
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _buildStudentHeroContent(isMobile: true),
+                  const SizedBox(height: 60),
+                  _buildStudentHeroImage(isMobile: true),
+                ],
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: _buildStudentHeroContent(isMobile: false),
+                  ),
+                  const SizedBox(width: 40),
+                  Expanded(
+                    flex: 1,
+                    child: _buildStudentHeroImage(isMobile: false),
+                  ),
+                ],
+              ),
+        );
+      }
+    );
+  }
+
+  Widget _buildStudentHeroContent({required bool isMobile}) {
+    return Column(
+      crossAxisAlignment: isMobile ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(color: const Color(0xFFEEF2FF), borderRadius: BorderRadius.circular(20)),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.auto_awesome, size: 16, color: WebColors.purplePrimary),
+              const SizedBox(width: 8),
+              Text('AI-POWERED LEARNING ASSISTANT', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: WebColors.purplePrimary)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 32),
+        RichText(
+          textAlign: isMobile ? TextAlign.center : TextAlign.start,
+          text: TextSpan(
+            style: GoogleFonts.outfit(fontSize: isMobile ? 48 : 64, fontWeight: FontWeight.w900, color: const Color(0xFF1F1F1F), height: 1.1, letterSpacing: -1.5),
+            children: [
+              const TextSpan(text: 'Your notes.\n'),
+              TextSpan(text: 'Your AI.\n', style: GoogleFonts.outfit(color: WebColors.purplePrimary)),
+              const TextSpan(text: 'Your growth.'),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          'Transform any PDF, photo, or lecture recording into\npersonalized study guides, interactive quizzes, and\nsmart flashcards in seconds.',
+          textAlign: isMobile ? TextAlign.center : TextAlign.start,
+          style: GoogleFonts.inter(fontSize: 18, color: Colors.grey[600], height: 1.5),
+        ),
+        const SizedBox(height: 48),
+        Row(
+          mainAxisAlignment: isMobile ? MainAxisAlignment.center : MainAxisAlignment.start,
+          children: [
+            ElevatedButton(
+              onPressed: () => context.go('/auth'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: WebColors.purplePrimary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              ),
+              child: Text('Start for Free', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15)),
+            ),
+            const SizedBox(width: 16),
+            OutlinedButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.play_circle_fill, color: WebColors.purplePrimary),
+              label: Text('Watch Demo', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.grey[800],
+                side: BorderSide(color: Colors.grey[300]!),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 48),
+        Row(
+          mainAxisAlignment: isMobile ? MainAxisAlignment.center : MainAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 100,
+              child: Stack(
+                children: [
+                  _buildAvatar('assets/images/sumquiz_logo.png', 0),
+                  _buildAvatar('assets/images/sumquiz_logo.png', 20),
+                  _buildAvatar('assets/images/sumquiz_logo.png', 40),
+                  _buildAvatar('assets/images/sumquiz_logo.png', 60),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(color: const Color(0xFFEEF2FF), borderRadius: BorderRadius.circular(20)),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.auto_awesome, size: 16, color: WebColors.purplePrimary),
-                      const SizedBox(width: 8),
-                      Text('AI-POWERED LEARNING ASSISTANT', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: WebColors.purplePrimary)),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 32),
-                RichText(
-                  text: TextSpan(
-                    style: GoogleFonts.outfit(fontSize: 64, fontWeight: FontWeight.w900, color: const Color(0xFF1F1F1F), height: 1.1, letterSpacing: -1.5),
-                    children: [
-                      const TextSpan(text: 'Your notes.\n'),
-                      TextSpan(text: 'Your AI.\n', style: GoogleFonts.outfit(color: WebColors.purplePrimary)),
-                      const TextSpan(text: 'Your growth.'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Transform any PDF, photo, or lecture recording into\npersonalized study guides, interactive quizzes, and\nsmart flashcards in seconds.',
-                  style: GoogleFonts.inter(fontSize: 18, color: Colors.grey[600], height: 1.5),
-                ),
-                const SizedBox(height: 48),
+                Text('18,000+ Nigerian Students', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[800])),
                 Row(
                   children: [
-                    ElevatedButton(
-                      onPressed: () => context.go('/auth'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: WebColors.purplePrimary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                      ),
-                      child: Text('Start for Free', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15)),
-                    ),
-                    const SizedBox(width: 16),
-                    OutlinedButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.play_circle_fill, color: WebColors.purplePrimary),
-                      label: Text('Watch Demo', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15)),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.grey[800],
-                        side: BorderSide(color: Colors.grey[300]!),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 48),
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 100,
-                      child: Stack(
-                        children: [
-                          _buildAvatar('assets/images/sumquiz_logo.png', 0),
-                          _buildAvatar('assets/images/sumquiz_logo.png', 20),
-                          _buildAvatar('assets/images/sumquiz_logo.png', 40),
-                          _buildAvatar('assets/images/sumquiz_logo.png', 60),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('18,000+ Nigerian Students', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[800])),
-                        Row(
-                          children: [
-                            Row(children: List.generate(5, (index) => const Icon(Icons.star, color: Colors.amber, size: 14))),
-                            const SizedBox(width: 4),
-                            Text('4.9/5 stars', style: GoogleFonts.inter(fontSize: 12, color: WebColors.purplePrimary, fontWeight: FontWeight.w600)),
-                          ],
-                        )
-                      ],
-                    )
+                    Row(children: List.generate(5, (index) => const Icon(Icons.star, color: Colors.amber, size: 14))),
+                    const SizedBox(width: 4),
+                    Text('4.9/5 stars', style: GoogleFonts.inter(fontSize: 12, color: WebColors.purplePrimary, fontWeight: FontWeight.w600)),
                   ],
                 )
               ],
-            ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1),
+            )
+          ],
+        )
+      ],
+    ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1);
+  }
+
+  Widget _buildStudentHeroImage({required bool isMobile}) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          height: isMobile ? 350 : 500,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: WebColors.purplePrimary.withValues(alpha: 0.1),
+                blurRadius: 40,
+                offset: const Offset(0, 20),
+              )
+            ],
+            image: const DecorationImage(
+              image: AssetImage('assets/images/student_studying_phone.png'),
+              fit: BoxFit.cover,
+            ),
           ),
-          const SizedBox(width: 60),
-          Expanded(
-            flex: 1,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  height: 500,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(32),
-                    boxShadow: [BoxShadow(color: WebColors.purplePrimary.withValues(alpha: 0.1), blurRadius: 40, offset: const Offset(0, 20))],
-                    image: const DecorationImage(
-                      image: AssetImage('assets/images/student_studying_phone.png'),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ).animate().fadeIn(duration: 800.ms, delay: 200.ms).scale(begin: const Offset(0.95, 0.95)),
-                Positioned(
-                  bottom: -20,
-                  left: -40,
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, 10))],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: const Color(0xFFF3E8FF), borderRadius: BorderRadius.circular(12)),
-                          child: const Icon(Icons.loop, color: WebColors.purplePrimary, size: 24),
-                        ),
-                        const SizedBox(width: 16),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('SPACED REPETITION', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: WebColors.purplePrimary, letterSpacing: 1)),
-                            const SizedBox(height: 4),
-                            Text('Organic Chemistry Mastery', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF1F1F1F))),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Container(
-                                  width: 150,
-                                  height: 6,
-                                  decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(3)),
-                                  child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Container(width: 120, decoration: BoxDecoration(color: WebColors.purplePrimary, borderRadius: BorderRadius.circular(3))),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Text('85%', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[600])),
-                              ],
-                            )
-                          ],
-                        )
-                      ],
-                    ),
-                  ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2),
+        ).animate().fadeIn(duration: 800.ms, delay: 200.ms).scale(begin: const Offset(0.95, 0.95)),
+        Positioned(
+          bottom: -20,
+          left: isMobile ? 10 : -40,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
                 )
               ],
             ),
-          ),
-        ],
-      ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3E8FF),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.loop, color: WebColors.purplePrimary, size: 24),
+                ),
+                const SizedBox(width: 16),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'SPACED REPETITION',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: WebColors.purplePrimary,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Organic Chemistry Mastery',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF1F1F1F),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Container(
+                          width: 150,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Container(
+                              width: 120,
+                              decoration: BoxDecoration(
+                                color: WebColors.purplePrimary,
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          '85%',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2),
+        ),
+      ],
     );
   }
 

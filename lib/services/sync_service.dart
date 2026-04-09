@@ -12,6 +12,8 @@ import '../models/flashcard_set.dart';
 import '../models/quiz_question.dart';
 import '../models/local_quiz_question.dart';
 import '../models/local_flashcard.dart';
+import '../models/folder.dart';
+import '../models/content_folder.dart';
 import 'dart:developer' as developer;
 
 class SyncService {
@@ -41,6 +43,8 @@ class SyncService {
       await _syncSummaries(user.uid);
       await _syncQuizzes(user.uid);
       await _syncFlashcardSets(user.uid);
+      await _syncFolders(user.uid);
+      await _syncContentRelations(user.uid);
     } catch (e, s) {
       developer.log('Error during sync',
           name: 'SyncService', error: e, stackTrace: s);
@@ -273,6 +277,91 @@ class SyncService {
           localFlashcardSet.isSynced = true;
           await _localDb.saveFlashcardSet(localFlashcardSet);
         }
+      }
+    }
+  }
+
+  Future<void> _syncFolders(String userId) async {
+    final localFolders = await _localDb.getAllFolders(userId);
+    // Note: Folder model uses 'isSaved' as sync status
+    final unsyncedFolders = localFolders.where((f) => !f.isSaved).toList();
+
+    for (final localFolder in unsyncedFolders) {
+      try {
+        await _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('folders')
+            .doc(localFolder.id)
+            .set(localFolder.toFirestore());
+
+        localFolder.isSaved = true;
+        await _localDb.saveFolder(localFolder);
+      } catch (e, s) {
+        developer.log('Error syncing folder ${localFolder.id}',
+            name: 'SyncService', error: e, stackTrace: s);
+      }
+    }
+
+    final firestoreFolders = await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('folders')
+        .get();
+
+    for (final doc in firestoreFolders.docs) {
+      final localFolder = await _localDb.getFolder(doc.id);
+      if (localFolder == null) {
+        final newFolder = Folder.fromFirestore(doc.data(), doc.id);
+        await _localDb.saveFolder(newFolder);
+      } else {
+        final firestoreFolderData = doc.data();
+        final updatedAt =
+            (firestoreFolderData['updatedAt'] as Timestamp?)?.toDate() ??
+                DateTime.now();
+
+        if (updatedAt.isAfter(localFolder.updatedAt)) {
+          localFolder.name = firestoreFolderData['name'] ?? localFolder.name;
+          localFolder.updatedAt = updatedAt;
+          localFolder.isSaved = true;
+          await _localDb.saveFolder(localFolder);
+        }
+      }
+    }
+  }
+
+  Future<void> _syncContentRelations(String userId) async {
+    // Relationships are unique by their key '$folderId-$contentId'
+    // We fetch all relations from cloud and merge with local
+    final firestoreRelations = await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('content_folders')
+        .get();
+
+    for (final doc in firestoreRelations.docs) {
+      final relation = ContentFolder.fromFirestore(doc.data());
+      await _localDb.assignContentToFolder(
+        relation.contentId,
+        relation.folderId,
+        relation.contentType,
+        userId,
+      );
+    }
+
+    // Push local relations to cloud
+    final localRelations = await _localDb.getFolderContentsForUser(userId);
+    for (final relation in localRelations) {
+      try {
+        final key = '${relation.folderId}-${relation.contentId}';
+        await _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('content_folders')
+            .doc(key)
+            .set(relation.toFirestore());
+      } catch (e) {
+        developer.log('Error syncing relation', name: 'SyncService', error: e);
       }
     }
   }

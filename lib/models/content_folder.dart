@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 part 'content_folder.g.dart';
 
@@ -33,5 +34,25 @@ class ContentFolder extends HiveObject {
     contentType = '';
     userId = '';
     assignedAt = DateTime.now();
+  }
+
+  factory ContentFolder.fromFirestore(Map<String, dynamic> data) {
+    return ContentFolder(
+      contentId: data['contentId'] ?? '',
+      folderId: data['folderId'] ?? '',
+      contentType: data['contentType'] ?? '',
+      userId: data['userId'] ?? '',
+      assignedAt: (data['assignedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'contentId': contentId,
+      'folderId': folderId,
+      'contentType': contentType,
+      'userId': userId,
+      'assignedAt': Timestamp.fromDate(assignedAt),
+    };
   }
 }

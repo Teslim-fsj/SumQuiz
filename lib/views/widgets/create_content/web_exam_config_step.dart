@@ -22,6 +22,7 @@ class WebExamConfigStep extends StatelessWidget {
   final Function(String, bool) onRuleToggled;
   
   final VoidCallback onFinalize;
+  final VoidCallback onBack;
   final bool isGenerating;
 
   const WebExamConfigStep({
@@ -42,6 +43,7 @@ class WebExamConfigStep extends StatelessWidget {
     required this.focusWeakAreas,
     required this.onRuleToggled,
     required this.onFinalize,
+    required this.onBack,
     this.isGenerating = false,
   });
 
@@ -154,27 +156,38 @@ class WebExamConfigStep extends StatelessWidget {
                     ),
                   ],
                 ),
-                ElevatedButton(
-                  onPressed: isGenerating ? null : onFinalize,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4F46E5),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        isGenerating ? 'GENERATING...' : 'Generate Draft Exam',
-                        style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.bold),
+                Row(
+                  children: [
+                    TextButton.icon(
+                      onPressed: isGenerating ? null : onBack,
+                      icon: const Icon(Icons.arrow_back, size: 18),
+                      label: Text('Previous: Source Material', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+                      style: TextButton.styleFrom(foregroundColor: const Color(0xFF64748B)),
+                    ),
+                    const SizedBox(width: 16),
+                    ElevatedButton(
+                      onPressed: isGenerating ? null : onFinalize,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4F46E5),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       ),
-                      const SizedBox(width: 12),
-                      if (isGenerating)
-                        const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      else
-                        const Icon(Icons.auto_awesome, size: 20),
-                    ],
-                  ),
+                      child: Row(
+                        children: [
+                          Text(
+                            isGenerating ? 'GENERATING...' : 'Generate Draft Exam',
+                            style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(width: 12),
+                          if (isGenerating)
+                            const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          else
+                            const Icon(Icons.auto_awesome, size: 20),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -190,7 +203,7 @@ class WebExamConfigStep extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white, width: 2),
       ),
-      child: CircleAvatar(radius: 16, child: Icon(Icons.person, size: 20, color: Colors.white), backgroundColor: Colors.grey),
+      child: CircleAvatar(radius: 16, backgroundColor: Colors.grey, child: Icon(Icons.person, size: 20, color: Colors.white)),
     );
   }
 
@@ -444,7 +457,7 @@ class WebExamConfigStep extends StatelessWidget {
         Switch(
           value: isOn,
           onChanged: onChanged,
-          activeColor: Colors.white,
+          activeThumbColor: Colors.white,
           activeTrackColor: const Color(0xFF4F46E5),
           inactiveTrackColor: const Color(0xFFCBD5E1),
           inactiveThumbColor: Colors.white,

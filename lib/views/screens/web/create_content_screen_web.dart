@@ -127,7 +127,11 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
               final text = _textController.text.trim();
               if (text.isNotEmpty) {
                 Navigator.pop(context);
-                provider.setSource(isTopic ? 'topic' : (isLink ? 'link' : 'text'), text: text);
+                final bool isYoutube = text.contains('youtube.com') || text.contains('youtu.be');
+                provider.setSource(
+                  isTopic ? 'topic' : (isYoutube ? 'youtube' : (isLink ? 'link' : 'text')),
+                  text: text,
+                );
               }
             },
             style: ElevatedButton.styleFrom(

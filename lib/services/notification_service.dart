@@ -10,6 +10,7 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:workmanager/workmanager.dart';
 
 final didReceiveLocalNotificationSubject =
     BehaviorSubject<ReceivedNotification>();
@@ -158,10 +159,6 @@ class NotificationService {
       if (androidPlugin != null) {
         final granted = await androidPlugin.requestNotificationsPermission();
         debugPrint('🔔 Android notification permission granted: $granted');
-
-        // Also request exact alarm permission for scheduled notifications (Android 12+)
-        await androidPlugin.requestExactAlarmsPermission();
-        debugPrint('🔔 Android exact alarm permission requested');
       }
 
       // Request iOS notification permissions
@@ -234,11 +231,39 @@ class NotificationService {
     final String message = _getPersonalizedMessage(category, data);
     final tz.TZDateTime scheduledDate = _getScheduledDateTime(days: days);
 
-    await _localNotifications.zonedSchedule(
+    final Duration delay = scheduledDate.isAfter(tz.TZDateTime.now(tz.local))
+        ? scheduledDate.difference(tz.TZDateTime.now(tz.local))
+        : const Duration(seconds: 5);
+
+    await Workmanager().registerOneOffTask(
+      id.toString(),
+      'notification_task',
+      initialDelay: delay,
+      inputData: {
+        'id': id,
+        'title': title,
+        'message': message,
+        'payload': json.encode({'route': payloadRoute}),
+        'category': category,
+      },
+      existingWorkPolicy: ExistingWorkPolicy.replace,
+    );
+
+    debugPrint('⏰ Scheduled notification $id via WorkManager with delay: $delay');
+  }
+
+  /// Helper to show a notification immediately (called by WorkManager)
+  Future<void> showImmediateNotification({
+    required int id,
+    required String title,
+    required String message,
+    required String payload,
+    required String category,
+  }) async {
+    await _localNotifications.show(
       id,
       title,
       message,
-      scheduledDate,
       NotificationDetails(
         android: AndroidNotificationDetails(
           '${category}_channel',
@@ -247,13 +272,9 @@ class NotificationService {
           importance: Importance.max,
           priority: Priority.high,
           color: Colors.black,
-          ledColor: Colors.black,
-          ledOnMs: 1000,
-          ledOffMs: 500,
         ),
       ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      payload: json.encode({'route': payloadRoute}),
+      payload: payload,
     );
   }
 
@@ -349,22 +370,20 @@ class NotificationService {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
 
-    await _localNotifications.zonedSchedule(
-      1001, // Unique ID for priming notifications
-      '🧠 Today\'s Mission is Ready',
-      '$cardCount cards • $estimatedMinutes min',
-      scheduledDate,
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'mission_priming',
-          'Mission Priming',
-          channelDescription: 'Mission preview notifications',
-          importance: Importance.high,
-          priority: Priority.high,
-        ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      payload: json.encode({'route': '/review'}),
+    final Duration delay = scheduledDate.difference(now);
+
+    await Workmanager().registerOneOffTask(
+      'priming_$userId',
+      'notification_task',
+      initialDelay: delay,
+      inputData: {
+        'id': 1001,
+        'title': '🧠 Today\'s Mission is Ready',
+        'message': '$cardCount cards • $estimatedMinutes min',
+        'payload': json.encode({'route': '/review'}),
+        'category': 'mission_priming',
+      },
+      existingWorkPolicy: ExistingWorkPolicy.replace,
     );
   }
 
@@ -378,22 +397,18 @@ class NotificationService {
     final tz.TZDateTime scheduledDate =
         tz.TZDateTime.now(tz.local).add(const Duration(hours: 20));
 
-    await _localNotifications.zonedSchedule(
-      1002, // Unique ID for recall notifications
-      '🚀 Yesterday: +$momentumGain Momentum',
-      'Keep the habit alive today!',
-      scheduledDate,
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'mission_recall',
-          'Mission Recall',
-          channelDescription: 'Encouragement after completion',
-          importance: Importance.defaultImportance,
-          priority: Priority.defaultPriority,
-        ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      payload: json.encode({'route': '/review'}),
+    await Workmanager().registerOneOffTask(
+      'recall_notification',
+      'notification_task',
+      initialDelay: const Duration(hours: 20),
+      inputData: {
+        'id': 1002,
+        'title': '🚀 Yesterday: +$momentumGain Momentum',
+        'message': 'Keep the habit alive today!',
+        'payload': json.encode({'route': '/review'}),
+        'category': 'mission_recall',
+      },
+      existingWorkPolicy: ExistingWorkPolicy.replace,
     );
   }
 
@@ -420,22 +435,20 @@ class NotificationService {
       return;
     }
 
-    await _localNotifications.zonedSchedule(
-      1003, // Unique ID for streak saver
-      '🔥 Save Your $currentStreak-Day Streak!',
-      '$remainingCards cards left • 3 mins to complete',
-      scheduledDate,
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'streak_saver',
-          'Streak Saver',
-          channelDescription: 'Urgent reminders to maintain streak',
-          importance: Importance.max,
-          priority: Priority.high,
-        ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      payload: json.encode({'route': '/review'}),
+    final Duration delay = scheduledDate.difference(now);
+
+    await Workmanager().registerOneOffTask(
+      'streak_saver',
+      'notification_task',
+      initialDelay: delay,
+      inputData: {
+        'id': 1003,
+        'title': '🔥 Save Your $currentStreak-Day Streak!',
+        'message': '$remainingCards cards left • 3 mins to complete',
+        'payload': json.encode({'route': '/review'}),
+        'category': 'streak_saver',
+      },
+      existingWorkPolicy: ExistingWorkPolicy.replace,
     );
   }
 }

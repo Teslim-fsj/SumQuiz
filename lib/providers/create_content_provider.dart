@@ -7,6 +7,7 @@ import 'package:sumquiz/services/content_extraction_service.dart';
 import 'package:sumquiz/services/enhanced_ai_service.dart';
 import 'package:sumquiz/services/local_database_service.dart';
 import 'package:sumquiz/services/usage_service.dart';
+import 'package:sumquiz/services/youtube_service.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
 
 enum CreationPhase { source, config, processing, success, error }
@@ -17,15 +18,18 @@ class CreateContentProvider with ChangeNotifier {
   final ContentExtractionService _extractionService;
   final EnhancedAIService _aiService;
   final LocalDatabaseService _localDb;
+  final YoutubeService _youtubeService;
   final UsageService _usageService = UsageService();
 
   CreateContentProvider({
     required ContentExtractionService extractionService,
     required EnhancedAIService aiService,
     required LocalDatabaseService localDb,
+    required YoutubeService youtubeService,
   })  : _extractionService = extractionService,
         _aiService = aiService,
-        _localDb = localDb;
+        _localDb = localDb,
+        _youtubeService = youtubeService;
 
   // --- STATE ---
   CreationPhase _phase = CreationPhase.source;
@@ -142,9 +146,25 @@ class CreateContentProvider with ChangeNotifier {
       }
 
       ExtractionResult? extractionResult;
-
-      // 2. Extract Content
-      if (_selectedSourceType == 'text' || _selectedSourceType == 'topic') {
+      
+      // Handle YouTube Transcript separately
+      if (_selectedSourceType == 'youtube') {
+        _progressMessage = 'Extracting YouTube transcript...';
+        notifyListeners();
+        try {
+          final transcript = await _youtubeService.getTranscript(_textContent);
+          final metadata = await _youtubeService.getVideoMetadata(_textContent);
+          extractionResult = ExtractionResult(
+            text: transcript,
+            suggestedTitle: metadata['title'] ?? 'YouTube Content',
+          );
+        } catch (e) {
+          throw Exception('YouTube Error: ${e.toString().replaceFirst('Exception: ', '')}');
+        }
+      }
+      
+      // 2. Extract Content (Regular sources)
+      else if (_selectedSourceType == 'text' || _selectedSourceType == 'topic') {
         if (_textContent.split(' ').length <= 8 && !_textContent.contains('\n') && _selectedSourceType == 'topic') {
            // Topic generation (Fast track)
            _progressMessage = 'Generating full study set from topic...';

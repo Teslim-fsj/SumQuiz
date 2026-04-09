@@ -10,6 +10,7 @@ class WebExamSetupStep extends StatelessWidget {
   final ValueChanged<String?> onLevelChanged;
   final VoidCallback onPickSourcePdf;
   final VoidCallback onPickSourceNotes;
+  final VoidCallback onPickSourceYoutube;
   final VoidCallback onNext;
   final bool hasSource;
   final String uploadStatusMessage;
@@ -24,6 +25,7 @@ class WebExamSetupStep extends StatelessWidget {
     required this.onLevelChanged,
     required this.onPickSourcePdf,
     required this.onPickSourceNotes,
+    required this.onPickSourceYoutube,
     required this.onNext,
     this.hasSource = false,
     this.uploadStatusMessage = '',
@@ -219,15 +221,27 @@ class WebExamSetupStep extends StatelessWidget {
           ),
           if (!hasSource) ...[
             const SizedBox(height: 12),
-            Center(
-              child: TextButton.icon(
-                onPressed: onPickSourceNotes,
-                icon: const Icon(Icons.edit_note_rounded),
-                label: const Text('Or paste raw text notes instead'),
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF4F46E5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton.icon(
+                  onPressed: onPickSourceNotes,
+                  icon: const Icon(Icons.edit_note_rounded),
+                  label: const Text('Paste Notes'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF4F46E5),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 16),
+                TextButton.icon(
+                  onPressed: onPickSourceYoutube,
+                  icon: const Icon(Icons.play_circle_fill_rounded),
+                  label: const Text('Add YouTube'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.redAccent,
+                  ),
+                ),
+              ],
             ),
           ],
         ],

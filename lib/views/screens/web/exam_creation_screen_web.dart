@@ -17,6 +17,7 @@ import 'package:sumquiz/services/content_extraction_service.dart';
 import 'package:sumquiz/services/firestore_service.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
 import 'package:sumquiz/utils/share_code_generator.dart';
+import 'package:sumquiz/services/youtube_service.dart';
 
 import '../../widgets/create_content/web_exam_setup_step.dart';
 import '../../widgets/create_content/web_exam_config_step.dart';
@@ -43,7 +44,8 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   // state variables
   String _selectedLevel = 'High School / Secondary';
   int _numberOfQuestions = 20;
-  final double _difficultyValue = 0.5;
+  double _easyRatio = 0.3;
+  double _hardRatio = 0.2;
   bool _includeMultipleChoice = true;
   bool _includeShortAnswer = false;
   bool _includeTheory = false;
@@ -62,9 +64,9 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   List<LocalQuizQuestion> _generatedQuestions = [];
 
   // Marks allocation
-  int _marksA = 1;
-  int _marksB = 5;
-  int _marksC = 10;
+  final int _marksA = 1;
+  final int _marksB = 5;
+  final int _marksC = 10;
 
   // Editor Controllers (to prevent focus loss during live edit)
   final Map<int, TextEditingController> _qTitleControllers = {};
@@ -254,7 +256,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           if (_includeTrueFalse) 'True/False',
           if (_includeTheory) 'Theory',
         ],
-        difficultyMix: _difficultyValue,
+        difficultyMix: (1.0 - _easyRatio + _hardRatio) / 2,
         evenTopicCoverage: _evenTopicCoverage,
         focusWeakAreas: _focusWeakAreas,
         userId: user?.uid ?? 'anonymous',
@@ -323,6 +325,33 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
     } catch (e) {
       setState(() => _isGeneratingQuestions = false);
       _showError('Export failed: $e');
+    }
+  }
+
+  Future<void> _regenerateQuestion(int index) async {
+    setState(() {
+      _isGeneratingQuestions = true;
+      _processingMessage = 'Regenerating question ${index + 1}...';
+    });
+
+    try {
+      final aiService = Provider.of<EnhancedAIService>(context, listen: false);
+      final oldQuestion = _generatedQuestions[index];
+
+      final regeneratedQuestion = await aiService.regenerateQuestion(
+        sourceText: _sourceMaterial,
+        subject: _subjectController.text,
+        level: _selectedLevel,
+        oldQuestion: oldQuestion,
+      );
+
+      setState(() {
+        _generatedQuestions[index] = regeneratedQuestion;
+        _isGeneratingQuestions = false;
+      });
+    } catch (e) {
+      setState(() => _isGeneratingQuestions = false);
+      _showError('Regeneration failed: $e');
     }
   }
 
@@ -621,6 +650,79 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
         SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 
+  void _showYoutubeInputDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text('Add YouTube Source', style: GoogleFonts.outfit(fontWeight: FontWeight.w800)),
+        content: SizedBox(
+          width: 500,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Enter a YouTube URL to extract its transcript and generate exam questions.'),
+              const SizedBox(height: 20),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'https://youtube.com/watch?v=...',
+                  prefixIcon: const Icon(Icons.play_circle_filled, color: Colors.redAccent),
+                  filled: true,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              final url = controller.text.trim();
+              if (url.isNotEmpty) {
+                Navigator.pop(context);
+                _extractFromYoutube(url);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4F46E5),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Extract Source'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _extractFromYoutube(String url) async {
+    setState(() {
+      _isProcessingSource = true;
+      _processingMessage = 'Fetching YouTube transcript...';
+    });
+
+    try {
+      final youtubeService = Provider.of<YoutubeService>(context, listen: false);
+      final transcript = await youtubeService.getTranscript(url);
+      
+      if (!mounted) return;
+      setState(() {
+        _sourceMaterial = transcript;
+        _isProcessingSource = false;
+        _processedFileNames.add('YouTube Video');
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isProcessingSource = false);
+      _showError('YouTube Error: $e');
+    }
+  }
+
   // --- UI Components ---
 
   @override
@@ -656,6 +758,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                       onLevelChanged: (v) => setState(() => _selectedLevel = v ?? _selectedLevel),
                       onPickSourcePdf: () => _pickSource('PDF'),
                       onPickSourceNotes: () => _pickSource('Notes'),
+                      onPickSourceYoutube: () => _showYoutubeInputDialog(),
                       onNext: _nextStep,
                       hasSource: _sourceMaterial.isNotEmpty,
                       uploadStatusMessage: _processedFileNames.isNotEmpty ? 'Processed: ${_processedFileNames.join(", ")}' : 'Material Ready',
@@ -664,11 +767,17 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                     WebExamConfigStep(
                       numberOfQuestions: _numberOfQuestions,
                       onQuestionsChanged: (v) => setState(() => _numberOfQuestions = v.round()),
-                      easyCount: (_numberOfQuestions * (1.0 - _difficultyValue) * 0.7).floor(),
-                      mediumCount: (_numberOfQuestions * _difficultyValue).round(),
-                      hardCount: (_numberOfQuestions * (1.0 - _difficultyValue) * 0.3).ceil(),
-                      onEasyChanged: (v) {}, // Mocked for UI, ideally update a complex state
-                      onHardChanged: (v) {},
+                      easyCount: (_numberOfQuestions * _easyRatio).round(),
+                      mediumCount: (_numberOfQuestions * (1.0 - _easyRatio - _hardRatio)).round(),
+                      hardCount: (_numberOfQuestions * _hardRatio).round(),
+                      onEasyChanged: (v) => setState(() {
+                        _easyRatio = v;
+                        if (_easyRatio + _hardRatio > 1.0) _hardRatio = 1.0 - _easyRatio;
+                      }),
+                      onHardChanged: (v) => setState(() {
+                        _hardRatio = v;
+                        if (_easyRatio + _hardRatio > 1.0) _easyRatio = 1.0 - _hardRatio;
+                      }),
                       includeMultipleChoice: _includeMultipleChoice,
                       includeTrueFalse: _includeTrueFalse,
                       includeTheory: _includeTheory,
@@ -693,17 +802,19 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                         _generateQuestions();
                         _nextStep();
                       },
+                      onBack: _prevStep,
                       isGenerating: _isGeneratingQuestions,
                     ),
                     // STEP 3: REVIEW
                     WebExamReviewStep(
                       questions: _generatedQuestions,
-                      onRegenerate: (index) {
-                        // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Regenerate specific AI feature coming soon.')));
+                      onRegenerate: _regenerateQuestion,
+                      onQuestionChanged: (index, updatedQ) {
                         setState(() {
-                          _generatedQuestions.removeAt(index);
+                          _generatedQuestions[index] = updatedQ;
                         });
                       },
+                      onBack: _prevStep,
                       onSaveLibrary: () {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved to Library.')));
                         context.go('/library');
@@ -712,9 +823,9 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                       onPublish: () {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Publishing to Class...')));
                       },
-                      easyCount: _generatedQuestions.where((q) => q.question.length < 50).length, // Fake mockup stats
-                      mediumCount: _generatedQuestions.where((q) => q.question.length >= 50 && q.question.length < 100).length,
-                      hardCount: _generatedQuestions.where((q) => q.question.length >= 100).length,
+                      easyCount: (_numberOfQuestions * _easyRatio).round(),
+                      mediumCount: (_numberOfQuestions * (1.0 - _easyRatio - _hardRatio)).round(),
+                      hardCount: (_numberOfQuestions * _hardRatio).round(),
                       topicCounts: const {'Metabolism': 8, 'Cell Structures': 12, 'Genetics': 5},
                     ),
                   ],
@@ -733,7 +844,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey.withOpacity(0.1))),
+        border: Border(bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.1))),
       ),
       child: Row(
         children: [

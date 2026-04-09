@@ -73,7 +73,7 @@ class SummaryScreenState extends State<SummaryScreen> {
         LocalSummary? summary = await _localDbService.getSummary(widget.id!);
 
         // If not found in local, check Firestore if on Web
-        if (summary == null) {
+        if (summary == null && mounted) {
           final user = Provider.of<UserModel?>(context, listen: false);
           if (user != null) {
             final firestore = FirestoreService();
@@ -143,7 +143,7 @@ class SummaryScreenState extends State<SummaryScreen> {
   void _generateSummary() async {
     final userModel = Provider.of<UserModel?>(context, listen: false);
     final usageService = Provider.of<UsageService?>(context, listen: false);
-    if (userModel == null || usageService == null) {
+    if (!mounted || userModel == null || usageService == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('User not available. Please log in again.')));
@@ -245,7 +245,7 @@ class SummaryScreenState extends State<SummaryScreen> {
 
   Future<void> _publishDeck() async {
     final user = context.read<UserModel?>();
-    if (user == null || user.role != UserRole.creator) return;
+    if (user == null) return;
 
     setState(() => _loadingMessage = 'Publishing Deck...');
 
@@ -443,12 +443,11 @@ class SummaryScreenState extends State<SummaryScreen> {
         actions: [
           Consumer<UserModel?>(
             builder: (context, user, _) {
-              if (user != null &&
-                  user.role == UserRole.creator &&
-                  _state == ScreenState.success) {
+              if (user != null && _state == ScreenState.success) {
+                final isStudent = user.role == UserRole.student;
                 return IconButton(
-                  icon: const Icon(Icons.public),
-                  tooltip: 'Publish Deck',
+                  icon: Icon(isStudent ? Icons.share_rounded : Icons.public),
+                  tooltip: isStudent ? 'Share with Friends' : 'Publish Deck',
                   onPressed: _publishDeck,
                 );
               }
@@ -491,7 +490,7 @@ class SummaryScreenState extends State<SummaryScreen> {
           const SizedBox(height: 24),
           Text(_loadingMessage,
               style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.7))),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7))),
         ],
       ).animate().fadeIn(),
     );
@@ -517,7 +516,7 @@ class SummaryScreenState extends State<SummaryScreen> {
               Text(
                 'Paste your content or upload a PDF to generate a comprehensive summary',
                 style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
               ).animate().fadeIn(delay: 100.ms).slideY(begin: -0.2),
               const SizedBox(height: 48),
               TextField(
@@ -527,7 +526,7 @@ class SummaryScreenState extends State<SummaryScreen> {
                 decoration: InputDecoration(
                   hintText: 'Paste your text here...',
                   hintStyle: TextStyle(
-                      color: theme.colorScheme.onSurface.withOpacity(0.3)),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.3)),
                   filled: true,
                   fillColor: theme.cardColor,
                   border: OutlineInputBorder(
@@ -556,7 +555,7 @@ class SummaryScreenState extends State<SummaryScreen> {
                         Icons.upload_file_rounded,
                         color: _pdfFileName != null
                             ? const Color(0xFF0D9488)
-                            : theme.colorScheme.onSurface.withOpacity(0.6),
+                            : theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                       label: Text(
                         _pdfFileName ?? 'Upload PDF',
@@ -633,7 +632,7 @@ class SummaryScreenState extends State<SummaryScreen> {
             Text(_errorMessage,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.7))),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7))),
             const SizedBox(height: 32),
             ElevatedButton.icon(
               onPressed: _retry,
@@ -659,7 +658,7 @@ class SummaryScreenState extends State<SummaryScreen> {
       return Center(
           child: Text('No summary available',
               style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6))));
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6))));
     }
 
     final isViewingSaved = widget.summary != null;
@@ -694,7 +693,7 @@ class SummaryScreenState extends State<SummaryScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withOpacity(0.1),
+                          color: theme.colorScheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -833,25 +832,27 @@ class SummaryScreenState extends State<SummaryScreen> {
 
                 const SizedBox(height: 48),
 
-                // Publish Button for Creators
+                // Share/Publish Button
                 Consumer<UserModel?>(builder: (context, user, _) {
-                  if (user != null && user.role == UserRole.creator) {
-                    return SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: _publishDeck,
-                        icon: const Icon(Icons.public_rounded),
-                        label: const Text('Publish as Public Deck'),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          side: BorderSide(color: theme.colorScheme.primary),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
+                  final isCreator = user != null && user.role == UserRole.creator;
+                  return SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _publishDeck,
+                      icon: Icon(isCreator
+                          ? Icons.public_rounded
+                          : Icons.share_rounded),
+                      label: Text(isCreator
+                          ? 'Publish as Public Deck'
+                          : 'Share with Friends'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: BorderSide(color: theme.colorScheme.primary),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
-                    ).animate().fadeIn(delay: 400.ms);
-                  }
-                  return const SizedBox.shrink();
+                    ),
+                  ).animate().fadeIn(delay: 400.ms);
                 }),
               ],
             ),

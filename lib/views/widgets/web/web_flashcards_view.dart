@@ -2,7 +2,6 @@ import 'dart:async';
 // Screen goal: User should go through cards rapidly with minimal animation delay and no wasted space. Focus on repetition speed, not visual effects.
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flip_card/flip_card.dart';
 import 'package:sumquiz/theme/web_theme.dart';
 import 'package:sumquiz/models/flashcard.dart';
@@ -30,7 +29,7 @@ class WebFlashcardsView extends StatefulWidget {
 class _WebFlashcardsViewState extends State<WebFlashcardsView> {
   int _currentIndex = 0;
   bool _isFlipped = false;
-  GlobalKey<FlipCardState> _cardKey = GlobalKey<FlipCardState>();
+  final GlobalKey<FlipCardState> _cardKey = GlobalKey<FlipCardState>();
   int _knewCount = 0;
   final Stopwatch _stopwatch = Stopwatch();
   late Timer _timer;
@@ -265,7 +264,7 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
             left: 0,
             top: 0,
             child: Text(
-              '${(_currentIndex + 1).toString().padLeft(2, '0')}',
+              (_currentIndex + 1).toString().padLeft(2, '0'),
               style: GoogleFonts.outfit(
                 fontSize: 200,
                 fontWeight: FontWeight.w900,

@@ -8,6 +8,7 @@ import 'package:sumquiz/models/local_quiz.dart';
 import 'package:sumquiz/models/local_flashcard_set.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:sumquiz/providers/sync_provider.dart';
 
 class DataStorageScreen extends StatelessWidget {
   const DataStorageScreen({super.key});
@@ -121,13 +122,19 @@ class DataStorageScreen extends StatelessWidget {
                               child:
                                   Divider(height: 1, color: theme.dividerColor),
                             ),
-                            _buildActionTile(
-                              context,
-                              icon: Icons.sync_outlined,
-                              title: 'Sync Data',
-                              subtitle: 'Sync with cloud',
-                              onTap: () => _syncData(context),
-                              theme: theme,
+                            Consumer<SyncProvider>(
+                              builder: (context, syncProvider, _) {
+                                return _buildActionTile(
+                                  context,
+                                  icon: Icons.sync_outlined,
+                                  title: 'Sync Data',
+                                  subtitle: syncProvider.isSyncing
+                                      ? 'Syncing...'
+                                      : 'Sync with cloud',
+                                  onTap: () => syncProvider.syncData(),
+                                  theme: theme,
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -528,15 +535,6 @@ class DataStorageScreen extends StatelessWidget {
     );
   }
 
-  void _syncData(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Syncing data...'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-    // TODO: Implement actual sync functionality
-  }
 
   Future<double> _calculateStorageUsage(
       LocalDatabaseService localDB, String userId) async {

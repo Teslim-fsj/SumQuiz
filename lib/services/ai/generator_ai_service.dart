@@ -6,7 +6,6 @@ import 'package:sumquiz/models/local_quiz_question.dart';
 import 'package:sumquiz/models/local_flashcard.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
 import 'package:uuid/uuid.dart';
-import 'ai_config.dart';
 import 'ai_base_service.dart';
 import 'package:sumquiz/providers/create_content_provider.dart';
 
@@ -530,6 +529,65 @@ Text: $text''';
     } catch (e) {
       rethrow;
     }
+  }
+
+  Future<LocalQuizQuestion> regenerateQuestion({
+    required String sourceText,
+    required String subject,
+    required String level,
+    required LocalQuizQuestion oldQuestion,
+    CancellationToken? cancelToken,
+  }) async {
+    final type = oldQuestion.questionType;
+    final prompt = '''You are an expert examiner. Regenerate this $type question for a $level $subject exam.
+    The new question must be based on the source text but different from the previous one.
+    
+    OLD QUESTION: ${oldQuestion.question}
+    
+    SOURCE TEXT:
+    $sourceText
+    
+    OUTPUT FORMAT: JSON with 'question', 'options' (if MC/TF), 'correctAnswer', 'explanation', 'questionType'.''';
+
+    final config = GenerationConfig(
+      responseMimeType: 'application/json',
+      responseSchema: Schema.object(
+        properties: {
+          'question': Schema.string(),
+          'options': Schema.array(items: Schema.string()),
+          'correctAnswer': Schema.string(),
+          'explanation': Schema.string(),
+          'questionType': Schema.string(),
+        },
+        requiredProperties: ['question', 'correctAnswer', 'explanation', 'questionType'],
+      ),
+    );
+
+    final response = await generateWithRetry(
+      prompt,
+      customModel: educatorModel,
+      generationConfig: config,
+      cancelToken: cancelToken,
+    );
+
+    final jsonStr = extractJson(response);
+    final data = safeJsonDecode(jsonStr);
+
+    final List<String> options = [];
+    final rawOptions = data['options'];
+    if (rawOptions is List) {
+      for (final o in rawOptions) {
+        options.add(o.toString());
+      }
+    }
+
+    return LocalQuizQuestion(
+      question: data['question']?.toString() ?? '...',
+      options: options,
+      correctAnswer: data['correctAnswer']?.toString() ?? '',
+      explanation: data['explanation']?.toString(),
+      questionType: data['questionType']?.toString() ?? type,
+    );
   }
 
   // --- VERIFICATION API ---

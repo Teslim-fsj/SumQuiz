@@ -8,6 +8,11 @@ import 'package:sumquiz/models/local_flashcard_set.dart';
 import 'package:sumquiz/models/local_quiz.dart';
 import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
+import 'package:sumquiz/services/firestore_service.dart';
+import 'package:sumquiz/models/public_deck.dart';
+import 'package:sumquiz/utils/share_code_generator.dart';
+import 'package:sumquiz/views/widgets/share_deck_dialog.dart';
+import 'package:uuid/uuid.dart';
 import 'package:sumquiz/services/spaced_repetition_service.dart';
 import 'package:sumquiz/services/local_database_service.dart';
 import 'package:sumquiz/services/auth_service.dart';
@@ -99,6 +104,72 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _publishDeck() async {
+    final user = context.read<UserModel?>();
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please log in to share packs')),
+      );
+      return;
+    }
+
+    if (_summary == null || _quiz == null || _flashcardSet == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Wait for content to finish loading.')));
+      return;
+    }
+
+    if (!user.isPro) {
+      showDialog(
+        context: context,
+        builder: (context) => const UpgradeDialog(featureName: 'Sharing Packs'),
+      );
+      return;
+    }
+
+    try {
+      final shareCode = ShareCodeGenerator.generate();
+      final publicDeckId = const Uuid().v4();
+
+      final publicDeck = PublicDeck(
+        id: publicDeckId,
+        creatorId: user.uid,
+        creatorName: user.displayName,
+        title: _summary?.title ?? _quiz?.title ?? _flashcardSet?.title ?? 'Study Pack',
+        description: "Shared Study Pack",
+        shareCode: shareCode,
+        summaryData: {
+          'content': _summary!.content,
+          'tags': _summary!.tags,
+        },
+        quizData: {
+          'questions': _quiz!.questions.map((q) => q.toMap()).toList(),
+        },
+        flashcardData: {
+          'flashcards': _flashcardSet!.flashcards.map((f) => f.toMap()).toList(),
+        },
+        publishedAt: DateTime.now(),
+      );
+
+      await FirestoreService().publishDeck(publicDeck);
+
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (_) => ShareDeckDialog(
+          shareCode: shareCode,
+          deckTitle: publicDeck.title,
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error sharing: $e')));
       }
     }
   }
@@ -205,6 +276,23 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
                 ),
               ),
               const SizedBox(width: 16),
+              // Share button
+              Consumer<UserModel?>(builder: (context, user, _) {
+                if (user == null) return const SizedBox.shrink();
+                final isStudent = user.role == UserRole.student;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: IconButton(
+                    onPressed: _publishDeck,
+                    icon: Icon(
+                      isStudent ? Icons.share_rounded : Icons.public,
+                      color: WebColors.purplePrimary,
+                      size: 24,
+                    ),
+                    tooltip: isStudent ? 'Share with Friends' : 'Publish Deck',
+                  ),
+                );
+              }),
               // Save button
               ElevatedButton.icon(
                 onPressed: _saveToLibrary,

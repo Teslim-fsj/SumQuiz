@@ -302,10 +302,14 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
             return const SizedBox.shrink();
           }),
           Consumer<UserModel?>(builder: (context, user, _) {
-            if (user?.role == UserRole.creator) {
+            if (user != null) {
+              final isStudent = user.role == UserRole.student;
               return IconButton(
-                icon: Icon(Icons.public, color: theme.colorScheme.primary),
-                tooltip: 'Publish Deck',
+                icon: Icon(
+                  isStudent ? Icons.share_rounded : Icons.public,
+                  color: theme.colorScheme.primary,
+                ),
+                tooltip: isStudent ? 'Share with Friends' : 'Publish Deck',
                 onPressed: _publishDeck,
               );
             }

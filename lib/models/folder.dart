@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 part 'folder.g.dart';
 
@@ -38,4 +39,24 @@ class Folder extends HiveObject {
         createdAt = DateTime.now(),
         updatedAt = DateTime.now(),
         isSaved = false;
+
+  factory Folder.fromFirestore(Map<String, dynamic> data, String id) {
+    return Folder(
+      id: id,
+      name: data['name'] ?? 'Untitled Folder',
+      userId: data['userId'] ?? '',
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      isSaved: true,
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'name': name,
+      'userId': userId,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
+    };
+  }
 }

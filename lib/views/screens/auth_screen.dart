@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:sumquiz/services/auth_service.dart';

@@ -322,6 +322,11 @@ class LocalDatabaseService {
         .toList();
   }
 
+  Future<List<ContentFolder>> getFolderContentsForUser(String userId) async {
+    await init();
+    return _contentFoldersBox.values.where((cf) => cf.userId == userId).toList();
+  }
+
   Future<String?> getParentFolderId(String contentId) async {
     await init();
     for (final cf in _contentFoldersBox.values) {

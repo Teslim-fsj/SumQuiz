@@ -554,7 +554,7 @@ class _LibraryViewState extends State<_LibraryView>
                     children: [
                       Icon(Icons.share, size: 20),
                       SizedBox(width: 12),
-                      Text('Share'),
+                      Text('Share with Friends'),
                     ],
                   ),
                 ),

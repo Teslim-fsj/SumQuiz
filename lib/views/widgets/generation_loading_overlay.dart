@@ -9,11 +9,11 @@ class GenerationLoadingOverlay extends StatelessWidget {
   final VoidCallback? onCancel;
 
   const GenerationLoadingOverlay({
-    Key? key,
+    super.key,
     this.message = 'Generating Content...',
     this.subMessage = 'Processing with AI...',
     this.onCancel,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

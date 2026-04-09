@@ -212,6 +212,22 @@ class EnhancedAIService {
     return result;
   }
 
+  Future<LocalQuizQuestion> regenerateQuestion({
+    required String sourceText,
+    required String subject,
+    required String level,
+    required LocalQuizQuestion oldQuestion,
+    CancellationToken? cancelToken,
+  }) async {
+    return _generatorService.regenerateQuestion(
+      sourceText: sourceText,
+      subject: subject,
+      level: level,
+      oldQuestion: oldQuestion,
+      cancelToken: cancelToken,
+    );
+  }
+
   Future<Result<ExtractionResult>> analyzeContentFromUrl({
     required String url,
     required String mimeType,

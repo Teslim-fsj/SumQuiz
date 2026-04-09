@@ -110,11 +110,29 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
     setState(() => _isLoading = true);
 
     try {
+      // Use individual catchErrors so one failure doesn't stop the rest
       final results = await Future.wait([
-        _svc.getTeacherStats(_uid!),
-        _svc.getTeacherContent(_uid!),
-        _svc.getStudentList(_uid!),
-        _svc.getRecentActivity(_uid!),
+        _svc.getTeacherStats(_uid!).catchError((e) {
+          debugPrint('Stats Load Error: $e');
+          return TeacherStats(totalExams: 0, totalStudyPacks: 0, totalStudents: 0, activeStudents: 0, averageScore: 0, totalAttempts: 0);
+        }),
+        _svc.getTeacherContent(_uid!).catchError((e) {
+          debugPrint('Content Load Error: $e');
+          return <PublicDeck>[];
+        }),
+        _svc.getStudentList(_uid!).catchError((e) {
+          debugPrint('Students Load Error: $e');
+          return <StudentLink>[];
+        }),
+        _svc.getRecentActivity(_uid!).catchError((e) {
+          debugPrint('Activity Load Error: $e');
+          return <ActivityItem>[];
+        }),
+      ]).timeout(const Duration(seconds: 10), onTimeout: () => [
+        TeacherStats(totalExams: 0, totalStudyPacks: 0, totalStudents: 0, activeStudents: 0, averageScore: 0, totalAttempts: 0),
+        <PublicDeck>[],
+        <StudentLink>[],
+        <ActivityItem>[],
       ]);
 
       if (!mounted) return;
@@ -129,7 +147,13 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
         _loadTrends();
       }
     } catch (e) {
-      debugPrint('Teacher Dashboard Load Error: $e');
+      debugPrint('Teacher Dashboard Critical Load Error: $e');
+      // Set default stats so UI can render
+      if (mounted && _stats == null) {
+        setState(() {
+          _stats = TeacherStats(totalExams: 0, totalStudyPacks: 0, totalStudents: 0, activeStudents: 0, averageScore: 0, totalAttempts: 0);
+        });
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

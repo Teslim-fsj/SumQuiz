@@ -277,8 +277,8 @@ class _WebQuizViewState extends State<WebQuizView> {
               const Spacer(),
               TextButton(
                 onPressed: _nextQuestion,
-                child: Text('Skip for now', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
                 style: TextButton.styleFrom(foregroundColor: WebColors.textPrimary),
+                child: Text('Skip for now', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
               ),
               const SizedBox(width: 24),
               Container(
