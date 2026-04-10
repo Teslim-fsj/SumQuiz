@@ -52,25 +52,27 @@ class DashboardOverview extends StatelessWidget {
           
           const SizedBox(height: 16),
           
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                flex: 5,
-                child: _buildEngagementOverview(),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                flex: 2,
-                child: Column(
-                  children: [
-                    Expanded(child: _buildActiveStudentsCard()),
-                    const SizedBox(height: 16),
-                    Expanded(child: _buildContentRatingCard()),
-                  ],
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  flex: 5,
+                  child: _buildEngagementOverview(),
                 ),
-              ),
-            ],
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    children: [
+                      Expanded(child: _buildActiveStudentsCard()),
+                      const SizedBox(height: 16),
+                      Expanded(child: _buildContentRatingCard()),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ).animate().fadeIn().slideY(begin: 0.1, delay: 100.ms),
 
           const SizedBox(height: 12),

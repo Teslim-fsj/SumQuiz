@@ -213,7 +213,7 @@ GoRouter createRouter(AuthService authService) {
                     desktop: LibraryScreenWeb(),
                   ),
                   creatorView: ResponsiveView(
-                    mobile: ExamCreationScreen(),
+                    mobile: TeacherDashboardWeb(module: 'content'),
                     desktop: TeacherDashboardWeb(module: 'content'),
                   ),
                 ),
@@ -356,7 +356,7 @@ GoRouter createRouter(AuthService authService) {
                     desktop: ProgressScreenWeb(),
                   ),
                   creatorView: ResponsiveView(
-                    mobile: TeacherDashboardScreen(),
+                    mobile: TeacherDashboardWeb(module: 'analytics'),
                     desktop: TeacherDashboardWeb(module: 'analytics'),
                   ),
                 ),
@@ -371,8 +371,10 @@ GoRouter createRouter(AuthService authService) {
             routes: <RouteBase>[
               GoRoute(
                 path: '/students',
-                builder: (context, state) =>
-                    const TeacherDashboardWeb(module: 'students'),
+                builder: (context, state) => const ResponsiveView(
+                  mobile: TeacherDashboardWeb(module: 'students'),
+                  desktop: TeacherDashboardWeb(module: 'students'),
+                ),
               ),
             ],
           ),
@@ -383,8 +385,10 @@ GoRouter createRouter(AuthService authService) {
             routes: <RouteBase>[
               GoRoute(
                 path: '/feedback',
-                builder: (context, state) =>
-                    const TeacherDashboardWeb(module: 'feedback'),
+                builder: (context, state) => const ResponsiveView(
+                  mobile: TeacherDashboardWeb(module: 'feedback'),
+                  desktop: TeacherDashboardWeb(module: 'feedback'),
+                ),
               ),
             ],
           ),

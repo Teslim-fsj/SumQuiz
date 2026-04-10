@@ -299,15 +299,17 @@ class _CreatorTabViewState extends State<CreatorTabView> {
                       _buildFrameworkCard(Icons.all_inclusive, 'Knowledge Fusion', 'Synthesize diverse sources—from PDFs to lecture transcripts—into coherent, verified study modules.', ['MULTI-SOURCE', 'AUTO-SUMMARIES']),
                     ],
                   )
-                : Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(child: _buildFrameworkCard(Icons.science, 'Exam Architect', 'Maintain absolute control over academic rigor. Map questions to Bloom\'s Taxonomy with precision scoring.', ['TAXONOMY MAPPING', 'AUTO-BALANCING'])),
-                      const SizedBox(width: 24),
-                      Expanded(child: _buildFrameworkCard(Icons.insights, 'Real-time Analytics', 'Identify conceptual bottlenecks instantly. See beyond the score to understand the "why" of student performance.', ['CONCEPT DRILLS', 'COHORT TRENDS'])),
-                      const SizedBox(width: 24),
-                      Expanded(child: _buildFrameworkCard(Icons.all_inclusive, 'Knowledge Fusion', 'Synthesize diverse sources—from PDFs to lecture transcripts—into coherent, verified study modules.', ['MULTI-SOURCE', 'AUTO-SUMMARIES'])),
-                    ],
+                : IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(child: _buildFrameworkCard(Icons.science, 'Exam Architect', 'Maintain absolute control over academic rigor. Map questions to Bloom\'s Taxonomy with precision scoring.', ['TAXONOMY MAPPING', 'AUTO-BALANCING'])),
+                        const SizedBox(width: 24),
+                        Expanded(child: _buildFrameworkCard(Icons.insights, 'Real-time Analytics', 'Identify conceptual bottlenecks instantly. See beyond the score to understand the "why" of student performance.', ['CONCEPT DRILLS', 'COHORT TRENDS'])),
+                        const SizedBox(width: 24),
+                        Expanded(child: _buildFrameworkCard(Icons.all_inclusive, 'Knowledge Fusion', 'Synthesize diverse sources—from PDFs to lecture transcripts—into coherent, verified study modules.', ['MULTI-SOURCE', 'AUTO-SUMMARIES'])),
+                      ],
+                    ),
                   )
             ],
           ),
@@ -615,48 +617,79 @@ class _CreatorTabViewState extends State<CreatorTabView> {
   }
 
   Widget _buildFooter() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 60),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: Color(0xFFF3F4F6))),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Image.asset('assets/images/sumquiz_logo.png', width: 32, height: 32),
-                    const SizedBox(width: 12),
-                    Text('SumQuiz', style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w800, color: const Color(0xFF1F1F1F), letterSpacing: -0.5)),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Text('The intelligence layer for modern\neducation. Scalable, ethical, and\nresearch-backed tools for the global\nacademic community.', style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[500], height: 1.6)),
-                const SizedBox(height: 60),
-                Text('© 2024 SumQuiz AI Labs. All rights reserved.', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[400])),
-              ],
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 700;
+        final hPad = isMobile ? 24.0 : 80.0;
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 60),
+          decoration: const BoxDecoration(
+            border: Border(top: BorderSide(color: Color(0xFFF3F4F6))),
           ),
-          Expanded(
-            flex: 1,
-            child: _footerCol('PLATFORM', ['Exam Architect', 'Deep Scan Analytics', 'Integrations', 'Security']),
-          ),
-          Expanded(
-            flex: 1,
-            child: _footerCol('RESOURCES', ['Case Studies', 'Whitepapers', 'Documentation', 'Academic Support']),
-          ),
-          Expanded(
-            flex: 1,
-            child: _footerCol('COMPANY', ['About Us', 'Careers', 'Privacy Policy', 'Contact']),
-          ),
-        ],
-      ),
+          child: isMobile
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Image.asset('assets/images/sumquiz_logo.png', width: 32, height: 32,
+                        errorBuilder: (_, __, ___) => const Icon(Icons.school, color: WebColors.purplePrimary, size: 32)),
+                      const SizedBox(width: 12),
+                      Text('SumQuiz', style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w800, color: const Color(0xFF1F1F1F), letterSpacing: -0.5)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text('The intelligence layer for modern education.', style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[500], height: 1.6)),
+                  const SizedBox(height: 32),
+                  _footerCol('PLATFORM', ['Exam Architect', 'Deep Scan Analytics', 'Integrations', 'Security']),
+                  const SizedBox(height: 24),
+                  _footerCol('RESOURCES', ['Case Studies', 'Whitepapers', 'Documentation', 'Academic Support']),
+                  const SizedBox(height: 24),
+                  _footerCol('COMPANY', ['About Us', 'Careers', 'Privacy Policy', 'Contact']),
+                  const SizedBox(height: 24),
+                  Text('© 2024 SumQuiz AI Labs. All rights reserved.', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[400])),
+                ],
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Image.asset('assets/images/sumquiz_logo.png', width: 32, height: 32,
+                              errorBuilder: (_, __, ___) => const Icon(Icons.school, color: WebColors.purplePrimary, size: 32)),
+                            const SizedBox(width: 12),
+                            Text('SumQuiz', style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w800, color: const Color(0xFF1F1F1F), letterSpacing: -0.5)),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        Text('The intelligence layer for modern\neducation. Scalable, ethical, and\nresearch-backed tools for the global\nacademic community.', style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[500], height: 1.6)),
+                        const SizedBox(height: 60),
+                        Text('© 2024 SumQuiz AI Labs. All rights reserved.', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[400])),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: _footerCol('PLATFORM', ['Exam Architect', 'Deep Scan Analytics', 'Integrations', 'Security']),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: _footerCol('RESOURCES', ['Case Studies', 'Whitepapers', 'Documentation', 'Academic Support']),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: _footerCol('COMPANY', ['About Us', 'Careers', 'Privacy Policy', 'Contact']),
+                  ),
+                ],
+              ),
+        );
+      },
     );
   }
 

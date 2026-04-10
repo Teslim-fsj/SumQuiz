@@ -193,9 +193,10 @@ class ContentExtractionService {
           rawText = input as String;
           suggestedTitle = 'Pasted Text';
           break;
+        case 'youtube':
         case 'link':
           final url = input as String;
-          developer.log('Processing link: $url',
+          developer.log('Processing $type: $url',
               name: 'ContentExtractionService');
 
           if (url.isEmpty) {

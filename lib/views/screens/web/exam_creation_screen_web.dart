@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:sumquiz/services/exam_pdf_generator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
@@ -302,8 +303,28 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
 
       await firestore.publishDeck(publicDeck);
 
-      final pdf = await _generatePdfDocument(shareCode);
-      final bytes = await pdf.save();
+      final pdfGenerator = ExamPdfGenerator();
+      final config = ExamPdfConfig(
+        schoolName: _schoolNameController.text.trim().isEmpty
+            ? 'SUMQUIZ ACADEMY'
+            : _schoolNameController.text.trim(),
+        examTitle: _titleController.text,
+        subject: _subjectController.text,
+        classLevel: _selectedLevel,
+        durationMinutes: int.tryParse(_durationController.text) ?? 60,
+        shareCode: shareCode,
+        marksA: _marksA,
+        marksB: _marksB,
+        marksC: _marksC,
+        includeAnswerSheet: true,
+        includeMarkingScheme: true,
+      );
+
+      final studentPaper = pdfGenerator.generateStudentPaper(
+        questions: _generatedQuestions,
+        config: config,
+      );
+      final bytes = await studentPaper.save();
 
       // Desktop/Mobile/Browser standard print
       await Printing.layoutPdf(
@@ -355,295 +376,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
     }
   }
 
-  Future<pw.Document> _generatePdfDocument(String shareCode) async {
-    final pdf = pw.Document();
-
-    final sectionA = _generatedQuestions
-        .where((q) =>
-            q.questionType == 'Multiple Choice' ||
-            q.questionType == 'True/False')
-        .toList();
-    final sectionB = _generatedQuestions
-        .where((q) => q.questionType == 'Short Answer')
-        .toList();
-    final sectionC = _generatedQuestions
-        .where((q) =>
-            q.questionType == 'Theory' ||
-            q.questionType == 'Essay' ||
-            (!['Multiple Choice', 'True/False', 'Short Answer']
-                .contains(q.questionType)))
-        .toList();
-
-    pdf.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(30),
-        header: (pw.Context context) =>
-            _buildPdfHeader(shareCode, isFirstPage: false),
-        build: (pw.Context context) => [
-          _buildPdfHeader(shareCode, isFirstPage: true),
-          pw.SizedBox(height: 10),
-          if (sectionA.isNotEmpty) ...[
-            _pdfSectionTitle(
-                'SECTION A – OBJECTIVE (${sectionA.length * _marksA} MARKS)'),
-            pw.SizedBox(height: 8),
-            for (int i = 0; i < sectionA.length; i++)
-              _pdfQuestionItem(sectionA[i], i + 1, _marksA),
-            pw.SizedBox(height: 15),
-          ],
-          if (sectionB.isNotEmpty) ...[
-            _pdfSectionTitle(
-                'SECTION B – SHORT ANSWER (${sectionB.length * _marksB} MARKS)'),
-            pw.SizedBox(height: 8),
-            for (int i = 0; i < sectionB.length; i++)
-              _pdfQuestionItem(
-                  sectionB[i], i + sectionA.length + 1, _marksB),
-            pw.SizedBox(height: 15),
-          ],
-          if (sectionC.isNotEmpty) ...[
-            _pdfSectionTitle(
-                'SECTION C – THEORY / ESSAY (${sectionC.length * _marksC} MARKS)'),
-            pw.SizedBox(height: 8),
-            for (int i = 0; i < sectionC.length; i++)
-              _pdfQuestionItem(sectionC[i],
-                  i + sectionA.length + sectionB.length + 1, _marksC),
-          ],
-        ],
-      ),
-    );
-
-    // Add Answer Scheme Page
-    pdf.addPage(pw.MultiPage(
-      pageFormat: PdfPageFormat.a4,
-      margin: const pw.EdgeInsets.all(30),
-      header: (pw.Context context) =>
-          _buildPdfHeader(shareCode, isFirstPage: false),
-      build: (pw.Context context) => [
-        _pdfSectionTitle('MARKING SCHEME & ANSWER KEY'),
-        pw.SizedBox(height: 10),
-          if (sectionA.isNotEmpty) ...[
-            pw.Text('SECTION A - OBJECTIVE',
-                style:
-                    pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
-            pw.SizedBox(height: 8),
-            for (int i = 0; i < sectionA.length; i++)
-              pw.Padding(
-                padding: const pw.EdgeInsets.only(bottom: 4),
-                child: pw.Text(
-                    '${i + 1}. ${sectionA[i].options.contains(sectionA[i].correctAnswer) ? String.fromCharCode(65 + sectionA[i].options.indexOf(sectionA[i].correctAnswer)) : ""} - ${sectionA[i].correctAnswer}',
-                    style: const pw.TextStyle(fontSize: 10)),
-              ),
-            pw.SizedBox(height: 15),
-          ],
-          if (sectionB.isNotEmpty) ...[
-            pw.Text('SECTION B - SHORT ANSWER',
-                style:
-                    pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
-            pw.SizedBox(height: 8),
-            for (int i = 0; i < sectionB.length; i++)
-              pw.Padding(
-                  padding: const pw.EdgeInsets.only(bottom: 6),
-                  child: pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: [
-                        pw.Text(
-                            '${i + sectionA.length + 1}. ${sectionB[i].correctAnswer}',
-                            style: const pw.TextStyle(
-                                fontSize: 10, color: PdfColors.green700)),
-                        if (sectionB[i].explanation != null &&
-                            sectionB[i].explanation!.isNotEmpty) ...[
-                          pw.SizedBox(height: 2),
-                          pw.Text('Explanation: ${sectionB[i].explanation}',
-                              style: pw.TextStyle(
-                                  fontSize: 9,
-                                  fontStyle: pw.FontStyle.italic,
-                                  color: PdfColors.grey700)),
-                        ]
-                      ])),
-            pw.SizedBox(height: 15),
-          ],
-          if (sectionC.isNotEmpty) ...[
-            pw.Text('SECTION C - THEORY / ESSAY',
-                style:
-                    pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
-            pw.SizedBox(height: 8),
-            for (int i = 0; i < sectionC.length; i++)
-              pw.Padding(
-                  padding: const pw.EdgeInsets.only(bottom: 8),
-                  child: pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: [
-                        pw.Text(
-                            '${i + sectionA.length + sectionB.length + 1}. Expected Answer/Points:',
-                            style: pw.TextStyle(
-                                fontSize: 10, fontWeight: pw.FontWeight.bold)),
-                        pw.SizedBox(height: 2),
-                        pw.Text(sectionC[i].correctAnswer,
-                            style: const pw.TextStyle(
-                                fontSize: 10, color: PdfColors.green700)),
-                        if (sectionC[i].explanation != null &&
-                            sectionC[i].explanation!.isNotEmpty) ...[
-                          pw.SizedBox(height: 2),
-                          pw.Text('Marking Guide: ${sectionC[i].explanation}',
-                              style: pw.TextStyle(
-                                  fontSize: 9,
-                                  fontStyle: pw.FontStyle.italic,
-                                  color: PdfColors.grey700)),
-                        ]
-                      ])),
-          ],
-      ],
-    ));
-
-    return pdf;
-  }
-
-  pw.Widget _buildPdfHeader(String shareCode, {bool isFirstPage = true}) {
-    if (!isFirstPage) {
-      return pw.Column(children: [
-        pw.Center(
-          child: pw.Text(_schoolNameController.text.toUpperCase(),
-              style: pw.TextStyle(
-                  fontSize: 14,
-                  fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.grey700)),
-        ),
-        pw.SizedBox(height: 5),
-        pw.Divider(thickness: 0.5, color: PdfColors.grey300),
-        pw.SizedBox(height: 10),
-      ]);
-    }
-
-    return pw.Column(children: [
-      pw.Center(
-        child: pw.Text(_schoolNameController.text.toUpperCase(),
-            style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold)),
-      ),
-      pw.SizedBox(height: 15),
-      pw.Row(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-          children: [
-            pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text('SUBJECT: ${_subjectController.text.toUpperCase()}',
-                      style: pw.TextStyle(
-                          fontWeight: pw.FontWeight.bold, fontSize: 10)),
-                  pw.SizedBox(height: 4),
-                  pw.Text('CLASS: $_selectedLevel',
-                      style: pw.TextStyle(
-                          fontWeight: pw.FontWeight.bold, fontSize: 10)),
-                  pw.SizedBox(height: 4),
-                  pw.Text('TIME ALLOWED: ${_durationController.text} MINUTES',
-                      style: pw.TextStyle(
-                          fontWeight: pw.FontWeight.bold, fontSize: 10)),
-                  pw.SizedBox(height: 12),
-                  pw.Text(
-                      'STUDENT NAME: __________________________________________',
-                      style: pw.TextStyle(
-                          fontWeight: pw.FontWeight.bold, fontSize: 10)),
-                ]),
-            pw.Container(
-              padding: const pw.EdgeInsets.all(6),
-              decoration: pw.BoxDecoration(
-                border: pw.Border.all(color: PdfColors.grey300),
-                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-              ),
-              child: pw.Column(children: [
-                pw.Text('Review Online:',
-                    style: pw.TextStyle(
-                        fontSize: 7, fontWeight: pw.FontWeight.bold)),
-                pw.SizedBox(height: 2),
-                pw.Text('sumquiz.xyz/s/$shareCode',
-                    style: const pw.TextStyle(
-                        fontSize: 8, color: PdfColors.blue800)),
-                pw.SizedBox(height: 4),
-                pw.Container(
-                  height: 35,
-                  width: 35,
-                  child: pw.BarcodeWidget(
-                    color: PdfColors.black,
-                    barcode: pw.Barcode.qrCode(),
-                    data: "https://sumquiz.xyz/s/$shareCode",
-                  ),
-                ),
-              ]),
-            ),
-          ]),
-      pw.SizedBox(height: 10),
-      pw.Divider(thickness: 1.5),
-    ]);
-  }
-
-  pw.Widget _pdfSectionTitle(String title) {
-    return pw.Container(
-      padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 10),
-      decoration: const pw.BoxDecoration(
-        color: PdfColors.grey100,
-        border: pw.Border(
-          top: pw.BorderSide(width: 1),
-          bottom: pw.BorderSide(width: 1),
-        ),
-      ),
-      width: double.infinity,
-      child: pw.Text(title,
-          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
-    );
-  }
-
-  pw.Widget _pdfQuestionItem(LocalQuizQuestion q, int number, int marks) {
-    return pw.Container(
-      margin: const pw.EdgeInsets.only(bottom: 8),
-      child:
-          pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-        pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-          pw.Text('$number. ', style: const pw.TextStyle(fontSize: 10)),
-          pw.Expanded(
-            child: pw.RichText(
-              text: pw.TextSpan(
-                children: [
-                  pw.TextSpan(
-                      text: q.question,
-                      style: const pw.TextStyle(fontSize: 10)),
-                  pw.TextSpan(
-                      text: ' ($marks Mark${marks > 1 ? 's' : ''})',
-                      style: pw.TextStyle(
-                          fontSize: 9,
-                          fontWeight: pw.FontWeight.bold,
-                          fontStyle: pw.FontStyle.italic)),
-                ],
-              ),
-            ),
-          ),
-        ]),
-        if (q.questionType == 'Multiple Choice') ...[
-          pw.SizedBox(height: 4),
-          pw.Padding(
-            padding: const pw.EdgeInsets.only(left: 15),
-            child: pw.Column(children: [
-              for (int i = 0; i < q.options.length; i++)
-                pw.Padding(
-                  padding: const pw.EdgeInsets.only(bottom: 1.5),
-                  child: pw.Row(children: [
-                    pw.Text('(${String.fromCharCode(65 + i)}) ',
-                        style: const pw.TextStyle(fontSize: 9)),
-                    pw.Text(q.options[i],
-                        style: const pw.TextStyle(fontSize: 9)),
-                  ]),
-                ),
-            ]),
-          ),
-        ] else if (q.questionType == 'Theory' || q.questionType == 'Essay') ...[
-          pw.SizedBox(height: 30),
-        ] else if (q.questionType == 'Short Answer') ...[
-          pw.SizedBox(height: 10),
-          pw.Text('Answer: __________________________________________________',
-              style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
-        ],
-      ]),
-    );
-  }
+  // PDF generation is now handled by ExamPdfGenerator service.
 
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -703,18 +436,25 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   Future<void> _extractFromYoutube(String url) async {
     setState(() {
       _isProcessingSource = true;
-      _processingMessage = 'Fetching YouTube transcript...';
+      _processingMessage = 'Analyzing YouTube video...';
     });
 
     try {
-      final youtubeService = Provider.of<YoutubeService>(context, listen: false);
-      final transcript = await youtubeService.getTranscript(url);
+      final extractionService = Provider.of<ContentExtractionService>(context, listen: false);
+      final user = Provider.of<UserModel?>(context, listen: false);
+
+      final result = await extractionService.extractContent(
+        type: 'youtube',
+        input: url,
+        userId: user?.uid,
+        onProgress: (msg) => setState(() => _processingMessage = msg),
+      );
       
       if (!mounted) return;
       setState(() {
-        _sourceMaterial = transcript;
+        _sourceMaterial = result.text;
         _isProcessingSource = false;
-        _processedFileNames.add('YouTube Video');
+        _processedFileNames.add('YouTube: ${result.suggestedTitle}');
       });
     } catch (e) {
       if (!mounted) return;
@@ -739,7 +479,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
       color: const Color(0xFFF1F5F9), 
       child: Stack(
         children: [
-          _isProcessingSource ? _buildOverlayLoading() : const SizedBox.shrink(),
+          (_isProcessingSource || _isGeneratingQuestions) ? _buildOverlayLoading() : const SizedBox.shrink(),
           Column(
             children: [
               _buildModernStepIndicator(),
@@ -798,9 +538,11 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                           if (rule == 'weak') _focusWeakAreas = val;
                         });
                       },
-                      onFinalize: () {
-                        _generateQuestions();
-                        _nextStep();
+                      onFinalize: () async {
+                        await _generateQuestions();
+                        if (_generatedQuestions.isNotEmpty) {
+                          _nextStep();
+                        }
                       },
                       onBack: _prevStep,
                       isGenerating: _isGeneratingQuestions,

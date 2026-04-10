@@ -49,12 +49,12 @@ class WebExamConfigStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      child: Stack(
-        alignment: Alignment.bottomCenter,
-        children: [
-          Column(
+    return Stack(
+      alignment: Alignment.bottomCenter,
+      children: [
+        SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
@@ -102,25 +102,27 @@ class WebExamConfigStep extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 100), // Bottom padding for floating bar
             ],
           ),
-          
-          // Floating Action Bar
-          Container(
+        ),
+        
+        // Floating Action Bar
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Container(
             height: 64,
-            margin: const EdgeInsets.only(bottom: 16),
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(45),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 30,
                   offset: const Offset(0, 10),
                 )
               ],
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -191,9 +193,9 @@ class WebExamConfigStep extends StatelessWidget {
                 ),
               ],
             ),
-          )
-        ],
-      ),
+          ),
+        )
+      ],
     );
   }
   

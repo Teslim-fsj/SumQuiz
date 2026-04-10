@@ -24,17 +24,20 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
     final isTeacher = user?.role == UserRole.creator;
     final isDark = theme.brightness == Brightness.dark;
 
-    int indexToBranch(int index) {
-      return index; 
-    }
+    // For teachers on mobile: map 5 visible tabs to branches 0,1,2,3,5
+    final List<int> teacherMobileBranches = [0, 1, 2, 3, 5];
 
     int branchToIndex(int branch) {
-      if (branch > 3) return -1; 
+      if (isTeacher) {
+        final idx = teacherMobileBranches.indexOf(branch);
+        return idx; // -1 if not in list (e.g. branch 4,6,7)
+      }
+      if (branch > 3) return -1;
       return branch;
     }
 
     void onTap(int index) {
-      final targetBranch = indexToBranch(index);
+      final targetBranch = isTeacher ? teacherMobileBranches[index] : index;
       widget.navigationShell.goBranch(
         targetBranch,
         initialLocation: targetBranch == widget.navigationShell.currentIndex,
@@ -55,39 +58,78 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
           return Scaffold(
             backgroundColor: theme.scaffoldBackgroundColor,
             body: widget.navigationShell,
-            bottomNavigationBar: BottomNavigationBar(
-              items: [
-                BottomNavigationBarItem(
-                  icon: Icon(isTeacher ? Icons.dashboard_outlined : Icons.auto_awesome_mosaic_outlined),
-                  activeIcon: Icon(isTeacher ? Icons.dashboard : Icons.auto_awesome_mosaic),
-                  label: isTeacher ? 'Dashboard' : 'Home',
+            bottomNavigationBar: isTeacher
+              ? BottomNavigationBar(
+                  items: const [
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.dashboard_outlined),
+                      activeIcon: Icon(Icons.dashboard),
+                      label: 'Dashboard',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.inventory_2_outlined),
+                      activeIcon: Icon(Icons.inventory_2),
+                      label: 'Content',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.add_circle_outline),
+                      activeIcon: Icon(Icons.add_circle),
+                      label: 'Create Exam',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.analytics_outlined),
+                      activeIcon: Icon(Icons.analytics),
+                      label: 'Analytics',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.auto_awesome_outlined),
+                      activeIcon: Icon(Icons.auto_awesome),
+                      label: 'AI Feedback',
+                    ),
+                  ],
+                  currentIndex: currentIdx < 0 ? 0 : currentIdx,
+                  onTap: onTap,
+                  type: BottomNavigationBarType.fixed,
+                  selectedItemColor: WebColors.purplePrimary,
+                  unselectedItemColor: Colors.grey[500],
+                  selectedFontSize: 10,
+                  unselectedFontSize: 10,
+                  selectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                  unselectedLabelStyle: GoogleFonts.inter(),
+                )
+              : BottomNavigationBar(
+                  items: const [
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.auto_awesome_mosaic_outlined),
+                      activeIcon: Icon(Icons.auto_awesome_mosaic),
+                      label: 'Home',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.book_outlined),
+                      activeIcon: Icon(Icons.book),
+                      label: 'Library',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.add_circle_outline),
+                      activeIcon: Icon(Icons.add_circle),
+                      label: 'New Set',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.insights_outlined),
+                      activeIcon: Icon(Icons.insights),
+                      label: 'Progress',
+                    ),
+                  ],
+                  currentIndex: currentIdx == -1 ? 0 : currentIdx,
+                  onTap: onTap,
+                  type: BottomNavigationBarType.fixed,
+                  selectedItemColor: WebColors.purplePrimary,
+                  unselectedItemColor: Colors.grey[500],
+                  selectedFontSize: 11,
+                  unselectedFontSize: 11,
+                  selectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                  unselectedLabelStyle: GoogleFonts.inter(),
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(isTeacher ? Icons.inventory_2_outlined : Icons.book_outlined),
-                  activeIcon: Icon(isTeacher ? Icons.inventory_2 : Icons.book),
-                  label: isTeacher ? 'Content' : 'Library',
-                ),
-                BottomNavigationBarItem(
-                  icon: const Icon(Icons.add_circle_outline),
-                  activeIcon: const Icon(Icons.add_circle),
-                  label: isTeacher ? 'Create' : 'New Set',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(isTeacher ? Icons.analytics_outlined : Icons.insights_outlined),
-                  activeIcon: Icon(isTeacher ? Icons.analytics : Icons.insights),
-                  label: isTeacher ? 'Analytics' : 'Progress',
-                ),
-              ],
-              currentIndex: currentIdx == -1 ? 0 : currentIdx,
-              onTap: onTap,
-              type: BottomNavigationBarType.fixed,
-              selectedItemColor: WebColors.purplePrimary,
-              unselectedItemColor: Colors.grey[500],
-              selectedFontSize: 11,
-              unselectedFontSize: 11,
-              selectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.bold),
-              unselectedLabelStyle: GoogleFonts.inter(),
-            ),
           );
         } else {
           return Scaffold(

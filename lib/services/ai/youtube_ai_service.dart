@@ -610,18 +610,28 @@ REQUIREMENTS:
 
   bool _isValidYouTubeUrl(String url) {
     try {
-      final uri = Uri.parse(url);
+      final uri = Uri.parse(url.trim());
+      final host = uri.host.toLowerCase();
       final validDomains = [
         'youtube.com',
         'www.youtube.com',
         'youtu.be',
-        'm.youtube.com'
+        'm.youtube.com',
+        'music.youtube.com'
       ];
-      if (!validDomains.contains(uri.host)) return false;
-      return uri.path.contains('/watch') ||
-          uri.path.contains('/shorts') ||
-          uri.path.contains('/live') ||
-          uri.host.contains('youtu.be');
+      
+      bool isYoutubeHost = validDomains.any((domain) => host == domain || host.endsWith('.$domain'));
+      if (!isYoutubeHost) return false;
+
+      // Check for common path patterns
+      final path = uri.path;
+      return path.contains('/watch') ||
+          path.contains('/shorts/') ||
+          path.contains('/live/') ||
+          path.contains('/v/') ||
+          path.contains('/embed/') ||
+          uri.host.contains('youtu.be') ||
+          uri.queryParameters.containsKey('v');
     } catch (_) {
       return false;
     }
@@ -629,28 +639,34 @@ REQUIREMENTS:
 
   String? _extractVideoId(String url) {
     try {
-      final uri = Uri.parse(url);
-      if (uri.host.contains('youtu.be')) {
+      final uri = Uri.parse(url.trim());
+      
+      // Handle youtu.be/ID
+      if (uri.host.toLowerCase().contains('youtu.be')) {
         return uri.pathSegments.isNotEmpty ? uri.pathSegments.first : null;
       }
+      
+      // Handle ?v=ID
       if (uri.queryParameters.containsKey('v')) {
         return uri.queryParameters['v'];
       }
-      if (uri.path.contains('/shorts/')) {
-        final segments = uri.pathSegments;
-        final index = segments.indexOf('shorts');
+      
+      // Handle /shorts/ID, /v/ID, /embed/ID, /live/ID
+      final segments = uri.pathSegments;
+      final typeMarkers = ['shorts', 'v', 'embed', 'live'];
+      
+      for (final marker in typeMarkers) {
+        final index = segments.indexOf(marker);
         if (index != -1 && index + 1 < segments.length) {
           return segments[index + 1];
         }
       }
-      if (uri.path.contains('/live/')) {
-        final segments = uri.pathSegments;
-        final index = segments.indexOf('live');
-        if (index != -1 && index + 1 < segments.length) {
-          return segments[index + 1];
-        }
-      }
-      return null;
+
+      // Regex fallback for complex attribute URLs
+      final regex = RegExp(
+          r'(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})');
+      final match = regex.firstMatch(url);
+      return match?.group(1);
     } catch (_) {
       return null;
     }

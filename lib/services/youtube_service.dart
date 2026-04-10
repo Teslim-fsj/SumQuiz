@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:youtube_transcript_api/youtube_transcript_api.dart';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
 class YoutubeService {
   /// Extracts the video ID from various YouTube URL formats.
@@ -32,24 +32,32 @@ class YoutubeService {
       throw Exception('Invalid YouTube URL');
     }
 
-    final api = YouTubeTranscriptApi();
+    final yt = YoutubeExplode();
     try {
-      final transcript = await api.fetch(videoId);
+      final manifest = await yt.videos.closedCaptions.getManifest(videoId);
+      if (manifest.tracks.isEmpty) {
+        throw Exception('No transcript/captions found for this video.');
+      }
+
+      // Prioritize English
+      final track = manifest.tracks.firstWhere(
+        (t) => t.language.code == 'en',
+        orElse: () => manifest.tracks.first,
+      );
+
+      final captions = await yt.videos.closedCaptions.get(track);
       
-      // Concatenate all transcript segments into a single text block
       final buffer = StringBuffer();
-      for (var segment in transcript) {
-        // [MODERN 2026 LOGIC]: We could potentially keep timestamps, 
-        // but for basic study pack generation, a clean text block is more efficient.
+      for (var segment in captions.captions) {
         buffer.write('${segment.text} ');
       }
       
       return buffer.toString().trim();
     } catch (e) {
       debugPrint('Error fetching YouTube transcript: $e');
-      throw Exception('Could not retrieve transcript. The video might not have captions enabled.');
+      throw Exception('Could not retrieve transcript. The video might be private or have captions disabled.');
     } finally {
-      api.dispose();
+      yt.close();
     }
   }
 

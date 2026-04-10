@@ -10,6 +10,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:sumquiz/services/exam_pdf_generator.dart';
 import 'package:sumquiz/services/content_extraction_service.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
 import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
@@ -1901,274 +1902,36 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
         await FirestoreService().publishDeck(publicDeck);
       }
 
-      final doc = pw.Document();
+      final pdfGenerator = ExamPdfGenerator();
       final schoolName = _schoolNameController.text.trim().isEmpty
           ? 'SUMQUIZ ACADEMY'
           : _schoolNameController.text.trim().toUpperCase();
 
-      // 1. Group and Process Questions
+      // Process questions for randomization
       var allQuestions = List<LocalQuizQuestion>.from(widget.questions);
+      if (_randomizeQuestionOrder) allQuestions.shuffle();
 
-      if (_randomizeQuestionOrder) {
-        allQuestions.shuffle();
-      }
-
-      final sectionA = allQuestions
-          .where((q) =>
-              q.questionType == 'Multiple Choice' ||
-              q.questionType == 'True/False')
-          .toList();
-      final sectionB =
-          allQuestions.where((q) => q.questionType == 'Short Answer').toList();
-      final sectionC = allQuestions
-          .where((q) =>
-              q.questionType == 'Theory' ||
-              q.questionType == 'Essay' ||
-              (!['Multiple Choice', 'True/False', 'Short Answer']
-                  .contains(q.questionType)))
-          .toList();
-
-      // Helper for shuffling options if enabled
-      List<LocalQuizQuestion> processOptions(List<LocalQuizQuestion> list) {
-        if (!_randomizeOptions) return list;
-        return list.map((q) {
-          if (q.questionType == 'Multiple Choice') {
-            final opts = List<String>.from(q.options)..shuffle();
-            return LocalQuizQuestion(
-              question: q.question,
-              options: opts,
-              correctAnswer: q.correctAnswer,
-              explanation: q.explanation,
-              questionType: q.questionType,
-            );
-          }
-          return q;
-        }).toList();
-      }
-
-      final questionsA = processOptions(sectionA);
-      final questionsB = processOptions(sectionB);
-      final questionsC = processOptions(sectionC);
-
-      // 2. Build Main Exam Paper
-      doc.addPage(
-        pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(40),
-          header: (pw.Context context) {
-            return pw.Column(children: [
-              pw.Center(
-                child: pw.Text(schoolName,
-                    style: pw.TextStyle(
-                        fontSize: 22, fontWeight: pw.FontWeight.bold)),
-              ),
-              pw.SizedBox(height: 15),
-              pw.Row(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Expanded(
-                        child: pw.Column(
-                            crossAxisAlignment: pw.CrossAxisAlignment.start,
-                            children: [
-                          pw.Text('SUBJECT: ${widget.subject.toUpperCase()}',
-                              style: pw.TextStyle(
-                                  fontWeight: pw.FontWeight.bold,
-                                  fontSize: 11)),
-                          pw.SizedBox(height: 8),
-                          pw.Text('CLASS: ${widget.classLevel.toUpperCase()}',
-                              style: pw.TextStyle(
-                                  fontWeight: pw.FontWeight.bold,
-                                  fontSize: 11)),
-                          pw.SizedBox(height: 8),
-                          pw.Text('DATE: ____________________',
-                              style: pw.TextStyle(
-                                  fontWeight: pw.FontWeight.bold,
-                                  fontSize: 11)),
-                          pw.SizedBox(height: 8),
-                          pw.Text('TIME ALLOWED: ${widget.duration} MINUTES',
-                              style: pw.TextStyle(
-                                  fontWeight: pw.FontWeight.bold,
-                                  fontSize: 11)),
-                          pw.SizedBox(height: 15),
-                          pw.Text(
-                              'STUDENT NAME: __________________________________________',
-                              style: pw.TextStyle(
-                                  fontWeight: pw.FontWeight.bold,
-                                  fontSize: 11)),
-                        ])),
-                    if (shareCode != null)
-                      pw.Container(
-                          padding: const pw.EdgeInsets.all(10),
-                          decoration: pw.BoxDecoration(
-                            border: pw.Border.all(color: PdfColors.grey300),
-                            borderRadius: const pw.BorderRadius.all(
-                                pw.Radius.circular(8)),
-                          ),
-                          child: pw.Column(
-                              crossAxisAlignment: pw.CrossAxisAlignment.center,
-                              children: [
-                                pw.Text('Practice & Review:',
-                                    style: pw.TextStyle(
-                                        fontSize: 9,
-                                        fontWeight: pw.FontWeight.bold)),
-                                pw.SizedBox(height: 4),
-                                pw.Text('sumquiz.xyz/s/$shareCode',
-                                    style: const pw.TextStyle(
-                                        fontSize: 10,
-                                        color: PdfColors.blue800)),
-                                pw.SizedBox(height: 6),
-                                pw.Container(
-                                  height: 60,
-                                  width: 60,
-                                  child: pw.BarcodeWidget(
-                                    color: PdfColors.black,
-                                    barcode: pw.Barcode.qrCode(),
-                                    data: "https://sumquiz.xyz/s/$shareCode",
-                                  ),
-                                ),
-                              ]))
-                  ]),
-              pw.SizedBox(height: 20),
-              pw.Container(
-                  padding: const pw.EdgeInsets.all(8),
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(width: 1),
-                  ),
-                  child: pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: [
-                        pw.Text('INSTRUCTIONS:',
-                            style: pw.TextStyle(
-                                fontWeight: pw.FontWeight.bold, fontSize: 10)),
-                        pw.Text('1. Answer all questions.',
-                            style: const pw.TextStyle(fontSize: 9)),
-                        if (questionsA.isNotEmpty)
-                          pw.Text(
-                              '2. Section A carries $_marksA mark${_marksA > 1 ? 's' : ''} each.',
-                              style: const pw.TextStyle(fontSize: 9)),
-                        if (questionsB.isNotEmpty)
-                          pw.Text(
-                              '${questionsA.isNotEmpty ? '3' : '2'}. Section B carries $_marksB marks each.',
-                              style: const pw.TextStyle(fontSize: 9)),
-                        if (questionsC.isNotEmpty)
-                          pw.Text(
-                              '${(questionsA.isNotEmpty ? 1 : 0) + (questionsB.isNotEmpty ? 1 : 0) + 1 + 1}. Section C carries $_marksC marks each.',
-                              style: const pw.TextStyle(fontSize: 9)),
-                      ])),
-              pw.SizedBox(height: 20),
-            ]);
-          },
-          build: (pw.Context context) {
-            final List<pw.Widget> content = [];
-            int globalIndex = 0;
-
-            // SECTION A
-            if (questionsA.isNotEmpty) {
-              content.add(_sectionTitle(
-                  'SECTION A – OBJECTIVE (${questionsA.length * _marksA} MARKS)'));
-              content.addAll(questionsA.map((q) {
-                globalIndex++;
-                return _buildPdfQuestion(globalIndex, q);
-              }));
-              content.add(pw.SizedBox(height: 20));
-            }
-
-            // SECTION B
-            if (questionsB.isNotEmpty) {
-              content.add(_sectionTitle(
-                  'SECTION B – SHORT ANSWER (${questionsB.length * _marksB} MARKS)'));
-              content.addAll(questionsB.map((q) {
-                globalIndex++;
-                return _buildPdfQuestion(globalIndex, q);
-              }));
-              content.add(pw.SizedBox(height: 20));
-            }
-
-            // SECTION C
-            if (questionsC.isNotEmpty) {
-              content.add(_sectionTitle(
-                  'SECTION C – THEORY (${questionsC.length * _marksC} MARKS)'));
-              content.addAll(questionsC.map((q) {
-                globalIndex++;
-                return _buildPdfQuestion(globalIndex, q);
-              }));
-            }
-
-            return content;
-          },
-        ),
+      final config = ExamPdfConfig(
+        schoolName: schoolName,
+        examTitle: widget.examTitle,
+        subject: widget.subject,
+        classLevel: widget.classLevel,
+        durationMinutes: widget.duration,
+        shareCode: shareCode,
+        marksA: _marksA,
+        marksB: _marksB,
+        marksC: _marksC,
+        includeAnswerSheet: _includeAnswerSheet,
+        includeMarkingScheme: _includeMarkingScheme,
+        randomizeOptions: _randomizeOptions,
       );
 
-      // 3. Answer Key (Separate Page)
-      if (_includeAnswerSheet) {
-        doc.addPage(pw.MultiPage(
-            pageFormat: PdfPageFormat.a4,
-            build: (pw.Context context) {
-              return [
-                pw.Center(
-                    child: pw.Text('ANSWER SHEET',
-                        style: pw.TextStyle(
-                            fontSize: 20, fontWeight: pw.FontWeight.bold))),
-                pw.SizedBox(height: 20),
-                pw.Wrap(
-                  spacing: 40,
-                  runSpacing: 10,
-                  children: allQuestions.asMap().entries.map((entry) {
-                    final index = entry.key + 1;
-                    final q = entry.value;
-                    return pw.Container(
-                      width: 80,
-                      child: pw.Text('$index. ${q.correctAnswer}',
-                          style: const pw.TextStyle(fontSize: 12)),
-                    );
-                  }).toList(),
-                ),
-              ];
-            }));
-      }
+      final studentPaper = pdfGenerator.generateStudentPaper(
+        questions: allQuestions,
+        config: config,
+      );
+      final bytes = await studentPaper.save();
 
-      // 4. Marking Scheme (Separate Page)
-      if (_includeMarkingScheme) {
-        doc.addPage(pw.MultiPage(
-            pageFormat: PdfPageFormat.a4,
-            build: (pw.Context context) {
-              return [
-                pw.Center(
-                    child: pw.Text('MARKING SCHEME & EXPLANATIONS',
-                        style: pw.TextStyle(
-                            fontSize: 20, fontWeight: pw.FontWeight.bold))),
-                pw.SizedBox(height: 20),
-                ...allQuestions.asMap().entries.map((entry) {
-                  final index = entry.key + 1;
-                  final q = entry.value;
-                  return pw.Container(
-                      margin: const pw.EdgeInsets.only(bottom: 12),
-                      child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text('$index. ${q.question}',
-                                style: pw.TextStyle(
-                                    fontWeight: pw.FontWeight.bold,
-                                    fontSize: 10)),
-                            pw.Text('Answer: ${q.correctAnswer}',
-                                style: pw.TextStyle(
-                                    color: PdfColors.green, fontSize: 10)),
-                            if (q.explanation != null &&
-                                q.explanation!.isNotEmpty)
-                              pw.Text('Explanation: ${q.explanation}',
-                                  style: pw.TextStyle(
-                                      fontSize: 9,
-                                      fontStyle: pw.FontStyle.italic,
-                                      color: PdfColors.grey700)),
-                            pw.Divider(thickness: 0.5),
-                          ]));
-                }),
-              ];
-            }));
-      }
-
-      final bytes = await doc.save();
       await Printing.layoutPdf(
         onLayout: (PdfPageFormat format) async => bytes,
         name: '${widget.examTitle.replaceAll(' ', '_')}_Exam_Paper.pdf',
@@ -2194,56 +1957,5 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
     }
   }
 
-  pw.Widget _sectionTitle(String title) {
-    return pw.Container(
-      margin: const pw.EdgeInsets.symmetric(vertical: 10),
-      padding: const pw.EdgeInsets.all(5),
-      decoration: const pw.BoxDecoration(color: PdfColors.grey200),
-      width: double.infinity,
-      child: pw.Text(title,
-          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12)),
-    );
-  }
-
-  pw.Widget _buildPdfQuestion(int index, LocalQuizQuestion q) {
-    return pw.Container(
-      margin: const pw.EdgeInsets.only(bottom: 15),
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          pw.Text('$index. ${q.question}',
-              style:
-                  pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
-          if (q.questionType == 'Multiple Choice' ||
-              q.questionType == 'True/False')
-            pw.Padding(
-              padding: const pw.EdgeInsets.only(left: 15, top: 5),
-              child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: q.options.asMap().entries.map((entry) {
-                  final char = String.fromCharCode(65 + entry.key);
-                  return pw.Text('$char. ${entry.value}',
-                      style: const pw.TextStyle(fontSize: 10));
-                }).toList(),
-              ),
-            )
-          else
-            pw.Padding(
-              padding: const pw.EdgeInsets.only(top: 10),
-              child: pw.Container(
-                height: q.questionType == 'Theory' || q.questionType == 'Essay'
-                    ? 100
-                    : 40,
-                width: double.infinity,
-                decoration: pw.BoxDecoration(
-                  border: pw.Border.all(width: 0.5, color: PdfColors.grey400),
-                  borderRadius:
-                      const pw.BorderRadius.all(pw.Radius.circular(4)),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
+  // PDF generation is now handled by ExamPdfGenerator service.
 }

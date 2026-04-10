@@ -147,16 +147,20 @@ class CreateContentProvider with ChangeNotifier {
 
       ExtractionResult? extractionResult;
       
-      // Handle YouTube Transcript separately
+      // Handle YouTube Transcript via Extraction Service
       if (_selectedSourceType == 'youtube') {
-        _progressMessage = 'Extracting YouTube transcript...';
+        _progressMessage = 'Analyzing YouTube video...';
         notifyListeners();
         try {
-          final transcript = await _youtubeService.getTranscript(_textContent);
-          final metadata = await _youtubeService.getVideoMetadata(_textContent);
-          extractionResult = ExtractionResult(
-            text: transcript,
-            suggestedTitle: metadata['title'] ?? 'YouTube Content',
+          extractionResult = await _extractionService.extractContent(
+            type: 'youtube',
+            input: _textContent,
+            userId: userId,
+            cancelToken: cancelToken,
+            onProgress: (msg) {
+              _progressMessage = msg;
+              notifyListeners();
+            },
           );
         } catch (e) {
           throw Exception('YouTube Error: ${e.toString().replaceFirst('Exception: ', '')}');

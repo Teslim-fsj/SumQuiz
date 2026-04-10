@@ -83,26 +83,39 @@ class WebExamReviewStep extends StatelessWidget {
           const SizedBox(height: 16),
           
           Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Questions List Column
-                Expanded(
-                  flex: 6,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 120),
-                    itemCount: questions.length,
-                    itemBuilder: (context, index) => _buildQuestionItem(context, questions[index], index),
+            child: questions.isEmpty 
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.psychology_outlined, size: 64, color: Color(0xFFCBD5E1)),
+                      const SizedBox(height: 16),
+                      Text('No questions generated yet.', style: GoogleFonts.outfit(fontSize: 18, color: const Color(0xFF64748B))),
+                      const SizedBox(height: 8),
+                      Text('Try adjusting your configuration and generating again.', style: GoogleFonts.outfit(fontSize: 14, color: const Color(0xFF94A3B8))),
+                    ],
                   ),
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Questions List Column
+                    Expanded(
+                      flex: 6,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.only(bottom: 120),
+                        itemCount: questions.length,
+                        itemBuilder: (context, index) => _buildQuestionItem(context, questions[index], index),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Exam Summary Panel
+                    Expanded(
+                      flex: 3,
+                      child: _buildExamSummary(context),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 16),
-                // Exam Summary Panel
-                Expanded(
-                  flex: 3,
-                  child: _buildExamSummary(context),
-                ),
-              ],
-            ),
           )
         ],
       ),

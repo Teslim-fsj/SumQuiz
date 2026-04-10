@@ -33,7 +33,7 @@ class WebExamSetupStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,13 +56,15 @@ class WebExamSetupStep extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: _buildSourceMaterial(context)),
-              const SizedBox(width: 16),
-              Expanded(child: _buildAcademicContext(context)),
-            ],
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: _buildSourceMaterial(context)),
+                const SizedBox(width: 16),
+                Expanded(child: _buildAcademicContext(context)),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           Align(
