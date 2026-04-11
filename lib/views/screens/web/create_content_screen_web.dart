@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../models/user_model.dart';
+import '../../../utils/youtube_pro_gate.dart';
 import '../../../providers/create_content_provider.dart';
 import '../../widgets/create_content/creation_progress_indicator.dart';
 import '../../widgets/create_content/creation_success_view.dart';
@@ -53,8 +54,11 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
           key: ValueKey(provider.phase),
           onTranslate: (t) {},
           onUploadFiles: () => _pickFile(context, provider, user, ['pdf', 'doc', 'docx', 'txt'], 'pdf'),
-          onWriteNow: () => _showInputDialog(context, provider, 'Text / Quick Topic', 'Type a topic or paste text...', isTopic: true),
-          onImportUrl: () => _showInputDialog(context, provider, 'YouTube / Web Link', 'Paste URL here...', isLink: true),
+          onWriteNow: () => _showInputDialog(context, provider, user,
+              'Text / Quick Topic', 'Type a topic or paste text...',
+              isTopic: true),
+          onImportUrl: () => _showInputDialog(context, provider, user,
+              'YouTube / Web Link', 'Paste URL here...', isLink: true),
           onScanPage: () => _pickFile(context, provider, user, ['jpg', 'jpeg', 'png'], 'image'),
           onListenAndLearn: () => _pickFile(context, provider, user, ['mp3', 'wav', 'm4a'], 'audio'),
         );
@@ -63,7 +67,12 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
           key: ValueKey(provider.phase),
           provider: provider,
           onGenerate: () {
-            if (user != null) provider.startGeneration(user.uid);
+            if (user != null) {
+              provider.startGeneration(
+                user.uid,
+                allowYouTubeImport: userMayImportFromYouTube(user),
+              );
+            }
           },
         );
       case CreationPhase.processing:
@@ -98,7 +107,15 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
     }
   }
 
-  void _showInputDialog(BuildContext context, CreateContentProvider provider, String title, String hint, {bool isTopic = false, bool isLink = false}) {
+  void _showInputDialog(
+    BuildContext context,
+    CreateContentProvider provider,
+    UserModel? subscriptionUser,
+    String title,
+    String hint, {
+    bool isTopic = false,
+    bool isLink = false,
+  }) {
     _textController.clear();
     showDialog(
       context: context,
@@ -126,8 +143,18 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
             onPressed: () {
               final text = _textController.text.trim();
               if (text.isNotEmpty) {
+                final bool isYoutube =
+                    text.contains('youtube.com') || text.contains('youtu.be');
+                if (isYoutube &&
+                    !userMayImportFromYouTube(subscriptionUser)) {
+                  showDialog<void>(
+                    context: context,
+                    builder: (_) =>
+                        const UpgradeDialog(featureName: 'YouTube import'),
+                  );
+                  return;
+                }
                 Navigator.pop(context);
-                final bool isYoutube = text.contains('youtube.com') || text.contains('youtu.be');
                 provider.setSource(
                   isTopic ? 'topic' : (isYoutube ? 'youtube' : (isLink ? 'link' : 'text')),
                   text: text,

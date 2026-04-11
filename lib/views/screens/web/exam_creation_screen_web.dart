@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:sumquiz/services/exam_pdf_generator.dart';
 import 'package:go_router/go_router.dart';
@@ -18,7 +17,8 @@ import 'package:sumquiz/services/content_extraction_service.dart';
 import 'package:sumquiz/services/firestore_service.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
 import 'package:sumquiz/utils/share_code_generator.dart';
-import 'package:sumquiz/services/youtube_service.dart';
+import 'package:sumquiz/utils/youtube_pro_gate.dart';
+import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
 
 import '../../widgets/create_content/web_exam_setup_step.dart';
 import '../../widgets/create_content/web_exam_config_step.dart';
@@ -166,6 +166,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                   : (name.toLowerCase().endsWith('.png')
                       ? 'image/png'
                       : 'image/jpeg'),
+              allowYouTubeImport: userMayImportFromYouTube(user),
               onProgress: (msg) => setState(() => _processingMessage =
                   '[${i + 1}/${files.length}] $msg'),
               cancelToken: _cancelToken,
@@ -434,6 +435,17 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   }
 
   Future<void> _extractFromYoutube(String url) async {
+    final user = Provider.of<UserModel?>(context, listen: false);
+    if (!userMayImportFromYouTube(user)) {
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        builder: (_) =>
+            const UpgradeDialog(featureName: 'YouTube import'),
+      );
+      return;
+    }
+
     setState(() {
       _isProcessingSource = true;
       _processingMessage = 'Analyzing YouTube video...';
@@ -441,12 +453,12 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
 
     try {
       final extractionService = Provider.of<ContentExtractionService>(context, listen: false);
-      final user = Provider.of<UserModel?>(context, listen: false);
 
       final result = await extractionService.extractContent(
         type: 'youtube',
         input: url,
         userId: user?.uid,
+        allowYouTubeImport: userMayImportFromYouTube(user),
         onProgress: (msg) => setState(() => _processingMessage = msg),
       );
       
@@ -498,7 +510,18 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                       onLevelChanged: (v) => setState(() => _selectedLevel = v ?? _selectedLevel),
                       onPickSourcePdf: () => _pickSource('PDF'),
                       onPickSourceNotes: () => _pickSource('Notes'),
-                      onPickSourceYoutube: () => _showYoutubeInputDialog(),
+                      onPickSourceYoutube: () {
+                        if (!userMayImportFromYouTube(user)) {
+                          showDialog<void>(
+                            context: context,
+                            builder: (_) => const UpgradeDialog(
+                              featureName: 'YouTube import',
+                            ),
+                          );
+                          return;
+                        }
+                        _showYoutubeInputDialog();
+                      },
                       onNext: _nextStep,
                       hasSource: _sourceMaterial.isNotEmpty,
                       uploadStatusMessage: _processedFileNames.isNotEmpty ? 'Processed: ${_processedFileNames.join(", ")}' : 'Material Ready',

@@ -17,6 +17,7 @@ import 'package:sumquiz/services/extraction_result_cache.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
 import 'package:sumquiz/views/widgets/extraction_progress_dialog.dart';
 import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
+import 'package:sumquiz/utils/youtube_pro_gate.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sumquiz/theme/web_theme.dart'; // Reuse premium colors
@@ -364,10 +365,22 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           input = _textController.text;
           break;
         case 'link':
+          validationError = InputValidator.validateUrl(_linkController.text);
+          if (validationError == null &&
+              InputValidator.isYoutubeUrl(_linkController.text) &&
+              !user.isPro) {
+            if (mounted) {
+              showDialog<void>(
+                context: context,
+                builder: (_) =>
+                    const UpgradeDialog(featureName: 'YouTube import'),
+              );
+            }
+            return;
+          }
           if (!await _checkProAccess('Analyze Link')) {
             return;
           }
-          validationError = InputValidator.validateUrl(_linkController.text);
           type = 'link';
           input = _linkController.text;
           break;
@@ -491,6 +504,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
         input: input,
         userId: user.uid,
         mimeType: mimeType,
+        allowYouTubeImport: userMayImportFromYouTube(user),
         cancelToken: cancelToken,
         onProgress: (message) {
           if (!cancelToken.isCancelled && mounted) {

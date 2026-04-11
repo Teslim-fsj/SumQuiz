@@ -4,19 +4,19 @@ import 'package:intl/intl.dart';
 import 'package:sumquiz/theme/web_theme.dart';
 
 class SharedTeacherWidgets {
-  static Widget moduleHeader(String title, String subtitle) {
+  static Widget moduleHeader(String title, String subtitle, {bool isMobile = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title,
             style: GoogleFonts.outfit(
-                fontSize: 26,
+                fontSize: isMobile ? 22 : 26,
                 fontWeight: FontWeight.w900,
                 color: WebColors.textPrimary)),
         const SizedBox(height: 4),
         Text(subtitle,
             style: GoogleFonts.outfit(
-                fontSize: 14, color: WebColors.textSecondary)),
+                fontSize: isMobile ? 12 : 14, color: WebColors.textSecondary)),
       ],
     );
   }

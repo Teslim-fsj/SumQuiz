@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:file_picker/file_picker.dart';
 
 import '../../models/user_model.dart';
+import '../../utils/youtube_pro_gate.dart';
 import '../../providers/create_content_provider.dart';
 import '../widgets/create_content/source_choice_card.dart';
 import '../widgets/create_content/config_selector.dart';
@@ -177,9 +178,21 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
               ),
               SourceChoiceCard(
                 title: 'YouTube',
-                description: 'Analyze video content',
+                description: userMayImportFromYouTube(user)
+                    ? 'Analyze video content'
+                    : 'Pro — analyze video content',
                 icon: Icons.play_circle_fill_rounded,
-                onTap: () => _showUrlInputDialog(context, provider, isYoutube: true),
+                onTap: () {
+                  if (!userMayImportFromYouTube(user)) {
+                    showDialog<void>(
+                      context: context,
+                      builder: (_) =>
+                          const UpgradeDialog(featureName: 'YouTube import'),
+                    );
+                    return;
+                  }
+                  _showUrlInputDialog(context, provider, isYoutube: true);
+                },
                 color: Colors.orange,
               ),
               SourceChoiceCard(
@@ -293,7 +306,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
     );
   }
 
-  void _showUrlInputDialog(BuildContext context, CreateContentProvider provider, {bool isYoutube = false}) {
+  void _showUrlInputDialog(BuildContext context, CreateContentProvider provider,
+      {bool isYoutube = false}) {
     _textController.clear();
     showModalBottomSheet(
       context: context,
@@ -342,6 +356,19 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
               onPressed: () {
                 final url = _textController.text.trim();
                 if (url.isNotEmpty && url.startsWith('http')) {
+                  final u = Provider.of<UserModel?>(context, listen: false);
+                  final lower = url.toLowerCase();
+                  final looksYt = lower.contains('youtube.com/') ||
+                      lower.contains('youtu.be/') ||
+                      lower.contains('m.youtube.com/');
+                  if (looksYt && !userMayImportFromYouTube(u)) {
+                    showDialog<void>(
+                      context: context,
+                      builder: (_) =>
+                          const UpgradeDialog(featureName: 'YouTube import'),
+                    );
+                    return;
+                  }
                   Navigator.pop(context);
                   provider.setSource('link', text: url);
                 }
@@ -400,7 +427,10 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
             onPressed: () {
               final user = Provider.of<UserModel?>(context, listen: false);
               if (user != null) {
-                provider.startGeneration(user.uid);
+                provider.startGeneration(
+                  user.uid,
+                  allowYouTubeImport: userMayImportFromYouTube(user),
+                );
               }
             },
             style: ElevatedButton.styleFrom(

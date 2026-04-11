@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, compute;
 import 'package:sumquiz/models/extraction_result.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
+import 'package:sumquiz/utils/youtube_pro_gate.dart';
 import 'package:sumquiz/services/ai/ai_config.dart';
 import 'package:sumquiz/services/ai/pdf_ai_service.dart';
 
@@ -132,6 +133,8 @@ class ContentExtractionService {
     String? userId,
     String? mimeType,
     bool refineWithAI = false,
+    /// Must be true when [type] is `youtube`, or when `link` resolves to YouTube.
+    bool allowYouTubeImport = false,
     void Function(String)? onProgress,
     CancellationToken? cancelToken,
   }) async {
@@ -151,6 +154,7 @@ class ContentExtractionService {
           userId: userId,
           mimeType: mimeType,
           refineWithAI: refineWithAI,
+          allowYouTubeImport: allowYouTubeImport,
           onProgress: onProgress,
           cancelToken: cancelToken,
         )).timeout(
@@ -172,6 +176,7 @@ class ContentExtractionService {
     String? userId,
     String? mimeType,
     bool refineWithAI = false,
+    bool allowYouTubeImport = false,
     void Function(String)? onProgress,
     CancellationToken? cancelToken,
   }) async {
@@ -185,6 +190,15 @@ class ContentExtractionService {
         name: 'ContentExtractionService');
 
     try {
+      if (type == 'youtube' ||
+          (type == 'link' &&
+              input is String &&
+              _detectUrlType(input) == UrlContentType.youtube)) {
+        if (!allowYouTubeImport) {
+          throw Exception(kYoutubeProRequiredMessage);
+        }
+      }
+
       switch (type) {
         case 'text':
           developer.log('Processing text type',

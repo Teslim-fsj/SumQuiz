@@ -21,58 +21,58 @@ class AnalyticsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SharedTeacherWidgets.moduleHeader('Analytics',
-              'Detailed insights about content and student performance'),
-          const SizedBox(height: 16),
-          if (content.isEmpty)
-            SharedTeacherWidgets.emptyCard('No content to analyze',
-                'Create and share content to generate analytics data.')
-          else ...[
-            _buildClassOverview(),
-            const SizedBox(height: 16),
-            _buildTrendSection(),
-            const SizedBox(height: 20),
-            _buildContentAnalyticsList(),
-          ],
-        ],
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 800;
+        
+        return SingleChildScrollView(
+          padding: EdgeInsets.all(isMobile ? 12 : 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SharedTeacherWidgets.moduleHeader('AI Performance Analytics',
+                  'Synthesized failure patterns and targeted interventions', isMobile: isMobile),
+              const SizedBox(height: 24),
+              if (content.isEmpty)
+                SharedTeacherWidgets.emptyCard('No content to analyze',
+                    'Create and share content to generate analytics data.')
+              else ...[
+                _buildClassOverview(isMobile: isMobile),
+                const SizedBox(height: 24),
+                _buildTrendSection(isMobile: isMobile),
+                const SizedBox(height: 32),
+                _buildContentAnalyticsList(isMobile: isMobile),
+              ],
+            ],
+          ),
+        );
+      }
     );
   }
 
-  Widget _buildTrendSection() {
+  Widget _buildTrendSection({bool isMobile = false}) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isMobile ? 20 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: WebColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: WebColors.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Activity Trends',
               style: GoogleFonts.outfit(
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.w800,
                   color: WebColors.textPrimary)),
           Text('Total student attempts over the last 30 days',
               style: GoogleFonts.outfit(
-                  fontSize: 12, color: WebColors.textTertiary)),
-          const SizedBox(height: 16),
+                  fontSize: 13, color: WebColors.textTertiary)),
+          const SizedBox(height: 24),
           SizedBox(
-            height: 180,
+            height: isMobile ? 150 : 200,
             width: double.infinity,
             child: _TrendChart(data: trends),
           ),
@@ -81,40 +81,50 @@ class AnalyticsView extends StatelessWidget {
     );
   }
 
-  Widget _buildClassOverview() {
+  Widget _buildClassOverview({bool isMobile = false}) {
     final sorted = List<StudentLink>.from(students)
       ..sort((a, b) => b.averageScore.compareTo(a.averageScore));
     final topStudents = sorted.take(3).toList();
     final weakStudents = sorted.reversed.take(3).toList();
 
+    final topPerformers = SharedTeacherWidgets.sectionCard(
+      title: 'Top Performers',
+      icon: Icons.emoji_events_outlined,
+      child: Column(
+        children: topStudents.isEmpty
+            ? [SharedTeacherWidgets.emptyHint('No student data yet')]
+            : topStudents.asMap().entries.map((e) {
+                return _rankRow(e.key + 1, e.value);
+              }).toList(),
+      ),
+    );
+
+    final needsSupport = SharedTeacherWidgets.sectionCard(
+      title: 'Needs Support',
+      icon: Icons.support_outlined,
+      child: Column(
+        children: weakStudents.isEmpty
+            ? [SharedTeacherWidgets.emptyHint('No student data yet')]
+            : weakStudents.map((s) => _rankRow(0, s, showWarning: true)).toList(),
+      ),
+    );
+
+    if (isMobile) {
+      return Column(
+        children: [
+          topPerformers,
+          const SizedBox(height: 16),
+          needsSupport,
+        ],
+      );
+    }
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: SharedTeacherWidgets.sectionCard(
-            title: 'Top Performers',
-            icon: Icons.emoji_events_outlined,
-            child: Column(
-              children: topStudents.isEmpty
-                  ? [SharedTeacherWidgets.emptyHint('No student data yet')]
-                  : topStudents.asMap().entries.map((e) {
-                      return _rankRow(e.key + 1, e.value);
-                    }).toList(),
-            ),
-          ),
-        ),
+        Expanded(child: topPerformers),
         const SizedBox(width: 24),
-        Expanded(
-          child: SharedTeacherWidgets.sectionCard(
-            title: 'Needs Support',
-            icon: Icons.support_outlined,
-            child: Column(
-              children: weakStudents.isEmpty
-                  ? [SharedTeacherWidgets.emptyHint('No student data yet')]
-                  : weakStudents.map((s) => _rankRow(0, s, showWarning: true)).toList(),
-            ),
-          ),
-        ),
+        Expanded(child: needsSupport),
       ],
     );
   }
@@ -157,69 +167,93 @@ class AnalyticsView extends StatelessWidget {
     );
   }
 
-  Widget _buildContentAnalyticsList() {
+  Widget _buildContentAnalyticsList({bool isMobile = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Content Performance',
             style: GoogleFonts.outfit(
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: FontWeight.w800,
                 color: WebColors.textPrimary)),
         const SizedBox(height: 16),
         ...content.map((deck) {
           final a = analytics[deck.id];
-          return _contentAnalyticsRow(deck, a);
+          return _contentAnalyticsRow(deck, a, isMobile: isMobile);
         }),
       ],
     );
   }
 
-  Widget _contentAnalyticsRow(PublicDeck deck, ContentAnalytics? a) {
+  Widget _contentAnalyticsRow(PublicDeck deck, ContentAnalytics? a, {bool isMobile = false}) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: WebColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.01),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: WebColors.border.withOpacity(0.5)),
+        boxShadow: WebColors.cardShadow,
       ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(deck.title,
-                    style: GoogleFonts.outfit(
-                        fontSize: 14, fontWeight: FontWeight.w800),
-                    overflow: TextOverflow.ellipsis),
-                SharedTeacherWidgets.badge(
-                  deck.isExam ? 'Exam' : 'Study Pack',
-                  deck.isExam ? WebColors.purplePrimary : WebColors.secondary
+      child: isMobile
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(deck.title,
+                        style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis),
+                  ),
+                  SharedTeacherWidgets.badge(
+                    deck.isExam ? 'Exam' : 'Pack',
+                    deck.isExam ? WebColors.purplePrimary : WebColors.secondary
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _analyticsMini('Attempts', '${a?.numberOfAttempts ?? 0}', WebColors.blueInfo),
+                  _analyticsMini('Avg Score', '${a?.averageScore.toStringAsFixed(0) ?? 0}%', WebColors.success),
+                  _analyticsMini('Rate', '${a?.completionRate.toStringAsFixed(0) ?? 0}%', WebColors.secondary),
+                ],
+              )
+            ],
+          )
+        : Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(deck.title,
+                        style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w800),
+                        overflow: TextOverflow.ellipsis),
+                    SharedTeacherWidgets.badge(
+                      deck.isExam ? 'Exam' : 'Study Pack',
+                      deck.isExam ? WebColors.purplePrimary : WebColors.secondary
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              Expanded(
+                  child: _analyticsMini('Attempts',
+                      '${a?.numberOfAttempts ?? 0}', WebColors.blueInfo)),
+              Expanded(
+                  child: _analyticsMini('Avg Score',
+                      '${a?.averageScore.toStringAsFixed(0) ?? 0}%', WebColors.success)),
+              Expanded(
+                  child: _analyticsMini('Completion',
+                      '${a?.completionRate.toStringAsFixed(0) ?? 0}%', WebColors.secondary)),
+            ],
           ),
-          Expanded(
-              child: _analyticsMini('Attempts',
-                  '${a?.numberOfAttempts ?? 0}', WebColors.blueInfo)),
-          Expanded(
-              child: _analyticsMini('Avg Score',
-                  '${a?.averageScore.toStringAsFixed(0) ?? 0}%', WebColors.success)),
-          Expanded(
-              child: _analyticsMini('Completion',
-                  '${a?.completionRate.toStringAsFixed(0) ?? 0}%', WebColors.secondary)),
-        ],
-      ),
     );
   }
 

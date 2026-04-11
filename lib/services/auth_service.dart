@@ -1,7 +1,9 @@
 import 'dart:developer' as developer;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sumquiz/config/google_oauth_config.dart';
 import 'package:provider/provider.dart';
 import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/providers/sync_provider.dart';
@@ -17,6 +19,8 @@ class AuthService {
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
   final FirestoreService _firestoreService = FirestoreService();
   final ReferralService _referralService = ReferralService();
+
+  static bool _googleSignInInitialized = false;
   static const String _authTokenKey = 'auth_token';
   static const String _userIdKey = 'user_id';
   static const String _userDisplayNameKey = 'user_display_name';
@@ -93,37 +97,58 @@ class AuthService {
     });
   }
 
+  Future<void> _ensureGoogleSignInInitialized() async {
+    if (_googleSignInInitialized) return;
+    await GoogleSignIn.instance.initialize(
+      serverClientId: kGoogleWebServerClientId,
+    );
+    _googleSignInInitialized = true;
+  }
+
   Future<void> signInWithGoogle(BuildContext context,
       {String? referralCode}) async {
     try {
-      developer.log('Starting Google Sign-In flow');
+      developer.log('Starting Google Sign-In flow (web=$kIsWeb)');
 
-      // Disconnect any existing sessions to ensure fresh sign-in
-      await _googleSignIn.disconnect();
+      User? user;
 
-      // Trigger the authentication flow
-      final GoogleSignInAccount googleUser =
-          await _googleSignIn.attemptLightweightAuthentication() ??
-              await _googleSignIn.authenticate();
+      if (kIsWeb) {
+        final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+        googleProvider.setCustomParameters(const {'prompt': 'select_account'});
+        final UserCredential result =
+            await _auth.signInWithPopup(googleProvider);
+        user = result.user;
+      } else {
+        await _ensureGoogleSignInInitialized();
+        await _googleSignIn.signOut();
 
-      developer.log('Google Sign-In response received');
+        final Future<GoogleSignInAccount?>? lightweightFuture =
+            _googleSignIn.attemptLightweightAuthentication();
+        GoogleSignInAccount? googleUser;
+        if (lightweightFuture != null) {
+          googleUser = await lightweightFuture;
+        }
+        googleUser ??= await _googleSignIn.authenticate();
 
-      developer.log('Google user authenticated: ${googleUser.email}');
+        developer.log('Google user authenticated: ${googleUser.email}');
 
-      // Obtain the auth details
-      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+        final GoogleSignInAuthentication googleAuth =
+            googleUser.authentication;
+        final String? idToken = googleAuth.idToken;
+        if (idToken == null || idToken.isEmpty) {
+          throw FirebaseAuthException(
+            code: 'no-id-token',
+            message: 'Google did not return an ID token.',
+          );
+        }
 
-      developer.log('Google authentication obtained');
-
-      // Create a new credential
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
-      );
-
-      // Sign in to Firebase
-      final UserCredential result =
-          await _auth.signInWithCredential(credential);
-      final user = result.user;
+        final OAuthCredential credential = GoogleAuthProvider.credential(
+          idToken: idToken,
+        );
+        final UserCredential result =
+            await _auth.signInWithCredential(credential);
+        user = result.user;
+      }
 
       if (user != null) {
         developer.log('Firebase user signed in: ${user.uid}');
@@ -194,46 +219,15 @@ class AuthService {
     } on FirebaseAuthException catch (e, s) {
       developer.log('Firebase Auth error during Google Sign-In',
           error: e, stackTrace: s);
-
-      // Handle specific error cases
-      switch (e.code) {
-        case 'account-exists-with-different-credential':
-          throw Exception(
-              'An account already exists with the same email address but different sign-in credentials. Please use the original sign-in method.');
-        case 'invalid-credential':
-          throw Exception(
-              'The supplied auth credential is malformed or has expired.');
-        case 'operation-not-allowed':
-          throw Exception(
-              'Google Sign-In is disabled. Please contact support.');
-        case 'user-disabled':
-          throw Exception(
-              'This account has been disabled. Please contact support.');
-        case 'user-not-found':
-          throw Exception('No user found with these credentials.');
-        case 'wrong-password':
-          throw Exception('Incorrect password.');
-        case 'network-request-failed':
-          throw Exception(
-              'Network error. Please check your connection and try again.');
-        default:
-          throw Exception('Authentication failed. Please try again later.');
-      }
+      rethrow;
     } on GoogleSignInException catch (e, s) {
       developer.log('Google Sign-In error', error: e, stackTrace: s);
-
-      // Handle specific Google Sign-In errors
-      final errorMessage = e.toString();
-      if (errorMessage.contains('network error')) {
-        throw Exception(
-            'Network error during Google Sign-In. Please check your connection and try again.');
-      } else {
-        throw Exception('Google Sign-In failed: $errorMessage');
-      }
+      rethrow;
     } catch (e, s) {
       developer.log('An unexpected error occurred during Google Sign-In',
           error: e, stackTrace: s);
-      throw Exception('An unexpected error occurred: ${e.toString()}');
+      if (e is FirebaseAuthException || e is GoogleSignInException) rethrow;
+      throw Exception('Google sign-in could not complete. Please try again.');
     }
   }
 
@@ -356,7 +350,9 @@ class AuthService {
 
   Future<void> signOut() async {
     try {
-      await _googleSignIn.signOut();
+      if (!kIsWeb && _googleSignInInitialized) {
+        await _googleSignIn.signOut();
+      }
       await _auth.signOut();
       // Clear saved authentication state
       await _clearAuthState();

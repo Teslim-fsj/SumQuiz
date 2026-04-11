@@ -4,10 +4,12 @@ import 'package:sumquiz/services/auth_service.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sumquiz/models/user_model.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:sumquiz/utils/auth_error_messages.dart';
 
 enum AuthMode { login, signUp }
 
@@ -71,9 +73,9 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         if (mounted) developer.log('Sign-Up successful, user document creation initiated with role: ${_signUpRole.name}');
       }
     } on FirebaseAuthException catch (e) {
-      _showError(theme, _getFirebaseErrorMessage(e));
+      if (mounted) _showError(theme, messageForFirebaseAuth(e));
     } catch (e) {
-      _showError(theme, _getErrorMessage(e));
+      if (mounted) _showError(theme, messageForAuthFailure(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -96,8 +98,17 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       if (prefs.getBool('is_new_user') ?? false) {
         developer.log('Google Sign-In successful for new user, role: ${prefs.getString('intended_role')}');
       }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) _showError(theme, messageForFirebaseAuth(e));
     } catch (e) {
-      _showError(theme, _getGoogleErrorMessage(e));
+      // Catch GoogleSignInException dynamically or check its type string to avoid compile errors if missing
+      final errorStr = e.toString();
+      if (errorStr.contains('GoogleSignInException') || errorStr.contains('PlatformException')) {
+        final msg = messageForGoogleSignInException(e);
+        if (mounted && msg.isNotEmpty) _showError(theme, msg);
+      } else {
+        if (mounted) _showError(theme, messageForAuthFailure(e));
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -112,37 +123,6 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         behavior: SnackBarBehavior.floating,
       ),
     );
-  }
-
-  String _getFirebaseErrorMessage(FirebaseAuthException e) {
-    switch (e.code) {
-      case 'invalid-email': return 'Invalid email address format.';
-      case 'user-disabled': return 'This account has been disabled.';
-      case 'user-not-found': return 'No account found with this email.';
-      case 'wrong-password': return 'Incorrect password.';
-      case 'email-already-in-use': return 'An account already exists with this email.';
-      case 'operation-not-allowed': return 'Email/password accounts are not enabled.';
-      case 'weak-password': return 'Password is too weak. Please use a stronger password.';
-      case 'network-request-failed': return 'Network error. Please check your connection and try again.';
-      default: return 'Authentication failed. Please try again later.';
-    }
-  }
-
-  String _getErrorMessage(dynamic e) {
-    String msg = e.toString();
-    if (msg.toLowerCase().contains('referral')) return msg.replaceAll('Exception:', '').trim();
-    return 'Authentication Failed: $msg';
-  }
-
-  String _getGoogleErrorMessage(dynamic e) {
-    String msg = e.toString();
-    if (msg.contains('network') || msg.contains('connection')) return 'Network error. Please check your connection.';
-    if (msg.contains('cancelled')) return '';
-    if (msg.contains('account disabled')) return 'This account is disabled. Please contact support.';
-    if (msg.contains('malformed') || msg.contains('expired')) return 'Token invalid. Please try again.';
-    if (msg.contains('Google Sign-In is disabled')) return 'Google Sign-In is disabled for this app.';
-    if (msg.toLowerCase().contains('referral')) return msg.replaceAll('Exception:', '').trim();
-    return msg.replaceAll('Exception:', '').trim().isEmpty ? 'Google Sign-In failed.' : msg.replaceAll('Exception:', '').trim();
   }
 
   @override

@@ -28,6 +28,7 @@ import 'package:rxdart/rxdart.dart';
 import 'exam_creation_screen.dart';
 import '../../services/content_extraction_service.dart';
 import '../../utils/cancellation_token.dart';
+import '../../utils/youtube_pro_gate.dart';
 import '../../services/usage_service.dart';
 import '../../services/iap_service.dart';
 import '../widgets/extraction_progress_dialog.dart';
@@ -1644,9 +1645,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   void _showLinkDialog() {
     final controller = TextEditingController();
+    final parentContext = context;
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Analyze Link'),
         content: TextField(
           controller: controller,
@@ -1657,20 +1659,32 @@ class _ReviewScreenState extends State<ReviewScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () {
               final url = controller.text.trim();
-              Navigator.pop(context);
-              if (url.isNotEmpty) {
-                // If it's a YouTube URL, we use the 'youtube' type to trigger Tier 0 reasoning
-                final type = url.contains('youtube.com/') || url.contains('youtu.be/') 
-                    ? 'youtube' 
-                    : 'link';
-                _processExtraction(type, url);
+              Navigator.pop(dialogContext);
+              if (url.isEmpty) return;
+              // If it's a YouTube URL, we use the 'youtube' type to trigger Tier 0 reasoning
+              final type = url.contains('youtube.com/') || url.contains('youtu.be/')
+                  ? 'youtube'
+                  : 'link';
+              if (type == 'youtube') {
+                final u =
+                    Provider.of<UserModel?>(parentContext, listen: false);
+                if (!userMayImportFromYouTube(u)) {
+                  showDialog<void>(
+                    context: parentContext,
+                    builder: (_) => const UpgradeDialog(
+                      featureName: 'YouTube import',
+                    ),
+                  );
+                  return;
+                }
               }
+              _processExtraction(type, url);
             },
             child: const Text('Analyze'),
           ),
@@ -1735,11 +1749,15 @@ class _ReviewScreenState extends State<ReviewScreen> {
         );
 
         debugPrint('Calling extractionService.extractContent');
+        final subscriptionUser =
+            Provider.of<UserModel?>(context, listen: false);
+
         final result = await extractionService.extractContent(
           type: type,
           input: input,
           userId: userId,
           mimeType: mimeType,
+          allowYouTubeImport: userMayImportFromYouTube(subscriptionUser),
           onProgress: (m) {
             debugPrint('Progress update: $m');
             progressNotifier.value = m;

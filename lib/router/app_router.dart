@@ -192,7 +192,7 @@ GoRouter createRouter(AuthService authService) {
                     desktop: ReviewScreenWeb(),
                   ),
                   creatorView: ResponsiveView(
-                    mobile: TeacherDashboardScreen(),
+                    mobile: TeacherDashboardWeb(module: 'dashboard'),
                     desktop: TeacherDashboardWeb(module: 'dashboard'),
                   ),
                 ),

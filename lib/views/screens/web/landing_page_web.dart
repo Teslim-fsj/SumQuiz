@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sumquiz/theme/web_theme.dart';
@@ -62,13 +61,16 @@ class _LandingPageWebState extends State<LandingPageWeb>
         children: [
           _buildTopBar(context),
           Expanded(
-            child: ListenableBuilder(
-              listenable: _tabController,
-              builder: (context, _) {
-                return _tabController.index == 0
-                    ? _buildStudentLanding()
-                    : const CreatorTabView();
-              },
+            // TabBarView keeps each tab's subtree alive and avoids rebuilding the
+            // whole landing on every TabController tick (which reset flutter_animate
+            // and could leave hero content invisible on web).
+            child: TabBarView(
+              controller: _tabController,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                _buildStudentLanding(),
+                const CreatorTabView(),
+              ],
             ),
           ),
         ],
@@ -340,7 +342,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
           ],
         )
       ],
-    ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1);
+    );
   }
 
   Widget _buildStudentHeroImage({required bool isMobile}) {
@@ -348,7 +350,6 @@ class _LandingPageWebState extends State<LandingPageWeb>
       clipBehavior: Clip.none,
       children: [
         Container(
-          height: isMobile ? 350 : 500,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(32),
             boxShadow: [
@@ -358,12 +359,28 @@ class _LandingPageWebState extends State<LandingPageWeb>
                 offset: const Offset(0, 20),
               )
             ],
-            image: const DecorationImage(
-              image: AssetImage('assets/images/student_studying_phone.png'),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(32),
+            child: Image.asset(
+              'assets/images/student_studying_phone.png',
               fit: BoxFit.cover,
+              width: double.infinity,
+              height: isMobile ? 350 : 500,
+              errorBuilder: (_, __, ___) => Container(
+                width: double.infinity,
+                height: isMobile ? 350 : 500,
+                color: const Color(0xFFEEF2FF),
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.menu_book_rounded,
+                  size: isMobile ? 72 : 96,
+                  color: WebColors.purplePrimary.withValues(alpha: 0.5),
+                ),
+              ),
             ),
           ),
-        ).animate().fadeIn(duration: 800.ms, delay: 200.ms).scale(begin: const Offset(0.95, 0.95)),
+        ),
         Positioned(
           bottom: -20,
           left: isMobile ? 10 : -40,
@@ -449,7 +466,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
                 ),
               ],
             ),
-          ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2),
+          ),
         ),
       ],
     );
@@ -648,7 +665,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, color: WebColors.purplePrimary, size: 28),
-          const Spacer(),
+          const SizedBox(height: 16),
           Text(title, style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
           Text(desc, style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600], height: 1.5)),

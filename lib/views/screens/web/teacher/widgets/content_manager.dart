@@ -4,6 +4,10 @@ import 'package:intl/intl.dart';
 import 'package:sumquiz/models/public_deck.dart';
 import 'package:sumquiz/models/teacher_models.dart';
 import 'package:sumquiz/theme/web_theme.dart';
+import 'package:pdf/pdf.dart';
+import 'package:printing/printing.dart';
+import 'package:sumquiz/models/local_quiz_question.dart';
+import 'package:sumquiz/services/exam_pdf_generator.dart';
 
 class ContentManager extends StatefulWidget {
   final List<PublicDeck> content;
@@ -42,81 +46,186 @@ class _ContentManagerState extends State<ContentManager> {
     
     final displayedItems = _showExams ? exams : packs;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildTopBanner(),
-          const SizedBox(height: 16),
-          Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 800;
+        
+        return SingleChildScrollView(
+          padding: EdgeInsets.all(isMobile ? 12 : 16),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(flex: 1, child: _buildSidebar(packs.length, exams.length)),
-              const SizedBox(width: 24),
-              Expanded(
-                flex: 3,
-                child: _buildMainContentArea(displayedItems),
-              ),
+              _buildTopBanner(isMobile: isMobile),
+              const SizedBox(height: 24),
+              if (isMobile) ...[
+                _buildSearchBar(isMobile: true),
+                const SizedBox(height: 20),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _sidebarMenuButton('Study Packs', packs.length, !_showExams, () => setState(() => _showExams = false), isMobile: true),
+                      const SizedBox(width: 8),
+                      _sidebarMenuButton('Exams', exams.length, _showExams, () => setState(() => _showExams = true), isMobile: true),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                _buildMainContentArea(displayedItems, isMobile: true),
+              ] else
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(flex: 1, child: _buildSidebar(packs.length, exams.length)),
+                    const SizedBox(width: 24),
+                    Expanded(
+                      flex: 3,
+                      child: _buildMainContentArea(displayedItems),
+                    ),
+                  ],
+                ),
             ],
           ),
-        ],
-      ),
+        );
+      }
     );
   }
 
-  Widget _buildTopBanner() {
+  Future<void> _exportDeckPdf(PublicDeck deck) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final raw = deck.quizData['questions'];
+    if (raw is! List || raw.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(
+            content: Text('This item has no exam questions to export as PDF.')),
+      );
+      return;
+    }
+    final questions = <LocalQuizQuestion>[];
+    for (final item in raw) {
+      if (item is Map) {
+        questions.add(
+            LocalQuizQuestion.fromJson(Map<String, dynamic>.from(item)));
+      }
+    }
+    if (questions.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(
+            content: Text('Could not read questions for this deck.')),
+      );
+      return;
+    }
+    try {
+      final titleFromQuiz = deck.quizData['title'];
+      final title = titleFromQuiz is String && titleFromQuiz.trim().isNotEmpty
+          ? titleFromQuiz.trim()
+          : deck.title;
+      final pdfGen = ExamPdfGenerator();
+      final config = ExamPdfConfig(
+        schoolName: 'SUMQUIZ ACADEMY',
+        examTitle: title,
+        subject: title,
+        classLevel: 'General',
+        durationMinutes: 60,
+        shareCode: deck.shareCode,
+        includeAnswerSheet: true,
+        includeMarkingScheme: false,
+      );
+      final doc = pdfGen.generateStudentPaper(
+        questions: questions,
+        config: config,
+      );
+      final bytes = await doc.save();
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => bytes,
+        name: '$title.pdf',
+      );
+      try {
+        await Printing.sharePdf(bytes: bytes, filename: '$title.pdf');
+      } catch (_) {}
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('PDF export failed: $e')),
+      );
+    }
+  }
+
+  Widget _buildTopBanner({bool isMobile = false}) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isMobile ? 20 : 24),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [const Color(0xFF2E1A47), const Color(0xFF1E112A)],
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2E1A47), Color(0xFF1E112A)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
-                  child: Text('CURRICULUM INTELLIGENCE', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white70, letterSpacing: 1.2)),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Manage Content Lifecycle',
-                  style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white, height: 1.1),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Orchestrate study pathways. Convert lectures into quizzes and exams with AI insights.',
-                  style: GoogleFonts.outfit(fontSize: 12, color: Colors.white70, height: 1.4),
-                ),
-              ],
-            ),
-          ),
-          Column(
+      child: isMobile 
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _bannerStatCard('TOTAL MATERIALS', '${widget.content.length}'),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+                child: Text('CURRICULUM INTELLIGENCE', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white70, letterSpacing: 1.2)),
+              ),
               const SizedBox(height: 16),
-              _bannerStatCard('ACTIVE STUDENTS', '1.2k'),
+              Text(
+                'Manage Content Lifecycle',
+                style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white, height: 1.1),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(child: _bannerStatCard('MATERIALS', '${widget.content.length}', isMobile: true)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _bannerStatCard('STUDENTS', '1.2k', isMobile: true)),
+                ],
+              )
             ],
           )
-        ],
-      ),
+        : Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+                      child: Text('CURRICULUM INTELLIGENCE', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white70, letterSpacing: 1.2)),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Manage Content Lifecycle',
+                      style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white, height: 1.1),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Orchestrate study pathways. Convert lectures into quizzes and exams with AI insights.',
+                      style: GoogleFonts.outfit(fontSize: 12, color: Colors.white70, height: 1.4),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                children: [
+                  _bannerStatCard('TOTAL MATERIALS', '${widget.content.length}'),
+                  const SizedBox(height: 16),
+                  _bannerStatCard('ACTIVE STUDENTS', '1.2k'),
+                ],
+              )
+            ],
+          ),
     );
   }
   
-  Widget _bannerStatCard(String label, String value) {
+  Widget _bannerStatCard(String label, String value, {bool isMobile = false}) {
     return Container(
-      width: 150,
+      width: isMobile ? null : 150,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
@@ -177,8 +286,9 @@ class _ContentManagerState extends State<ContentManager> {
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar({bool isMobile = false}) {
     return Container(
+      width: isMobile ? double.infinity : null,
       height: 48,
       decoration: BoxDecoration(
         color: Colors.white,
@@ -198,25 +308,27 @@ class _ContentManagerState extends State<ContentManager> {
     );
   }
 
-  Widget _sidebarMenuButton(String label, int count, bool isActive, VoidCallback onTap) {
+  Widget _sidebarMenuButton(String label, int count, bool isActive, VoidCallback onTap, {bool isMobile = false}) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(24),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 20, vertical: isMobile ? 12 : 14),
         decoration: BoxDecoration(
           color: isActive ? WebColors.purplePrimary : Colors.white,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: isActive ? WebColors.purplePrimary : const Color(0xFFE5E7EB)),
         ),
         child: Row(
+          mainAxisSize: isMobile ? MainAxisSize.min : MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: GoogleFonts.outfit(fontSize: 14, fontWeight: isActive ? FontWeight.bold : FontWeight.w600, color: isActive ? Colors.white : const Color(0xFF1F1F1F))),
+            Text(label, style: GoogleFonts.outfit(fontSize: isMobile ? 13 : 14, fontWeight: isActive ? FontWeight.bold : FontWeight.w600, color: isActive ? Colors.white : const Color(0xFF1F1F1F))),
+            if (isMobile) const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(color: isActive ? Colors.white.withOpacity(0.2) : const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(12)),
-              child: Text('$count', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: isActive ? Colors.white : Colors.grey[700])),
+              child: Text('$count', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: isActive ? Colors.white : Colors.grey[700])),
             ),
           ],
         ),
@@ -243,54 +355,55 @@ class _ContentManagerState extends State<ContentManager> {
     );
   }
 
-  Widget _buildMainContentArea(List<PublicDeck> displayedItems) {
+  Widget _buildMainContentArea(List<PublicDeck> displayedItems, {bool isMobile = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(_showExams ? 'Current Exams' : 'Current Study Packs', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w900)),
-                Text('Managing ${displayedItems.length} active bundles', style: GoogleFonts.outfit(fontSize: 12, color: Colors.grey[600])),
-              ],
-            ),
-            Row(
-              children: [
-                Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(border: Border.all(color: WebColors.border), shape: BoxShape.circle), child: const Icon(Icons.filter_list, size: 20)),
-                const SizedBox(width: 12),
-                Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(border: Border.all(color: WebColors.border), shape: BoxShape.circle), child: const Icon(Icons.sort, size: 20)),
-              ],
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
+        if (!isMobile)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(_showExams ? 'Current Exams' : 'Current Study Packs', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w900)),
+                  Text('Managing ${displayedItems.length} active bundles', style: GoogleFonts.outfit(fontSize: 12, color: Colors.grey[600])),
+                ],
+              ),
+              Row(
+                children: [
+                  Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(border: Border.all(color: WebColors.border), shape: BoxShape.circle), child: const Icon(Icons.filter_list, size: 20)),
+                  const SizedBox(width: 12),
+                  Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(border: Border.all(color: WebColors.border), shape: BoxShape.circle), child: const Icon(Icons.sort, size: 20)),
+                ],
+              ),
+            ],
+          ),
+        if (!isMobile) const SizedBox(height: 24),
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: isMobile ? 1 : 2,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
-            childAspectRatio: 0.95,
+            childAspectRatio: isMobile ? 1.1 : 0.95,
           ),
-          itemCount: displayedItems.length + 2, // adding creation/AI cards
+          itemCount: displayedItems.length + (isMobile ? 1 : 2), // adding creation/AI cards
           itemBuilder: (context, i) {
             if (i == displayedItems.length) {
-              return _buildAiRecommendationCard();
+              return isMobile ? _buildCreateNewCard(isMobile: true) : _buildAiRecommendationCard();
             } else if (i == displayedItems.length + 1) {
               return _buildCreateNewCard();
             }
-            return _contentCard(displayedItems[i]);
+            return _contentCard(displayedItems[i], isMobile: isMobile);
           },
         ),
       ],
     );
   }
 
-  Widget _contentCard(PublicDeck deck) {
+  Widget _contentCard(PublicDeck deck, {bool isMobile = false}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -298,7 +411,7 @@ class _ContentManagerState extends State<ContentManager> {
         boxShadow: WebColors.cardShadow,
         border: Border.all(color: WebColors.border.withOpacity(0.5)),
       ),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isMobile ? 12 : 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -307,7 +420,7 @@ class _ContentManagerState extends State<ContentManager> {
             children: [
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: const Color(0xFFEEF2FF), shape: BoxShape.circle),
+                decoration: const BoxDecoration(color: Color(0xFFEEF2FF), shape: BoxShape.circle),
                 child: Icon(deck.isExam ? Icons.assignment : Icons.science, color: WebColors.purplePrimary),
               ),
               Container(
@@ -325,12 +438,12 @@ class _ContentManagerState extends State<ContentManager> {
             ],
           ),
           const SizedBox(height: 16),
-          Text(deck.title, style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800, height: 1.2), maxLines: 2, overflow: TextOverflow.ellipsis),
+          Text(deck.title, style: GoogleFonts.outfit(fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.w800, height: 1.2), maxLines: 2, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 8),
           Text('Updated ${DateFormat.MMMd().format(deck.publishedAt)}', style: GoogleFonts.outfit(fontSize: 12, color: Colors.grey[500])),
           
           if (!deck.isExam) ...[
-             const SizedBox(height: 24),
+             SizedBox(height: isMobile ? 16 : 24),
              Row(
                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                children: [
@@ -347,25 +460,35 @@ class _ContentManagerState extends State<ContentManager> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              if (true)
-                 Text('${(widget.analytics[deck.id]?.engagementRate ?? 0).toStringAsFixed(1)}k active enrollments', style: GoogleFonts.outfit(color: WebColors.purplePrimary, fontWeight: FontWeight.bold, fontSize: 11))
-              else
-                 Expanded(
-                   child: ElevatedButton(
-                     onPressed: () => widget.onEdit(deck),
-                     style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFF1F1F1F), elevation: 0, side: const BorderSide(color: Color(0xFFE5E7EB)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
-                     child: const Text('Continue Editing'),
-                   ),
+               Expanded(
+                 child: Column(
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+                     Text('${((widget.analytics[deck.id]?.engagementRate ?? 0) * 12).toInt()} enrollments', 
+                          style: GoogleFonts.outfit(color: WebColors.purplePrimary, fontWeight: FontWeight.bold, fontSize: 11)),
+                     const SizedBox(height: 2),
+                     Text('Code: ${deck.shareCode}', style: GoogleFonts.outfit(fontSize: 10, color: Colors.grey[600], fontWeight: FontWeight.w600)),
+                   ],
                  ),
+               ),
               
               Row(
                 children: [
-                  if (true) ...[
-                     IconButton(icon: const Icon(Icons.share, size: 18, color: Colors.grey), onPressed: () {}),
-                     IconButton(icon: const Icon(Icons.edit, size: 18, color: Colors.grey), onPressed: () => widget.onEdit(deck)),
-                  ] else ...[
-                     Container(decoration: const BoxDecoration(color: WebColors.purplePrimary, shape: BoxShape.circle), child: IconButton(icon: const Icon(Icons.play_arrow, color: Colors.white, size: 20), onPressed: () {})),
-                  ]
+                   IconButton(
+                     tooltip: 'Download PDF',
+                     icon: const Icon(Icons.picture_as_pdf_outlined, size: 18, color: Colors.grey), 
+                     onPressed: () => _exportDeckPdf(deck),
+                   ),
+                   IconButton(
+                     tooltip: 'Edit',
+                     icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.grey), 
+                     onPressed: () => widget.onEdit(deck)
+                   ),
+                   IconButton(
+                     tooltip: 'Delete',
+                     icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.grey), 
+                     onPressed: () => widget.onDelete(deck)
+                   ),
                 ],
               )
             ],
@@ -433,7 +556,7 @@ class _ContentManagerState extends State<ContentManager> {
     );
   }
 
-  Widget _buildCreateNewCard() {
+  Widget _buildCreateNewCard({bool isMobile = false}) {
     return InkWell(
       onTap: _showExams ? widget.onCreateExam : widget.onCreatePack,
       borderRadius: BorderRadius.circular(24),

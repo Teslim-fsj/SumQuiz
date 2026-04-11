@@ -9,6 +9,7 @@ import 'package:sumquiz/services/local_database_service.dart';
 import 'package:sumquiz/services/usage_service.dart';
 import 'package:sumquiz/services/youtube_service.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
+import 'package:sumquiz/utils/youtube_pro_gate.dart';
 
 enum CreationPhase { source, config, processing, success, error }
 
@@ -125,7 +126,8 @@ class CreateContentProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> startGeneration(String userId) async {
+  Future<void> startGeneration(String userId,
+      {required bool allowYouTubeImport}) async {
     if (_phase == CreationPhase.processing) return;
 
     _phase = CreationPhase.processing;
@@ -146,7 +148,11 @@ class CreateContentProvider with ChangeNotifier {
       }
 
       ExtractionResult? extractionResult;
-      
+
+      if (_selectedSourceType == 'youtube' && !allowYouTubeImport) {
+        throw Exception(kYoutubeProRequiredMessage);
+      }
+
       // Handle YouTube Transcript via Extraction Service
       if (_selectedSourceType == 'youtube') {
         _progressMessage = 'Analyzing YouTube video...';
@@ -156,6 +162,7 @@ class CreateContentProvider with ChangeNotifier {
             type: 'youtube',
             input: _textContent,
             userId: userId,
+            allowYouTubeImport: allowYouTubeImport,
             cancelToken: cancelToken,
             onProgress: (msg) {
               _progressMessage = msg;
@@ -201,6 +208,7 @@ class CreateContentProvider with ChangeNotifier {
           input: _fileBytes!,
           userId: userId,
           mimeType: _mimeType,
+          allowYouTubeImport: allowYouTubeImport,
           cancelToken: cancelToken,
           onProgress: (msg) {
             _progressMessage = msg;
@@ -214,6 +222,7 @@ class CreateContentProvider with ChangeNotifier {
           type: 'link',
           input: _textContent,
           userId: userId,
+          allowYouTubeImport: allowYouTubeImport,
           cancelToken: cancelToken,
           onProgress: (msg) {
             _progressMessage = msg;

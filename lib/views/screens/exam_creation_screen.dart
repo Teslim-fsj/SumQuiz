@@ -8,7 +8,6 @@ import 'package:sumquiz/services/enhanced_ai_service.dart';
 import 'package:uuid/uuid.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:sumquiz/services/exam_pdf_generator.dart';
 import 'package:sumquiz/services/content_extraction_service.dart';
@@ -19,6 +18,7 @@ import 'package:sumquiz/services/firestore_service.dart';
 import 'package:sumquiz/models/public_deck.dart';
 import 'package:sumquiz/utils/share_code_generator.dart';
 import 'package:sumquiz/services/youtube_service.dart';
+import 'package:sumquiz/utils/youtube_pro_gate.dart';
 
 class ExamCreationScreen extends StatefulWidget {
   const ExamCreationScreen({super.key});
@@ -327,6 +327,15 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
                               _selectSourceMaterial('Notes');
                             }),
                             _buildUploadOption('YouTube', Icons.play_circle_fill, () {
+                              if (!userMayImportFromYouTube(user)) {
+                                showDialog<void>(
+                                  context: context,
+                                  builder: (_) => const UpgradeDialog(
+                                    featureName: 'YouTube import',
+                                  ),
+                                );
+                                return;
+                              }
                               _selectSourceMaterial('YouTube');
                             }),
                           ],
@@ -786,6 +795,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
               input: bytes,
               userId: user?.uid,
               mimeType: type == 'PDF' ? 'application/pdf' : 'image/jpeg',
+              allowYouTubeImport: userMayImportFromYouTube(user),
               onProgress: (msg) {
                 if (mounted) setState(() => _processingMessage = msg);
               },
@@ -950,6 +960,17 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
   }
 
   Future<void> _extractFromYoutube(String url) async {
+    final u = Provider.of<UserModel?>(context, listen: false);
+    if (!userMayImportFromYouTube(u)) {
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        builder: (_) =>
+            const UpgradeDialog(featureName: 'YouTube import'),
+      );
+      return;
+    }
+
     setState(() {
       _isProcessing = true;
       _processingMessage = 'Fetching YouTube transcript...';

@@ -24,13 +24,13 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
     final isTeacher = user?.role == UserRole.creator;
     final isDark = theme.brightness == Brightness.dark;
 
-    // For teachers on mobile: map 5 visible tabs to branches 0,1,2,3,5
-    final List<int> teacherMobileBranches = [0, 1, 2, 3, 5];
+    // For teachers on mobile: map 5 visible tabs to branches 0, 1, 2, 4, 3
+    final List<int> teacherMobileBranches = [0, 1, 2, 4, 3];
 
     int branchToIndex(int branch) {
       if (isTeacher) {
         final idx = teacherMobileBranches.indexOf(branch);
-        return idx; // -1 if not in list (e.g. branch 4,6,7)
+        return idx; // -1 if not in list (e.g. branch 5,6,7)
       }
       if (branch > 3) return -1;
       return branch;
@@ -74,17 +74,17 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                     BottomNavigationBarItem(
                       icon: Icon(Icons.add_circle_outline),
                       activeIcon: Icon(Icons.add_circle),
-                      label: 'Create Exam',
+                      label: 'Create',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.people_outline),
+                      activeIcon: Icon(Icons.people),
+                      label: 'Students',
                     ),
                     BottomNavigationBarItem(
                       icon: Icon(Icons.analytics_outlined),
                       activeIcon: Icon(Icons.analytics),
                       label: 'Analytics',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.auto_awesome_outlined),
-                      activeIcon: Icon(Icons.auto_awesome),
-                      label: 'AI Feedback',
                     ),
                   ],
                   currentIndex: currentIdx < 0 ? 0 : currentIdx,
