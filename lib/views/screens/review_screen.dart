@@ -233,7 +233,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
     final userService = UserService();
     await userService.incrementItemsCompleted(userId);
 
-    _loadMission();
+    _loadDashboardData();
   }
 
   @override
@@ -407,8 +407,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        theme.colorScheme.primary.withValues(alpha: 0.1),
-                        theme.colorScheme.secondary.withValues(alpha: 0.1),
+                        theme.colorScheme.primary.withOpacity(0.1),
+                        theme.colorScheme.secondary.withOpacity(0.1),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -430,7 +430,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 Text(
                   'Transform any content into personalized study materials.\nStart by summarizing a document or article.',
                   style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    color: theme.colorScheme.onSurface.withOpacity(0.7),
                     height: 1.6,
                   ),
                   textAlign: TextAlign.center,
@@ -447,7 +447,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                        color: theme.colorScheme.primary.withOpacity(0.3),
                         blurRadius: 20,
                         offset: const Offset(0, 8),
                       ),
@@ -488,15 +488,15 @@ class _ReviewScreenState extends State<ReviewScreen> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  theme.colorScheme.primary.withValues(alpha: 0.1),
-                  theme.colorScheme.secondary.withValues(alpha: 0.05),
+                  theme.colorScheme.primary.withOpacity(0.1),
+                  theme.colorScheme.secondary.withOpacity(0.05),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                color: theme.colorScheme.primary.withOpacity(0.2),
                 width: 1.5,
               ),
             ),
@@ -514,7 +514,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                        color: theme.colorScheme.primary.withOpacity(0.3),
                         blurRadius: 15,
                         offset: const Offset(0, 5),
                       ),
@@ -532,7 +532,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                         'Welcome back,',
                         style: theme.textTheme.bodyLarge?.copyWith(
                           color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.7),
+                              .withOpacity(0.7),
                         ),
                       ),
                       Text(
@@ -549,10 +549,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.amber.withValues(alpha: 0.1),
+                    color: Colors.amber.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                     border:
-                        Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                        Border.all(color: Colors.amber.withOpacity(0.3)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -587,15 +587,15 @@ class _ReviewScreenState extends State<ReviewScreen> {
               gradient: LinearGradient(
                 colors: [
                   theme.colorScheme.surface,
-                  theme.colorScheme.surfaceContainerHighest
-                      .withValues(alpha: 0.3),
+                  theme.colorScheme.surfaceVariant
+                      .withOpacity(0.3),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                color: theme.colorScheme.outlineVariant.withOpacity(0.3),
                 width: 1.5,
               ),
             ),
@@ -612,8 +612,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
                         shape: BoxShape.circle,
                         gradient: LinearGradient(
                           colors: [
-                            theme.colorScheme.primary.withValues(alpha: 0.1),
-                            theme.colorScheme.secondary.withValues(alpha: 0.05),
+                            theme.colorScheme.primary.withOpacity(0.1),
+                            theme.colorScheme.secondary.withOpacity(0.05),
                           ],
                         ),
                       ),
@@ -626,13 +626,13 @@ class _ReviewScreenState extends State<ReviewScreen> {
                         strokeWidth: 8,
                         color: const Color(0xFF0D9488), // secondaryTeal
                         backgroundColor: theme.colorScheme.outlineVariant
-                            .withValues(alpha: 0.2),
+                            .withOpacity(0.2),
                       ),
                     ),
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                        color: const Color(0xFF0D9488).withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.auto_awesome_rounded,
@@ -649,7 +649,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                           style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                               color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.8))),
+                                  .withOpacity(0.8))),
                       const SizedBox(height: 8),
                       Text(
                           '${_masteryScore.toStringAsFixed(1)}% Overall Proficiency',
@@ -660,7 +660,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                       LinearProgressIndicator(
                         value: _masteryScore / 100,
                         backgroundColor: theme.colorScheme.outlineVariant
-                            .withValues(alpha: 0.2),
+                            .withOpacity(0.2),
                         color: const Color(0xFF0D9488),
                         borderRadius: BorderRadius.circular(10),
                         minHeight: 8,
@@ -673,11 +673,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.primaryContainer
-                        .withValues(alpha: 0.3),
+                        .withOpacity(0.3),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                         color:
-                            theme.colorScheme.primary.withValues(alpha: 0.2)),
+                            theme.colorScheme.primary.withOpacity(0.2)),
                   ),
                   child: TextButton(
                     onPressed: () => context.push('/progress'),
@@ -727,7 +727,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
           Text('Jump Back In',
               style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8))),
+                  color: theme.colorScheme.onSurface.withOpacity(0.8))),
           const SizedBox(height: 16),
           SizedBox(
             height: 180,
@@ -756,11 +756,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
             color: theme.cardColor.withValues(alpha: isDark ? 0.5 : 0.7),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-                color: borderColor ?? theme.dividerColor.withValues(alpha: 0.2),
+                color: borderColor ?? theme.dividerColor.withOpacity(0.2),
                 width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 20,
                 offset: const Offset(0, 5),
               ),
@@ -787,14 +787,14 @@ class _ReviewScreenState extends State<ReviewScreen> {
         gradient: LinearGradient(
           colors: [
             theme.colorScheme.surface,
-            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            theme.colorScheme.surfaceVariant.withOpacity(0.3),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+          color: theme.colorScheme.outlineVariant.withOpacity(0.3),
           width: 1.5,
         ),
       ),
@@ -808,7 +808,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: iconColor.withValues(alpha: 0.3),
+                  color: iconColor.withOpacity(0.3),
                   blurRadius: 15,
                   offset: const Offset(0, 5),
                 ),
@@ -825,10 +825,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
           Text(title,
               style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8))),
+                  color: theme.colorScheme.onSurface.withOpacity(0.8))),
           Text(subtitle,
               style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+                  color: theme.colorScheme.onSurface.withOpacity(0.6))),
         ],
       ),
     ).animate().fadeIn().slideY(begin: 0.1);
@@ -846,7 +846,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
         gradient: LinearGradient(
           colors: [
             theme.colorScheme.surface,
-            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            theme.colorScheme.surfaceVariant.withOpacity(0.3),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -854,8 +854,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isDone
-              ? Colors.green.withValues(alpha: 0.3)
-              : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+              ? Colors.green.withOpacity(0.3)
+              : theme.colorScheme.outlineVariant.withOpacity(0.3),
           width: 1.5,
         ),
       ),
@@ -880,8 +880,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   boxShadow: [
                     BoxShadow(
                       color: isDone
-                          ? Colors.green.withValues(alpha: 0.3)
-                          : theme.colorScheme.primary.withValues(alpha: 0.3),
+                          ? Colors.green.withOpacity(0.3)
+                          : theme.colorScheme.primary.withOpacity(0.3),
                       blurRadius: 15,
                       offset: const Offset(0, 5),
                     ),
@@ -898,10 +898,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.1),
+                    color: Colors.green.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(16),
                     border:
-                        Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                        Border.all(color: Colors.green.withOpacity(0.3)),
                   ),
                   child: const Text('COMPLETED',
                       style: TextStyle(
@@ -921,19 +921,19 @@ class _ReviewScreenState extends State<ReviewScreen> {
           Text('Daily Goal',
               style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8))),
+                  color: theme.colorScheme.onSurface.withOpacity(0.8))),
           Text(isDone ? 'Goal achieved! 🎉' : 'Keep going!',
               style: theme.textTheme.bodySmall?.copyWith(
                   color: isDone
                       ? Colors.green
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+                      : theme.colorScheme.onSurface.withOpacity(0.6))),
           const SizedBox(height: 16),
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
               value: progress,
               backgroundColor:
-                  theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
+                  theme.colorScheme.outlineVariant.withOpacity(0.2),
               color: isDone ? Colors.green : theme.colorScheme.primary,
               minHeight: 10,
             ),
@@ -952,14 +952,14 @@ class _ReviewScreenState extends State<ReviewScreen> {
           gradient: LinearGradient(
             colors: [
               theme.colorScheme.surface,
-              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+              theme.colorScheme.surfaceVariant.withOpacity(0.3),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+            color: theme.colorScheme.outlineVariant.withOpacity(0.3),
             width: 1.5,
           ),
         ),
@@ -970,7 +970,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                    color: theme.colorScheme.primary.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -993,7 +993,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                         'Create some study content first to generate your daily mission.',
                         style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.6)),
+                                .withOpacity(0.6)),
                       ),
                     ],
                   ),
@@ -1028,7 +1028,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
         gradient: LinearGradient(
           colors: [
             theme.colorScheme.surface,
-            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            theme.colorScheme.surfaceVariant.withOpacity(0.3),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -1036,8 +1036,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isCompleted
-              ? Colors.green.withValues(alpha: 0.3)
-              : theme.colorScheme.primary.withValues(alpha: 0.3),
+              ? Colors.green.withOpacity(0.3)
+              : theme.colorScheme.primary.withOpacity(0.3),
           width: 1.5,
         ),
       ),
@@ -1049,8 +1049,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: isCompleted
-                      ? Colors.green.withValues(alpha: 0.1)
-                      : theme.colorScheme.primary.withValues(alpha: 0.1),
+                      ? Colors.green.withOpacity(0.1)
+                      : theme.colorScheme.primary.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -1075,7 +1075,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                       Text('Boost your momentum now',
                           style: theme.textTheme.bodyMedium?.copyWith(
                               color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.6))),
+                                  .withOpacity(0.6))),
                   ],
                 ),
               ),
@@ -1084,10 +1084,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.1),
+                    color: Colors.green.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(16),
                     border:
-                        Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                        Border.all(color: Colors.green.withOpacity(0.3)),
                   ),
                   child: const Text('COMPLETED',
                       style: TextStyle(
@@ -1125,7 +1125,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15)),
                   elevation: 4,
-                  shadowColor: theme.colorScheme.primary.withValues(alpha: 0.4),
+                  shadowColor: theme.colorScheme.primary.withOpacity(0.4),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1146,7 +1146,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
               "You've earned +${_dailyMission!.momentumReward} momentum score today!",
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8)),
+                  color: theme.colorScheme.onSurface.withOpacity(0.8)),
             ),
             const SizedBox(height: 16),
             // Growth CTA when finished
@@ -1155,10 +1155,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color:
-                    theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                    theme.colorScheme.primaryContainer.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.2)),
+                    color: theme.colorScheme.primary.withOpacity(0.2)),
               ),
               child: Column(
                 children: [
@@ -1171,7 +1171,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.7))),
+                              .withOpacity(0.7))),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     onPressed: () => context.push('/create'),
@@ -1203,7 +1203,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
         Text(label,
             style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.8))),
+                color: theme.colorScheme.onSurface.withOpacity(0.8))),
       ],
     );
   }
@@ -1299,7 +1299,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
               child: Text('No recent activity',
                   style: theme.textTheme.bodyMedium?.copyWith(
                       color:
-                          theme.colorScheme.onSurface.withValues(alpha: 0.6))));
+                          theme.colorScheme.onSurface.withOpacity(0.6))));
         }
 
         return ListView.builder(
@@ -1335,10 +1335,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: theme.cardColor.withValues(alpha: 0.6),
+                      color: theme.cardColor.withOpacity(0.6),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                          color: theme.dividerColor.withValues(alpha: 0.5)),
+                          color: theme.dividerColor.withOpacity(0.5)),
                     ),
                     child: InkWell(
                       onTap: () {
@@ -1377,7 +1377,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                                color: color.withValues(alpha: 0.1),
+                                color: color.withOpacity(0.1),
                                 shape: BoxShape.circle),
                             child: Icon(icon, color: color, size: 24),
                           ),
@@ -1392,7 +1392,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                           Text(type,
                               style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.6))),
+                                      .withOpacity(0.6))),
                         ],
                       ),
                     ),
@@ -1430,7 +1430,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  color: theme.colorScheme.primary.withOpacity(0.1),
                   shape: BoxShape.circle),
               child: Icon(Icons.timer_outlined,
                   color: theme.colorScheme.primary, size: 24),
@@ -1449,7 +1449,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                       style: theme.textTheme.bodySmall?.copyWith(
                           fontSize: 13,
                           color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.6))),
+                              .withOpacity(0.6))),
                 ],
               ),
             ),
@@ -1471,13 +1471,13 @@ class _ReviewScreenState extends State<ReviewScreen> {
       child: _buildGlassCard(
         theme: theme,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        borderColor: Colors.amber.withValues(alpha: 0.3),
+        borderColor: Colors.amber.withOpacity(0.3),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                  color: Colors.amber.withValues(alpha: 0.2),
+                  color: Colors.amber.withOpacity(0.2),
                   shape: BoxShape.circle),
               child: const Icon(Icons.notifications_active_rounded,
                   color: Colors.amber, size: 24),
@@ -1496,7 +1496,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                       style: theme.textTheme.bodySmall?.copyWith(
                           fontSize: 13,
                           color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.6))),
+                              .withOpacity(0.6))),
                 ],
               ),
             ),

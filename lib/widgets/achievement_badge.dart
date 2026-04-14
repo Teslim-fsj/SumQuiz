@@ -34,7 +34,7 @@ class AchievementBadge extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
               color: isEarned
-                  ? theme.colorScheme.secondary.withValues(alpha: 0.5)
+                  ? theme.colorScheme.secondary.withOpacity(0.5)
                   : Colors.transparent,
               width: 1),
         ),
@@ -57,7 +57,7 @@ class AchievementBadge extends StatelessWidget {
                   Text(
                     description,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: textColor.withValues(alpha: 0.7),
+                      color: textColor.withOpacity(0.7),
                     ),
                   ),
                 ],

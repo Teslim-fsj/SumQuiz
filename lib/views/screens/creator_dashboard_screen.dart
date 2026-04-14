@@ -89,7 +89,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                           Container(
                             padding: const EdgeInsets.all(24),
                             decoration: BoxDecoration(
-                              color: WebColors.primary.withValues(alpha: 0.1),
+                              color: WebColors.primary.withOpacity(0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(Icons.dashboard_outlined,
@@ -165,7 +165,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                                             Container(
                                               padding: const EdgeInsets.all(12),
                                               decoration: BoxDecoration(
-                                                color: WebColors.primary.withValues(alpha: 0.1),
+                                                color: WebColors.primary.withOpacity(0.1),
                                                 borderRadius: BorderRadius.circular(16),
                                               ),
                                               child: Icon(Icons.auto_awesome_mosaic, color: WebColors.primary),
@@ -274,7 +274,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                color: theme.colorScheme.primary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.workspace_premium_rounded,
@@ -291,7 +291,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             Text(
               'Upgrade to SumQuiz Pro to publish your decks, share them with the world, and track student analytics.',
               style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+                  color: theme.colorScheme.onSurface.withOpacity(0.7)),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -321,9 +321,9 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.05),
+        color: color.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.1)),
+        border: Border.all(color: color.withOpacity(0.1)),
       ),
       child: Column(
         children: [

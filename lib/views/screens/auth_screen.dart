@@ -150,14 +150,14 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   Widget _buildBrandingPanel(ThemeData theme) {
     final isDark = theme.brightness == Brightness.dark;
     final bgGradient = isDark
-        ? LinearGradient(colors: [theme.colorScheme.primary.withValues(alpha: 0.1), theme.colorScheme.surface], begin: Alignment.topLeft, end: Alignment.bottomRight)
-        : LinearGradient(colors: [theme.colorScheme.primary, theme.colorScheme.primaryContainer.withValues(alpha: 0.8)], begin: Alignment.topLeft, end: Alignment.bottomRight);
+        ? LinearGradient(colors: [theme.colorScheme.primary.withOpacity(0.1), theme.colorScheme.surface], begin: Alignment.topLeft, end: Alignment.bottomRight)
+        : LinearGradient(colors: [theme.colorScheme.primary, theme.colorScheme.primaryContainer.withOpacity(0.8)], begin: Alignment.topLeft, end: Alignment.bottomRight);
 
     return Container(
       decoration: BoxDecoration(
         color: isDark ? theme.colorScheme.surface : theme.colorScheme.primary,
         gradient: bgGradient,
-        border: Border(right: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1))),
+        border: Border(right: BorderSide(color: theme.dividerColor.withOpacity(0.1))),
       ),
       child: Stack(
         children: [
@@ -170,7 +170,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
               height: 400,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: theme.colorScheme.surface.withValues(alpha: 0.1),
+                color: theme.colorScheme.surface.withOpacity(0.1),
               ),
             ),
           ).animate().fadeIn(duration: 1.seconds).scale(begin: const Offset(0.8, 0.8)),
@@ -187,7 +187,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                     color: theme.colorScheme.surface,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 30, offset: const Offset(0, 10)),
+                      BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 30, offset: const Offset(0, 10)),
                     ]
                   ),
                   child: Image.asset('assets/images/sumquiz_logo.png', width: 64, height: 64),
@@ -210,7 +210,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                     fontSize: 18,
                     fontWeight: FontWeight.w400,
                     height: 1.5,
-                    color: isDark ? theme.colorScheme.onSurface.withValues(alpha: 0.7) : Colors.white70,
+                    color: isDark ? theme.colorScheme.onSurface.withOpacity(0.7) : Colors.white70,
                   ),
                 ).animate().slideY(begin: 0.2, delay: 200.ms).fadeIn(),
               ],
@@ -262,7 +262,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         children: [
           Text('Welcome back', style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface, letterSpacing: -0.5)),
           const SizedBox(height: 8),
-          Text('Please enter your details to sign in.', style: GoogleFonts.inter(fontSize: 15, color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+          Text('Please enter your details to sign in.', style: GoogleFonts.inter(fontSize: 15, color: theme.colorScheme.onSurface.withOpacity(0.6))),
           const SizedBox(height: 40),
           _buildTextField(
             controller: _emailController,
@@ -312,7 +312,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         children: [
           Text('Create an account', style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface, letterSpacing: -0.5)),
           const SizedBox(height: 8),
-          Text('Start your journey with SumQuiz today.', style: GoogleFonts.inter(fontSize: 15, color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+          Text('Start your journey with SumQuiz today.', style: GoogleFonts.inter(fontSize: 15, color: theme.colorScheme.onSurface.withOpacity(0.6))),
           const SizedBox(height: 32),
           _buildRoleSelector(theme),
           const SizedBox(height: 24),
@@ -374,7 +374,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface.withValues(alpha: 0.8))),
+        Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface.withOpacity(0.8))),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
@@ -384,13 +384,13 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           style: GoogleFonts.inter(fontSize: 15, color: theme.colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: 'Enter your ${label.toLowerCase()}',
-            hintStyle: GoogleFonts.inter(fontSize: 14, color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
-            prefixIcon: Icon(icon, size: 20, color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+            hintStyle: GoogleFonts.inter(fontSize: 14, color: theme.colorScheme.onSurface.withOpacity(0.4)),
+            prefixIcon: Icon(icon, size: 20, color: theme.colorScheme.onSurface.withOpacity(0.5)),
             filled: true,
-            fillColor: isDark ? theme.colorScheme.surfaceContainerHighest : Colors.white,
+            fillColor: isDark ? theme.colorScheme.surfaceVariant : Colors.white,
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1))),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? theme.dividerColor.withValues(alpha: 0.05) : const Color(0xFFE5E7EB))),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: theme.dividerColor.withOpacity(0.1))),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? theme.dividerColor.withOpacity(0.05) : const Color(0xFFE5E7EB))),
             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: theme.colorScheme.primary, width: 2)),
             errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: theme.colorScheme.error)),
           ),
@@ -402,9 +402,9 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   Widget _buildRoleSelector(ThemeData theme) {
     return Container(
       decoration: BoxDecoration(
-        color: theme.brightness == Brightness.dark ? theme.colorScheme.surfaceContainerHighest : const Color(0xFFF3F4F6),
+        color: theme.brightness == Brightness.dark ? theme.colorScheme.surfaceVariant : const Color(0xFFF3F4F6),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
       ),
       padding: const EdgeInsets.all(4),
       child: Row(
@@ -461,7 +461,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         ),
         style: OutlinedButton.styleFrom(
           backgroundColor: isDark ? Colors.transparent : Colors.white,
-          side: BorderSide(color: isDark ? theme.dividerColor.withValues(alpha: 0.3) : const Color(0xFFE5E7EB)),
+          side: BorderSide(color: isDark ? theme.dividerColor.withOpacity(0.3) : const Color(0xFFE5E7EB)),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
@@ -471,12 +471,12 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   Widget _buildSocialDivider(ThemeData theme) {
     return Row(
       children: [
-        Expanded(child: Divider(color: theme.dividerColor.withValues(alpha: 0.2))),
+        Expanded(child: Divider(color: theme.dividerColor.withOpacity(0.2))),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text('OR', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface.withValues(alpha: 0.4))),
+          child: Text('OR', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface.withOpacity(0.4))),
         ),
-        Expanded(child: Divider(color: theme.dividerColor.withValues(alpha: 0.2))),
+        Expanded(child: Divider(color: theme.dividerColor.withOpacity(0.2))),
       ],
     );
   }
@@ -485,7 +485,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(text, style: GoogleFonts.inter(fontSize: 14, color: theme.colorScheme.onSurface.withValues(alpha: 0.7))),
+        Text(text, style: GoogleFonts.inter(fontSize: 14, color: theme.colorScheme.onSurface.withOpacity(0.7))),
         const SizedBox(width: 4),
         InkWell(
           onTap: onTap,
@@ -515,7 +515,7 @@ class _RolePill extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected ? theme.colorScheme.surface : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
-          boxShadow: isSelected ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))] : [],
+          boxShadow: isSelected ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))] : [],
         ),
         alignment: Alignment.center,
         child: Text(
@@ -523,7 +523,7 @@ class _RolePill extends StatelessWidget {
           style: GoogleFonts.inter(
             fontSize: 14,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: isSelected ? theme.colorScheme.onSurface : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            color: isSelected ? theme.colorScheme.onSurface : theme.colorScheme.onSurface.withOpacity(0.6),
           ),
         ),
       ),

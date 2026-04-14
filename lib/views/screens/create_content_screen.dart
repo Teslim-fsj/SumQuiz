@@ -439,7 +439,7 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
               padding: const EdgeInsets.symmetric(vertical: 18),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               elevation: 4,
-              shadowColor: colorScheme.primary.withValues(alpha: 0.3),
+              shadowColor: colorScheme.primary.withOpacity(0.3),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -516,16 +516,16 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: colorScheme.primary.withValues(alpha: 0.08),
+        color: colorScheme.primary.withOpacity(0.08),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.2)),
+        border: Border.all(color: colorScheme.primary.withOpacity(0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.1),
+              color: colorScheme.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(icon, color: colorScheme.primary),
@@ -574,7 +574,7 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: colorScheme.error.withValues(alpha: 0.1),
+              color: colorScheme.error.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(Icons.error_outline_rounded, color: colorScheme.error, size: 64),

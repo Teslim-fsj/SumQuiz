@@ -422,7 +422,7 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
                               ]
                             : [
                                 const Color(0xFFE3F2FD),
-                                const Color(0xFFBBDEFB).withValues(alpha: 0.5),
+                                const Color(0xFFBBDEFB).withOpacity(0.5),
                               ],
                       ),
                     ),
@@ -480,7 +480,7 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
             ),
           if (_isLoading)
             Container(
-              color: Colors.black.withValues(alpha: 0.6),
+              color: Colors.black.withOpacity(0.6),
               child: Center(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(24),
@@ -489,9 +489,9 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(32),
                       decoration: BoxDecoration(
-                        color: theme.cardColor.withValues(alpha: 0.9),
+                        color: theme.cardColor.withOpacity(0.9),
                         border: Border.all(
-                            color: theme.dividerColor.withValues(alpha: 0.2)),
+                            color: theme.dividerColor.withOpacity(0.2)),
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: Column(
@@ -541,7 +541,7 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
         border: InputBorder.none,
         hintText: 'Enter a title...',
         hintStyle: theme.textTheme.titleLarge?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+            color: theme.colorScheme.onSurface.withOpacity(0.5)),
       ),
       onSubmitted: (_) => setState(() => _isEditingTitle = false),
     );
@@ -560,13 +560,13 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               color: isSelected
-                  ? theme.colorScheme.primary.withValues(alpha: 0.2)
-                  : theme.cardColor.withValues(alpha: 0.5),
+                  ? theme.colorScheme.primary.withOpacity(0.2)
+                  : theme.cardColor.withOpacity(0.5),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isSelected
-                    ? theme.colorScheme.primary.withValues(alpha: 0.5)
-                    : theme.dividerColor.withValues(alpha: 0.2),
+                    ? theme.colorScheme.primary.withOpacity(0.5)
+                    : theme.dividerColor.withOpacity(0.2),
               ),
             ),
             child: Row(
@@ -578,7 +578,7 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
                     fontWeight: FontWeight.w600,
                     color: isSelected
                         ? theme.colorScheme.primary
-                        : theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                        : theme.colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
                 if (isSelected) ...[
@@ -597,9 +597,9 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: theme.cardColor.withValues(alpha: 0.8),
+        color: theme.cardColor.withOpacity(0.8),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
       ),
       child: TextField(
         readOnly: false, // Always editable
@@ -613,7 +613,7 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
           hintText:
               'Your extracted or pasted text appears here. You can edit it before generating.',
           hintStyle: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+              color: theme.colorScheme.onSurface.withOpacity(0.4)),
         ),
       ),
     );
@@ -677,13 +677,13 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: remaining > 0
-            ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
-            : Colors.orange.withValues(alpha: 0.2),
+            ? theme.colorScheme.primaryContainer.withOpacity(0.3)
+            : Colors.orange.withOpacity(0.2),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: remaining > 0
-              ? theme.colorScheme.primary.withValues(alpha: 0.3)
-              : Colors.orange.withValues(alpha: 0.5),
+              ? theme.colorScheme.primary.withOpacity(0.3)
+              : Colors.orange.withOpacity(0.5),
         ),
       ),
       child: Row(

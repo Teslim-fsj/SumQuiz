@@ -85,13 +85,21 @@ class MissionService {
     // FALLBACK: If we don't have enough due cards, pick non-due cards to fill the mission
     if (selectedFlashcards.length < targetCount) {
       final allTrackedIds = await _srs.getAllTrackedIds(userId);
-      final nonDueIds = allTrackedIds.where((id) => !selectedFlashcards.contains(id)).toList();
-      
+      final nonDueIds =
+          allTrackedIds.where((id) => !selectedFlashcards.contains(id)).toList();
+
       // Shuffle non-due cards to provide variety
       nonDueIds.shuffle();
-      
+
       final needed = targetCount - selectedFlashcards.length;
       selectedFlashcards.addAll(nonDueIds.take(needed));
+    }
+
+    // Ensure all selected cards are scheduled in SRS if they are from a new set
+    for (final cardId in selectedFlashcards) {
+      if (!_srs.isItemTracked(cardId)) {
+        await _srs.scheduleReview(cardId, userId);
+      }
     }
 
     final mission = DailyMission(
@@ -161,6 +169,18 @@ class MissionService {
       });
     } catch (e) {
       debugPrint('Error syncing mission completion to Firestore: $e');
+    }
+
+    // Cancel pending notifications relating to this mission phase
+    if (_notificationService != null) {
+      try {
+        // 🚫 Cancel streak saver notification for today
+        await _notificationService.cancelWorkManagerTask('streak_saver');
+        // 🚫 Cancel priming notification
+        await _notificationService.cancelWorkManagerTask('priming_$userId');
+      } catch (e) {
+        debugPrint('Error during notification cleanup: $e');
+      }
     }
 
     // Update User Momentum (only for Pro users)

@@ -58,6 +58,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
   Timer? _timer;
 
   List<LocalFlashcardSet> _dueFlashcardSets = []; // Updated type
+  late SpacedRepetitionService _srsService;
 
   @override
   void initState() {
@@ -120,10 +121,10 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
       final mission = await missionService.generateDailyMission(userId);
 
       await localDb.init();
-      final srsService =
+      _srsService =
           SpacedRepetitionService(localDb.getSpacedRepetitionBox());
-      final stats = await srsService.getStatistics(userId);
-      final nextDate = srsService.getNextReviewDate(userId);
+      final stats = await _srsService.getStatistics(userId);
+      final nextDate = _srsService.getNextReviewDate(userId);
 
       final progressService = ProgressService();
       // Use recent accuracy for last 7 days
@@ -157,7 +158,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
 
       if (!mounted) return;
 
-      final dueIds = await srsService.getDueItems(userId);
+      final dueIds = await _srsService.getDueItems(userId);
       _dueFlashcardSets = allSets.where((s) => s.flashcards.any((f) => dueIds.contains(f.id))).toList();
 
       // If none are due but we have sets, show some anyway to avoid empty state
@@ -368,7 +369,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
             const SizedBox(height: 8),
             Text('Time: ${_formatDuration(_stopwatch.elapsed)}',
                 style: GoogleFonts.outfit(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7))),
+                    color: theme.colorScheme.onSurface.withOpacity(0.7))),
           ],
         ),
         actions: [
@@ -437,7 +438,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
               'Complete the curated quiz sets for today to earn extra XP and maintain your streak.',
               style: GoogleFonts.outfit(
                 fontSize: 16,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
                 height: 1.5,
               ),
             ),
@@ -474,6 +475,14 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
 
   void _nextCard(bool known) {
     if (known) _correctCount++;
+
+    // Update SRS progress for the individual card
+    final currentCard = _studyCards[_currentCardIndex];
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final userId = authService.currentUser?.uid;
+    if (userId != null) {
+      _srsService.updateReview(currentCard.id, known);
+    }
 
     if (_currentCardIndex < _studyCards.length - 1) {
       setState(() {
@@ -754,7 +763,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                                   fontSize: 12,
                                   fontWeight: FontWeight.w800,
                                   color: theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.5),
+                                      .withOpacity(0.5),
                                   letterSpacing: 1.5,
                                 ),
                               ),
@@ -788,14 +797,14 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 24, vertical: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.8),
+                        color: Colors.white.withOpacity(0.8),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                             color: theme.colorScheme.outline
-                                .withValues(alpha: 0.1)),
+                                .withOpacity(0.1)),
                         boxShadow: [
                           BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
+                              color: Colors.black.withOpacity(0.05),
                               blurRadius: 10)
                         ],
                       ),
@@ -887,12 +896,12 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(32),
                 border: Border.all(
-                    color: theme.colorScheme.outline.withValues(alpha: 0.5)),
+                    color: theme.colorScheme.outline.withOpacity(0.5)),
                 boxShadow: isBack
                     ? [
                         BoxShadow(
                           color: theme.colorScheme.tertiaryContainer
-                              .withValues(alpha: 0.1),
+                              .withOpacity(0.1),
                           blurRadius: 40,
                           offset: const Offset(0, 20),
                         ),

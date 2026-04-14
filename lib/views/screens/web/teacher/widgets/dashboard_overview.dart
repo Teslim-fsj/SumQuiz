@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sumquiz/models/public_deck.dart';
@@ -14,6 +15,7 @@ class DashboardOverview extends StatelessWidget {
   final List<ActivityItem> activity;
   final List<PublicDeck> content;
   final Map<String, ContentAnalytics> analytics;
+  final Map<String, int> trends;
 
   const DashboardOverview({
     super.key,
@@ -21,11 +23,11 @@ class DashboardOverview extends StatelessWidget {
     required this.activity,
     required this.content,
     required this.analytics,
+    required this.trends,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final user = Provider.of<UserModel?>(context);
     final name = user?.displayName.split(' ').first ?? 'Educator';
     
@@ -39,7 +41,7 @@ class DashboardOverview extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Hello, Dr. $name',
+                'Hello, $name',
                 style: GoogleFonts.outfit(
                   fontSize: isMobile ? 24 : 32,
                   fontWeight: FontWeight.w900,
@@ -119,7 +121,7 @@ class DashboardOverview extends StatelessWidget {
                     ),
                   ),
                   TextButton(
-                    onPressed: () => context.go('/dashboard/content'),
+                    onPressed: () => context.go('/library'),
                     child: Text('View all', style: TextStyle(color: WebColors.purplePrimary, fontWeight: FontWeight.bold, fontSize: isMobile ? 14 : 16)),
                   ),
                 ],
@@ -173,7 +175,7 @@ class DashboardOverview extends StatelessWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)]),
                       child: Text('WEEKLY', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold)),
                     ),
                     Container(
@@ -191,13 +193,7 @@ class DashboardOverview extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                _barChartColumn('MON', 40, 30, isMobile: isMobile),
-                _barChartColumn('TUE', 55, 45, isMobile: isMobile),
-                _barChartColumn('WED', 80, 60, isMobile: isMobile),
-                _barChartColumn('THU', 100, 90, isMobile: isMobile),
-                _barChartColumn('FRI', 65, 50, isMobile: isMobile),
-                _barChartColumn('SAT', 35, 20, isMobile: isMobile),
-                _barChartColumn('SUN', 25, 15, isMobile: isMobile),
+                ..._buildChartBars(isMobile: isMobile),
               ],
             ),
           ),
@@ -216,6 +212,35 @@ class DashboardOverview extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  List<Widget> _buildChartBars({required bool isMobile}) {
+    if (trends.isEmpty) {
+      return [
+        _barChartColumn('MON', 40, 30, isMobile: isMobile),
+        _barChartColumn('TUE', 55, 45, isMobile: isMobile),
+        _barChartColumn('WED', 80, 60, isMobile: isMobile),
+        _barChartColumn('THU', 100, 90, isMobile: isMobile),
+        _barChartColumn('FRI', 65, 50, isMobile: isMobile),
+        _barChartColumn('SAT', 35, 20, isMobile: isMobile),
+        _barChartColumn('SUN', 25, 15, isMobile: isMobile),
+      ];
+    }
+
+    final days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+    final now = DateTime.now();
+    final bars = <Widget>[];
+
+    for (int i = 6; i >= 0; i--) {
+      final date = now.subtract(Duration(days: i));
+      final dayStr = DateFormat('yyyy-MM-dd').format(date);
+      final count = trends[dayStr] ?? 0;
+      final label = days[(date.weekday - 1) % 7];
+      
+      final h = (count * 10.0 + 30).clamp(30.0, 100.0);
+      bars.add(_barChartColumn(label, h, h * 0.75, isMobile: isMobile));
+    }
+    return bars;
   }
 
   Widget _barChartColumn(String day, double height1, double height2, {bool isMobile = false}) {
@@ -261,7 +286,7 @@ class DashboardOverview extends StatelessWidget {
           const SizedBox(height: 12),
           Text('${stats?.activeStudents ?? 0}', style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white)),
           const SizedBox(height: 12),
-          Text('+${activity.where((e) => e.type == "attempt").length} students joined recently', style: GoogleFonts.outfit(fontSize: 12, color: Colors.white70)),
+          Text('+${activity.where((e) => e.type == "attempt").length} student attempts tracked', style: GoogleFonts.outfit(fontSize: 12, color: Colors.white70)),
         ],
       ),
     );
@@ -292,7 +317,7 @@ class DashboardOverview extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Text('Based on ${stats?.totalAttempts ?? 0} student evaluations this semester.', style: GoogleFonts.outfit(fontSize: 12, color: Colors.grey[600], height: 1.5)),
+          Text('Average score across ${stats?.totalAttempts ?? 0} valid attempts.', style: GoogleFonts.outfit(fontSize: 12, color: Colors.grey[600], height: 1.5)),
         ],
       ),
     );
@@ -370,16 +395,16 @@ class DashboardOverview extends StatelessWidget {
                  crossAxisAlignment: CrossAxisAlignment.start,
                  children: [
                    Text('Student Sentiment', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800)),
-                   Text('Real-time feedback analysis', style: GoogleFonts.outfit(fontSize: 13, color: Colors.grey[600])),
+                   Text('Engagement analysis', style: GoogleFonts.outfit(fontSize: 13, color: Colors.grey[600])),
                  ],
                ),
             ],
           ),
           const SizedBox(height: 24),
           if (isMobile) ...[
-            _sentimentProgress('Clarity of Content', 0.94),
+            _sentimentProgress('Clarity of Content', stats?.averageScore != null ? (stats!.averageScore / 100).clamp(0.0, 1.0) : 0.85),
             const SizedBox(height: 12),
-            _sentimentProgress('Difficulty Balance', 0.82),
+            _sentimentProgress('Student Engagement', stats?.totalAttempts != null ? (stats!.totalAttempts / 100).clamp(0.0, 1.0) : 0.75),
             const SizedBox(height: 24),
             Container(
               padding: const EdgeInsets.all(20),
@@ -393,7 +418,7 @@ class DashboardOverview extends StatelessWidget {
                     children: [
                       const CircleAvatar(radius: 12, backgroundColor: Colors.teal),
                       const SizedBox(width: 8),
-                      Text('Student #A203', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold)),
+                      Text('Anonymous Student', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold)),
                     ],
                   )
                 ],
@@ -406,9 +431,9 @@ class DashboardOverview extends StatelessWidget {
                 Expanded(
                   child: Column(
                     children: [
-                      _sentimentProgress('Clarity of Content', 0.94),
+                      _sentimentProgress('Clarity of Content', stats?.averageScore != null ? (stats!.averageScore / 100).clamp(0.0, 1.0) : 0.85),
                       const SizedBox(height: 12),
-                      _sentimentProgress('Difficulty Balance', 0.82),
+                      _sentimentProgress('Student Engagement', stats?.totalAttempts != null ? (stats!.totalAttempts / 100).clamp(0.0, 1.0) : 0.75),
                     ],
                   ),
                 ),
@@ -420,13 +445,13 @@ class DashboardOverview extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('"The AI-generated insights on the Molecular Deck were incredibly helpful for my exam prep last night."', style: GoogleFonts.outfit(fontSize: 13, fontStyle: FontStyle.italic, color: Colors.grey[700], height: 1.5)),
+                        Text('"The AI-generated insights on the most recent material were incredibly helpful for my revision."', style: GoogleFonts.outfit(fontSize: 13, fontStyle: FontStyle.italic, color: Colors.grey[700], height: 1.5)),
                         const SizedBox(height: 16),
                         Row(
                           children: [
                             const CircleAvatar(radius: 12, backgroundColor: Colors.teal),
                             const SizedBox(width: 8),
-                            Text('Student #A203', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold)),
+                            Text('Anonymous Student', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold)),
                           ],
                         )
                       ],
@@ -480,7 +505,7 @@ class DashboardOverview extends StatelessWidget {
               children: [
                 Expanded(flex: 3, child: Text('DECK NAME', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[500], letterSpacing: 1))),
                 Expanded(flex: 1, child: Text('STATUS', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[500], letterSpacing: 1))),
-                Expanded(flex: 2, child: Text('COMPLETION RATE', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[500], letterSpacing: 1))),
+                Expanded(flex: 2, child: Text('ENROLLMENT', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[500], letterSpacing: 1))),
                 const Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child: Text('ACTIONS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.transparent)))),
               ],
             ),
@@ -497,7 +522,7 @@ class DashboardOverview extends StatelessWidget {
 
   Widget _buildDeckRow(PublicDeck deck, {bool isMobile = false}) {
     final a = analytics[deck.id];
-    final completionRate = a?.engagementRate ?? 0;
+    final enrollmentCount = a?.numberOfAttempts ?? 0;
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -533,21 +558,9 @@ class DashboardOverview extends StatelessWidget {
             flex: isMobile ? 1 : 2,
             child: Row(
               children: [
-                Text('${completionRate.toStringAsFixed(0)}%', style: GoogleFonts.outfit(fontSize: isMobile ? 11 : 13, fontWeight: FontWeight.w700)),
-                if (!isMobile) ...[
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: LinearProgressIndicator(
-                        value: completionRate / 100,
-                        backgroundColor: const Color(0xFFE5E7EB),
-                        valueColor: const AlwaysStoppedAnimation(WebColors.purplePrimary),
-                        minHeight: 6,
-                      ),
-                    ),
-                  ),
-                ],
+                Text('$enrollmentCount', style: GoogleFonts.outfit(fontSize: isMobile ? 11 : 13, fontWeight: FontWeight.w700)),
+                const SizedBox(width: 8),
+                Text('attempts', style: GoogleFonts.outfit(fontSize: 11, color: Colors.grey[600])),
                 const SizedBox(width: 24),
               ],
             ),

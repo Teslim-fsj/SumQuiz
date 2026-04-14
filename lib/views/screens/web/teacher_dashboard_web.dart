@@ -31,7 +31,13 @@ enum _NavModule {
 
 class TeacherDashboardWeb extends StatefulWidget {
   final String module;
-  const TeacherDashboardWeb({super.key, this.module = 'dashboard'});
+  final String? studentId;
+
+  const TeacherDashboardWeb({
+    super.key,
+    this.module = 'dashboard',
+    this.studentId,
+  });
 
   @override
   State<TeacherDashboardWeb> createState() => _TeacherDashboardWebState();
@@ -190,19 +196,7 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
         return;
       }
 
-      final prompt =
-          '''You are an educational analytics AI. A teacher has the following exam question failure data:
-
-$buffer
-
-Write 3–5 concise, actionable insights for the teacher. For each insight:
-1. Identify the concept students are struggling with.
-2. Explain why they likely missed it.
-3. Suggest one specific teaching/revision action.
-
-Format: Use bullet points. Keep it professional and direct. Max 200 words.''';
-
-      final result = await ai.refineContent(prompt);
+      final result = await ai.generatePedagogicalInsights(failureData: buffer.toString());
       if (mounted) {
         setState(() {
           _feedbackInsight = result;
@@ -224,7 +218,10 @@ Format: Use bullet points. Keep it professional and direct. Max 200 words.''';
   @override
   Widget build(BuildContext context) {
     final userModel = context.watch<UserModel?>();
-    if (userModel != null && !userModel.isPro) return _buildUpgradeView();
+    // Allow access if user is Pro OR if they are a Creator (Teacher)
+    if (userModel != null && !userModel.isPro && userModel.role != UserRole.creator) {
+      return _buildUpgradeView();
+    }
 
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -234,7 +231,7 @@ Format: Use bullet points. Keep it professional and direct. Max 200 words.''';
       return _buildErrorState();
     }
 
-    return _buildModuleContent();
+    return _buildModuleContent(userModel);
   }
 
   Widget _buildErrorState() {
@@ -263,16 +260,24 @@ Format: Use bullet points. Keep it professional and direct. Max 200 words.''';
 
   // ─── Module Dispatcher ──────────────────────────────────────────────────────
 
-  Widget _buildModuleContent() {
+  Widget _buildModuleContent(UserModel? userModel) {
     return switch (_activeModule) {
-      _NavModule.dashboard => DashboardOverview(
-          stats: _stats,
-          activity: _activity,
-          content: _content,
-          analytics: _analytics,
+      _NavModule.dashboard => StreamBuilder<List<ActivityItem>>(
+          stream: _svc.getActivityStream(userModel?.uid ?? ''),
+          initialData: _activity,
+          builder: (context, snapshot) {
+            return DashboardOverview(
+              stats: _stats,
+              activity: snapshot.data ?? _activity,
+              content: _content,
+              analytics: _analytics,
+              trends: _trends,
+            );
+          },
         ),
       _NavModule.content => ContentManager(
           content: _content,
+          stats: _stats,
           analytics: _analytics,
           onEdit: _editDeck,
           onDelete: _confirmDelete,
@@ -288,6 +293,7 @@ Format: Use bullet points. Keep it professional and direct. Max 200 words.''';
           students: _students,
           trends: _trends,
           analytics: _analytics,
+          selectedStudentId: widget.studentId,
         ),
       _NavModule.feedback => FeedbackInsights(
           feedbackInsight: _feedbackInsight,
@@ -329,7 +335,7 @@ Format: Use bullet points. Keep it professional and direct. Max 200 words.''';
                   style: GoogleFonts.outfit(
                       fontSize: 13,
                       color:
-                          theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+                          theme.colorScheme.onSurface.withOpacity(0.6))),
               const SizedBox(height: 20),
               TextField(
                 controller: emailController,
@@ -447,7 +453,7 @@ Format: Use bullet points. Keep it professional and direct. Max 200 words.''';
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(32),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, 4))],
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 4))],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -455,7 +461,7 @@ Format: Use bullet points. Keep it professional and direct. Max 200 words.''';
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                color: theme.colorScheme.primary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.school_rounded,
@@ -470,7 +476,7 @@ Format: Use bullet points. Keep it professional and direct. Max 200 words.''';
             Text(
               'Get access to the full 5-module teacher dashboard: create exams, track students, view analytics, and AI-powered feedback.',
               style: GoogleFonts.outfit(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
                   fontSize: 13,
                   height: 1.5),
               textAlign: TextAlign.center,

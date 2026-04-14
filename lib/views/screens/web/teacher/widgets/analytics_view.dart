@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sumquiz/models/public_deck.dart';
 import 'package:sumquiz/models/teacher_models.dart';
 import 'package:sumquiz/theme/web_theme.dart';
@@ -10,6 +11,7 @@ class AnalyticsView extends StatelessWidget {
   final List<StudentLink> students;
   final Map<String, int> trends;
   final Map<String, ContentAnalytics> analytics;
+  final String? selectedStudentId;
 
   const AnalyticsView({
     super.key,
@@ -17,6 +19,7 @@ class AnalyticsView extends StatelessWidget {
     required this.students,
     required this.trends,
     required this.analytics,
+    this.selectedStudentId,
   });
 
   @override
@@ -37,6 +40,9 @@ class AnalyticsView extends StatelessWidget {
                 SharedTeacherWidgets.emptyCard('No content to analyze',
                     'Create and share content to generate analytics data.')
               else ...[
+                if (selectedStudentId != null)
+                   _buildStudentContextBanner(context, isMobile: isMobile),
+                const SizedBox(height: 16),
                 _buildClassOverview(isMobile: isMobile),
                 const SizedBox(height: 24),
                 _buildTrendSection(isMobile: isMobile),
@@ -47,6 +53,39 @@ class AnalyticsView extends StatelessWidget {
           ),
         );
       }
+    );
+  }
+
+  Widget _buildStudentContextBanner(BuildContext context, {bool isMobile = false}) {
+    final student = students.firstWhere((s) => s.studentId == selectedStudentId, 
+        orElse: () => StudentLink(studentId: '', studentName: 'Unknown', averageScore: 0, enrollmentDate: DateTime.now(), totalAttempts: 0));
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: WebColors.purplePrimary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: WebColors.purplePrimary.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.person_search_rounded, color: WebColors.purplePrimary, size: 20),
+          const SizedBox(width: 12),
+          Text(
+            'Showing analytics for: ',
+            style: GoogleFonts.outfit(fontSize: 14, color: WebColors.textSecondary),
+          ),
+          Text(
+            student.studentName,
+            style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.bold, color: WebColors.purplePrimary),
+          ),
+          const Spacer(),
+          TextButton(
+            onPressed: () => context.go('/progress'),
+            child: const Text('Clear Filter', style: TextStyle(fontSize: 12)),
+          )
+        ],
+      ),
     );
   }
 
@@ -82,10 +121,15 @@ class AnalyticsView extends StatelessWidget {
   }
 
   Widget _buildClassOverview({bool isMobile = false}) {
-    final sorted = List<StudentLink>.from(students)
+    final filteredStudents = selectedStudentId != null 
+        ? students.where((s) => s.studentId == selectedStudentId).toList()
+        : students;
+
+    final sorted = List<StudentLink>.from(filteredStudents)
       ..sort((a, b) => b.averageScore.compareTo(a.averageScore));
+      
     final topStudents = sorted.take(3).toList();
-    final weakStudents = sorted.reversed.take(3).toList();
+    final weakStudents = sorted.where((s) => s.averageScore < 50).toList();
 
     final topPerformers = SharedTeacherWidgets.sectionCard(
       title: 'Top Performers',
@@ -104,7 +148,7 @@ class AnalyticsView extends StatelessWidget {
       icon: Icons.support_outlined,
       child: Column(
         children: weakStudents.isEmpty
-            ? [SharedTeacherWidgets.emptyHint('No student data yet')]
+            ? [SharedTeacherWidgets.emptyHint('No low scores tracked')]
             : weakStudents.map((s) => _rankRow(0, s, showWarning: true)).toList(),
       ),
     );
@@ -320,8 +364,8 @@ class _TrendPainter extends CustomPainter {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-            WebColors.purplePrimary.withValues(alpha: 0.2),
-            WebColors.purplePrimary.withValues(alpha: 0.0)
+            WebColors.purplePrimary.withOpacity(0.2),
+            WebColors.purplePrimary.withOpacity(0.0)
           ])
           .createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
@@ -339,7 +383,6 @@ class _TrendPainter extends CustomPainter {
         fillPath.moveTo(x, size.height);
         fillPath.lineTo(x, y);
       } else {
-        // Curve approximation
         final prevX = (i - 1) * stepX;
         final prevY = size.height - (values[i - 1] / maxValue * size.height);
         final cx = (prevX + x) / 2;
@@ -357,7 +400,6 @@ class _TrendPainter extends CustomPainter {
     canvas.drawPath(fillPath, fillPaint);
     canvas.drawPath(path, paint);
     
-    // Draw data points
     final pointPaint = Paint()
       ..color = WebColors.purplePrimary
       ..style = PaintingStyle.fill;
@@ -368,7 +410,6 @@ class _TrendPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     for (int i = 0; i < values.length; i++) {
-      // Only draw every 3rd point if many points
       if (values.length > 20 && i % 3 != 0) continue;
       
       final x = i * stepX;

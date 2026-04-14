@@ -30,6 +30,9 @@ class _LandingPageWebState extends State<LandingPageWeb>
 
   void _handleTabSelection() {
     if (_tabController.indexIsChanging) return;
+    // Prevent redundant navigation if we are already on the correct tab for the current route
+    if (_tabController.index == widget.initialTab) return;
+
     if (_tabController.index == 0) {
       context.go('/landing');
     } else {
@@ -354,7 +357,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
             borderRadius: BorderRadius.circular(32),
             boxShadow: [
               BoxShadow(
-                color: WebColors.purplePrimary.withValues(alpha: 0.1),
+                color: WebColors.purplePrimary.withOpacity(0.1),
                 blurRadius: 40,
                 offset: const Offset(0, 20),
               )
@@ -375,7 +378,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
                 child: Icon(
                   Icons.menu_book_rounded,
                   size: isMobile ? 72 : 96,
-                  color: WebColors.purplePrimary.withValues(alpha: 0.5),
+                  color: WebColors.purplePrimary.withOpacity(0.5),
                 ),
               ),
             ),
@@ -391,7 +394,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: Colors.black.withOpacity(0.1),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 )
@@ -659,7 +662,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 20, offset: const Offset(0, 10))],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20, offset: const Offset(0, 10))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -776,7 +779,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
         decoration: BoxDecoration(
           color: WebColors.purplePrimary,
           borderRadius: BorderRadius.circular(40),
-          boxShadow: [BoxShadow(color: WebColors.purplePrimary.withValues(alpha: 0.3), blurRadius: 40, offset: const Offset(0, 20))],
+          boxShadow: [BoxShadow(color: WebColors.purplePrimary.withOpacity(0.3), blurRadius: 40, offset: const Offset(0, 20))],
         ),
         child: Column(
           children: [

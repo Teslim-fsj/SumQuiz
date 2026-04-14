@@ -129,7 +129,7 @@ class WebSourceSelection extends StatelessWidget {
             height: 48,
             padding: const EdgeInsets.symmetric(horizontal: 24),
             decoration: BoxDecoration(
-              color: const Color(0xFFF0F2FF).withValues(alpha: 0.8),
+              color: const Color(0xFFF0F2FF).withOpacity(0.8),
               borderRadius: BorderRadius.circular(24),
             ),
             child: Row(
@@ -211,13 +211,13 @@ class _SourceCardState extends State<_SourceCard> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: _isHovered ? widget.accentColor.withValues(alpha: 0.3) : const Color(0xFFE8ECF4),
+              color: _isHovered ? widget.accentColor.withOpacity(0.3) : const Color(0xFFE8ECF4),
             ),
             boxShadow: [
               BoxShadow(
                 color: _isHovered
-                    ? widget.accentColor.withValues(alpha: 0.08)
-                    : Colors.black.withValues(alpha: 0.03),
+                    ? widget.accentColor.withOpacity(0.08)
+                    : Colors.black.withOpacity(0.03),
                 blurRadius: _isHovered ? 24 : 16,
                 offset: Offset(0, _isHovered ? 8 : 4),
               ),
@@ -230,7 +230,7 @@ class _SourceCardState extends State<_SourceCard> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: widget.accentColor.withValues(alpha: 0.08),
+                  color: widget.accentColor.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(widget.icon, color: widget.accentColor, size: 22),
@@ -268,7 +268,7 @@ class _SourceCardState extends State<_SourceCard> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: Colors.white.withOpacity(0.2),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 28),

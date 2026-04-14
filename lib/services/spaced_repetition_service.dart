@@ -165,6 +165,11 @@ class SpacedRepetitionService {
         .toList();
   }
 
+  /// Check if a specific item is already tracked in SRS
+  bool isItemTracked(String contentId) {
+    return _box.containsKey(contentId);
+  }
+
   /// Get all flashcards currently tracked in SRS
   Future<List<String>> getAllTrackedIds(String userId) async {
     return _box.values

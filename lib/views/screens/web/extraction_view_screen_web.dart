@@ -199,15 +199,15 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                       flex: 3,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest
-                              .withValues(alpha: 0.05),
+                          color: theme.colorScheme.surfaceVariant
+                              .withOpacity(0.05),
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
                               color: theme.colorScheme.outline
-                                  .withValues(alpha: 0.1)),
+                                  .withOpacity(0.1)),
                           boxShadow: [
                             BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.08),
+                                color: Colors.black.withOpacity(0.08),
                                 blurRadius: 20,
                                 offset: const Offset(0, 4))
                           ],
@@ -256,7 +256,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                                                 .textTheme
                                                 .bodyMedium
                                                 ?.color
-                                                ?.withValues(alpha: 0.7),
+                                                ?.withOpacity(0.7),
                                           ),
                                         ),
                                       ],
@@ -287,14 +287,14 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                                       borderRadius: BorderRadius.circular(16),
                                       borderSide: BorderSide(
                                           color: theme.colorScheme.outline
-                                              .withValues(alpha: 0.2),
+                                              .withOpacity(0.2),
                                           width: 1.5),
                                     ),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(16),
                                       borderSide: BorderSide(
                                           color: theme.colorScheme.outline
-                                              .withValues(alpha: 0.2),
+                                              .withOpacity(0.2),
                                           width: 1.5),
                                     ),
                                     focusedBorder: OutlineInputBorder(
@@ -307,7 +307,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                                         "Edit your content here... The AI will process this text to generate summaries, quizzes, and flashcards",
                                     hintStyle: GoogleFonts.outfit(
                                       color: theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.4),
+                                          .withOpacity(0.4),
                                     ),
                                   ),
                                 ),
@@ -326,15 +326,15 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                       child: Container(
                         padding: const EdgeInsets.all(32),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest
-                              .withValues(alpha: 0.05),
+                          color: theme.colorScheme.surfaceVariant
+                              .withOpacity(0.05),
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
                               color: theme.colorScheme.outline
-                                  .withValues(alpha: 0.1)),
+                                  .withOpacity(0.1)),
                           boxShadow: [
                             BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.08),
+                                color: Colors.black.withOpacity(0.08),
                                 blurRadius: 20,
                                 offset: const Offset(0, 4))
                           ],
@@ -359,7 +359,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                               style: GoogleFonts.outfit(
                                 fontSize: 16,
                                 color: theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.6),
+                                    .withOpacity(0.6),
                               ),
                             ),
                             const SizedBox(height: 40),
@@ -374,7 +374,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                                     .textTheme
                                     .labelSmall
                                     ?.color
-                                    ?.withValues(alpha: 0.5),
+                                    ?.withOpacity(0.5),
                                 letterSpacing: 1.2,
                               ),
                             ),
@@ -391,7 +391,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                                 hintText: "Enter a title for your content...",
                                 hintStyle: GoogleFonts.outfit(
                                     color: theme.colorScheme.onSurface
-                                        .withValues(alpha: 0.4)),
+                                        .withOpacity(0.4)),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(
@@ -422,7 +422,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                                     .textTheme
                                     .labelSmall
                                     ?.color
-                                    ?.withValues(alpha: 0.5),
+                                    ?.withOpacity(0.5),
                                 letterSpacing: 1.2,
                               ),
                             ),
@@ -469,8 +469,8 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                                       color: !isSelected
                                           ? Theme.of(context)
                                               .colorScheme
-                                              .surfaceContainerHighest
-                                              .withValues(alpha: 0.3)
+                                              .surfaceVariant
+                                              .withOpacity(0.3)
                                           : null,
                                       borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
@@ -500,7 +500,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                                               : Theme.of(context)
                                                   .iconTheme
                                                   .color
-                                                  ?.withValues(alpha: 0.7),
+                                                  ?.withOpacity(0.7),
                                           size: 24,
                                         ),
                                         const SizedBox(width: 12),
@@ -542,8 +542,8 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                               decoration: BoxDecoration(
                                 color: Theme.of(context)
                                     .colorScheme
-                                    .surfaceContainerHighest
-                                    .withValues(alpha: 0.3),
+                                    .surfaceVariant
+                                    .withOpacity(0.3),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                     color: Theme.of(context).dividerColor),
@@ -554,7 +554,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
                                       color: theme.colorScheme.primaryContainer
-                                          .withValues(alpha: 0.1),
+                                          .withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Icon(Icons.shield_outlined,
@@ -583,7 +583,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                                           style: GoogleFonts.outfit(
                                             fontSize: 12,
                                             color: theme.colorScheme.onSurface
-                                                .withValues(alpha: 0.6),
+                                                .withOpacity(0.6),
                                           ),
                                         ),
                                       ],
@@ -606,7 +606,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                                   boxShadow: [
                                     BoxShadow(
                                       color: theme.colorScheme.primaryContainer
-                                          .withValues(alpha: 0.3),
+                                          .withOpacity(0.3),
                                       blurRadius: 16,
                                       offset: const Offset(0, 8),
                                     ),
@@ -673,13 +673,13 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
       decoration: BoxDecoration(
         color:
-            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.05),
+            theme.colorScheme.surfaceVariant.withOpacity(0.05),
         borderRadius: BorderRadius.circular(24),
         border:
-            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+            Border.all(color: theme.colorScheme.outline.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
+              color: Colors.black.withOpacity(0.08),
               blurRadius: 20,
               offset: const Offset(0, 4))
         ],
@@ -712,7 +712,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                         .textTheme
                         .bodyMedium
                         ?.color
-                        ?.withValues(alpha: 0.7),
+                        ?.withOpacity(0.7),
                   ),
                 ),
               ],
@@ -723,8 +723,8 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
             decoration: BoxDecoration(
               color: Theme.of(context)
                   .colorScheme
-                  .surfaceContainerHighest
-                  .withValues(alpha: 0.3),
+                  .surfaceVariant
+                  .withOpacity(0.3),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(

@@ -144,7 +144,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                     color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
                     border: Border(
                       right: BorderSide(
-                        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[200]!,
+                        color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200]!,
                         width: 1,
                       ),
                     ),
@@ -236,7 +236,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               borderRadius: BorderRadius.circular(100),
                               boxShadow: [
                                 BoxShadow(
-                                  color: WebColors.purplePrimary.withValues(alpha: 0.3),
+                                  color: WebColors.purplePrimary.withOpacity(0.3),
                                   blurRadius: 12,
                                   offset: const Offset(0, 4),
                                 )
@@ -354,7 +354,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                 vertical: 24,
                               ),
                               child: Divider(
-                                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey[200]!,
+                                color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey[200]!,
                                 thickness: 1,
                               ),
                             ),
@@ -432,7 +432,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                         decoration: BoxDecoration(
                           border: Border(
                             top: BorderSide(
-                              color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey[200]!,
+                              color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey[200]!,
                             ),
                           ),
                         ),
@@ -441,7 +441,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                           children: [
                             CircleAvatar(
                               radius: 20,
-                              backgroundColor: WebColors.purplePrimary.withValues(alpha: 0.1),
+                              backgroundColor: WebColors.purplePrimary.withOpacity(0.1),
                               backgroundImage: user?.photoURL != null ? NetworkImage(user!.photoURL!) : null,
                               child: user?.photoURL == null
                                   ? Text(
@@ -509,7 +509,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
     required bool isExpanded,
     required bool isDark,
   }) {
-    Color activeBg = isDark ? WebColors.purplePrimary.withValues(alpha: 0.2) : const Color(0xFFEEF2FF);
+    Color activeBg = isDark ? WebColors.purplePrimary.withOpacity(0.2) : const Color(0xFFEEF2FF);
     Color activeForeground = isDark ? Colors.white : WebColors.purplePrimary;
     Color inactiveForeground = isDark ? Colors.grey[400]! : Colors.grey[600]!;
 
@@ -552,7 +552,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
           ? InkWell(
               onTap: onTap,
               borderRadius: BorderRadius.circular(12),
-              hoverColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[200],
+              hoverColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200],
               child: content,
             )
           : Tooltip(
@@ -560,13 +560,13 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
               preferBelow: false,
               textStyle: GoogleFonts.inter(color: Colors.white, fontSize: 12),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.8),
+                color: Colors.black.withOpacity(0.8),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: InkWell(
                 onTap: onTap,
                 borderRadius: BorderRadius.circular(12),
-                hoverColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[200],
+                hoverColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200],
                 child: content,
               ),
             ),

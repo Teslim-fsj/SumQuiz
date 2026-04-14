@@ -163,7 +163,7 @@ class PreferencesScreen extends StatelessWidget {
                               'Request notification permissions from system',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                   color: theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.6))),
+                                      .withOpacity(0.6))),
                           trailing: Icon(Icons.security,
                               color: theme.colorScheme.primary),
                           onTap: () async {
@@ -242,13 +242,13 @@ class PreferencesScreen extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            color: theme.cardColor.withValues(alpha: 0.7),
+            color: theme.cardColor.withOpacity(0.7),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-                color: theme.cardColor.withValues(alpha: 0.6), width: 1.5),
+                color: theme.cardColor.withOpacity(0.6), width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -269,7 +269,7 @@ class PreferencesScreen extends StatelessWidget {
       thickness: 1,
       indent: 16,
       endIndent: 16,
-      color: theme.dividerColor.withValues(alpha: 0.2),
+      color: theme.dividerColor.withOpacity(0.2),
     );
   }
 
@@ -283,7 +283,7 @@ class PreferencesScreen extends StatelessWidget {
       secondary: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: theme.colorScheme.primary.withValues(alpha: 0.1),
+          color: theme.colorScheme.primary.withOpacity(0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(Icons.dark_mode_outlined,
@@ -292,7 +292,7 @@ class PreferencesScreen extends StatelessWidget {
       value: themeProvider.themeMode == ThemeMode.dark,
       onChanged: (value) => themeProvider.toggleTheme(),
       activeTrackColor: theme.colorScheme.primary,
-      hoverColor: theme.colorScheme.onSurface.withValues(alpha: 0.05),
+      hoverColor: theme.colorScheme.onSurface.withOpacity(0.05),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
     );
   }
@@ -307,7 +307,7 @@ class PreferencesScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.blueAccent.withValues(alpha: 0.1),
+                color: Colors.blueAccent.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.format_size,
@@ -325,7 +325,7 @@ class PreferencesScreen extends StatelessWidget {
         Container(
           height: 44,
           decoration: BoxDecoration(
-            color: theme.disabledColor.withValues(alpha: 0.1),
+            color: theme.disabledColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -359,7 +359,7 @@ class PreferencesScreen extends StatelessWidget {
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
+                        color: Colors.black.withOpacity(0.05),
                         blurRadius: 4,
                         offset: const Offset(0, 2))
                   ]
@@ -371,7 +371,7 @@ class PreferencesScreen extends StatelessWidget {
             style: theme.textTheme.bodyMedium?.copyWith(
               color: isSelected
                   ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  : theme.colorScheme.onSurface.withOpacity(0.6),
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               fontSize: 13,
             ),
@@ -398,7 +398,7 @@ class PreferencesScreen extends StatelessWidget {
       secondary: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: theme.colorScheme.secondary.withValues(alpha: 0.1),
+          color: theme.colorScheme.secondary.withOpacity(0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: theme.colorScheme.secondary, size: 20),

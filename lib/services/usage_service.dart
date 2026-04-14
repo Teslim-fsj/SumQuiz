@@ -39,8 +39,8 @@ class UsageService {
       // Determine limit based on user tier
       int limit = UsageConfig.freeDecksPerDay;
 
-      if (user.isCreatorPro) {
-        // Creator Pro: Unlimited (high cap)
+      if (user.isCreatorPro || user.role == UserRole.creator) {
+        // Creator Pro or Teacher: Unlimited (high cap)
         limit = UsageConfig.proDecksPerDay;
       } else if (user.isPro) {
         // Pro user: Check if trial or paid
@@ -157,7 +157,7 @@ class UsageService {
       if (!userDoc.exists) return false;
 
       final user = UserModel.fromFirestore(userDoc);
-      if (user.isPro) return true;
+      if (user.isPro || user.role == UserRole.creator) return true;
 
       final totalUploads = user.totalUploads;
       final lifetimeOk = totalUploads < UsageConfig.freeUploadsLifetime;

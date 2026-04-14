@@ -155,7 +155,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
+            color: Colors.black.withOpacity(0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -229,7 +229,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
                 PopupMenuButton<String>(
                   icon: const Icon(Icons.more_horiz, color: Colors.grey, size: 20),
                   onSelected: (val) {
-                    if (val == 'analytics') context.go('/dashboard/analytics');
+                    if (val == 'analytics') context.go('/progress?studentId=${student.studentId}');
                   },
                   itemBuilder: (context) => [
                     const PopupMenuItem(value: 'analytics', child: Text('View Performance')),
@@ -354,7 +354,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_horiz, color: Colors.grey),
             onSelected: (val) {
-              if (val == 'analytics') context.go('/dashboard/analytics');
+              if (val == 'analytics') context.go('/progress?studentId=${student.studentId}');
               // Other actions could be added here
             },
             itemBuilder: (context) => [

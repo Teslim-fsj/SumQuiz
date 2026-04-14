@@ -709,7 +709,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF6366F1).withValues(alpha: 0.08),
+                color: const Color(0xFF6366F1).withOpacity(0.08),
               ),
             ),
           )
@@ -723,7 +723,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
               height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFEC4899).withValues(alpha: 0.05),
+                color: const Color(0xFFEC4899).withOpacity(0.05),
               ),
             ),
           )
@@ -744,7 +744,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
             icon: const Icon(Icons.arrow_back_ios_new_rounded,
                 color: Colors.white, size: 20),
             style: IconButton.styleFrom(
-              backgroundColor: Colors.white.withValues(alpha: 0.05),
+              backgroundColor: Colors.white.withOpacity(0.05),
               padding: const EdgeInsets.all(12),
             ),
           ),
@@ -766,7 +766,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
         borderRadius: BorderRadius.circular(100),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFACC15).withValues(alpha: 0.3),
+            color: const Color(0xFFFACC15).withOpacity(0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -829,9 +829,9 @@ class _CreateContentScreenState extends State<CreateContentScreen>
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: Column(
         children: [
@@ -840,10 +840,10 @@ class _CreateContentScreenState extends State<CreateContentScreen>
               margin: const EdgeInsets.all(12),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFF6366F1).withValues(alpha: 0.15),
+                color: const Color(0xFF6366F1).withOpacity(0.15),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                    color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
+                    color: const Color(0xFF6366F1).withOpacity(0.3)),
               ),
               child: Row(
                 children: [
@@ -882,7 +882,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                     decoration: InputDecoration(
                       hintText: 'Paste link or material...',
                       hintStyle: GoogleFonts.outfit(
-                        color: Colors.white.withValues(alpha: 0.3),
+                        color: Colors.white.withOpacity(0.3),
                       ),
                       border: InputBorder.none,
                       contentPadding:
@@ -914,7 +914,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           _pickPdf();
         }
       },
-      icon: Icon(icon, color: color.withValues(alpha: 0.8), size: 22),
+      icon: Icon(icon, color: color.withOpacity(0.8), size: 22),
       tooltip: 'Upload ${type.toUpperCase()}',
     );
   }
@@ -949,12 +949,12 @@ class _CreateContentScreenState extends State<CreateContentScreen>
             padding: const EdgeInsets.symmetric(vertical: 16),
             decoration: BoxDecoration(
               gradient: enabled ? gradient : null,
-              color: enabled ? null : Colors.white.withValues(alpha: 0.05),
+              color: enabled ? null : Colors.white.withOpacity(0.05),
               borderRadius: BorderRadius.circular(16),
               boxShadow: enabled
                   ? [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
+                        color: Colors.black.withOpacity(0.2),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       )
@@ -985,18 +985,18 @@ class _CreateContentScreenState extends State<CreateContentScreen>
   Widget _buildSeparator() {
     return Row(
       children: [
-        Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.1))),
+        Expanded(child: Divider(color: Colors.white.withOpacity(0.1))),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             'Or',
             style: GoogleFonts.outfit(
-              color: Colors.white.withValues(alpha: 0.3),
+              color: Colors.white.withOpacity(0.3),
               fontWeight: FontWeight.w600,
             ),
           ),
         ),
-        Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.1))),
+        Expanded(child: Divider(color: Colors.white.withOpacity(0.1))),
       ],
     );
   }
@@ -1005,14 +1005,14 @@ class _CreateContentScreenState extends State<CreateContentScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: Row(
         children: [
           Icon(Icons.search_rounded,
-              color: Colors.white.withValues(alpha: 0.3), size: 24),
+              color: Colors.white.withOpacity(0.3), size: 24),
           const SizedBox(width: 12),
           Expanded(
             child: TextField(
@@ -1030,7 +1030,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
               decoration: InputDecoration(
                 hintText: 'Type a topic...',
                 hintStyle: GoogleFonts.outfit(
-                  color: Colors.white.withValues(alpha: 0.3),
+                  color: Colors.white.withOpacity(0.3),
                 ),
                 border: InputBorder.none,
               ),
@@ -1100,7 +1100,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           style: GoogleFonts.outfit(
             fontSize: 11,
             fontWeight: FontWeight.w800,
-            color: Colors.white.withValues(alpha: 0.4),
+            color: Colors.white.withOpacity(0.4),
             letterSpacing: 1.5,
           ),
         ),
@@ -1127,17 +1127,17 @@ class _CreateContentScreenState extends State<CreateContentScreen>
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: const Color(0xFF10B981).withValues(alpha: 0.05),
+          color: const Color(0xFF10B981).withOpacity(0.05),
           borderRadius: BorderRadius.circular(24),
           border:
-              Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.2)),
+              Border.all(color: const Color(0xFF10B981).withOpacity(0.2)),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                color: const Color(0xFF10B981).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: const Icon(Icons.biotech_rounded,
@@ -1159,7 +1159,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                   Text(
                     'Strategic Tutoring & Exam Solver',
                     style: GoogleFonts.outfit(
-                      color: Colors.white.withValues(alpha: 0.5),
+                      color: Colors.white.withOpacity(0.5),
                       fontSize: 13,
                     ),
                   ),
@@ -1187,7 +1187,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           decoration: BoxDecoration(
             color: isSelected
                 ? Colors.white
-                : Colors.white.withValues(alpha: 0.06),
+                : Colors.white.withOpacity(0.06),
             borderRadius: BorderRadius.circular(100),
             border: Border.all(
                 color: Colors.white.withValues(alpha: isSelected ? 1 : 0.1)),
@@ -1200,7 +1200,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                 fontWeight: FontWeight.w800,
                 color: isSelected
                     ? Colors.black
-                    : Colors.white.withValues(alpha: 0.6),
+                    : Colors.white.withOpacity(0.6),
               ),
             ),
           ),
@@ -1219,11 +1219,11 @@ class _CreateContentScreenState extends State<CreateContentScreen>
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFEF4444).withValues(alpha: 0.95),
+          color: const Color(0xFFEF4444).withOpacity(0.95),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3), blurRadius: 20),
+                color: Colors.black.withOpacity(0.3), blurRadius: 20),
           ],
         ),
         child: Row(
@@ -1277,7 +1277,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: Colors.white.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
@@ -1329,9 +1329,9 @@ class _CreateContentScreenState extends State<CreateContentScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 24),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
+            color: Colors.white.withOpacity(0.05),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
           ),
           child: Column(
             children: [

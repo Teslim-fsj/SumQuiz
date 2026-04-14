@@ -351,6 +351,49 @@ class TeacherService {
     }
   }
 
+  /// Listen to real-time activity for the teacher's content.
+  Stream<List<ActivityItem>> getActivityStream(String uid) {
+    // For simplicity, we listen to the last 20 attempts globally 
+    // and filter them. In a production app, we'd add 'creatorId' 
+    // to attempts or use advanced composite listeners.
+    return _db
+        .collection('attempts')
+        .orderBy('attemptedAt', descending: true)
+        .limit(20)
+        .snapshots()
+        .asyncMap((snapshot) async {
+      final content = await getTeacherContent(uid);
+      final contentIds = content.map((c) => c.id).toSet();
+      final items = <ActivityItem>[];
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final contentId = data['contentId'] as String?;
+        if (contentId != null && contentIds.contains(contentId)) {
+          final deck = content.firstWhere((c) => c.id == contentId);
+          final score = (data['score'] as num?)?.toDouble() ?? 0.0;
+          items.add(ActivityItem(
+            type: 'attempt',
+            title: '${data['studentName'] ?? 'A student'} attempted ${deck.title}',
+            subtitle: 'Score: ${score.toStringAsFixed(0)}%',
+            timestamp: (data['attemptedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+            contentId: contentId,
+          ));
+        }
+      }
+      return items;
+    });
+  }
+
+  /// Save a student practice attempt.
+  Future<void> saveAttempt(StudentAttempt attempt) async {
+    try {
+      await _db.collection('attempts').add(attempt.toFirestore());
+    } catch (e) {
+      print('Error saving attempt: $e');
+    }
+  }
+
   /// Get attempt counts over the last 30 days for trend analysis.
   Future<Map<String, int>> getCompletionTrends(String uid) async {
     try {

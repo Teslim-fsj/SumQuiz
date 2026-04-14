@@ -283,10 +283,10 @@ class SettingsScreen extends StatelessWidget {
                   color: theme.cardColor.withValues(alpha: isDark ? 0.5 : 0.7),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                      color: theme.dividerColor.withValues(alpha: 0.2)),
+                      color: theme.dividerColor.withOpacity(0.2)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
+                      color: Colors.black.withOpacity(0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 2),
                     ),
@@ -297,7 +297,7 @@ class SettingsScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        color: theme.colorScheme.primary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(icon,
@@ -343,10 +343,10 @@ class SettingsScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color: theme.cardColor.withValues(alpha: isDark ? 0.5 : 0.7),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
+            border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),

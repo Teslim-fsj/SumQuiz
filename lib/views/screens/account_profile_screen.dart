@@ -115,13 +115,13 @@ class AccountProfileScreen extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            color: theme.cardColor.withValues(alpha: 0.7),
+            color: theme.cardColor.withOpacity(0.7),
             borderRadius: BorderRadius.circular(20),
             border:
-                Border.all(color: theme.dividerColor.withValues(alpha: 0.6)),
+                Border.all(color: theme.dividerColor.withOpacity(0.6)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -141,7 +141,7 @@ class AccountProfileScreen extends StatelessWidget {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                color: theme.colorScheme.primary.withOpacity(0.2),
                 blurRadius: 15,
                 spreadRadius: 5,
               ),
@@ -149,7 +149,7 @@ class AccountProfileScreen extends StatelessWidget {
           ),
           child: CircleAvatar(
             radius: 50,
-            backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+            backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
             child: Text(
               user.displayName.isNotEmpty
                   ? user.displayName[0].toUpperCase()
@@ -174,7 +174,7 @@ class AccountProfileScreen extends StatelessWidget {
         Text(
           user.email,
           style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+              color: theme.colorScheme.onSurface.withOpacity(0.7)),
         ),
         if (user.subscriptionExpiry != null)
           Padding(
@@ -182,10 +182,10 @@ class AccountProfileScreen extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.amberAccent.withValues(alpha: 0.1),
+                color: Colors.amberAccent.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                    color: Colors.amberAccent.withValues(alpha: 0.3)),
+                    color: Colors.amberAccent.withOpacity(0.3)),
               ),
               child: Text(
                 'Pro until ${user.subscriptionExpiry!.toLocal().toString().split(' ')[0]}',
@@ -225,7 +225,7 @@ class AccountProfileScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Divider(
-                height: 1, color: theme.dividerColor.withValues(alpha: 0.1)),
+                height: 1, color: theme.dividerColor.withOpacity(0.1)),
           ),
           _buildListTile(
             context,
@@ -237,7 +237,7 @@ class AccountProfileScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Divider(
-                height: 1, color: theme.dividerColor.withValues(alpha: 0.1)),
+                height: 1, color: theme.dividerColor.withOpacity(0.1)),
           ),
           _buildListTile(
             context,
@@ -253,7 +253,7 @@ class AccountProfileScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Divider(
-                height: 1, color: theme.dividerColor.withValues(alpha: 0.1)),
+                height: 1, color: theme.dividerColor.withOpacity(0.1)),
           ),
           _buildListTile(
             context,
@@ -285,7 +285,7 @@ class AccountProfileScreen extends StatelessWidget {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
+          color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: color, size: 20),
@@ -342,12 +342,12 @@ class AccountProfileScreen extends StatelessWidget {
         child: Container(
           width: double.infinity,
           decoration: BoxDecoration(
-            color: theme.cardColor.withValues(alpha: 0.7),
+            color: theme.cardColor.withOpacity(0.7),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
+            border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),

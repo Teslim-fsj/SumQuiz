@@ -65,7 +65,7 @@ class _CreatorTabViewState extends State<CreatorTabView> {
               color: WebColors.purplePrimary,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
-                BoxShadow(color: WebColors.purplePrimary.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))
+                BoxShadow(color: WebColors.purplePrimary.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))
               ],
             ),
             child: Text('EDUCATION', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13, letterSpacing: 1.2)),
@@ -196,7 +196,7 @@ class _CreatorTabViewState extends State<CreatorTabView> {
             borderRadius: BorderRadius.circular(32),
             color: const Color(0xFFF8FAFC),
             border: Border.all(color: Colors.grey[200]!, width: 4),
-            boxShadow: [BoxShadow(color: WebColors.purplePrimary.withValues(alpha: 0.05), blurRadius: 40, offset: const Offset(0, 20))],
+            boxShadow: [BoxShadow(color: WebColors.purplePrimary.withOpacity(0.05), blurRadius: 40, offset: const Offset(0, 20))],
             image: const DecorationImage(
               image: AssetImage('assets/images/educator_tablet_analytics.png'),
               fit: BoxFit.cover,
@@ -211,7 +211,7 @@ class _CreatorTabViewState extends State<CreatorTabView> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, 10))],
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10))],
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -325,7 +325,7 @@ class _CreatorTabViewState extends State<CreatorTabView> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(32),
         border: Border.all(color: Colors.grey[200]!),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 20, offset: const Offset(0, 10))],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20, offset: const Offset(0, 10))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -415,7 +415,7 @@ class _CreatorTabViewState extends State<CreatorTabView> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(32),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, 10))],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10))],
       ),
       child: Center(
         child: Column(
@@ -480,7 +480,7 @@ class _CreatorTabViewState extends State<CreatorTabView> {
               Row(
                 mainAxisAlignment: isMobile ? MainAxisAlignment.center : MainAxisAlignment.start,
                 children: [
-                  CircleAvatar(backgroundColor: WebColors.purplePrimary.withValues(alpha: 0.2), radius: 24, child: const Icon(Icons.person, color: WebColors.purplePrimary),),
+                  CircleAvatar(backgroundColor: WebColors.purplePrimary.withOpacity(0.2), radius: 24, child: const Icon(Icons.person, color: WebColors.purplePrimary),),
                   const SizedBox(width: 16),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -504,10 +504,10 @@ class _CreatorTabViewState extends State<CreatorTabView> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(32),
         gradient: const LinearGradient(colors: [Color(0xFF1A1A1A), Colors.black], begin: Alignment.topCenter, end: Alignment.bottomCenter),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 40, offset: const Offset(0, 20))],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 40, offset: const Offset(0, 20))],
       ),
       child: Center(
-        child: Icon(Icons.query_stats, size: isMobile ? 100 : 160, color: Colors.cyanAccent.withValues(alpha: 0.3)),
+        child: Icon(Icons.query_stats, size: isMobile ? 100 : 160, color: Colors.cyanAccent.withOpacity(0.3)),
       )
     );
   }
@@ -552,7 +552,7 @@ class _CreatorTabViewState extends State<CreatorTabView> {
             decoration: BoxDecoration(
               color: const Color(0xFF2E1A47),
               borderRadius: BorderRadius.circular(40),
-              boxShadow: [BoxShadow(color: const Color(0xFF2E1A47).withValues(alpha: 0.3), blurRadius: 40, offset: const Offset(0, 20))],
+              boxShadow: [BoxShadow(color: const Color(0xFF2E1A47).withOpacity(0.3), blurRadius: 40, offset: const Offset(0, 20))],
             ),
             child: Column(
               children: [
@@ -608,7 +608,7 @@ class _CreatorTabViewState extends State<CreatorTabView> {
       onPressed: () {},
       style: OutlinedButton.styleFrom(
         foregroundColor: Colors.white,
-        side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+        side: BorderSide(color: Colors.white.withOpacity(0.3)),
         padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
       ),

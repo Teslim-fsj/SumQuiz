@@ -29,7 +29,7 @@ class WebLibraryHeader extends StatelessWidget {
             child: Container(
               height: 44,
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9).withValues(alpha: 0.8),
+                color: const Color(0xFFF1F5F9).withOpacity(0.8),
                 borderRadius: BorderRadius.circular(22),
               ),
               child: TextField(
@@ -87,7 +87,7 @@ class WebLibraryHeader extends StatelessWidget {
                   fit: BoxFit.cover,
                 ),
               ),
-              child: Icon(Icons.person_outline_rounded, color: theme.colorScheme.primary.withValues(alpha: 0.5)),
+              child: Icon(Icons.person_outline_rounded, color: theme.colorScheme.primary.withOpacity(0.5)),
             ),
           ),
         ],

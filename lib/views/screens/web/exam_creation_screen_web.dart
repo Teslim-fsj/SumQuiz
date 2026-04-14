@@ -609,7 +609,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.1))),
+        border: Border(bottom: BorderSide(color: Colors.grey.withOpacity(0.1))),
       ),
       child: Row(
         children: [
@@ -674,14 +674,14 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           width: 500,
           padding: const EdgeInsets.all(40),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest
-                .withValues(alpha: 0.05),
+            color: theme.colorScheme.surfaceVariant
+                .withOpacity(0.05),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-                color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+                color: theme.colorScheme.outline.withOpacity(0.1)),
             boxShadow: [
               BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
+                  color: Colors.black.withOpacity(0.08),
                   blurRadius: 20,
                   offset: const Offset(0, 4))
             ],

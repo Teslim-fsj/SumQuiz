@@ -49,7 +49,7 @@ class ConfigSelector extends StatelessWidget {
       style: GoogleFonts.outfit(
         fontSize: 11,
         fontWeight: FontWeight.w800,
-        color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+        color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
         letterSpacing: 1.2,
       ),
     );
@@ -77,13 +77,13 @@ class ConfigSelector extends StatelessWidget {
                 color: isSelected ? colorScheme.primary : theme.cardColor,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isSelected ? colorScheme.primary : colorScheme.onSurface.withValues(alpha: 0.1),
+                  color: isSelected ? colorScheme.primary : colorScheme.onSurface.withOpacity(0.1),
                   width: 1.5,
                 ),
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                          color: colorScheme.primary.withValues(alpha: 0.2),
+                          color: colorScheme.primary.withOpacity(0.2),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         )
@@ -134,7 +134,7 @@ class ConfigSelector extends StatelessWidget {
                 color: isSelected ? colorScheme.secondary : theme.cardColor,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isSelected ? colorScheme.secondary : colorScheme.onSurface.withValues(alpha: 0.1),
+                  color: isSelected ? colorScheme.secondary : colorScheme.onSurface.withOpacity(0.1),
                   width: 1.5,
                 ),
               ),
@@ -174,7 +174,7 @@ class ConfigSelector extends StatelessWidget {
               color: isSelected ? colorScheme.tertiary : theme.cardColor,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isSelected ? colorScheme.tertiary : colorScheme.onSurface.withValues(alpha: 0.1),
+                color: isSelected ? colorScheme.tertiary : colorScheme.onSurface.withOpacity(0.1),
                 width: 1.5,
               ),
             ),

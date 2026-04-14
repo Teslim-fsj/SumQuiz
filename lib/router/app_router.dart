@@ -106,46 +106,42 @@ GoRouter createRouter(AuthService authService) {
     navigatorKey: _rootNavigatorKey,
     refreshListenable: GoRouterRefreshStream(authStream),
     redirect: (context, state) {
+      // Navigation State Helpers
       final isAuthRoute = state.matchedLocation == '/auth';
-      final isLanding = state.matchedLocation == '/landing' ||
-          state.matchedLocation == '/Educators';
+      final isLanding = state.matchedLocation == '/landing' || state.matchedLocation == '/Educators';
       final isSplash = state.matchedLocation == '/splash';
       final isOnboarding = state.matchedLocation == '/onboarding';
 
       final userModel = Provider.of<UserModel?>(context);
       final firebaseUser = authService.currentUser;
 
-      // [FIX] Handle email verification for creators
-      if (userModel != null && !userModel.isEmailVerified && userModel.role == UserRole.creator) {
-        return null;
-      }
-
-      if (isSplash || isOnboarding) {
-        return null;
-      }
-
-      // [PHASE 1] Handle Unauthenticated Users
+      // 1. Handle Unauthenticated Users
       if (firebaseUser == null) {
         if (isAuthRoute || isLanding || isSplash || isOnboarding) {
-          return null;
+          return null; // Stay on public pages
         }
-        // Platform-specific default landing
         return kIsWeb ? '/landing' : '/onboarding';
       }
 
-      // [PHASE 1] Handle Authenticated Users with missing Firestore Profile
-      // If we have a Firebase User but no UserModel yet, don't redirect to landing.
-      // This prevents the sign-in loop where users are stuck on the landing page after login.
+      // 2. Handle Users Waiting for Firestore Profile
       if (userModel == null) {
+        // If logged in but profile is still loading, stay on the current shell
+        // (ScaffoldWithNavBar) so the nested view (RoleAwareView) can show its own loader.
         if (isAuthRoute || isLanding || isSplash || isOnboarding) {
-          // Allow progress to main shell so dashboard can show loading state
           return '/';
         }
-        return null; // Stay where you are while loading
+        return null;
       }
 
-      // [PHASE 2] Handle fully authenticated users on landing/auth routes
-      if (isAuthRoute || isLanding || isSplash || isOnboarding) {
+      // 3. Handle Email Verification for Creators
+      if (!userModel.isEmailVerified && userModel.role == UserRole.creator) {
+        // Allow them to stay on the page they are on (which should show a verification banner)
+        // or redirect to a specific verification screen if one exists.
+        return null; 
+      }
+
+      // 4. Handle Authenticated Users on Public Routes
+      if (isAuthRoute || isLanding || isSplash) {
         return '/';
       }
 
@@ -356,8 +352,14 @@ GoRouter createRouter(AuthService authService) {
                     desktop: ProgressScreenWeb(),
                   ),
                   creatorView: ResponsiveView(
-                    mobile: TeacherDashboardWeb(module: 'analytics'),
-                    desktop: TeacherDashboardWeb(module: 'analytics'),
+                    mobile: TeacherDashboardWeb(
+                      module: 'analytics',
+                      studentId: state.uri.queryParameters['studentId'],
+                    ),
+                    desktop: TeacherDashboardWeb(
+                      module: 'analytics',
+                      studentId: state.uri.queryParameters['studentId'],
+                    ),
                   ),
                 ),
                 routes: [],

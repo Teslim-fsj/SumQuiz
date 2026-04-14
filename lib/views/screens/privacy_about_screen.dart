@@ -129,7 +129,7 @@ class _PrivacyAboutScreenState extends State<PrivacyAboutScreen> {
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.6)),
+                                .withOpacity(0.6)),
                       ).animate().fadeIn(delay: 400.ms),
                     ],
                   ),
@@ -148,14 +148,14 @@ class _PrivacyAboutScreenState extends State<PrivacyAboutScreen> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withValues(alpha: 0.05),
+            color: theme.colorScheme.primary.withOpacity(0.05),
             shape: BoxShape.circle,
             border: Border.all(
-                color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                color: theme.colorScheme.primary.withOpacity(0.1),
                 width: 2),
             boxShadow: [
               BoxShadow(
-                color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                color: theme.colorScheme.primary.withOpacity(0.1),
                 blurRadius: 20,
                 spreadRadius: 5,
               ),
@@ -177,10 +177,10 @@ class _PrivacyAboutScreenState extends State<PrivacyAboutScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withValues(alpha: 0.1),
+            color: theme.colorScheme.primary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-                color: theme.colorScheme.primary.withValues(alpha: 0.2)),
+                color: theme.colorScheme.primary.withOpacity(0.2)),
           ),
           child: Text(
             _version,
@@ -201,13 +201,13 @@ class _PrivacyAboutScreenState extends State<PrivacyAboutScreen> {
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            color: theme.cardColor.withValues(alpha: 0.7),
+            color: theme.cardColor.withOpacity(0.7),
             borderRadius: BorderRadius.circular(24),
             border:
-                Border.all(color: theme.dividerColor.withValues(alpha: 0.6)),
+                Border.all(color: theme.dividerColor.withOpacity(0.6)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -268,6 +268,6 @@ class _PrivacyAboutScreenState extends State<PrivacyAboutScreen> {
   Widget _buildDivider(ThemeData theme) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
         child: Divider(
-            height: 1, color: theme.dividerColor.withValues(alpha: 0.2)),
+            height: 1, color: theme.dividerColor.withOpacity(0.2)),
       );
 }

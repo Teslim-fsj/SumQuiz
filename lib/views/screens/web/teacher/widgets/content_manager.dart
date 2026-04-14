@@ -12,6 +12,7 @@ import 'package:sumquiz/services/exam_pdf_generator.dart';
 class ContentManager extends StatefulWidget {
   final List<PublicDeck> content;
   final Map<String, ContentAnalytics> analytics;
+  final TeacherStats? stats;
   final Function(PublicDeck) onEdit;
   final Function(PublicDeck) onDelete;
   final VoidCallback onCreateExam;
@@ -21,6 +22,7 @@ class ContentManager extends StatefulWidget {
     super.key,
     required this.content,
     required this.analytics,
+    required this.stats,
     required this.onEdit,
     required this.onDelete,
     required this.onCreateExam,
@@ -34,12 +36,16 @@ class ContentManager extends StatefulWidget {
 class _ContentManagerState extends State<ContentManager> {
   String _searchQuery = '';
   bool _showExams = false; // toggle between study packs and exams
+  bool _filterPublished = true;
+  bool _filterDrafts = false;
 
   @override
   Widget build(BuildContext context) {
-    final filteredContent = widget.content.where((c) => 
-      c.title.toLowerCase().contains(_searchQuery.toLowerCase())
-    ).toList();
+    final filteredContent = widget.content.where((c) {
+      final matchesSearch = c.title.toLowerCase().contains(_searchQuery.toLowerCase());
+      final matchesStatus = (c.isPublished && _filterPublished) || (!c.isPublished && _filterDrafts);
+      return matchesSearch && matchesStatus;
+    }).toList();
 
     final exams = filteredContent.where((c) => c.isExam).toList();
     final packs = filteredContent.where((c) => !c.isExam).toList();
@@ -181,7 +187,7 @@ class _ContentManagerState extends State<ContentManager> {
                 children: [
                   Expanded(child: _bannerStatCard('MATERIALS', '${widget.content.length}', isMobile: true)),
                   const SizedBox(width: 12),
-                  Expanded(child: _bannerStatCard('STUDENTS', '1.2k', isMobile: true)),
+                  Expanded(child: _bannerStatCard('STUDENTS', '${widget.stats?.totalStudents ?? 0}', isMobile: true)),
                 ],
               )
             ],
@@ -211,11 +217,11 @@ class _ContentManagerState extends State<ContentManager> {
                   ],
                 ),
               ),
-              Column(
+               Column(
                 children: [
                   _bannerStatCard('TOTAL MATERIALS', '${widget.content.length}'),
                   const SizedBox(height: 16),
-                  _bannerStatCard('ACTIVE STUDENTS', '1.2k'),
+                  _bannerStatCard('ACTIVE STUDENTS', '${widget.stats?.activeStudents ?? 0}'),
                 ],
               )
             ],
@@ -258,9 +264,9 @@ class _ContentManagerState extends State<ContentManager> {
         
         Text('STATUS FILTER', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[500], letterSpacing: 1)),
         const SizedBox(height: 16),
-        _buildCheckbox('Published', widget.content.length, true),
+        _buildCheckbox('Published', widget.content.where((c) => c.isPublished).length, _filterPublished, (v) => setState(() => _filterPublished = v ?? true)),
         const SizedBox(height: 8),
-        _buildCheckbox('Drafts', 0, false),
+        _buildCheckbox('Drafts', widget.content.where((c) => !c.isPublished).length, _filterDrafts, (v) => setState(() => _filterDrafts = v ?? false)),
         
         const SizedBox(height: 24),
         Container(
@@ -336,7 +342,7 @@ class _ContentManagerState extends State<ContentManager> {
     );
   }
 
-  Widget _buildCheckbox(String label, int count, bool isChecked) {
+  Widget _buildCheckbox(String label, int count, bool isChecked, Function(bool?) onChange) {
     return Row(
       children: [
         SizedBox(
@@ -344,7 +350,7 @@ class _ContentManagerState extends State<ContentManager> {
           height: 24,
           child: Checkbox(
             value: isChecked,
-            onChanged: (v) {},
+            onChanged: onChange,
             activeColor: WebColors.purplePrimary,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
           ),

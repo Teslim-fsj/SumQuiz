@@ -229,13 +229,13 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            color: theme.cardColor.withValues(alpha: 0.8),
+            color: theme.cardColor.withOpacity(0.8),
             borderRadius: BorderRadius.circular(24),
             border:
-                Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
+                Border.all(color: theme.dividerColor.withOpacity(0.2)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
+                color: Colors.black.withOpacity(0.1),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -306,7 +306,7 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
                   child: LinearProgressIndicator(
                     value: (_currentIndex + 1) / _dueFlashcards.length,
                     backgroundColor:
-                        theme.colorScheme.onSurface.withValues(alpha: 0.1),
+                        theme.colorScheme.onSurface.withOpacity(0.1),
                     valueColor: AlwaysStoppedAnimation<Color>(
                         theme.colorScheme.secondary),
                     minHeight: 8,
@@ -316,7 +316,7 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
               const SizedBox(width: 16),
               Text('${_currentIndex + 1}/${_dueFlashcards.length}',
                   style: theme.textTheme.labelLarge?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      color: theme.colorScheme.onSurface.withOpacity(0.7),
                       fontWeight: FontWeight.bold)),
             ],
           ),
@@ -390,7 +390,7 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
                     child: Text('Tap to reveal answer',
                         style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.5),
+                                .withOpacity(0.5),
                             fontStyle: FontStyle.italic)))
             ],
           ),

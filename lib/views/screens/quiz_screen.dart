@@ -20,6 +20,8 @@ import '../widgets/quiz_view.dart';
 import '../../services/firestore_service.dart';
 import '../../services/export_service.dart';
 import 'exam_creation_screen.dart';
+import '../../services/teacher_service.dart';
+import '../../models/teacher_models.dart';
 
 enum QuizState { creation, loading, inProgress, finished, error }
 
@@ -291,8 +293,25 @@ class _QuizScreenState extends State<QuizScreen> {
       try {
         final userService = UserService();
         await userService.incrementItemsCompleted(user.uid);
+
+        // If this quiz belongs to a shared deck, save the attempt for teacher analytics
+        if (quizToSave.publicDeckId != null) {
+          final teacherService = TeacherService();
+          await teacherService.saveAttempt(StudentAttempt(
+            attemptId: const Uuid().v4(),
+            studentId: user.uid,
+            studentName: user.displayName,
+            contentId: quizToSave.publicDeckId!,
+            score: percentageScore,
+            totalQuestions: _questions.length,
+            correctAnswers: _score,
+            answers: {}, // We can expand this in the future
+            attemptedAt: DateTime.now(),
+            timeTakenSeconds: currentSessionSeconds,
+          ));
+        }
       } catch (e) {
-        debugPrint('Failed to increment progress: $e');
+        debugPrint('Failed to increment progress or save attempt: $e');
       }
 
       // 🔔 Schedule notifications after quiz completion

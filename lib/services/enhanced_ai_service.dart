@@ -659,6 +659,24 @@ class EnhancedAIService {
       cancelToken: cancelToken,
     );
   }
+
+  Future<String> generatePedagogicalInsights({
+    required String failureData,
+    CancellationToken? cancelToken,
+  }) async {
+    final prompt = '''You are an educational analytics AI. A teacher has the following exam question failure data:
+
+$failureData
+
+Write 3–5 concise, actionable pedagogical insights for the teacher. For each insight:
+1. Identify the specific concept or skill students are struggling with.
+2. Explain the likely bottleneck or misconception (e.g., calculation error, lack of factual recall, or inability to apply principle).
+3. Suggest one specific, high-impact teaching or revision action (e.g., "Use a concept map for X", "Drill more examples on Y").
+
+Format: Use professional bullet points. Keep it direct and empathetic to the teacher's time. Max 250 words.''';
+
+    return _generatorService.refineContent(prompt, cancelToken: cancelToken);
+  }
 }
 
 extension StringExtension on String {

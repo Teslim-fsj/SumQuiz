@@ -108,7 +108,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     style: GoogleFonts.outfit(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: cs.onSurface.withValues(alpha: 0.6),
+                      color: cs.onSurface.withOpacity(0.6),
                     ),
                   ),
                 ),
@@ -152,7 +152,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 decoration: BoxDecoration(
                   color: _currentPage == i
                       ? cs.primary
-                      : cs.onSurface.withValues(alpha: 0.2),
+                      : cs.onSurface.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
@@ -172,7 +172,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   onPressed: _currentPage > 0 ? _prev : null,
                   icon: Icon(
                     Icons.arrow_back_rounded,
-                    color: cs.onSurface.withValues(alpha: 0.5),
+                    color: cs.onSurface.withOpacity(0.5),
                   ),
                 ),
               ),
@@ -192,7 +192,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       borderRadius: BorderRadius.circular(28),
                     ),
                     elevation: 6,
-                    shadowColor: cs.primary.withValues(alpha: 0.4),
+                    shadowColor: cs.primary.withOpacity(0.4),
                     padding: EdgeInsets.zero,
                   ),
                   child: AnimatedSwitcher(
@@ -246,7 +246,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             textAlign: TextAlign.center,
             style: GoogleFonts.outfit(
               fontSize: 15,
-              color: cs.onSurface.withValues(alpha: 0.6),
+              color: cs.onSurface.withOpacity(0.6),
             ),
           ).animate(delay: 100.ms).fadeIn(),
           const SizedBox(height: 48),
@@ -310,7 +310,7 @@ class _PageFeatureShowcase extends StatelessWidget {
             textAlign: TextAlign.center,
             style: GoogleFonts.outfit(
               fontSize: 14,
-              color: cs.onSurface.withValues(alpha: 0.55),
+              color: cs.onSurface.withOpacity(0.55),
               height: 1.5,
             ),
           ).animate(delay: 100.ms).fadeIn(),
@@ -388,7 +388,7 @@ class _PageFeatureShowcase extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: cs.primary.withValues(alpha: 0.1),
+                        color: cs.primary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -449,7 +449,7 @@ class _PageFeatureShowcase extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: cs.tertiary.withValues(alpha: 0.1),
+                        color: cs.tertiary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -476,7 +476,7 @@ class _PageFeatureShowcase extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: cs.primary.withValues(alpha: 0.06),
+                    color: cs.primary.withOpacity(0.06),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Column(
@@ -486,7 +486,7 @@ class _PageFeatureShowcase extends StatelessWidget {
                         style: GoogleFonts.jetBrainsMono(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
-                          color: cs.primary.withValues(alpha: 0.6),
+                          color: cs.primary.withOpacity(0.6),
                           letterSpacing: 1,
                         ),
                       ),
@@ -513,7 +513,7 @@ class _PageFeatureShowcase extends StatelessWidget {
             width: double.infinity,
             height: 56,
             decoration: BoxDecoration(
-              color: cs.primary.withValues(alpha: 0.15),
+              color: cs.primary.withOpacity(0.15),
               borderRadius: BorderRadius.circular(28),
             ),
             child: Center(
@@ -533,7 +533,7 @@ class _PageFeatureShowcase extends StatelessWidget {
             style: GoogleFonts.jetBrainsMono(
               fontSize: 10,
               fontWeight: FontWeight.w600,
-              color: cs.onSurface.withValues(alpha: 0.35),
+              color: cs.onSurface.withOpacity(0.35),
               letterSpacing: 1,
             ),
           ).animate(delay: 700.ms).fadeIn(),
@@ -595,7 +595,7 @@ class _PageStartWithAnything extends StatelessWidget {
             textAlign: TextAlign.center,
             style: GoogleFonts.outfit(
               fontSize: 14,
-              color: cs.onSurface.withValues(alpha: 0.55),
+              color: cs.onSurface.withOpacity(0.55),
               height: 1.6,
             ),
           ).animate(delay: 200.ms).fadeIn(),
@@ -608,14 +608,14 @@ class _PageStartWithAnything extends StatelessWidget {
             child: Row(
               children: [
                 Icon(Icons.link_rounded,
-                    size: 20, color: cs.onSurface.withValues(alpha: 0.4)),
+                    size: 20, color: cs.onSurface.withOpacity(0.4)),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Paste any link…',
                     style: GoogleFonts.outfit(
                       fontSize: 15,
-                      color: cs.onSurface.withValues(alpha: 0.35),
+                      color: cs.onSurface.withOpacity(0.35),
                     ),
                   ),
                 ),
@@ -638,7 +638,7 @@ class _PageStartWithAnything extends StatelessWidget {
             width: 180,
             height: 52,
             decoration: BoxDecoration(
-              color: cs.primary.withValues(alpha: 0.15),
+              color: cs.primary.withOpacity(0.15),
               borderRadius: BorderRadius.circular(26),
             ),
             child: Center(
@@ -685,17 +685,17 @@ class _PageUnfairAdvantage extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  cs.surfaceContainerHighest,
-                  cs.surfaceContainerHighest.withValues(alpha: 0.7),
+                  cs.surfaceVariant,
+                  cs.surfaceVariant.withOpacity(0.7),
                 ],
               ),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: cs.primary.withValues(alpha: 0.15),
+                color: cs.primary.withOpacity(0.15),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: cs.primary.withValues(alpha: 0.08),
+                  color: cs.primary.withOpacity(0.08),
                   blurRadius: 40,
                   offset: const Offset(0, 16),
                 ),
@@ -712,7 +712,7 @@ class _PageUnfairAdvantage extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 6),
                       decoration: BoxDecoration(
-                        color: cs.primary.withValues(alpha: 0.15),
+                        color: cs.primary.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -735,7 +735,7 @@ class _PageUnfairAdvantage extends StatelessWidget {
                   height: 80,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: cs.primary.withValues(alpha: 0.12),
+                    color: cs.primary.withOpacity(0.12),
                   ),
                   child: Icon(Icons.school_rounded,
                       color: cs.primary, size: 40),
@@ -747,7 +747,7 @@ class _PageUnfairAdvantage extends StatelessWidget {
                   style: GoogleFonts.jetBrainsMono(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
-                    color: cs.onSurface.withValues(alpha: 0.45),
+                    color: cs.onSurface.withOpacity(0.45),
                     letterSpacing: 1.5,
                   ),
                 ),
@@ -768,7 +768,7 @@ class _PageUnfairAdvantage extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: 0.85,
                     minHeight: 6,
-                    backgroundColor: cs.onSurface.withValues(alpha: 0.1),
+                    backgroundColor: cs.onSurface.withOpacity(0.1),
                     valueColor: AlwaysStoppedAnimation(cs.primary),
                   ),
                 ),
@@ -781,7 +781,7 @@ class _PageUnfairAdvantage extends StatelessWidget {
                       style: GoogleFonts.jetBrainsMono(
                         fontSize: 9,
                         fontWeight: FontWeight.w600,
-                        color: cs.onSurface.withValues(alpha: 0.4),
+                        color: cs.onSurface.withOpacity(0.4),
                         letterSpacing: 1,
                       ),
                     ),
@@ -838,7 +838,7 @@ class _PageUnfairAdvantage extends StatelessWidget {
             textAlign: TextAlign.center,
             style: GoogleFonts.outfit(
               fontSize: 14,
-              color: cs.onSurface.withValues(alpha: 0.55),
+              color: cs.onSurface.withOpacity(0.55),
               height: 1.6,
             ),
           ).animate(delay: 300.ms).fadeIn(),
@@ -857,7 +857,7 @@ class _PageUnfairAdvantage extends StatelessWidget {
                     width: 24,
                     height: 24,
                     decoration: BoxDecoration(
-                      color: cs.onSurface.withValues(alpha: 0.1),
+                      color: cs.onSurface.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
                   ),
@@ -867,7 +867,7 @@ class _PageUnfairAdvantage extends StatelessWidget {
                     style: GoogleFonts.jetBrainsMono(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: cs.onSurface.withValues(alpha: 0.45),
+                      color: cs.onSurface.withOpacity(0.45),
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -883,7 +883,7 @@ class _PageUnfairAdvantage extends StatelessWidget {
             width: 220,
             height: 56,
             decoration: BoxDecoration(
-              color: cs.primary.withValues(alpha: 0.15),
+              color: cs.primary.withOpacity(0.15),
               borderRadius: BorderRadius.circular(28),
             ),
             child: Center(
@@ -934,7 +934,7 @@ class _BackgroundOrbs extends StatelessWidget {
             height: 250,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: cs.primary.withValues(alpha: 0.06),
+              color: cs.primary.withOpacity(0.06),
             ),
           ),
         ),
@@ -946,7 +946,7 @@ class _BackgroundOrbs extends StatelessWidget {
             height: 200,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: cs.tertiary.withValues(alpha: 0.04),
+              color: cs.tertiary.withOpacity(0.04),
             ),
           ),
         ),
@@ -966,10 +966,10 @@ class _GlassCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        color: colorScheme.surfaceVariant.withOpacity(0.5),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.08),
+          color: colorScheme.outline.withOpacity(0.08),
         ),
       ),
       child: child,
@@ -1014,7 +1014,7 @@ class _BulletPoint extends StatelessWidget {
                   text: TextSpan(
                     style: GoogleFonts.outfit(
                       fontSize: 13,
-                      color: cs.onSurface.withValues(alpha: 0.7),
+                      color: cs.onSurface.withOpacity(0.7),
                       height: 1.4,
                     ),
                     children: [
@@ -1034,7 +1034,7 @@ class _BulletPoint extends StatelessWidget {
                   text,
                   style: GoogleFonts.outfit(
                     fontSize: 13,
-                    color: cs.onSurface.withValues(alpha: 0.7),
+                    color: cs.onSurface.withOpacity(0.7),
                     height: 1.4,
                   ),
                 ),
@@ -1058,13 +1058,13 @@ class _QuizOption extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: selected
-              ? cs.primary.withValues(alpha: 0.15)
-              : cs.surfaceContainerHighest.withValues(alpha: 0.5),
+              ? cs.primary.withOpacity(0.15)
+              : cs.surfaceVariant.withOpacity(0.5),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: selected
-                ? cs.primary.withValues(alpha: 0.3)
-                : cs.outline.withValues(alpha: 0.1),
+                ? cs.primary.withOpacity(0.3)
+                : cs.outline.withOpacity(0.1),
           ),
         ),
         child: Center(
@@ -1075,7 +1075,7 @@ class _QuizOption extends StatelessWidget {
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               color: selected
                   ? cs.primary
-                  : cs.onSurface.withValues(alpha: 0.6),
+                  : cs.onSurface.withOpacity(0.6),
             ),
           ),
         ),
@@ -1098,8 +1098,8 @@ class _InputTypeIcon extends StatelessWidget {
       height: 36,
       decoration: BoxDecoration(
         color: isAccent
-            ? cs.error.withValues(alpha: 0.12)
-            : cs.onSurface.withValues(alpha: 0.08),
+            ? cs.error.withOpacity(0.12)
+            : cs.onSurface.withOpacity(0.08),
         shape: BoxShape.circle,
       ),
       child: Icon(
@@ -1107,7 +1107,7 @@ class _InputTypeIcon extends StatelessWidget {
         size: 18,
         color: isAccent
             ? cs.error
-            : cs.onSurface.withValues(alpha: 0.4),
+            : cs.onSurface.withOpacity(0.4),
       ),
     );
   }
@@ -1142,19 +1142,19 @@ class _RoleCard extends StatelessWidget {
         padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
           color: selected
-              ? cs.primary.withValues(alpha: 0.1)
-              : cs.surfaceContainerHighest.withValues(alpha: 0.5),
+              ? cs.primary.withOpacity(0.1)
+              : cs.surfaceVariant.withOpacity(0.5),
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
             color: selected
                 ? cs.primary
-                : cs.outline.withValues(alpha: 0.15),
+                : cs.outline.withOpacity(0.15),
             width: selected ? 2 : 1,
           ),
           boxShadow: selected
               ? [
                   BoxShadow(
-                    color: cs.primary.withValues(alpha: 0.1),
+                    color: cs.primary.withOpacity(0.1),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   )
@@ -1168,12 +1168,12 @@ class _RoleCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: selected
                     ? cs.primary
-                    : cs.onSurface.withValues(alpha: 0.08),
+                    : cs.onSurface.withOpacity(0.08),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 icon,
-                color: selected ? cs.onPrimary : cs.onSurface.withValues(alpha: 0.6),
+                color: selected ? cs.onPrimary : cs.onSurface.withOpacity(0.6),
                 size: 28,
               ),
             ),
@@ -1195,7 +1195,7 @@ class _RoleCard extends StatelessWidget {
                     subtitle,
                     style: GoogleFonts.outfit(
                       fontSize: 13,
-                      color: cs.onSurface.withValues(alpha: 0.55),
+                      color: cs.onSurface.withOpacity(0.55),
                     ),
                   ),
                 ],

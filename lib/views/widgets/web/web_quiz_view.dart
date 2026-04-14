@@ -177,7 +177,7 @@ class _WebQuizViewState extends State<WebQuizView> {
                       style: GoogleFonts.outfit(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
-                        color: WebColors.primary.withValues(alpha: 0.6),
+                        color: WebColors.primary.withOpacity(0.6),
                         letterSpacing: 1.5,
                       ),
                     ),
@@ -213,7 +213,7 @@ class _WebQuizViewState extends State<WebQuizView> {
             child: Container(
               height: 6,
               width: double.infinity,
-              color: WebColors.border.withValues(alpha: 0.5),
+              color: WebColors.border.withOpacity(0.5),
               child: FractionallySizedBox(
                 alignment: Alignment.centerLeft,
                 widthFactor: progress,
@@ -360,9 +360,9 @@ class _WebQuizViewState extends State<WebQuizView> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: accentColor.withValues(alpha: 0.05),
+        color: accentColor.withOpacity(0.05),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: accentColor.withValues(alpha: 0.3), width: 1.5),
+        border: Border.all(color: accentColor.withOpacity(0.3), width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -379,7 +379,7 @@ class _WebQuizViewState extends State<WebQuizView> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.1),
+                  color: accentColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(30),
                 ),
                 child: Text(
@@ -403,7 +403,7 @@ class _WebQuizViewState extends State<WebQuizView> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: WebColors.backgroundAlt.withValues(alpha: 0.5),
+        color: WebColors.backgroundAlt.withOpacity(0.5),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: WebColors.border),
       ),
@@ -444,7 +444,7 @@ class _WebQuizViewState extends State<WebQuizView> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: WebColors.border.withValues(alpha: 0.5)),
+        border: Border.all(color: WebColors.border.withOpacity(0.5)),
         boxShadow: WebColors.subtleShadow,
       ),
       child: Stack(
@@ -489,7 +489,7 @@ class _WebQuizViewState extends State<WebQuizView> {
                 style: GoogleFonts.outfit(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: WebColors.primary.withValues(alpha: 0.7),
+                  color: WebColors.primary.withOpacity(0.7),
                   fontStyle: FontStyle.italic,
                   height: 1.4,
                 ),
@@ -540,7 +540,7 @@ class _WebQuizViewState extends State<WebQuizView> {
         duration: 200.ms,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFF5F3FF).withValues(alpha: 0.5) : Colors.white,
+          color: isSelected ? const Color(0xFFF5F3FF).withOpacity(0.5) : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: borderColor,
@@ -588,7 +588,7 @@ class _WebQuizViewState extends State<WebQuizView> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: WebColors.backgroundAlt.withValues(alpha: 0.5),
+        color: WebColors.backgroundAlt.withOpacity(0.5),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Row(

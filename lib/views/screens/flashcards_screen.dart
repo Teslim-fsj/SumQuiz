@@ -554,9 +554,9 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
                     hintText: 'e.g., Biology Chapter 5',
                     hintStyle: TextStyle(
                         color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+                            theme.colorScheme.onSurface.withOpacity(0.5)),
                     filled: true,
-                    fillColor: theme.cardColor.withValues(alpha: 0.5),
+                    fillColor: theme.cardColor.withOpacity(0.5),
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none),
@@ -577,9 +577,9 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
                     hintText: 'Paste your notes, an article, or any text here.',
                     hintStyle: TextStyle(
                         color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+                            theme.colorScheme.onSurface.withOpacity(0.5)),
                     filled: true,
-                    fillColor: theme.cardColor.withValues(alpha: 0.5),
+                    fillColor: theme.cardColor.withOpacity(0.5),
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none),
@@ -656,7 +656,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
                   'You got $_correctCount out of ${_flashcards.length} correct.',
                   style: theme.textTheme.titleMedium?.copyWith(
                       color:
-                          theme.colorScheme.onSurface.withValues(alpha: 0.8))),
+                          theme.colorScheme.onSurface.withOpacity(0.8))),
               const SizedBox(height: 40),
               if (_isCreationMode) ...[
                 SizedBox(
@@ -708,7 +708,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
                     child: Text('Finish',
                         style: theme.textTheme.labelLarge?.copyWith(
                             color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.7)))),
+                                .withOpacity(0.7)))),
               ),
             ],
           ),
@@ -728,13 +728,13 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
         child: Container(
           padding: padding ?? const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: theme.cardColor.withValues(alpha: 0.8),
+            color: theme.cardColor.withOpacity(0.8),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-                color: theme.dividerColor.withValues(alpha: 0.2), width: 1.5),
+                color: theme.dividerColor.withOpacity(0.2), width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),

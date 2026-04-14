@@ -159,12 +159,12 @@ class DataStorageScreen extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            color: theme.cardColor.withValues(alpha: 0.7),
+            color: theme.cardColor.withOpacity(0.7),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.cardColor.withValues(alpha: 0.6)),
+            border: Border.all(color: theme.cardColor.withOpacity(0.6)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -207,10 +207,10 @@ class DataStorageScreen extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withValues(alpha: 0.05),
+            color: theme.colorScheme.primary.withOpacity(0.05),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-                color: theme.colorScheme.primary.withValues(alpha: 0.1)),
+                color: theme.colorScheme.primary.withOpacity(0.1)),
           ),
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -222,7 +222,7 @@ class DataStorageScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        color: theme.colorScheme.primary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(Icons.storage_outlined,
@@ -267,7 +267,7 @@ class DataStorageScreen extends StatelessWidget {
                               value: usagePercent,
                               minHeight: 10,
                               backgroundColor:
-                                  theme.disabledColor.withValues(alpha: 0.1),
+                                  theme.disabledColor.withOpacity(0.1),
                               valueColor: AlwaysStoppedAnimation<Color>(
                                   theme.colorScheme.primary),
                             ),
@@ -316,10 +316,10 @@ class DataStorageScreen extends StatelessWidget {
               ?.copyWith(color: theme.colorScheme.onSurface, fontSize: 16)),
       subtitle: Text(subtitle,
           style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
               fontSize: 13)),
       trailing: Icon(Icons.arrow_forward_ios,
-          size: 14, color: theme.disabledColor.withValues(alpha: 0.4)),
+          size: 14, color: theme.disabledColor.withOpacity(0.4)),
     );
   }
 
@@ -337,7 +337,7 @@ class DataStorageScreen extends StatelessWidget {
           content: Text(
               'Are you sure you want to clear all cached data? This will free up storage space but may require re-downloading content.',
               style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8))),
+                  color: theme.colorScheme.onSurface.withOpacity(0.8))),
           actions: <Widget>[
             TextButton(
               child: const Text('Cancel'),
@@ -381,12 +381,12 @@ class DataStorageScreen extends StatelessWidget {
             child: Container(
               height: MediaQuery.of(context).size.height * 0.7,
               decoration: BoxDecoration(
-                color: theme.cardColor.withValues(alpha: 0.9),
+                color: theme.cardColor.withOpacity(0.9),
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(24)),
                 border: Border(
                   top:
-                      BorderSide(color: theme.cardColor.withValues(alpha: 0.6)),
+                      BorderSide(color: theme.cardColor.withOpacity(0.6)),
                 ),
               ),
               padding: const EdgeInsets.all(24.0),
@@ -397,7 +397,7 @@ class DataStorageScreen extends StatelessWidget {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: theme.disabledColor.withValues(alpha: 0.3),
+                      color: theme.disabledColor.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -504,9 +504,9 @@ class DataStorageScreen extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: theme.disabledColor.withValues(alpha: 0.05),
+        color: theme.disabledColor.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.disabledColor.withValues(alpha: 0.1)),
+        border: Border.all(color: theme.disabledColor.withOpacity(0.1)),
       ),
       child: ListTile(
         title: Text(title,

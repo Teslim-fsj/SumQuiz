@@ -14,6 +14,7 @@ class PublicDeck {
   final int completedCount;
   final DateTime publishedAt;
   final bool isExam;
+  final bool isPublished;
 
   String get type {
     if (isExam) return 'exam';
@@ -36,6 +37,7 @@ class PublicDeck {
     this.completedCount = 0,
     required this.publishedAt,
     this.isExam = false,
+    this.isPublished = true,
   });
 
   factory PublicDeck.fromFirestore(DocumentSnapshot doc) {
@@ -55,6 +57,7 @@ class PublicDeck {
       publishedAt:
           (data['publishedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       isExam: data['isExam'] ?? false,
+      isPublished: data['isPublished'] ?? true,
     );
   }
 
@@ -72,6 +75,7 @@ class PublicDeck {
       'completedCount': completedCount,
       'publishedAt': Timestamp.fromDate(publishedAt),
       'isExam': isExam,
+      'isPublished': isPublished,
     };
   }
 }

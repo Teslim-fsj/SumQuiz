@@ -92,7 +92,8 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
   }
 
   Future<void> _pickFile(BuildContext context, CreateContentProvider provider, UserModel? user, List<String> extensions, String type) async {
-    if (user != null && !user.isPro && type != 'pdf') {
+    // Only lock for non-pro students. Teachers (creators) get free access.
+    if (user != null && !user.isPro && user.role != UserRole.creator && type != 'pdf') {
        showDialog(context: context, builder: (_) => UpgradeDialog(featureName: '$type Uploads'));
        return;
     }
@@ -196,9 +197,9 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
       width: 600,
       padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
-        color: colorScheme.error.withValues(alpha: 0.05),
+        color: colorScheme.error.withOpacity(0.05),
         borderRadius: BorderRadius.circular(40),
-        border: Border.all(color: colorScheme.error.withValues(alpha: 0.1)),
+        border: Border.all(color: colorScheme.error.withOpacity(0.1)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

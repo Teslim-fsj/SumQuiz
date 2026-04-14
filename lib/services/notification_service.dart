@@ -113,6 +113,15 @@ class NotificationService {
     debugPrint('🚫 Cancelled notification: $id');
   }
 
+  Future<void> cancelWorkManagerTask(String tag) async {
+    try {
+      await Workmanager().cancelByUniqueName(tag);
+      debugPrint('🚫 Cancelled WorkManager task: $tag');
+    } catch (e) {
+      debugPrint('Error cancelling WorkManager task $tag: $e');
+    }
+  }
+
   Future<void> _loadNotificationTemplates() async {
     final String response =
         await rootBundle.loadString('assets/notification_templates.json');

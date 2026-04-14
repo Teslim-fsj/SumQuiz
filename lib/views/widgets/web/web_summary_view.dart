@@ -110,7 +110,7 @@ class WebSummaryView extends StatelessWidget {
       width: 450,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: WebColors.backgroundAlt.withValues(alpha: 0.5),
+        color: WebColors.backgroundAlt.withOpacity(0.5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: WebColors.border),
       ),
@@ -164,7 +164,7 @@ class WebSummaryView extends StatelessWidget {
         p: GoogleFonts.outfit(
           fontSize: 15,
           height: 1.5,
-          color: WebColors.textPrimary.withValues(alpha: 0.9),
+          color: WebColors.textPrimary.withOpacity(0.9),
         ),
         strong: const TextStyle(fontWeight: FontWeight.w800, color: WebColors.primary),
         h1: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w800, height: 1.6),
@@ -204,7 +204,7 @@ class WebSummaryView extends StatelessWidget {
             '$flashcardCount fundamental concepts identified for your flashcards.',
             style: GoogleFonts.outfit(
               fontSize: 15,
-              color: Colors.white.withValues(alpha: 0.8),
+              color: Colors.white.withOpacity(0.8),
               height: 1.5,
             ),
           ),
@@ -212,7 +212,7 @@ class WebSummaryView extends StatelessWidget {
           ElevatedButton(
             onPressed: onReviewList,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white.withValues(alpha: 0.2),
+              backgroundColor: Colors.white.withOpacity(0.2),
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -245,7 +245,7 @@ class WebSummaryView extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
           gradient: LinearGradient(
-            colors: [Colors.black.withValues(alpha: 0.8), Colors.transparent],
+            colors: [Colors.black.withOpacity(0.8), Colors.transparent],
             begin: Alignment.bottomCenter,
             end: Alignment.topCenter,
           ),
@@ -260,7 +260,7 @@ class WebSummaryView extends StatelessWidget {
               style: GoogleFonts.outfit(
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
-                color: Colors.white.withValues(alpha: 0.6),
+                color: Colors.white.withOpacity(0.6),
                 letterSpacing: 2,
               ),
             ),

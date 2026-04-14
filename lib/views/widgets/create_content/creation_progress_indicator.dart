@@ -43,16 +43,16 @@ class CreationProgressIndicator extends StatelessWidget {
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
               color: isDark 
-                  ? Colors.black.withValues(alpha: 0.4) 
-                  : Colors.white.withValues(alpha: 0.7),
+                  ? Colors.black.withOpacity(0.4) 
+                  : Colors.white.withOpacity(0.7),
               borderRadius: BorderRadius.circular(40),
               border: Border.all(
-                color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+                color: (isDark ? Colors.white : Colors.black).withOpacity(0.1),
                 width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: Colors.black.withOpacity(0.1),
                   blurRadius: 40,
                   offset: const Offset(0, 20),
                 ),
@@ -85,7 +85,7 @@ class CreationProgressIndicator extends StatelessWidget {
                       message,
                       style: GoogleFonts.outfit(
                         fontSize: 14,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                        color: theme.colorScheme.onSurface.withOpacity(0.5),
                         fontWeight: FontWeight.w500,
                       ),
                     ).animate(onPlay: (c) => c.repeat()).shimmer(duration: 2.seconds),
@@ -124,8 +124,8 @@ class CreationProgressIndicator extends StatelessWidget {
         shape: BoxShape.circle,
         gradient: RadialGradient(
           colors: [
-            color.withValues(alpha: 0.15),
-            color.withValues(alpha: 0.0),
+            color.withOpacity(0.15),
+            color.withOpacity(0.0),
           ],
         ),
       ),
@@ -142,7 +142,7 @@ class CreationProgressIndicator extends StatelessWidget {
           height: 140,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: theme.colorScheme.primary.withValues(alpha: 0.05),
+            color: theme.colorScheme.primary.withOpacity(0.05),
           ),
         ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(begin: const Offset(0.9, 0.9), end: const Offset(1.1, 1.1), duration: 2.seconds),
         
@@ -154,7 +154,7 @@ class CreationProgressIndicator extends StatelessWidget {
             value: progress ?? 0.7,
             strokeWidth: 2,
             strokeCap: StrokeCap.round,
-            color: theme.colorScheme.primary.withValues(alpha: 0.3),
+            color: theme.colorScheme.primary.withOpacity(0.3),
             backgroundColor: Colors.transparent,
           ),
         ).animate(onPlay: (c) => c.repeat()).rotate(duration: 3.seconds),
@@ -168,7 +168,7 @@ class CreationProgressIndicator extends StatelessWidget {
             strokeCap: StrokeCap.round,
             value: progress,
             valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
-            backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+            backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
           ),
         ),
 
@@ -181,7 +181,7 @@ class CreationProgressIndicator extends StatelessWidget {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: theme.colorScheme.primary.withValues(alpha: 0.4),
+                color: theme.colorScheme.primary.withOpacity(0.4),
                 blurRadius: 15,
                 spreadRadius: 2,
               ),
@@ -241,7 +241,7 @@ class CreationProgressIndicator extends StatelessWidget {
               shape: BoxShape.circle,
               color: isActive 
                   ? theme.colorScheme.primary 
-                  : (isDone ? WebColors.success : theme.colorScheme.onSurface.withValues(alpha: 0.1)),
+                  : (isDone ? WebColors.success : theme.colorScheme.onSurface.withOpacity(0.1)),
             ),
             child: isDone && !isActive 
                 ? const Icon(Icons.check, size: 8, color: Colors.white)

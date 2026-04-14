@@ -63,7 +63,7 @@ class _RoleSelectionDialogState extends State<RoleSelectionDialog> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    WebColors.primary.withValues(alpha: 0.08),
+                    WebColors.primary.withOpacity(0.08),
                     Colors.transparent,
                   ],
                   begin: Alignment.topCenter,
@@ -84,7 +84,7 @@ class _RoleSelectionDialogState extends State<RoleSelectionDialog> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: WebColors.primary.withValues(alpha: 0.3),
+                          color: WebColors.primary.withOpacity(0.3),
                           blurRadius: 24,
                           offset: const Offset(0, 8),
                         ),
@@ -165,7 +165,7 @@ class _RoleSelectionDialogState extends State<RoleSelectionDialog> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: WebColors.primary,
                     foregroundColor: Colors.white,
-                    disabledBackgroundColor: WebColors.primary.withValues(alpha: 0.2),
+                    disabledBackgroundColor: WebColors.primary.withOpacity(0.2),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -222,7 +222,7 @@ class _RoleSelectionDialogState extends State<RoleSelectionDialog> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(28),
         decoration: BoxDecoration(
-          color: isSelected ? color.withValues(alpha: 0.08) : WebColors.backgroundAlt,
+          color: isSelected ? color.withOpacity(0.08) : WebColors.backgroundAlt,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: isSelected ? color : WebColors.border,
@@ -231,7 +231,7 @@ class _RoleSelectionDialogState extends State<RoleSelectionDialog> {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: color.withValues(alpha: 0.15),
+                    color: color.withOpacity(0.15),
                     blurRadius: 24,
                     offset: const Offset(0, 8),
                   )

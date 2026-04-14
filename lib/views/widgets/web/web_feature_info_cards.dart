@@ -46,9 +46,9 @@ class WebFeatureInfoCards extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: bgColor.withValues(alpha: 0.5),
+          color: bgColor.withOpacity(0.5),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: bgColor.withValues(alpha: 0.8)),
+          border: Border.all(color: bgColor.withOpacity(0.8)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,7 +58,7 @@ class WebFeatureInfoCards extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10)],
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10)],
               ),
               child: Icon(icon, color: iconColor, size: 24),
             ),

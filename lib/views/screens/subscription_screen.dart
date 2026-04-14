@@ -208,7 +208,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                               gradient: LinearGradient(
                                 colors: [
                                   theme.colorScheme.primary
-                                      .withValues(alpha: 0.1),
+                                      .withOpacity(0.1),
                                   scaffoldBg
                                 ],
                                 begin: Alignment.topCenter,
@@ -217,7 +217,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                             ),
                             child: Center(
                               child: Icon(Icons.auto_awesome_rounded,
-                                  color: primaryColor.withValues(alpha: 0.5),
+                                  color: primaryColor.withOpacity(0.5),
                                   size: 120),
                             ),
                           ),
@@ -327,7 +327,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [scaffoldBg.withValues(alpha: 0), scaffoldBg],
+                        colors: [scaffoldBg.withOpacity(0), scaffoldBg],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         stops: const [0.0, 0.3],
@@ -395,7 +395,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.1),
+              color: theme.colorScheme.primary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: theme.colorScheme.primary, size: 20),
@@ -445,12 +445,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: isSelected ? primaryColor.withValues(alpha: 0.05) : cardBg,
+          color: isSelected ? primaryColor.withOpacity(0.05) : cardBg,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
                 ? primaryColor
-                : theme.dividerColor.withValues(alpha: 0.1),
+                : theme.dividerColor.withOpacity(0.1),
             width: 2,
           ),
         ),
@@ -574,7 +574,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: statusColor.withValues(alpha: 0.1),
+                color: statusColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(statusIcon, color: statusColor, size: 64),
@@ -628,7 +628,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: theme.colorScheme.primary.withValues(alpha: 0.3),
+            color: theme.colorScheme.primary.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -642,7 +642,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: Colors.white.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.auto_awesome,
@@ -662,7 +662,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           Text(
             'Link your card to unlock 3 days of SumQuiz Pro for free. No charges until the trial ends.',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.9),
+              color: Colors.white.withOpacity(0.9),
             ),
           ),
           const SizedBox(height: 24),

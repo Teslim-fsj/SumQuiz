@@ -31,12 +31,12 @@ class SourceChoiceCard extends StatelessWidget {
           color: theme.cardColor,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: primaryColor.withValues(alpha: 0.15),
+            color: primaryColor.withOpacity(0.15),
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: primaryColor.withValues(alpha: 0.05),
+              color: primaryColor.withOpacity(0.05),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -48,7 +48,7 @@ class SourceChoiceCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: primaryColor.withValues(alpha: 0.1),
+                color: primaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(

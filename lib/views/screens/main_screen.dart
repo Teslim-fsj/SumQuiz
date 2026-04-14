@@ -31,10 +31,10 @@ class MainScreen extends StatelessWidget {
                 filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: theme.cardColor.withValues(alpha: 0.7),
+                    color: theme.cardColor.withOpacity(0.7),
                     border: Border(
                       top: BorderSide(
-                        color: theme.dividerColor.withValues(alpha: 0.2),
+                        color: theme.dividerColor.withOpacity(0.2),
                         width: 0.5,
                       ),
                     ),
@@ -65,7 +65,7 @@ class MainScreen extends StatelessWidget {
                     elevation: 0,
                     selectedItemColor: theme.colorScheme.primary,
                     unselectedItemColor:
-                        theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                        theme.colorScheme.onSurface.withOpacity(0.5),
                     selectedLabelStyle: theme.textTheme.labelMedium
                         ?.copyWith(fontWeight: FontWeight.w600, fontSize: 12),
                     unselectedLabelStyle: theme.textTheme.labelMedium
@@ -85,10 +85,10 @@ class MainScreen extends StatelessWidget {
                     filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: theme.cardColor.withValues(alpha: 0.7),
+                        color: theme.cardColor.withOpacity(0.7),
                         border: Border(
                           right: BorderSide(
-                            color: theme.dividerColor.withValues(alpha: 0.2),
+                            color: theme.dividerColor.withOpacity(0.2),
                             width: 0.5,
                           ),
                         ),
@@ -120,7 +120,7 @@ class MainScreen extends StatelessWidget {
                             IconThemeData(color: theme.colorScheme.primary),
                         unselectedIconTheme: IconThemeData(
                             color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.5)),
+                                .withOpacity(0.5)),
                         selectedLabelTextStyle:
                             theme.textTheme.labelMedium?.copyWith(
                           color: theme.colorScheme.primary,
@@ -129,7 +129,7 @@ class MainScreen extends StatelessWidget {
                         unselectedLabelTextStyle:
                             theme.textTheme.labelMedium?.copyWith(
                           color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.5),
+                              .withOpacity(0.5),
                         ),
                       ),
                     ),

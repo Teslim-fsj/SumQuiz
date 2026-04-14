@@ -169,7 +169,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
                   Text(
                     'Turn your teaching materials into an editable test paper.',
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      color: theme.colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -180,7 +180,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
                       decoration: BoxDecoration(
                         color: theme.colorScheme.primaryContainer,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.2)),
+                        border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
                       ),
                       child: Row(
                         children: [
@@ -200,7 +200,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
                                 Text(
                                   'Upgrade to Pro for unlimited generation.',
                                   style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
+                                    color: theme.colorScheme.onPrimaryContainer.withOpacity(0.8),
                                   ),
                                 ),
                               ],
@@ -655,7 +655,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
                     'Editable before export.',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      color: theme.colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                 ],
@@ -677,7 +677,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
         border: Border.all(color: theme.dividerColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1676,7 +1676,7 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
                 Text(
                   'Professional structure for printable exams.',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    color: theme.colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
                 const SizedBox(height: 24),

@@ -158,7 +158,7 @@ class _EditQuizScreenState extends State<EditQuizScreen> {
                             style: theme.textTheme.labelMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.7))),
+                                    .withOpacity(0.7))),
                         const SizedBox(height: 8),
                         TextField(
                           controller: _titleController,
@@ -166,7 +166,7 @@ class _EditQuizScreenState extends State<EditQuizScreen> {
                               ?.copyWith(fontWeight: FontWeight.bold),
                           decoration: InputDecoration(
                             filled: true,
-                            fillColor: theme.cardColor.withValues(alpha: 0.5),
+                            fillColor: theme.cardColor.withOpacity(0.5),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
@@ -241,13 +241,13 @@ class _EditQuizScreenState extends State<EditQuizScreen> {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: theme.cardColor.withValues(alpha: 0.4),
+            color: theme.cardColor.withOpacity(0.4),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-                color: theme.dividerColor.withValues(alpha: 0.1), width: 1),
+                color: theme.dividerColor.withOpacity(0.1), width: 1),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -291,13 +291,13 @@ class _QuestionEditorState extends State<_QuestionEditor> {
         filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
         child: Container(
             decoration: BoxDecoration(
-              color: theme.cardColor.withValues(alpha: 0.4),
+              color: theme.cardColor.withOpacity(0.4),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                  color: theme.dividerColor.withValues(alpha: 0.1), width: 1),
+                  color: theme.dividerColor.withOpacity(0.1), width: 1),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
+                  color: Colors.black.withOpacity(0.03),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -314,7 +314,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                   subtitle: Text('Question ${widget.index + 1}',
                       style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.6))),
+                              .withOpacity(0.6))),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -328,7 +328,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                             ? Icons.keyboard_arrow_up
                             : Icons.keyboard_arrow_down,
                         color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                            theme.colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ],
                   ),
@@ -340,7 +340,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                     child: Column(
                       children: [
                         Divider(
-                            color: theme.dividerColor.withValues(alpha: 0.2)),
+                            color: theme.dividerColor.withOpacity(0.2)),
                         const SizedBox(height: 8),
                         // Question Text Input
                         _buildGlassInput(
@@ -446,23 +446,23 @@ class _QuestionEditorState extends State<_QuestionEditor> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+            color: theme.colorScheme.onSurface.withOpacity(0.6)),
         filled: true,
         fillColor: isCorrect
-            ? Colors.green.withValues(alpha: 0.1)
-            : theme.cardColor.withValues(alpha: 0.3),
+            ? Colors.green.withOpacity(0.1)
+            : theme.cardColor.withOpacity(0.3),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
               color: isCorrect
-                  ? Colors.green.withValues(alpha: 0.5)
+                  ? Colors.green.withOpacity(0.5)
                   : Colors.transparent),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
               color: isCorrect
-                  ? Colors.green.withValues(alpha: 0.5)
+                  ? Colors.green.withOpacity(0.5)
                   : Colors.transparent),
         ),
         focusedBorder: OutlineInputBorder(

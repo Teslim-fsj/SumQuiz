@@ -225,7 +225,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: WebColors.border.withValues(alpha: 0.5))),
+        border: Border(bottom: BorderSide(color: WebColors.border.withOpacity(0.5))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -334,10 +334,10 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? WebColors.purplePrimary.withValues(alpha: 0.1) : Colors.transparent,
+          color: isSelected ? WebColors.purplePrimary.withOpacity(0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? WebColors.purplePrimary.withValues(alpha: 0.3) : Colors.transparent,
+            color: isSelected ? WebColors.purplePrimary.withOpacity(0.3) : Colors.transparent,
           ),
         ),
         child: Row(
@@ -401,7 +401,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4C3BCF).withValues(alpha: 0.3),
+            color: const Color(0xFF4C3BCF).withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -429,7 +429,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
             'Key terms extracted for "${_summary?.title ?? "your content"}":',
             style: GoogleFonts.outfit(
               fontSize: 13,
-              color: Colors.white.withValues(alpha: 0.8),
+              color: Colors.white.withOpacity(0.8),
               height: 1.5,
             ),
           ),
@@ -441,7 +441,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
                 .map((tag) => Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
+                        color: Colors.white.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
