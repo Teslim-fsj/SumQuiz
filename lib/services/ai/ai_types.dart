@@ -39,8 +39,10 @@ class EnhancedAIServiceException implements Exception {
   bool get isRateLimitError =>
       code == 'RESOURCE_EXHAUSTED' ||
       code == '429' ||
-      message.contains('rate limit') ||
-      message.contains('quota');
+      message.toLowerCase().contains('rate limit') ||
+      message.toLowerCase().contains('quota') ||
+      message.toLowerCase().contains('full') ||
+      message.toLowerCase().contains('overloaded');
 
   bool get isNetworkError =>
       code == 'NETWORK_ERROR' || originalError is TimeoutException;

@@ -12,12 +12,13 @@ class AIConfig {
   static const int transcriptTimeoutSeconds = 45;
   static const int webpageTimeoutSeconds = 30;
 
-  // Gemini 3.1 Series (Verified 2026 Models)
-  static const String primaryModel = 'gemini-3.1-flash-lite-preview';
-  static const String proModel = 'gemini-3.1-pro-preview';
-  static const String fallbackModel = 'gemini-2.5-flash';
-  static const String visionModel = 'gemini-3.1-pro-preview';
-  static const String youtubeModel = 'gemini-3.1-pro-preview';
+  // Gemini Series (Optimized for 2026 Production)
+  static const String primaryModel = 'gemini-3.1-flash-lite';
+  static const String secondaryModel = 'gemini-2.5-flash-lite';
+  static const String fallbackModel = 'gemini-3-flash';
+  static const String proModel = 'gemini-3.1-flash'; // Using Flash as Pro is restricted
+  static const String visionModel = 'gemini-3.1-flash-lite';
+  static const String youtubeModel = 'gemini-3.1-flash-lite';
 
   // Master extraction timeout — wraps the entire extraction operation
   static const int masterExtractionTimeoutSeconds = 300;

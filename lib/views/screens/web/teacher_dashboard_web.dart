@@ -282,7 +282,7 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
           onEdit: _editDeck,
           onDelete: _confirmDelete,
           onCreateExam: () => context.push('/exam-creation'),
-          onCreatePack: () => context.push('/create'),
+          onCreatePack: () => context.push('/create-content'),
         ),
       _NavModule.students => StudentRegistry(
           students: _students,

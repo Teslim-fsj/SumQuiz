@@ -37,6 +37,7 @@ import 'package:image_picker/image_picker.dart';
 import '../widgets/upgrade_dialog.dart';
 import '../../services/extraction_result_cache.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import '../../providers/create_content_provider.dart';
 
 class ReviewScreen extends StatefulWidget {
   const ReviewScreen({super.key});
@@ -271,75 +272,54 @@ class _ReviewScreenState extends State<ReviewScreen> {
         spacing: 12,
         spaceBetweenChildren: 8,
         tooltip: 'Create New Content',
-        children: [
           SpeedDialChild(
             child: const Icon(Icons.school_rounded),
             label: 'Tutor Exam',
             backgroundColor: const Color(0xFF6B5CE7), // purplePrimary
             foregroundColor: Colors.white,
-            onTap: () => _checkAccess(
-              requirePro: true,
-              actionType: 'text',
-              action: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ExamCreationScreen()),
-              ),
-            ),
+            onTap: () => context.push('/exam-creation'),
           ),
           SpeedDialChild(
             child: const Icon(Icons.picture_as_pdf),
             label: 'Upload Doc',
             backgroundColor: Colors.redAccent,
             foregroundColor: Colors.white,
-            onTap: () => _checkAccess(
-              requirePro: true,
-              actionType: 'upload',
-              action: () =>
-                  _pickAndExtractFile(['pdf', 'doc', 'docx', 'ppt', 'pptx']),
-            ),
+            onTap: () => _handleSourceSelection(context, 'pdf', ['pdf', 'doc', 'docx', 'txt']),
           ),
           SpeedDialChild(
             child: const Icon(Icons.link),
-            label: 'Analyze Link',
-            backgroundColor: Colors.blueAccent,
+            label: 'Web Link',
+            backgroundColor: Colors.teal,
             foregroundColor: Colors.white,
-            onTap: () => _checkAccess(
-              requirePro: true,
-              actionType: 'text',
-              action: _showLinkDialog,
-            ),
+            onTap: () => _showUrlInputDialog(context),
+          ),
+          SpeedDialChild(
+            child: const Icon(Icons.play_circle_fill_rounded),
+            label: 'YouTube',
+            backgroundColor: Colors.orange,
+            foregroundColor: Colors.white,
+            onTap: () => _showUrlInputDialog(context, isYoutube: true),
           ),
           SpeedDialChild(
             child: const Icon(Icons.camera_alt),
-            label: 'Image/Snap',
-            backgroundColor: Colors.orangeAccent,
+            label: 'Images',
+            backgroundColor: Colors.deepPurple,
             foregroundColor: Colors.white,
-            onTap: () => _checkAccess(
-              requirePro: true,
-              actionType: 'upload',
-              action: () => _pickAndExtractImage(ImageSource.camera),
-            ),
+            onTap: () => _handleSourceSelection(context, 'image', ['jpg', 'jpeg', 'png', 'webp']),
           ),
           SpeedDialChild(
             child: const Icon(Icons.audiotrack),
             label: 'Audio',
-            backgroundColor: Colors.purpleAccent,
+            backgroundColor: Colors.green,
             foregroundColor: Colors.white,
-            onTap: () => _checkAccess(
-              requirePro: true,
-              actionType: 'upload',
-              action: () => _pickAndExtractFile(['mp3', 'wav', 'm4a']),
-            ),
+            onTap: () => _handleSourceSelection(context, 'audio', ['mp3', 'wav', 'm4a', 'aac']),
           ),
           SpeedDialChild(
             child: const Icon(Icons.text_fields),
-            label: 'Paste Text',
-            backgroundColor: Colors.tealAccent.shade700,
+            label: 'Text/Topic',
+            backgroundColor: Colors.blue,
             foregroundColor: Colors.white,
-            onTap: () => _checkAccess(
-              actionType: 'text',
-              action: _showPasteTextDialog,
-            ),
+            onTap: () => _showTextInputDialog(context),
           ),
         ],
       ),
@@ -1519,360 +1499,214 @@ class _ReviewScreenState extends State<ReviewScreen> {
       return;
     }
 
-    final usageService = Provider.of<UsageService?>(context, listen: false);
-    final iapService = Provider.of<IAPService?>(context, listen: false);
-
-    if (usageService == null || iapService == null) return;
-
-    if (requirePro) {
-      final isPro = await iapService.hasProAccess();
-      if (!isPro) {
-        if (!mounted) return;
-        showDialog(
-          context: context,
-          builder: (context) => const UpgradeDialog(featureName: 'Pro Feature'),
-        );
-        return;
-      }
-    }
-
-    final canUse = await usageService.canPerformAction(user.uid, actionType);
-    if (!canUse) {
-      if (!mounted) return;
-
-      final feature =
-          actionType == 'upload' ? 'Unlimited Uploads' : 'Daily Limit';
-      showDialog(
-        context: context,
-        builder: (context) => UpgradeDialog(featureName: feature),
-      );
-      return;
-    }
-
-    action();
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
   }
 
-  Future<void> _pickAndExtractFile(List<String> extensions) async {
+  // --- NEW SOURCE SELECTION LOGIC (Matching CreateContentScreen) ---
+
+  Future<void> _handleSourceSelection(BuildContext context, String type, List<String> extensions) async {
+    final user = Provider.of<UserModel?>(context, listen: false);
+    if (user != null && !user.isPro && type != 'pdf') {
+       showDialog(context: context, builder: (_) => UpgradeDialog(featureName: '$type Uploads'));
+       return;
+    }
+
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: extensions,
         withData: true,
       );
 
-      if (result != null && result.files.isNotEmpty) {
+      if (result != null && result.files.single.bytes != null) {
         final file = result.files.single;
-        String? mimeType;
-        final extension = file.extension?.toLowerCase() ?? '';
-
-        if (extension == 'pdf') {
-          mimeType = 'application/pdf';
-        } else if (extension == 'doc' || extension == 'docx') {
-          mimeType =
-              'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-        } else if (extension == 'ppt' || extension == 'pptx') {
-          mimeType =
-              'application/vnd.openxmlformats-officedocument.presentationml.presentation';
-        } else if (['mp3', 'wav', 'm4a', 'aac'].contains(extension)) {
-          mimeType = 'audio/mpeg';
-        }
-
-        await _processExtraction(
-          ['pdf', 'doc', 'docx', 'ppt', 'pptx'].contains(extension)
-              ? 'pdf'
-              : 'audio',
-          file.bytes!,
-          mimeType: mimeType,
+        final provider = Provider.of<CreateContentProvider>(context, listen: false);
+        
+        provider.setSource(
+          type,
+          fileName: file.name,
+          bytes: file.bytes,
+          mime: _getMimeType(file.name),
         );
-      }
-    } catch (e) {
-      _showError('Extraction failed: $e');
-    }
-  }
-
-  Future<void> _pickAndExtractImage(ImageSource source) async {
-    try {
-      final picker = ImagePicker();
-      final XFile? image = await picker.pickImage(source: source);
-      if (!mounted) return;
-      if (image != null) {
-        final bytes = await image.readAsBytes();
-        if (!mounted) return;
-        String mimeType = 'image/jpeg';
-        if (image.path.toLowerCase().endsWith('.png')) {
-          mimeType = 'image/png';
-        }
-        await _processExtraction('image', bytes, mimeType: mimeType);
-      }
-    } catch (e) {
-      _showError('Image extraction failed: $e');
-    }
-  }
-
-  void _showPasteTextDialog() {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Paste Text'),
-        content: TextField(
-          controller: controller,
-          maxLines: 10,
-          decoration: const InputDecoration(
-            hintText: 'Paste educational content here...',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final text = controller.text.trim();
-              Navigator.pop(context);
-              if (text.isNotEmpty) {
-                _processExtraction('text', text);
-              }
-            },
-            child: const Text('Extract'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showLinkDialog() {
-    final controller = TextEditingController();
-    final parentContext = context;
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Analyze Link'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            hintText: 'Paste YouTube or Web URL',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final url = controller.text.trim();
-              Navigator.pop(dialogContext);
-              if (url.isEmpty) return;
-              // If it's a YouTube URL, we use the 'youtube' type to trigger Tier 0 reasoning
-              final type = url.contains('youtube.com/') || url.contains('youtu.be/')
-                  ? 'youtube'
-                  : 'link';
-              if (type == 'youtube') {
-                final u =
-                    Provider.of<UserModel?>(parentContext, listen: false);
-                if (!userMayImportFromYouTube(u)) {
-                  showDialog<void>(
-                    context: parentContext,
-                    builder: (_) => const UpgradeDialog(
-                      featureName: 'YouTube import',
-                    ),
-                  );
-                  return;
-                }
-              }
-              _processExtraction(type, url);
-            },
-            child: const Text('Analyze'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _processExtraction(String type, dynamic input,
-      {String? mimeType}) async {
-    debugPrint('Starting _processExtraction with type: $type');
-    try {
-      final authService = Provider.of<AuthService>(context, listen: false);
-
-      final userId = authService.currentUser?.uid;
-      if (userId == null) {
-        debugPrint('User is not authenticated');
+        
         if (mounted) {
-          _showError('User not authenticated. Please log in.');
+          context.go('/create-content');
         }
-        return;
       }
+    } catch (e) {
+      _showError('Error selecting file: $e');
+    }
+  }
 
-      final extractionService =
-          Provider.of<ContentExtractionService>(context, listen: false);
-
-      debugPrint('Starting extraction with type: $type, userId: $userId');
-
-      final progressNotifier =
-          ValueNotifier<String>('Initializing extraction...');
-
-      final cancelToken = CancellationToken();
-
-      // Check if dialog can be shown before attempting to show it
-      if (!mounted) {
-        debugPrint('_processExtraction: Context not mounted, exiting');
-        return;
-      }
-
-      // Flag to track if dialog was shown
-      bool dialogShown = false;
-
-      try {
-        debugPrint('Showing extraction progress dialog');
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) {
-            dialogShown = true;
-            debugPrint('Dialog builder called, dialogShown set to true');
-            return ExtractionProgressDialog(
-              messageNotifier: progressNotifier,
-              onCancel: () {
-                debugPrint('Dialog cancel pressed');
-                cancelToken.cancel();
-                if (mounted) {
+  void _showTextInputDialog(BuildContext context) {
+    final textController = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          top: 24,
+          left: 24,
+          right: 24,
+        ),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Enter Topic or Notes',
+              style: GoogleFonts.outfit(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: textController,
+              maxLines: 8,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Type your topic here (e.g. Photosynthesis) or paste your long notes...',
+                hintStyle: GoogleFonts.outfit(color: Colors.grey),
+                filled: true,
+                fillColor: Theme.of(context).cardColor,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                final text = textController.text.trim();
+                if (text.isNotEmpty) {
+                  final provider = Provider.of<CreateContentProvider>(context, listen: false);
                   Navigator.pop(context);
+                  final isTopic = text.split(' ').length <= 8;
+                  provider.setSource(isTopic ? 'topic' : 'text', text: text);
+                  context.go('/create-content');
                 }
               },
-            );
-          },
-        );
-
-        debugPrint('Calling extractionService.extractContent');
-        final subscriptionUser =
-            Provider.of<UserModel?>(context, listen: false);
-
-        final result = await extractionService.extractContent(
-          type: type,
-          input: input,
-          userId: userId,
-          mimeType: mimeType,
-          allowYouTubeImport: userMayImportFromYouTube(subscriptionUser),
-          onProgress: (m) {
-            debugPrint('Progress update: $m');
-            progressNotifier.value = m;
-          },
-          cancelToken: cancelToken,
-        );
-
-        debugPrint('Extraction completed, result: ${result.text.length} chars');
-
-        // Dismiss dialog if it was shown and context is still valid
-        if (dialogShown && mounted) {
-          debugPrint('Attempting to dismiss dialog');
-          try {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-              debugPrint('Dialog dismissed successfully');
-            }
-          } catch (e) {
-            debugPrint('Error dismissing dialog: $e');
-            // Dialog already dismissed, ignore
-          }
-        } else {
-          debugPrint(
-              'Dialog not dismissed - dialogShown: $dialogShown, mounted: $mounted');
-        }
-
-        // Record upload if successful and it's a file type
-        if (type == 'pdf' || type == 'image' || type == 'audio') {
-          if (!mounted) return;
-          final usageService =
-              Provider.of<UsageService>(context, listen: false);
-          await usageService.recordAction(userId, 'upload');
-          debugPrint('Upload recorded');
-        }
-
-        // Check if the result is valid before navigating
-        if (result.text.trim().isNotEmpty && !result.text.startsWith('[')) {
-          // Make sure it's not an error result
-          debugPrint('Valid result received, preparing navigation');
-          // Wait for any UI operations to settle before navigation
-          await Future.delayed(const Duration(milliseconds: 100));
-          if (mounted) {
-            debugPrint('Navigating to extraction-view with result');
-            // Navigate to the extraction view screen using the correct route
-            try {
-              ExtractionResultCache.set(result);
-              await Future.delayed(const Duration(milliseconds: 100));
-              if (mounted) {
-                await FirebaseCrashlytics.instance.log(
-                    'Navigating to extraction-view. Text length: ${result.text.length}');
-                if (mounted) context.push('/create/extraction-view');
-              }
-            } catch (e) {
-              debugPrint('Navigation error in review screen: $e');
-              // Fallback navigation or error handling
-              if (mounted) {
-                _showError('Navigation failed: $e');
-              }
-            }
-          }
-        } else {
-          debugPrint('No content extracted');
-          if (mounted) {
-            _showError(
-                'No content was extracted. Please try with different content.');
-          }
-        }
-      } catch (dialogError) {
-        debugPrint('Error in dialog/extract section: $dialogError');
-        // If dialog was shown, try to dismiss it
-        if (dialogShown && mounted) {
-          try {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            }
-          } catch (e) {
-            debugPrint('Error dismissing dialog in catch: $e');
-            // Dialog already dismissed, ignore
-          }
-        }
-        rethrow; // Re-throw to be caught by outer catch
-      }
-    } catch (e, stackTrace) {
-      debugPrint('Error in _processExtraction: $e');
-      debugPrint('Stack trace: $stackTrace');
-
-      // Ensure dialog is dismissed even if an error occurs
-      try {
-        if (mounted && Navigator.of(context).canPop()) {
-          Navigator.of(context).pop(); // Dismiss dialog
-          debugPrint('Dialog dismissed in error catch');
-        }
-      } catch (dismissError) {
-        debugPrint('Error dismissing dialog in error catch: $dismissError');
-        // Dialog might already be dismissed, ignore this error
-      }
-
-      if (mounted) {
-        String errorMessage = 'Extraction failed. ';
-        if (e.toString().contains('NOT_FOUND') ||
-            e.toString().contains('404')) {
-          errorMessage += 'The AI model could not be reached.';
-        } else if (e.toString().contains('API')) {
-          errorMessage += 'API configuration error. Check your API key.';
-        } else {
-          errorMessage += e.toString();
-        }
-        _showError(errorMessage);
-      }
-    }
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              child: const Text('Next'),
+            ),
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
   }
 
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
+  void _showUrlInputDialog(BuildContext context, {bool isYoutube = false}) {
+    final textController = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          top: 24,
+          left: 24,
+          right: 24,
+        ),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              isYoutube ? 'Enter YouTube Link' : 'Enter Web Link',
+              style: GoogleFonts.outfit(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: textController,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: isYoutube ? 'https://youtube.com/watch?v=...' : 'https://example.com/article',
+                hintStyle: GoogleFonts.outfit(color: Colors.grey),
+                filled: true,
+                fillColor: Theme.of(context).cardColor,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+                prefixIcon: Icon(isYoutube ? Icons.play_circle_outline_rounded : Icons.link_rounded),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                final url = textController.text.trim();
+                if (url.isNotEmpty && url.startsWith('http')) {
+                  final u = Provider.of<UserModel?>(context, listen: false);
+                  final lower = url.toLowerCase();
+                  final looksYt = lower.contains('youtube.com/') ||
+                      lower.contains('youtu.be/') ||
+                      lower.contains('m.youtube.com/');
+                  if (looksYt && !userMayImportFromYouTube(u)) {
+                    showDialog<void>(
+                      context: context,
+                      builder: (_) =>
+                          const UpgradeDialog(featureName: 'YouTube import'),
+                    );
+                    return;
+                  }
+                  
+                  final provider = Provider.of<CreateContentProvider>(context, listen: false);
+                  Navigator.pop(context);
+                  provider.setSource('link', text: url);
+                  context.go('/create-content');
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              child: const Text('Next'),
+            ),
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
     );
+  }
+
+  String _getMimeType(String name) {
+    final ext = name.split('.').last.toLowerCase();
+    const map = {
+      'pdf': 'application/pdf',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'txt': 'text/plain',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'mp3': 'audio/mpeg',
+      'wav': 'audio/wav',
+      'm4a': 'audio/mp4',
+    };
+    return map[ext] ?? 'application/octet-stream';
   }
 }

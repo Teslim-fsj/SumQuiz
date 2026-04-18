@@ -25,8 +25,10 @@ class AIServiceException implements Exception {
   bool get isRateLimitError =>
       code == 'RESOURCE_EXHAUSTED' ||
       code == '429' ||
-      message.contains('rate limit') ||
-      message.contains('quota');
+      message.toLowerCase().contains('rate limit') ||
+      message.toLowerCase().contains('quota') ||
+      message.toLowerCase().contains('full') ||
+      message.toLowerCase().contains('overloaded');
 
   bool get isNetworkError =>
       code == 'NETWORK_ERROR' || originalError is TimeoutException;
@@ -34,8 +36,9 @@ class AIServiceException implements Exception {
 
 abstract class AIBaseService {
   GenerativeModel? _model;
+  GenerativeModel? _secondaryModel; // Tier 2 fallback
   GenerativeModel? _proModel;
-  GenerativeModel? _fallbackModel;
+  GenerativeModel? _fallbackModel; // Tier 3 fallback
   GenerativeModel? _visionModel;
   GenerativeModel? _youtubeModel;
   GenerativeModel? _educatorModel;
@@ -60,6 +63,12 @@ abstract class AIBaseService {
 
       _model = GenerativeModel(
         model: AIConfig.primaryModel,
+        apiKey: apiKey,
+        generationConfig: AIConfig.defaultGenerationConfig,
+      );
+      
+      _secondaryModel = GenerativeModel(
+        model: AIConfig.secondaryModel,
         apiKey: apiKey,
         generationConfig: AIConfig.defaultGenerationConfig,
       );
@@ -250,12 +259,20 @@ abstract class AIBaseService {
       return part;
     }).toList();
 
-    // Model cascade: primary → fallback (auto-switches on quota/rate-limit)
-    final modelChain = customModel != null
-        ? [customModel]
-        : [_model, _fallbackModel]
-            .whereType<GenerativeModel>()
-            .toList();
+    // Model cascade (2026 Edition): Primary → Secondary → Fallback
+    final List<GenerativeModel> modelChain = [];
+    if (customModel != null) {
+      modelChain.add(customModel);
+      if (_secondaryModel != null && customModel != _secondaryModel) {
+        modelChain.add(_secondaryModel!);
+      }
+      if (_fallbackModel != null && customModel != _fallbackModel) {
+        modelChain.add(_fallbackModel!);
+      }
+    } else {
+      modelChain.addAll([_model, _secondaryModel, _fallbackModel]
+          .whereType<GenerativeModel>());
+    }
 
     if (modelChain.isEmpty) {
       throw AIServiceException('No models available', code: 'MODEL_NOT_AVAILABLE');
@@ -299,7 +316,9 @@ abstract class AIBaseService {
         final isQuotaError = errorMsg.contains('quota') ||
             errorMsg.contains('rate limit') ||
             errorMsg.contains('429') ||
-            errorMsg.contains('resource_exhausted');
+            errorMsg.contains('resource_exhausted') ||
+            errorMsg.contains('full') ||
+            errorMsg.contains('overloaded');
         final isTimeout = e is TimeoutException;
 
         // Cascade to next model in chain on quota/timeout

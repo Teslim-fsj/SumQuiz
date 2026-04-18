@@ -1,5 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+﻿import 'package:firebase_auth/firebase_auth.dart';
 
 /// User-facing copy for Firebase Auth. Avoid exposing raw exception strings.
 String messageForFirebaseAuth(FirebaseAuthException e) {

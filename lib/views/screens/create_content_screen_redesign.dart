@@ -1385,19 +1385,19 @@ class _CreateContentScreenState extends State<CreateContentScreen>
   String _getUserFriendlyError(dynamic error) {
     final errorStr = error.toString().toLowerCase();
     if (errorStr.contains('rate limit')) {
-      return '🚦 Neural circuits overloaded. Please wait.';
+      return '🚦 Neural circuits overloaded. Please wait a minute and retry.';
     }
-    if (errorStr.contains('api') || errorStr.contains('quota')) {
-      return '🔑 Intelligence access restricted temporarily.';
+    if (errorStr.contains('api') || errorStr.contains('quota') || errorStr.contains('full') || errorStr.contains('overloaded')) {
+      return '🔑 Intelligence access is currently full or restricted. Please try again in 30 seconds.';
     }
     if (errorStr.contains('too long')) {
-      return '📏 Concept too vast for single transmutation.';
+      return '📏 Concept too vast for single transmutation. Try a shorter text.';
     }
     if (errorStr.contains('youtube')) {
       return '🎥 Visual stream unavailable or restricted.';
     }
     if (errorStr.contains('pdf')) return '📄 Document structure unreadable.';
     if (errorStr.contains('image')) return '🖼️ Visual pattern unrecognized.';
-    return '❌ Conceptual breach detected. Please retry.';
+    return '❌ Conceptual breach detected ($error). Please retry.';
   }
 }

@@ -432,6 +432,7 @@ class FirestoreService {
         summaryData: deck.summaryData,
         quizData: deck.quizData,
         flashcardData: deck.flashcardData,
+        isExam: deck.isExam,
         publishedAt: DateTime.now(),
       );
 

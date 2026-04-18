@@ -16,11 +16,12 @@ import 'package:flutter/material.dart';
 
 class AuthService {
   final FirebaseAuth _auth;
-  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    serverClientId: kGoogleWebServerClientId,
+  );
   final FirestoreService _firestoreService = FirestoreService();
   final ReferralService _referralService = ReferralService();
 
-  static bool _googleSignInInitialized = false;
   static const String _authTokenKey = 'auth_token';
   static const String _userIdKey = 'user_id';
   static const String _userDisplayNameKey = 'user_display_name';
@@ -97,13 +98,7 @@ class AuthService {
     });
   }
 
-  Future<void> _ensureGoogleSignInInitialized() async {
-    if (_googleSignInInitialized) return;
-    await GoogleSignIn.instance.initialize(
-      serverClientId: kGoogleWebServerClientId,
-    );
-    _googleSignInInitialized = true;
-  }
+  // Removed redundant _ensureGoogleSignInInitialized as configuration is handled in signInWithGoogle for mobile
 
   Future<void> signInWithGoogle(BuildContext context,
       {String? referralCode}) async {
@@ -119,23 +114,25 @@ class AuthService {
             await _auth.signInWithPopup(googleProvider);
         user = result.user;
       } else {
-        await _ensureGoogleSignInInitialized();
-        await _googleSignIn.signOut();
+        developer.log('Mobile Google Sign-In');
+        // Standard Google Sign-In flow for Android/iOS
+        await _googleSignIn.signOut(); // Ensure fresh picker
 
-        final Future<GoogleSignInAccount?>? lightweightFuture =
-            _googleSignIn.attemptLightweightAuthentication();
-        GoogleSignInAccount? googleUser;
-        if (lightweightFuture != null) {
-          googleUser = await lightweightFuture;
+        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+        
+        if (googleUser == null) {
+          developer.log('Google Sign-In cancelled by user');
+          return; // User cancelled
         }
-        googleUser ??= await _googleSignIn.authenticate();
 
-        developer.log('Google user authenticated: ${googleUser.email}');
+        developer.log('Google user selected: ${googleUser.email}');
 
-        final GoogleSignInAuthentication googleAuth =
-            googleUser.authentication;
+        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
         final String? idToken = googleAuth.idToken;
+        final String? accessToken = googleAuth.accessToken;
+
         if (idToken == null || idToken.isEmpty) {
+          developer.log('Error: Google did not return an ID token');
           throw FirebaseAuthException(
             code: 'no-id-token',
             message: 'Google did not return an ID token.',
@@ -144,9 +141,10 @@ class AuthService {
 
         final OAuthCredential credential = GoogleAuthProvider.credential(
           idToken: idToken,
+          accessToken: accessToken,
         );
-        final UserCredential result =
-            await _auth.signInWithCredential(credential);
+        
+        final UserCredential result = await _auth.signInWithCredential(credential);
         user = result.user;
       }
 
@@ -350,7 +348,7 @@ class AuthService {
 
   Future<void> signOut() async {
     try {
-      if (!kIsWeb && _googleSignInInitialized) {
+      if (!kIsWeb) {
         await _googleSignIn.signOut();
       }
       await _auth.signOut();

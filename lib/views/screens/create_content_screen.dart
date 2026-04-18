@@ -416,11 +416,15 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
           const SizedBox(height: 32),
           ConfigSelector(
             selectedDifficulty: provider.selectedDifficulty,
-            selectedCount: provider.quizCount,
+            selectedQuizCount: provider.quizCount,
+            selectedFlashcardCount: provider.flashcardCount,
             selectedQuestionTypes: provider.selectedQuestionTypes,
+            selectedArchetype: provider.selectedArchetype,
             onDifficultyChanged: (v) => provider.updateConfig(difficulty: v),
-            onCountChanged: (v) => provider.updateConfig(quizCount: v, flashcardCount: v),
+            onQuizCountChanged: (v) => provider.updateConfig(quizCount: v),
+            onFlashcardCountChanged: (v) => provider.updateConfig(flashcardCount: v),
             onToggleType: (v) => provider.toggleQuestionType(v),
+            onArchetypeChanged: (v) => provider.updateConfig(archetype: v),
           ),
           const SizedBox(height: 48),
           ElevatedButton(

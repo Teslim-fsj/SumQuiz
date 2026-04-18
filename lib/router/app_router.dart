@@ -332,8 +332,8 @@ GoRouter createRouter(AuthService authService) {
                     desktop: CreateContentScreenWeb(),
                   ),
                   creatorView: ResponsiveView(
-                    mobile: ExamCreationScreen(),
-                    desktop: ExamCreationScreenWeb(),
+                    mobile: CreateContentScreen(),
+                    desktop: CreateContentScreenWeb(),
                   ),
                 ),
               ),
@@ -346,8 +346,8 @@ GoRouter createRouter(AuthService authService) {
             routes: <RouteBase>[
               GoRoute(
                 path: '/progress',
-                builder: (context, state) => const RoleAwareView(
-                  studentView: ResponsiveView(
+                builder: (context, state) => RoleAwareView(
+                  studentView: const ResponsiveView(
                     mobile: ProgressScreen(),
                     desktop: ProgressScreenWeb(),
                   ),

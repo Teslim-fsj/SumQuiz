@@ -299,6 +299,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           'title': _titleController.text,
           'questions': _generatedQuestions.map((q) => q.toMap()).toList(),
         },
+        isExam: true,
         publishedAt: DateTime.now(),
       );
 

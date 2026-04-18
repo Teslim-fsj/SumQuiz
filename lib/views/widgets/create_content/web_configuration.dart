@@ -410,6 +410,7 @@ class _CountSelector extends StatelessWidget {
     return Wrap(
       spacing: 12,
       runSpacing: 12,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         ...values.map((v) => ChoiceChip(
               label: Text('$v'),
@@ -425,8 +426,22 @@ class _CountSelector extends StatelessWidget {
               side: BorderSide.none,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             )),
+        if (!values.contains(selectedValue))
+           ChoiceChip(
+              label: Text('$selectedValue'),
+              selected: true,
+              onSelected: (_) {},
+              selectedColor: const Color(0xFF3300FF),
+              labelStyle: GoogleFonts.outfit(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              side: BorderSide.none,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
         TextButton.icon(
-          onPressed: () {},
+          onPressed: () => _showCustomInputDialog(context),
           icon: const Icon(Icons.edit_outlined, size: 14),
           label: const Text('Custom'),
           style: TextButton.styleFrom(
@@ -438,6 +453,38 @@ class _CountSelector extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  void _showCustomInputDialog(BuildContext context) {
+    final controller = TextEditingController(text: selectedValue.toString());
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Enter Custom Amount'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Enter a number (max 100)',
+            suffixText: 'items',
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              final val = int.tryParse(controller.text);
+              if (val != null && val > 0 && val <= 100) {
+                onChanged(val);
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Apply'),
+          ),
+        ],
+      ),
     );
   }
 }

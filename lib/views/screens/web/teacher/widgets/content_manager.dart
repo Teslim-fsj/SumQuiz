@@ -51,6 +51,12 @@ class _ContentManagerState extends State<ContentManager> {
     final packs = filteredContent.where((c) => !c.isExam).toList();
     
     final displayedItems = _showExams ? exams : packs;
+    
+    // Status counts should also respect the search query for consistency
+    final searchFiltered = widget.content.where((c) => 
+      c.title.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+    final publishedCount = searchFiltered.where((c) => c.isPublished).length;
+    final draftCount = searchFiltered.where((c) => !c.isPublished).length;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -82,7 +88,7 @@ class _ContentManagerState extends State<ContentManager> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(flex: 1, child: _buildSidebar(packs.length, exams.length)),
+                    Expanded(flex: 1, child: _buildSidebar(packs.length, exams.length, publishedCount, draftCount)),
                     const SizedBox(width: 24),
                     Expanded(
                       flex: 3,
@@ -174,7 +180,7 @@ class _ContentManagerState extends State<ContentManager> {
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
                 child: Text('CURRICULUM INTELLIGENCE', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white70, letterSpacing: 1.2)),
               ),
               const SizedBox(height: 16),
@@ -201,7 +207,7 @@ class _ContentManagerState extends State<ContentManager> {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
                       child: Text('CURRICULUM INTELLIGENCE', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white70, letterSpacing: 1.2)),
                     ),
                     const SizedBox(height: 12),
@@ -234,9 +240,9 @@ class _ContentManagerState extends State<ContentManager> {
       width: isMobile ? null : 150,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -249,7 +255,7 @@ class _ContentManagerState extends State<ContentManager> {
     );
   }
 
-  Widget _buildSidebar(int packsCount, int examsCount) {
+  Widget _buildSidebar(int packsCount, int examsCount, int publishedCount, int draftCount) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -264,9 +270,9 @@ class _ContentManagerState extends State<ContentManager> {
         
         Text('STATUS FILTER', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[500], letterSpacing: 1)),
         const SizedBox(height: 16),
-        _buildCheckbox('Published', widget.content.where((c) => c.isPublished).length, _filterPublished, (v) => setState(() => _filterPublished = v ?? true)),
+        _buildCheckbox('Published', publishedCount, _filterPublished, (v) => setState(() => _filterPublished = v ?? true)),
         const SizedBox(height: 8),
-        _buildCheckbox('Drafts', widget.content.where((c) => !c.isPublished).length, _filterDrafts, (v) => setState(() => _filterDrafts = v ?? false)),
+        _buildCheckbox('Drafts', draftCount, _filterDrafts, (v) => setState(() => _filterDrafts = v ?? false)),
         
         const SizedBox(height: 24),
         Container(
@@ -333,7 +339,7 @@ class _ContentManagerState extends State<ContentManager> {
             if (isMobile) const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(color: isActive ? Colors.white.withOpacity(0.2) : const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(color: isActive ? Colors.white.withValues(alpha: 0.2) : const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(12)),
               child: Text('$count', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: isActive ? Colors.white : Colors.grey[700])),
             ),
           ],
@@ -385,26 +391,28 @@ class _ContentManagerState extends State<ContentManager> {
               ),
             ],
           ),
-        if (!isMobile) const SizedBox(height: 24),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: isMobile ? 1 : 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: isMobile ? 1.1 : 0.95,
+        if (displayedItems.isEmpty) 
+          _buildEmptyState()
+        else
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: isMobile ? 1 : 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: isMobile ? 1.1 : 0.95,
+            ),
+            itemCount: displayedItems.length + (isMobile ? 1 : 2), // adding creation/AI cards
+            itemBuilder: (context, i) {
+              if (i == displayedItems.length) {
+                return isMobile ? _buildCreateNewCard(isMobile: true) : _buildAiRecommendationCard();
+              } else if (i == displayedItems.length + 1) {
+                return _buildCreateNewCard();
+              }
+              return _contentCard(displayedItems[i], isMobile: isMobile);
+            },
           ),
-          itemCount: displayedItems.length + (isMobile ? 1 : 2), // adding creation/AI cards
-          itemBuilder: (context, i) {
-            if (i == displayedItems.length) {
-              return isMobile ? _buildCreateNewCard(isMobile: true) : _buildAiRecommendationCard();
-            } else if (i == displayedItems.length + 1) {
-              return _buildCreateNewCard();
-            }
-            return _contentCard(displayedItems[i], isMobile: isMobile);
-          },
-        ),
       ],
     );
   }
@@ -415,7 +423,7 @@ class _ContentManagerState extends State<ContentManager> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: WebColors.cardShadow,
-        border: Border.all(color: WebColors.border.withOpacity(0.5)),
+        border: Border.all(color: WebColors.border.withValues(alpha: 0.5)),
       ),
       padding: EdgeInsets.all(isMobile ? 12 : 16),
       child: Column(
@@ -518,6 +526,57 @@ class _ContentManagerState extends State<ContentManager> {
     );
   }
 
+  Widget _buildEmptyState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 80),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3F4F6),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              _searchQuery.isNotEmpty ? Icons.search_off_rounded : Icons.inventory_2_outlined,
+              size: 48,
+              color: Colors.grey[400],
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            _searchQuery.isNotEmpty 
+                ? 'No matching results' 
+                : 'No ${_showExams ? 'Exams' : 'Study Packs'} Created Yet',
+            style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _searchQuery.isNotEmpty 
+                ? 'Try adjusting your search terms or filters.'
+                : 'Start building your curriculum by creating your first ${_showExams ? 'formal exam' : 'study pack'}.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.outfit(fontSize: 14, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton.icon(
+            onPressed: _showExams ? widget.onCreateExam : widget.onCreatePack,
+            icon: const Icon(Icons.add),
+            label: Text('Create First ${_showExams ? 'Exam' : 'Pack'}'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: WebColors.purplePrimary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildAiRecommendationCard() {
     return Container(
       decoration: BoxDecoration(
@@ -530,7 +589,7 @@ class _ContentManagerState extends State<ContentManager> {
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
             child: Text('RECOMMENDED AI GENERATION', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white70, letterSpacing: 1)),
           ),
           const SizedBox(height: 20),
@@ -551,7 +610,7 @@ class _ContentManagerState extends State<ContentManager> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {},
-                  style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: BorderSide(color: Colors.white.withOpacity(0.2)), padding: const EdgeInsets.symmetric(vertical: 24), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: BorderSide(color: Colors.white.withValues(alpha: 0.2)), padding: const EdgeInsets.symmetric(vertical: 24), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                   child: const Text('Dismiss'),
                 ),
               ),
@@ -570,10 +629,10 @@ class _ContentManagerState extends State<ContentManager> {
         decoration: BoxDecoration(
           color: const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: WebColors.purplePrimary.withOpacity(0.3), style: BorderStyle.none),
+          border: Border.all(color: WebColors.purplePrimary.withValues(alpha: 0.3), style: BorderStyle.none),
         ),
         child: CustomPaint(
-          painter: DashedBorderPainter(color: WebColors.purplePrimary.withOpacity(0.4)),
+          painter: DashedBorderPainter(color: WebColors.purplePrimary.withValues(alpha: 0.4)),
           child: Padding(
             padding: const EdgeInsets.all(32),
             child: Column(
