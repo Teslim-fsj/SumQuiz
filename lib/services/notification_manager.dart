@@ -35,7 +35,7 @@ class NotificationManager {
       'We Miss You! 👋',
       'learning_engagement',
       {'name': user.displayName.split(' ').first},
-      payloadRoute: '/create',
+      payloadRoute: '/create-content',
       days: 3,
     );
   }
@@ -182,7 +182,7 @@ class NotificationManager {
       'New Feature! 🎉',
       'system_and_updates',
       {},
-      payloadRoute: '/create',
+      payloadRoute: '/create-content',
       days: 0, // Immediate
     );
   }
@@ -208,7 +208,7 @@ class NotificationManager {
       'Welcome to SumQuiz! 👋',
       'system_and_updates',
       {'name': user.displayName.split(' ').first},
-      payloadRoute: '/create',
+      payloadRoute: '/create-content',
       days: 0, // Immediate
     );
   }

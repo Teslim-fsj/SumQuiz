@@ -7,6 +7,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../models/user_model.dart';
 import '../../services/firestore_service.dart';
 import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
+import 'package:sumquiz/services/notification_integration.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -224,6 +225,60 @@ class SettingsScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                       ],
+                      const SizedBox(height: 32),
+                      _buildSectionTitle('Diagnostics', theme)
+                          .animate()
+                          .fadeIn(delay: 550.ms),
+                      _buildSettingsCard(
+                        context,
+                        icon: Icons.notifications_active_outlined,
+                        title: 'Test Notification',
+                        subtitle: 'Fire a test alert immediately',
+                        onTap: () async {
+                          try {
+                            await NotificationIntegration.testNotification(context);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Test notification sent! Check in 5 seconds.')),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Error: $e')),
+                              );
+                            }
+                          }
+                        },
+                        delay: 600.ms,
+                        theme: theme,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildSettingsCard(
+                        context,
+                        icon: Icons.link,
+                        title: 'Test Deep Link',
+                        subtitle: 'Copy test link to clipboard',
+                        onTap: () {
+                          const link = 'https://sumquiz.xyz/library';
+                          // For testing purpose, we just show what it is
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Test Deep Link'),
+                              content: const Text('Open this link in your browser or a notes app to test deep linking:\n\nhttps://sumquiz.xyz/library'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Close'),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                        delay: 650.ms,
+                        theme: theme,
+                      ),
                       const SizedBox(height: 48),
                       _buildLogoutButton(context, theme)
                           .animate()

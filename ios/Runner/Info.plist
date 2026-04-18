@@ -47,5 +47,20 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<!-- Deep Link: Custom URL Scheme -->
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>sumquiz</string>
+				</array>
+				<key>CFBundleURLName</key>
+				<string>xyz.sumquiz</string>
+			</dict>
+		</array>
+		<!-- Deep Link: Universal Links -->
+		<key>FlutterDeepLinkingEnabled</key>
+		<true/>
 	</dict>
 </plist>

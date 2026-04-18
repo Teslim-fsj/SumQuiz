@@ -1,5 +1,4 @@
 import 'package:sumquiz/services/ai/generator_ai_service.dart';
-import 'package:sumquiz/services/ai/ai_config.dart';
 
 void main() async {
   print('Testing GeneratorAIService.generateSummary...');

@@ -199,7 +199,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                       flex: 3,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceVariant
+                          color: theme.colorScheme.surfaceContainerHighest
                               .withOpacity(0.05),
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
@@ -326,7 +326,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                       child: Container(
                         padding: const EdgeInsets.all(32),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceVariant
+                          color: theme.colorScheme.surfaceContainerHighest
                               .withOpacity(0.05),
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
@@ -469,7 +469,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                                       color: !isSelected
                                           ? Theme.of(context)
                                               .colorScheme
-                                              .surfaceVariant
+                                              .surfaceContainerHighest
                                               .withOpacity(0.3)
                                           : null,
                                       borderRadius: BorderRadius.circular(16),
@@ -542,7 +542,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
                               decoration: BoxDecoration(
                                 color: Theme.of(context)
                                     .colorScheme
-                                    .surfaceVariant
+                                    .surfaceContainerHighest
                                     .withOpacity(0.3),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
@@ -673,7 +673,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
       decoration: BoxDecoration(
         color:
-            theme.colorScheme.surfaceVariant.withOpacity(0.05),
+            theme.colorScheme.surfaceContainerHighest.withOpacity(0.05),
         borderRadius: BorderRadius.circular(24),
         border:
             Border.all(color: theme.colorScheme.outline.withOpacity(0.1)),
@@ -723,7 +723,7 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
             decoration: BoxDecoration(
               color: Theme.of(context)
                   .colorScheme
-                  .surfaceVariant
+                  .surfaceContainerHighest
                   .withOpacity(0.3),
               borderRadius: BorderRadius.circular(20),
             ),

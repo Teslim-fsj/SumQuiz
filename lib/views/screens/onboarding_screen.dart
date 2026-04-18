@@ -685,8 +685,8 @@ class _PageUnfairAdvantage extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  cs.surfaceVariant,
-                  cs.surfaceVariant.withOpacity(0.7),
+                  cs.surfaceContainerHighest,
+                  cs.surfaceContainerHighest.withOpacity(0.7),
                 ],
               ),
               borderRadius: BorderRadius.circular(28),
@@ -966,7 +966,7 @@ class _GlassCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.5),
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: colorScheme.outline.withOpacity(0.08),
@@ -1059,7 +1059,7 @@ class _QuizOption extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected
               ? cs.primary.withOpacity(0.15)
-              : cs.surfaceVariant.withOpacity(0.5),
+              : cs.surfaceContainerHighest.withOpacity(0.5),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: selected
@@ -1143,7 +1143,7 @@ class _RoleCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected
               ? cs.primary.withOpacity(0.1)
-              : cs.surfaceVariant.withOpacity(0.5),
+              : cs.surfaceContainerHighest.withOpacity(0.5),
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
             color: selected

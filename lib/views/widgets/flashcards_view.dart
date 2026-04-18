@@ -9,7 +9,7 @@ import '../../models/flashcard.dart';
 class FlashcardsView extends StatefulWidget {
   final String title;
   final List<Flashcard> flashcards;
-  final Function(int index, bool knewIt) onReview;
+  final Function(int index, bool knewIt, {int? quality}) onReview;
   final VoidCallback onFinish;
   final String? creatorName;
 
@@ -42,8 +42,8 @@ class _FlashcardsViewState extends State<FlashcardsView> {
     return true;
   }
 
-  void _handleReview(int index, bool knewIt) {
-    widget.onReview(index, knewIt);
+  void _handleReview(int index, bool knewIt, {int? quality}) {
+    widget.onReview(index, knewIt, quality: quality);
     _swiperController.swipe(CardSwiperDirection.right);
   }
 
@@ -201,17 +201,31 @@ class _FlashcardsViewState extends State<FlashcardsView> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _buildGlassButton(
-                    label: "Still Learning",
+                    label: "Again",
                     icon: Icons.refresh_rounded,
-                    color: Colors.orange,
-                    onPressed: () => _handleReview(cardIndex!, false),
+                    color: Colors.redAccent,
+                    onPressed: () => _handleReview(cardIndex!, false, quality: 1),
                     theme: theme,
                   ),
                   _buildGlassButton(
-                    label: "Got It",
+                    label: "Hard",
+                    icon: Icons.sentiment_neutral_rounded,
+                    color: Colors.orange,
+                    onPressed: () => _handleReview(cardIndex!, true, quality: 3),
+                    theme: theme,
+                  ),
+                  _buildGlassButton(
+                    label: "Good",
+                    icon: Icons.sentiment_satisfied_rounded,
+                    color: Colors.blue,
+                    onPressed: () => _handleReview(cardIndex!, true, quality: 4),
+                    theme: theme,
+                  ),
+                  _buildGlassButton(
+                    label: "Easy",
                     icon: Icons.check_circle_outline_rounded,
                     color: Colors.green,
-                    onPressed: () => _handleReview(cardIndex!, true),
+                    onPressed: () => _handleReview(cardIndex!, true, quality: 5),
                     theme: theme,
                   ),
                 ],

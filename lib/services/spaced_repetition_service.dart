@@ -97,14 +97,17 @@ class SpacedRepetitionService {
     }
   }
 
-  Future<void> updateReview(String itemId, bool answeredCorrectly) async {
-    // The itemId passed here is typically the flashcardId.
-    // We first try to get it directly (new behavior).
+  /// Updates the SRS item using the SM-2 algorithm.
+  /// [quality] should be 0-5:
+  /// 5: perfect response
+  /// 4: correct response after a hesitation
+  /// 3: correct response recalled with serious difficulty
+  /// 2: incorrect response; where the correct one seemed easy to recall
+  /// 1: incorrect response; the correct one remembered
+  /// 0: complete blackout.
+  Future<void> updateReview(String itemId, bool answeredCorrectly, {int? quality}) async {
     var item = _box.get(itemId);
-
-    // Fallback: If not found, check if it was stored with a UUID (legacy behavior).
     item ??= _box.values.firstWhereOrNull((i) => i.contentId == itemId);
-
     if (item == null) return;
 
     final now = DateTime.now().toUtc();
@@ -113,29 +116,42 @@ class SpacedRepetitionService {
     int interval;
     int correctStreak;
 
-    if (answeredCorrectly) {
+    // Determine quality score (q)
+    int q = quality ?? (answeredCorrectly ? 4 : 1);
+    q = q.clamp(0, 5);
+
+    if (q >= 3) {
+      // Correct response
       correctStreak = item.correctStreak + 1;
       repetitionCount = item.repetitionCount + 1;
-      easeFactor = item.easeFactor + (0.1 - (5 - 4) * (0.08 + (5 - 4) * 0.02));
-      if (easeFactor < 1.3) easeFactor = 1.3;
+      
+      // SM-2 Ease Factor calculation: EF' = EF + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))
+      // Using actual q value ensures easeFactor changes (increment of 0 for q=4)
+      double efChange = 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02);
+      easeFactor = (item.easeFactor + efChange).clamp(1.3, 5.0).toDouble();
 
       if (repetitionCount == 1) {
         interval = 1;
       } else if (repetitionCount == 2) {
         interval = 6;
       } else {
-        interval = (item.interval * easeFactor).round();
+        // Apply interval multiplier
+        double multiplier = easeFactor;
+        // Ease calculation for "Hard" (q=3) should grow slower than "Good" (q=4)
+        if (q == 3) multiplier = 1.2; 
+        
+        interval = (item.interval * multiplier).round();
       }
     } else {
+      // Incorrect response
       correctStreak = 0;
-      repetitionCount = 0; // Reset repetition count
-      interval = 1; // Review again tomorrow
-      easeFactor =
-          item.easeFactor; // E-factor does not change on incorrect answer
+      repetitionCount = 0;
+      interval = 1;
+      easeFactor = item.easeFactor;
     }
 
     final updatedItem = SpacedRepetitionItem(
-      id: item.id, // Preserve the existing ID (whether UUID or flashcardId)
+      id: item.id,
       userId: item.userId,
       contentId: item.contentId,
       contentType: item.contentType,
@@ -149,20 +165,32 @@ class SpacedRepetitionService {
       correctStreak: correctStreak,
     );
 
-    // Save back using the SAME key we retrieved it with
     await _box.put(item.id, updatedItem);
   }
 
   Future<List<String>> getDueFlashcardIds(String userId) async {
     final now = DateTime.now().toUtc();
-    return _box.values
+    final dueItems = _box.values
         .where((item) =>
             item.userId == userId &&
             item.contentType == 'flashcards' &&
-            item.nextReviewDate.isBefore(now) || 
-            item.nextReviewDate.isAtSameMomentAs(now))
-        .map((item) => item.contentId)
+            (item.nextReviewDate.isBefore(now) || 
+            item.nextReviewDate.isAtSameMomentAs(now)))
         .toList();
+    dueItems.sort((a, b) => a.nextReviewDate.compareTo(b.nextReviewDate)); // Most overdue first
+    return dueItems.map((item) => item.contentId).toList();
+  }
+
+  /// Get items that were recently failed (quality < 3) or have very low ease factor.
+  Future<List<String>> getRecentlyFailedIds(String userId, {int limit = 10}) async {
+    final failedItems = _box.values
+        .where((item) =>
+            item.userId == userId &&
+            item.contentType == 'flashcards' &&
+            (item.correctStreak == 0 || item.easeFactor < 1.7))
+        .toList();
+    failedItems.sort((a, b) => a.easeFactor.compareTo(b.easeFactor)); // Hardest first
+    return failedItems.take(limit).map((item) => item.contentId).toList();
   }
 
   /// Check if a specific item is already tracked in SRS
@@ -185,6 +213,44 @@ class SpacedRepetitionService {
   Future<void> updateFlashcardProgress(
       String userId, String setId, String flashcardId, bool knewIt) {
     return updateReview(flashcardId, knewIt);
+  }
+
+  /// Demotes a specific flashcard because it was failed in a quiz.
+  /// Sets quality to 1 (Incorrect, but remembered correct answer)
+  Future<void> demoteFlashcard(String flashcardId) async {
+    return updateReview(flashcardId, false, quality: 1);
+  }
+
+  /// Attempts to find a flashcard that matches the quiz question text and demotes it.
+  Future<bool> demoteFlashcardByText(String userId, List<LocalFlashcard> flashcards, String questionText) async {
+    // Basic text matching (case-insensitive, first 30 chars)
+    final normalizedSearch = questionText.toLowerCase().trim();
+    
+    final matchingCard = flashcards.firstWhereOrNull((f) {
+      final fText = f.question.toLowerCase().trim();
+      return fText.contains(normalizedSearch) || normalizedSearch.contains(fText.substring(0, (fText.length < 20 ? fText.length : 20)));
+    });
+
+    if (matchingCard != null) {
+      await demoteFlashcard(matchingCard.id);
+      developer.log('Demoted matching flashcard: ${matchingCard.id}', name: 'SRS');
+      return true;
+    }
+    return false;
+  }
+
+  /// Demotes a random "at risk" or tracked card from a specific list of flashcards.
+  Future<void> demoteRandomFromList(String userId, List<LocalFlashcard> flashcards) async {
+    if (flashcards.isEmpty) return;
+    
+    // Filter cards that are actually tracked in SRS
+    final trackedInSet = flashcards.where((f) => isItemTracked(f.id)).toList();
+    if (trackedInSet.isEmpty) return;
+
+    // Pick a random card
+    final randomCard = (trackedInSet..shuffle()).first;
+    await demoteFlashcard(randomCard.id);
+    developer.log('Demoted random flashcard as penalty: ${randomCard.id}', name: 'SRS');
   }
 
   Future<List<LocalFlashcard>> getDueFlashcards(

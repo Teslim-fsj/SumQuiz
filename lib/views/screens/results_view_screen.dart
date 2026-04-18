@@ -395,11 +395,11 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       height: 48,
       decoration: BoxDecoration(
-        color: theme.cardColor.withOpacity(0.8),
+        color: theme.cardColor.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -492,7 +492,7 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
     return QuizView(
       title: _quiz!.title,
       questions: _quiz!.questions,
-      onAnswer: (isCorrect) {},
+      onAnswer: (bool isCorrect, LocalQuizQuestion question) {},
       onFinish: () {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -521,7 +521,7 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
     return FlashcardsView(
       title: _flashcardSet!.title,
       flashcards: flashcards,
-      onReview: (index, knewIt) {},
+      onReview: (int index, bool knewIt, {int? quality}) {},
       onFinish: () {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

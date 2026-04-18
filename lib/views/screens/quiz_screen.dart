@@ -22,6 +22,9 @@ import '../../services/export_service.dart';
 import 'exam_creation_screen.dart';
 import '../../services/teacher_service.dart';
 import '../../models/teacher_models.dart';
+import '../../services/spaced_repetition_service.dart';
+import '../../models/local_flashcard.dart';
+import 'package:collection/collection.dart';
 
 enum QuizState { creation, loading, inProgress, finished, error }
 
@@ -48,6 +51,7 @@ class _QuizScreenState extends State<QuizScreen> {
   final TextEditingController _titleController = TextEditingController();
   late final EnhancedAIService _aiService;
   final LocalDatabaseService _localDbService = LocalDatabaseService();
+  late final SpacedRepetitionService _srsService;
 
   QuizState _state = QuizState.creation;
   String _loadingMessage = 'Generating Quiz...';
@@ -58,13 +62,16 @@ class _QuizScreenState extends State<QuizScreen> {
 
   int _score = 0;
   String? _quizId;
+  List<LocalFlashcard> _relatedFlashcards = [];
 
   @override
   void initState() {
     super.initState();
     _aiService = EnhancedAIService(
         iapService: Provider.of<IAPService>(context, listen: false));
-    _localDbService.init();
+    _localDbService.init().then((_) {
+      _srsService = SpacedRepetitionService(_localDbService.getSpacedRepetitionBox());
+    });
     _loadQuiz();
   }
 
@@ -85,6 +92,7 @@ class _QuizScreenState extends State<QuizScreen> {
         LocalQuiz? quiz = await _localDbService.getQuiz(widget.id!);
 
         if (quiz == null) {
+          if (!mounted) return;
           final user = Provider.of<UserModel?>(context, listen: false);
           if (user != null) {
             final firestore = FirestoreService();
@@ -137,6 +145,30 @@ class _QuizScreenState extends State<QuizScreen> {
           if (mounted) _generateQuiz();
         });
       }
+    }
+    await _loadRelatedFlashcards();
+  }
+
+  Future<void> _loadRelatedFlashcards() async {
+    if (_quizId == null) return;
+    try {
+      final folderId = await _localDbService.getParentFolderId(_quizId!);
+      if (folderId != null) {
+        final contents = await _localDbService.getFolderContents(folderId);
+        final flashcardSetContent = contents.firstWhereOrNull(
+            (c) => c.contentType == 'flashcardSet' || c.contentType == 'flashcards');
+        if (flashcardSetContent != null) {
+          final flashcardSet =
+              await _localDbService.getFlashcardSet(flashcardSetContent.contentId);
+          if (flashcardSet != null) {
+            setState(() {
+              _relatedFlashcards = flashcardSet.flashcards;
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading related flashcards: $e');
     }
   }
 
@@ -437,12 +469,12 @@ class _QuizScreenState extends State<QuizScreen> {
                     children: [
                       Icon(Icons.person_outline_rounded,
                           size: 16,
-                          color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
                       const SizedBox(width: 6),
                       Text(
                         'Created by ${widget.quiz!.creatorName}',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -496,7 +528,7 @@ class _QuizScreenState extends State<QuizScreen> {
           Text(
             "Crafting challenging questions...",
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -527,7 +559,7 @@ class _QuizScreenState extends State<QuizScreen> {
               _errorMessage,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 32),
@@ -574,7 +606,7 @@ class _QuizScreenState extends State<QuizScreen> {
               Text(
                 'Generate a quiz from your study materials',
                 style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ).animate().fadeIn(delay: 100.ms).slideY(begin: -0.2),
               const SizedBox(height: 48),
@@ -594,7 +626,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 decoration: InputDecoration(
                   hintText: 'e.g., Biology Chapter 5 Quiz',
                   hintStyle: TextStyle(
-                    color: theme.colorScheme.onSurface.withOpacity(0.3),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                   ),
                   filled: true,
                   fillColor: theme.cardColor,
@@ -635,7 +667,7 @@ class _QuizScreenState extends State<QuizScreen> {
                   hintText:
                       'Paste your notes, article, or study material here...',
                   hintStyle: TextStyle(
-                    color: theme.colorScheme.onSurface.withOpacity(0.3),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                   ),
                   filled: true,
                   fillColor: theme.cardColor,
@@ -698,11 +730,27 @@ class _QuizScreenState extends State<QuizScreen> {
           _state = QuizState.finished;
         });
       },
-      onAnswer: (isCorrect) {
+      onAnswer: (bool isCorrect, LocalQuizQuestion question) async {
         if (isCorrect) {
           setState(() {
             _score++;
           });
+        } else {
+          // Linking: Quiz Failure -> SRS Demotion
+          final user = Provider.of<UserModel?>(context, listen: false);
+          if (user != null && _relatedFlashcards.isNotEmpty) {
+            // 1. Try text-based matching
+            final matched = await _srsService.demoteFlashcardByText(
+              user.uid,
+              _relatedFlashcards,
+              question.question,
+            );
+
+            // 2. Fallback to random demotion if no match (user penalty)
+            if (!matched) {
+              await _srsService.demoteRandomFromList(user.uid, _relatedFlashcards);
+            }
+          }
         }
       },
     );
@@ -747,7 +795,7 @@ class _QuizScreenState extends State<QuizScreen> {
               Container(
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
-                  color: performanceColor.withOpacity(0.1),
+                  color: performanceColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -798,7 +846,7 @@ class _QuizScreenState extends State<QuizScreen> {
                     Text(
                       '$_score out of ${_questions.length} correct',
                       style: theme.textTheme.titleLarge?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                   ],

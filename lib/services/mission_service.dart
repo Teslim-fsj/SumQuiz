@@ -64,6 +64,7 @@ class MissionService {
 
     final difficulty = user?.difficultyPreference ?? 3;
     final dueCardIds = await _srs.getDueFlashcardIds(userId);
+    final failedCardIds = await _srs.getRecentlyFailedIds(userId, limit: 15);
     
     List<String> selectedFlashcards = [];
     int targetCount = 10;
@@ -80,19 +81,19 @@ class MissionService {
       momentumReward = 150;
     }
 
-    selectedFlashcards = dueCardIds.take(targetCount).toList();
+    // Combine and prioritize failed cards first, then due cards
+    final combinedPool = [...failedCardIds, ...dueCardIds].toSet().toList();
+    selectedFlashcards = combinedPool.take(targetCount).toList();
 
-    // FALLBACK: If we don't have enough due cards, pick non-due cards to fill the mission
+    // FALLBACK: If we don't have enough cards in the pool, pick random ones
     if (selectedFlashcards.length < targetCount) {
       final allTrackedIds = await _srs.getAllTrackedIds(userId);
-      final nonDueIds =
+      final nonSelectedIds =
           allTrackedIds.where((id) => !selectedFlashcards.contains(id)).toList();
 
-      // Shuffle non-due cards to provide variety
-      nonDueIds.shuffle();
-
+      nonSelectedIds.shuffle();
       final needed = targetCount - selectedFlashcards.length;
-      selectedFlashcards.addAll(nonDueIds.take(needed));
+      selectedFlashcards.addAll(nonSelectedIds.take(needed));
     }
 
     // Ensure all selected cards are scheduled in SRS if they are from a new set

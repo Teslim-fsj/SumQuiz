@@ -40,6 +40,8 @@ import 'package:sumquiz/widgets/notification_navigator.dart';
 import 'package:sumquiz/theme/web_theme.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:sumquiz/services/deep_link_service.dart';
+import 'package:sumquiz/router/app_router.dart';
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
@@ -52,6 +54,12 @@ void callbackDispatcher() {
       final category = inputData['category'] ?? 'general';
 
       try {
+        // WorkManager runs in an isolate — must initialize bindings + Firebase
+        WidgetsFlutterBinding.ensureInitialized();
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
+
         final notificationService = NotificationService();
         await notificationService.initialize();
 
@@ -196,6 +204,9 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     _router = createRouter(widget.authService);
+    
+    // Initialize Deep Links
+    DeepLinkService().initialize(rootNavigatorKey);
   }
 
   Future<void> _scheduleNotificationsOnLaunch(BuildContext context) async {

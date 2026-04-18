@@ -675,7 +675,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           width: 500,
           padding: const EdgeInsets.all(40),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceVariant
+            color: theme.colorScheme.surfaceContainerHighest
                 .withOpacity(0.05),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(

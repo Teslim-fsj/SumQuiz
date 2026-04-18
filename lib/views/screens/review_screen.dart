@@ -272,6 +272,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
         spacing: 12,
         spaceBetweenChildren: 8,
         tooltip: 'Create New Content',
+        children: [
           SpeedDialChild(
             child: const Icon(Icons.school_rounded),
             label: 'Tutor Exam',
@@ -567,7 +568,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
               gradient: LinearGradient(
                 colors: [
                   theme.colorScheme.surface,
-                  theme.colorScheme.surfaceVariant
+                  theme.colorScheme.surfaceContainerHighest
                       .withOpacity(0.3),
                 ],
                 begin: Alignment.topLeft,
@@ -767,7 +768,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
         gradient: LinearGradient(
           colors: [
             theme.colorScheme.surface,
-            theme.colorScheme.surfaceVariant.withOpacity(0.3),
+            theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -826,7 +827,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
         gradient: LinearGradient(
           colors: [
             theme.colorScheme.surface,
-            theme.colorScheme.surfaceVariant.withOpacity(0.3),
+            theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -932,7 +933,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
           gradient: LinearGradient(
             colors: [
               theme.colorScheme.surface,
-              theme.colorScheme.surfaceVariant.withOpacity(0.3),
+              theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -1008,7 +1009,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
         gradient: LinearGradient(
           colors: [
             theme.colorScheme.surface,
-            theme.colorScheme.surfaceVariant.withOpacity(0.3),
+            theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -1490,16 +1491,15 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   Future<void> _checkAccess(
       {required VoidCallback action,
-      required String actionType,
-      bool requirePro = false}) async {
+      required String actionType}) async {
     final authService = Provider.of<AuthService>(context, listen: false);
     final user = authService.currentUser;
     if (user == null) {
-      _showError('User not logged in.');
+      showError('User not logged in.');
       return;
     }
 
-  void _showError(String message) {
+  void showError(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.red),
@@ -1508,7 +1508,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   // --- NEW SOURCE SELECTION LOGIC (Matching CreateContentScreen) ---
 
-  Future<void> _handleSourceSelection(BuildContext context, String type, List<String> extensions) async {
+  Future<void> handleSourceSelection(BuildContext context, String type, List<String> extensions) async {
     final user = Provider.of<UserModel?>(context, listen: false);
     if (user != null && !user.isPro && type != 'pdf') {
        showDialog(context: context, builder: (_) => UpgradeDialog(featureName: '$type Uploads'));
@@ -1530,7 +1530,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
           type,
           fileName: file.name,
           bytes: file.bytes,
-          mime: _getMimeType(file.name),
+          mime: getMimeType(file.name),
         );
         
         if (mounted) {
@@ -1538,11 +1538,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
         }
       }
     } catch (e) {
-      _showError('Error selecting file: $e');
+      showError('Error selecting file: $e');
     }
   }
 
-  void _showTextInputDialog(BuildContext context) {
+  void showTextInputDialog(BuildContext context) {
     final textController = TextEditingController();
     showModalBottomSheet(
       context: context,
@@ -1611,7 +1611,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
     );
   }
 
-  void _showUrlInputDialog(BuildContext context, {bool isYoutube = false}) {
+  void showUrlInputDialog(BuildContext context, {bool isYoutube = false}) {
     final textController = TextEditingController();
     showModalBottomSheet(
       context: context,
@@ -1693,7 +1693,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
     );
   }
 
-  String _getMimeType(String name) {
+  String getMimeType(String name) {
     final ext = name.split('.').last.toLowerCase();
     const map = {
       'pdf': 'application/pdf',

@@ -47,7 +47,7 @@ class NotificationService {
 
     // Set local time zone
     final timeZoneInfo = await FlutterTimezone.getLocalTimezone();
-    final String timeZoneName = timeZoneInfo.identifier;
+    final String timeZoneName = timeZoneInfo.identifier; // The standard getter
     tz.setLocalLocation(tz.getLocation(timeZoneName));
 
     await _loadNotificationTemplates();
@@ -221,7 +221,7 @@ class NotificationService {
       'Test Notification',
       'system_and_updates',
       {},
-      payloadRoute: '/home',
+      payloadRoute: '/',
       days: 0, // Schedule for a few seconds from now for testing
     );
   }
@@ -389,7 +389,7 @@ class NotificationService {
         'id': 1001,
         'title': '🧠 Today\'s Mission is Ready',
         'message': '$cardCount cards • $estimatedMinutes min',
-        'payload': json.encode({'route': '/review'}),
+        'payload': json.encode({'route': '/'}),
         'category': 'mission_priming',
       },
       existingWorkPolicy: ExistingWorkPolicy.replace,
@@ -403,9 +403,6 @@ class NotificationService {
     final prefs = await SharedPreferences.getInstance();
     if (!(prefs.getBool(notificationEnabledKey) ?? true)) return;
 
-    final tz.TZDateTime scheduledDate =
-        tz.TZDateTime.now(tz.local).add(const Duration(hours: 20));
-
     await Workmanager().registerOneOffTask(
       'recall_notification',
       'notification_task',
@@ -414,7 +411,7 @@ class NotificationService {
         'id': 1002,
         'title': '🚀 Yesterday: +$momentumGain Momentum',
         'message': 'Keep the habit alive today!',
-        'payload': json.encode({'route': '/review'}),
+        'payload': json.encode({'route': '/'}),
         'category': 'mission_recall',
       },
       existingWorkPolicy: ExistingWorkPolicy.replace,
@@ -454,7 +451,7 @@ class NotificationService {
         'id': 1003,
         'title': '🔥 Save Your $currentStreak-Day Streak!',
         'message': '$remainingCards cards left • 3 mins to complete',
-        'payload': json.encode({'route': '/review'}),
+        'payload': json.encode({'route': '/'}),
         'category': 'streak_saver',
       },
       existingWorkPolicy: ExistingWorkPolicy.replace,

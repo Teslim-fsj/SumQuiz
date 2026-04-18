@@ -16,7 +16,6 @@ import 'package:sumquiz/views/screens/review_screen.dart';
 import 'package:sumquiz/views/screens/summary_screen.dart';
 import 'package:sumquiz/views/screens/quiz_screen.dart';
 import 'package:sumquiz/views/screens/flashcards_screen.dart';
-import 'package:sumquiz/views/screens/edit_creator_profile_screen.dart';
 import 'package:sumquiz/views/screens/creator_dashboard_screen.dart';
 import 'package:sumquiz/views/screens/preferences_screen.dart';
 import 'package:sumquiz/views/screens/data_storage_screen.dart';
@@ -78,7 +77,7 @@ class GoRouterRefreshStream extends ChangeNotifier {
   }
 }
 
-final _rootNavigatorKey = GlobalKey<NavigatorState>();
+final rootNavigatorKey = GlobalKey<NavigatorState>();
 
 // Keys for shell branches
 final _libraryShellNavigatorKey =
@@ -103,7 +102,7 @@ GoRouter createRouter(AuthService authService) {
 
   return GoRouter(
     initialLocation: '/',
-    navigatorKey: _rootNavigatorKey,
+    navigatorKey: rootNavigatorKey,
     refreshListenable: GoRouterRefreshStream(authStream),
     redirect: (context, state) {
       // Navigation State Helpers
@@ -217,7 +216,7 @@ GoRouter createRouter(AuthService authService) {
                   GoRoute(
                     path: 'summary/:id',
                     name: 'library-summary',
-                    parentNavigatorKey: _rootNavigatorKey,
+                    parentNavigatorKey: rootNavigatorKey,
                     builder: (context, state) {
                       try {
                         final summary = state.extra is LocalSummary
@@ -239,7 +238,7 @@ GoRouter createRouter(AuthService authService) {
                   GoRoute(
                     path: 'quiz/:id',
                     name: 'library-quiz',
-                    parentNavigatorKey: _rootNavigatorKey,
+                    parentNavigatorKey: rootNavigatorKey,
                     builder: (context, state) {
                       try {
                         final quiz = state.extra is LocalQuiz
@@ -261,7 +260,7 @@ GoRouter createRouter(AuthService authService) {
                   GoRoute(
                     path: 'flashcards/:id',
                     name: 'library-flashcards',
-                    parentNavigatorKey: _rootNavigatorKey,
+                    parentNavigatorKey: rootNavigatorKey,
                     builder: (context, state) {
                       try {
                         final set = state.extra is FlashcardSet
@@ -283,7 +282,7 @@ GoRouter createRouter(AuthService authService) {
                   GoRoute(
                     path: 'results-view/:folderId',
                     name: 'results-view',
-                    parentNavigatorKey: _rootNavigatorKey,
+                    parentNavigatorKey: rootNavigatorKey,
                     builder: (context, state) {
                       try {
                         final folderId = state.pathParameters['folderId'];
@@ -400,8 +399,8 @@ GoRouter createRouter(AuthService authService) {
             navigatorKey: _profileShellNavigatorKey,
             routes: <RouteBase>[
               GoRoute(
-                path: '/edit_profile',
-                builder: (context, state) => const EditTeacherProfileScreen(),
+                path: '/profile',
+                builder: (context, state) => const AccountProfileScreen(),
               ),
             ],
           ),

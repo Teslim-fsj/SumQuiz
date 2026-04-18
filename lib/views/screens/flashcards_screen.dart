@@ -623,9 +623,9 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
       creatorName: widget.flashcardSet is LocalFlashcardSet
           ? (widget.flashcardSet as LocalFlashcardSet).creatorName
           : widget.creatorName,
-      onReview: (index, knewIt) {
+      onReview: (index, knewIt, {int? quality}) {
         final flashcardId = _flashcards[index].id;
-        _srsService.updateReview(flashcardId, knewIt);
+        _srsService.updateReview(flashcardId, knewIt, quality: quality);
         if (knewIt) _correctCount++;
       },
       onFinish: () {
