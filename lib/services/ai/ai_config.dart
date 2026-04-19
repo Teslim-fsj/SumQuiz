@@ -2,7 +2,7 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 
 class AIConfig {
   // Retry configuration with exponential backoff
-  static const int maxRetries = 5;
+  static const int maxRetries = 10;
   static const int initialRetryDelayMs = 1000;
   static const int maxRetryDelayMs = 60000;
   static const int requestTimeoutSeconds = 180;
@@ -12,13 +12,14 @@ class AIConfig {
   static const int transcriptTimeoutSeconds = 45;
   static const int webpageTimeoutSeconds = 30;
 
-  // Gemini Series (Optimized for 2026 Production)
-  static const String primaryModel = 'gemini-3.1-flash-lite';
-  static const String secondaryModel = 'gemini-2.5-flash-lite';
-  static const String fallbackModel = 'gemini-3-flash';
-  static const String proModel = 'gemini-3.1-flash'; // Using Flash as Pro is restricted
-  static const String visionModel = 'gemini-3.1-flash-lite';
-  static const String youtubeModel = 'gemini-3.1-flash-lite';
+  // Gemini Series (Verified 2026 Production)
+  static const String primaryModel = 'gemini-3.1-flash-lite-preview';
+  static const String secondaryModel = 'gemini-3-flash-preview';
+  static const String tertiaryModel = 'gemini-2.5-flash-lite';
+  static const String fallbackModel = 'gemini-flash-latest';
+  static const String proModel = 'gemini-3.1-flash-lite-preview'; 
+  static const String visionModel = 'gemini-3.1-flash-lite-preview';
+  static const String youtubeModel = 'gemini-3.1-flash-lite-preview';
 
   // Master extraction timeout — wraps the entire extraction operation
   static const int masterExtractionTimeoutSeconds = 300;

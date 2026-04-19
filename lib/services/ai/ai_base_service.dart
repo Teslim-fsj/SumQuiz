@@ -38,7 +38,8 @@ abstract class AIBaseService {
   GenerativeModel? _model;
   GenerativeModel? _secondaryModel; // Tier 2 fallback
   GenerativeModel? _proModel;
-  GenerativeModel? _fallbackModel; // Tier 3 fallback
+  GenerativeModel? _tertiaryModel;
+  GenerativeModel? _fallbackModel; // Tier 4 fallback
   GenerativeModel? _visionModel;
   GenerativeModel? _youtubeModel;
   GenerativeModel? _educatorModel;
@@ -79,6 +80,12 @@ abstract class AIBaseService {
         generationConfig: AIConfig.proGenerationConfig,
       );
 
+      _tertiaryModel = GenerativeModel(
+        model: AIConfig.tertiaryModel,
+        apiKey: apiKey,
+        generationConfig: AIConfig.defaultGenerationConfig,
+      );
+      
       _fallbackModel = GenerativeModel(
         model: AIConfig.fallbackModel,
         apiKey: apiKey,
@@ -208,6 +215,7 @@ abstract class AIBaseService {
   GenerativeModel get youtubeModel => _youtubeModel!;
   GenerativeModel get educatorModel => _educatorModel!;
   GenerativeModel get extractorModel => _extractorModel!;
+  String? get initializationError => _initializationError;
 
   Future<String> generateWithRetry(String prompt,
       {GenerativeModel? customModel,
@@ -270,7 +278,7 @@ abstract class AIBaseService {
         modelChain.add(_fallbackModel!);
       }
     } else {
-      modelChain.addAll([_model, _secondaryModel, _fallbackModel]
+      modelChain.addAll([_model, _secondaryModel, _tertiaryModel, _fallbackModel]
           .whereType<GenerativeModel>());
     }
 
@@ -319,10 +327,15 @@ abstract class AIBaseService {
             errorMsg.contains('resource_exhausted') ||
             errorMsg.contains('full') ||
             errorMsg.contains('overloaded');
+        final isServerIssue = errorMsg.contains('500') ||
+            errorMsg.contains('503') ||
+            errorMsg.contains('504') ||
+            errorMsg.contains('server error') ||
+            errorMsg.contains('unavailable');
         final isTimeout = e is TimeoutException;
 
-        // Cascade to next model in chain on quota/timeout
-        if ((isQuotaError || isTimeout) && modelIndex < modelChain.length - 1) {
+        // Cascade to next model in chain on quota/server issues/timeout
+        if ((isQuotaError || isServerIssue || isTimeout) && modelIndex < modelChain.length - 1) {
           modelIndex++;
           developer.log(
               'Cascading to next model (attempt $attempt) due to: $e',
