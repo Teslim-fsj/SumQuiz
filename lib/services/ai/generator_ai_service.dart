@@ -23,16 +23,6 @@ class GeneratorAIService extends AIBaseService {
         name: 'GeneratorAIService');
     final config = GenerationConfig(
       responseMimeType: 'application/json',
-      responseSchema: Schema.object(
-        properties: {
-          'title': Schema.string(description: 'Clear, topic-focused title'),
-          'content': Schema.string(
-              description: 'Detailed study guide in Markdown format'),
-          'tags': Schema.array(
-              items: Schema.string(), description: '3-5 relevant keywords'),
-        },
-        requiredProperties: ['title', 'content', 'tags'],
-      ),
     );
 
     final prompt =
@@ -53,6 +43,13 @@ OUTPUT REQUIREMENTS:
    - Include a "Quick Review" or "Summary Points" section at the end.
    - Add Memory Aids/Mnemonics where helpful.
 4. **Tone**: Academic, clear, and informative.
+
+OUTPUT EXACTLY IN THIS JSON FORMAT:
+{
+  "title": "Topic-focused title",
+  "content": "# Overview\\n\\nMarkdown formatted content...",
+  "tags": ["keyword1", "keyword2", "keyword3"]
+}
 
 Text: $text''';
 
@@ -111,34 +108,6 @@ Text: $text''';
         name: 'GeneratorAIService');
     final config = GenerationConfig(
       responseMimeType: 'application/json',
-      responseSchema: Schema.object(
-        properties: {
-          'title': Schema.string(),
-          'questions': Schema.array(
-            items: Schema.object(
-              properties: {
-                'question': Schema.string(description: 'Exam-style question'),
-                'options': Schema.array(
-                    items: Schema.string(),
-                    description: '4 options (only for Multiple Choice or True/False)'),
-                'correctAnswer': Schema.string(
-                    description: 'The exact matching correct option or answer'),
-                'explanation': Schema.string(
-                    description: 'Detailed explanation of the correct answer'),
-                'questionType': Schema.string(
-                    description: 'Specific type from: $typesStr'),
-              },
-              requiredProperties: [
-                'question',
-                'correctAnswer',
-                'explanation',
-                'questionType'
-              ],
-            ),
-          ),
-        },
-        requiredProperties: ['title', 'questions'],
-      ),
     );
 
     final prompt =
@@ -151,6 +120,20 @@ QUIZ RULES:
 3. For Multiple Choice / True-False: Options must be plausible distractors related to the topic.
 4. For Short Answer: Ensure the correctAnswer is concise (1-5 words).
 5. Explanations must be thorough, explaining WHY the answer is correct and briefly why others are incorrect if applicable.
+
+OUTPUT EXACTLY IN THIS JSON FORMAT:
+{
+  "title": "Quiz Title",
+  "questions": [
+    {
+      "question": "Sample text?",
+      "options": ["A", "B", "C", "D"],
+      "correctAnswer": "A",
+      "explanation": "Why this is right.",
+      "questionType": "Multiple Choice"
+    }
+  ]
+}
 
 Text: $text''';
 
@@ -213,25 +196,7 @@ Text: $text''';
         'Generating $difficulty flashcards ($cardCount) for text length: ${text.length}',
         name: 'GeneratorAIService');
     final config = GenerationConfig(
-      // ... (rest of config)
       responseMimeType: 'application/json',
-      responseSchema: Schema.object(
-        properties: {
-          'title': Schema.string(),
-          'flashcards': Schema.array(
-            items: Schema.object(
-              properties: {
-                'question':
-                    Schema.string(description: 'Concise question or concept'),
-                'answer':
-                    Schema.string(description: 'Precise answer or definition'),
-              },
-              requiredProperties: ['question', 'answer'],
-            ),
-          ),
-        },
-        requiredProperties: ['title', 'flashcards'],
-      ),
     );
 
     final prompt = '''Create $cardCount active-recall flashcards from the text.
@@ -242,6 +207,17 @@ FLASHCARD PRINCIPLES:
 - **Clarity**: Use clear, unambiguous language.
 - **Focus**: Target high-yield facts, crucial definitions, and pivotal concepts.
 - **Variety**: Use a mix of "What is...", "How does...", and "Identify the..." style questions.
+
+OUTPUT EXACTLY IN THIS JSON FORMAT:
+{
+  "title": "Deck Title",
+  "flashcards": [
+    {
+      "question": "Front of card",
+      "answer": "Back of card"
+    }
+  ]
+}
 
 Text: $text''';
 
@@ -350,11 +326,29 @@ Text: $text''';
     LEVEL: $depthInstruction
     STUDY ARCHETYPE: ${archetype == StudyArchetype.sprinter ? "The Sprinter (High-intensity, condensed, rapid review style)" : "The Architect (Structural mastery, core concepts, deep mental models)"}
 
-    GENERATE:
-    1. **TITLE**: Engaging title.
-    2. **SUMMARY**: Structured sections with bullet points.
-    3. **QUIZ**: 15 distinct questions from these types: ($typesStr). For each, provide question, options (if MC/TF), correctAnswer, explanation, and questionType.
-    4. **FLASHCARDS**: $cardCount question-answer pairs.''';
+    GENERATE IN THIS EXACT JSON FORMAT:
+    {
+      "title": "Clear Engaging Title",
+      "summary": {
+        "content": "# Overview\\n\\nMarkdown formatted content here...",
+        "tags": ["keyword1", "keyword2"]
+      },
+      "quiz": [
+        {
+          "question": "Sample question text",
+          "options": ["Option A", "Option B", "Option C", "Option D"],
+          "correctAnswer": "Option A",
+          "explanation": "Why this is correct.",
+          "questionType": "Multiple Choice"
+        }
+      ],
+      "flashcards": [
+        {
+          "question": "Front of card",
+          "answer": "Back of card"
+        }
+      ]
+    }''';
 
     try {
       final response = await generateWithRetry(prompt,
@@ -362,45 +356,6 @@ Text: $text''';
           cancelToken: cancelToken,
           generationConfig: GenerationConfig(
             responseMimeType: 'application/json',
-            responseSchema: Schema.object(
-              properties: {
-                'title': Schema.string(),
-                'summary': Schema.object(
-                  properties: {
-                    'content': Schema.string(),
-                    'tags': Schema.array(items: Schema.string()),
-                  },
-                  requiredProperties: ['content', 'tags'],
-                ),
-                'quiz': Schema.array(
-                  items: Schema.object(
-                    properties: {
-                      'question': Schema.string(),
-                      'options': Schema.array(items: Schema.string()),
-                      'correctAnswer': Schema.string(),
-                      'explanation': Schema.string(),
-                      'questionType': Schema.string(),
-                    },
-                    requiredProperties: [
-                      'question',
-                      'correctAnswer',
-                      'explanation',
-                      'questionType'
-                    ],
-                  ),
-                ),
-                'flashcards': Schema.array(
-                  items: Schema.object(
-                    properties: {
-                      'question': Schema.string(),
-                      'answer': Schema.string(),
-                    },
-                    requiredProperties: ['question', 'answer'],
-                  ),
-                ),
-              },
-              requiredProperties: ['title', 'summary', 'quiz', 'flashcards'],
-            ),
           ));
       final jsonStr = extractJson(response);
       final data = safeJsonDecode(jsonStr);
@@ -436,33 +391,6 @@ Text: $text''';
 
     final config = GenerationConfig(
       responseMimeType: 'application/json',
-      responseSchema: Schema.object(
-        properties: {
-          'questions': Schema.array(
-            items: Schema.object(
-              properties: {
-                'question': Schema.string(description: 'Exam-style question'),
-                'options': Schema.array(
-                    items: Schema.string(),
-                    description: '4 options (only for Multiple Choice or True/False)'),
-                'correctAnswer': Schema.string(
-                    description: 'The exact matching correct option or answer'),
-                'explanation': Schema.string(
-                    description: 'Detailed explanation of the correct answer or marking scheme'),
-                'questionType': Schema.string(
-                    description: 'Specific type from: $typesStr'),
-              },
-              requiredProperties: [
-                'question',
-                'correctAnswer',
-                'explanation',
-                'questionType'
-              ],
-            ),
-          ),
-        },
-        requiredProperties: ['questions'],
-      ),
     );
 
     final prompt =
@@ -487,7 +415,18 @@ Text: $text''';
     SOURCE TEXT:
     $text
 
-    OUTPUT FORMAT: JSON only.''';
+    OUTPUT EXACTLY IN THIS JSON FORMAT:
+    {
+      "questions": [
+        {
+          "question": "Question text here?",
+          "options": ["Option A", "Option B", "Option C", "Option D"],
+          "correctAnswer": "Option A",
+          "explanation": "Why this is correct.",
+          "questionType": "Multiple Choice"
+        }
+      ]
+    }''';
 
     try {
       final response = await generateWithRetry(
