@@ -1436,9 +1436,15 @@ class _CreateContentScreenState extends State<CreateContentScreen>
 
   String _getUserFriendlyError(dynamic error) {
     final errorStr = error.toString().toLowerCase();
-    if (errorStr.contains('rate limit')) {
-      return '🚦 Neural circuits overloaded. Please wait a minute and retry.';
+    
+    if (errorStr.contains('neural pathway to clear') || errorStr.contains('over-saturated')) {
+      return '🚦 Neural circuits are critical. We are pausing to let the systems recover. Please wait 2-3 minutes.';
     }
+    
+    if (errorStr.contains('rate limit') || errorStr.contains('quota exceeded')) {
+      return '🏎️ Speed limit reached. Shifting to fallback intelligence. Please retry in 30 seconds.';
+    }
+    
     if (errorStr.contains('api') || errorStr.contains('quota') || errorStr.contains('full') || errorStr.contains('overloaded')) {
       return '🔑 Intelligence access is currently full or restricted. Please try again in 30 seconds.';
     }

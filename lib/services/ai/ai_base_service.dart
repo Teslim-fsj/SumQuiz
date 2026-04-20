@@ -264,6 +264,15 @@ abstract class AIBaseService {
           code: 'SERVICE_NOT_READY');
     }
 
+    // --- 2026 Anomaly Guardrail ---
+    if (AIConfig.isCriticalAnomaly) {
+      developer.log('CRITICAL: Blocking request due to high anomaly score (${AIConfig.anomalyScore})', 
+          name: 'AIBaseService', level: 1000);
+      throw AIServiceException(
+          'Learning circuits are currently over-saturated. Please wait a few minutes for the neural pathway to clear.',
+          code: 'SYSTEM_OVERLOADED');
+    }
+
     // Sanitize any TextPart in the parts
     final sanitizedParts = parts.map((part) {
       if (part is TextPart) {
@@ -362,6 +371,13 @@ abstract class AIBaseService {
             errorMsg.contains('server error') ||
             errorMsg.contains('unavailable');
         final isTimeout = e is TimeoutException;
+
+        // --- 2026 Anomaly Reporting ---
+        if (isQuotaError || isServerIssue) {
+          AIConfig.recordAction(isQuotaError ? 15 : 40); // Server issues carry higher weight
+          developer.log('ANOMALY: Updated score to ${AIConfig.anomalyScore} due to $e', 
+              name: 'AIBaseService');
+        }
 
         // --- Model Cascade Logic ---
         // If we hit a quota or server error, and we have more models in the chain,
