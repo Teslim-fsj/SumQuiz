@@ -2,8 +2,8 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 
 class AIConfig {
   // Retry configuration with exponential backoff
-  static const int maxRetries = 10;
-  static const int initialRetryDelayMs = 1000;
+  static const int maxRetries = 3;
+  static const int initialRetryDelayMs = 2000;
   static const int maxRetryDelayMs = 60000;
   static const int requestTimeoutSeconds = 180;
 
@@ -77,4 +77,24 @@ class AIConfig {
         maxOutputTokens: maxOutputTokens * 2,
         responseMimeType: 'application/json',
       );
+
+  // --- Global Anomaly Guardrails (Silent Survival System) ---
+  static int anomalyScore = 0;
+  static DateTime lastAnomalyAction = DateTime.now();
+  
+  static bool get isAnomalyDetected => anomalyScore > 100; // Threshold for suspicious burst
+  static bool get isCriticalAnomaly => anomalyScore > 250; // Threshold for severe throttling
+  
+  static void recordAction(int intensity) {
+    final now = DateTime.now();
+    if (now.difference(lastAnomalyAction).inMinutes > 30) {
+      if (anomalyScore > 50) {
+        anomalyScore -= 50; // Decay over time
+      } else {
+        anomalyScore = 0;
+      }
+    }
+    anomalyScore += intensity;
+    lastAnomalyAction = now;
+  }
 }

@@ -483,123 +483,128 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
     final theme = Theme.of(context);
     final user = Provider.of<UserModel?>(context);
 
-    // Only block if they are at the limit AND not Pro
-    if (user != null && !user.isPro && user.examsGenerated >= 3) {
+    // Only block if they are at the limit AND not Pro AND NOT a teacher
+    if (user != null &&
+        !user.isPro &&
+        user.role != UserRole.creator &&
+        user.examsGenerated >= 3) {
       return _buildUpgradeScreen();
     }
 
-    return Container(
-      color: const Color(0xFFF1F5F9), 
-      child: Stack(
-        children: [
-          (_isProcessingSource || _isGeneratingQuestions) ? _buildOverlayLoading() : const SizedBox.shrink(),
-          Column(
-            children: [
-              _buildModernStepIndicator(),
-              Expanded(
-                child: PageView(
-                  controller: _pageController,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: [
-                    // STEP 1: SETUP
-                    WebExamSetupStep(
-                      titleController: _titleController,
-                      subjectController: _subjectController,
-                      schoolNameController: _schoolNameController,
-                      durationController: _durationController,
-                      selectedLevel: _selectedLevel,
-                      onLevelChanged: (v) => setState(() => _selectedLevel = v ?? _selectedLevel),
-                      onPickSourcePdf: () => _pickSource('PDF'),
-                      onPickSourceNotes: () => _pickSource('Notes'),
-                      onPickSourceYoutube: () {
-                        if (!userMayImportFromYouTube(user)) {
-                          showDialog<void>(
-                            context: context,
-                            builder: (_) => const UpgradeDialog(
-                              featureName: 'YouTube import',
-                            ),
-                          );
-                          return;
-                        }
-                        _showYoutubeInputDialog();
-                      },
-                      onNext: _nextStep,
-                      hasSource: _sourceMaterial.isNotEmpty,
-                      uploadStatusMessage: _processedFileNames.isNotEmpty ? 'Processed: ${_processedFileNames.join(", ")}' : 'Material Ready',
-                    ),
-                    // STEP 2: CONFIGURATION
-                    WebExamConfigStep(
-                      numberOfQuestions: _numberOfQuestions,
-                      onQuestionsChanged: (v) => setState(() => _numberOfQuestions = v.round()),
-                      easyCount: (_numberOfQuestions * _easyRatio).round(),
-                      mediumCount: (_numberOfQuestions * (1.0 - _easyRatio - _hardRatio)).round(),
-                      hardCount: (_numberOfQuestions * _hardRatio).round(),
-                      onEasyChanged: (v) => setState(() {
-                        _easyRatio = v;
-                        if (_easyRatio + _hardRatio > 1.0) _hardRatio = 1.0 - _easyRatio;
-                      }),
-                      onHardChanged: (v) => setState(() {
-                        _hardRatio = v;
-                        if (_easyRatio + _hardRatio > 1.0) _easyRatio = 1.0 - _hardRatio;
-                      }),
-                      includeMultipleChoice: _includeMultipleChoice,
-                      includeTrueFalse: _includeTrueFalse,
-                      includeTheory: _includeTheory,
-                      includeFillInBlank: _includeShortAnswer,
-                      onTypeToggled: (type, val) {
-                        setState(() {
-                          if (type == 'mcq') _includeMultipleChoice = val;
-                          if (type == 'tf') _includeTrueFalse = val;
-                          if (type == 'theory') _includeTheory = val;
-                          if (type == 'fib') _includeShortAnswer = val;
-                        });
-                      },
-                      evenTopicCoverage: _evenTopicCoverage,
-                      focusWeakAreas: _focusWeakAreas,
-                      onRuleToggled: (rule, val) {
-                        setState(() {
-                          if (rule == 'even') _evenTopicCoverage = val;
-                          if (rule == 'weak') _focusWeakAreas = val;
-                        });
-                      },
-                      onFinalize: () async {
-                        await _generateQuestions();
-                        if (_generatedQuestions.isNotEmpty) {
-                          _nextStep();
-                        }
-                      },
-                      onBack: _prevStep,
-                      isGenerating: _isGeneratingQuestions,
-                    ),
-                    // STEP 3: REVIEW
-                    WebExamReviewStep(
-                      questions: _generatedQuestions,
-                      onRegenerate: _regenerateQuestion,
-                      onQuestionChanged: (index, updatedQ) {
-                        setState(() {
-                          _generatedQuestions[index] = updatedQ;
-                        });
-                      },
-                      onBack: _prevStep,
-                      onSaveLibrary: () {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved to Library.')));
-                        context.go('/library');
-                      },
-                      onPdfExport: _exportExam,
-                      onPublish: () {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Publishing to Class...')));
-                      },
-                      easyCount: (_numberOfQuestions * _easyRatio).round(),
-                      mediumCount: (_numberOfQuestions * (1.0 - _easyRatio - _hardRatio)).round(),
-                      hardCount: (_numberOfQuestions * _hardRatio).round(),
-                      topicCounts: const {'Metabolism': 8, 'Cell Structures': 12, 'Genetics': 5},
-                    ),
-                  ],
+    return Scaffold(
+      body: Container(
+        color: const Color(0xFFF1F5F9), 
+        child: Stack(
+          children: [
+            (_isProcessingSource || _isGeneratingQuestions) ? _buildOverlayLoading() : const SizedBox.shrink(),
+            Column(
+              children: [
+                _buildModernStepIndicator(),
+                Expanded(
+                  child: PageView(
+                    controller: _pageController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      // STEP 1: SETUP
+                      WebExamSetupStep(
+                        titleController: _titleController,
+                        subjectController: _subjectController,
+                        schoolNameController: _schoolNameController,
+                        durationController: _durationController,
+                        selectedLevel: _selectedLevel,
+                        onLevelChanged: (v) => setState(() => _selectedLevel = v ?? _selectedLevel),
+                        onPickSourcePdf: () => _pickSource('PDF'),
+                        onPickSourceNotes: () => _pickSource('Notes'),
+                        onPickSourceYoutube: () {
+                          if (!userMayImportFromYouTube(user)) {
+                            showDialog<void>(
+                              context: context,
+                              builder: (_) => const UpgradeDialog(
+                                featureName: 'YouTube import',
+                              ),
+                            );
+                            return;
+                          }
+                          _showYoutubeInputDialog();
+                        },
+                        onNext: _nextStep,
+                        hasSource: _sourceMaterial.isNotEmpty,
+                        uploadStatusMessage: _processedFileNames.isNotEmpty ? 'Processed: ${_processedFileNames.join(", ")}' : 'Material Ready',
+                      ),
+                      // STEP 2: CONFIGURATION
+                      WebExamConfigStep(
+                        numberOfQuestions: _numberOfQuestions,
+                        onQuestionsChanged: (v) => setState(() => _numberOfQuestions = v.round()),
+                        easyCount: (_numberOfQuestions * _easyRatio).round(),
+                        mediumCount: (_numberOfQuestions * (1.0 - _easyRatio - _hardRatio)).round(),
+                        hardCount: (_numberOfQuestions * _hardRatio).round(),
+                        onEasyChanged: (v) => setState(() {
+                          _easyRatio = v;
+                          if (_easyRatio + _hardRatio > 1.0) _hardRatio = 1.0 - _easyRatio;
+                        }),
+                        onHardChanged: (v) => setState(() {
+                          _hardRatio = v;
+                          if (_easyRatio + _hardRatio > 1.0) _easyRatio = 1.0 - _hardRatio;
+                        }),
+                        includeMultipleChoice: _includeMultipleChoice,
+                        includeTrueFalse: _includeTrueFalse,
+                        includeTheory: _includeTheory,
+                        includeFillInBlank: _includeShortAnswer,
+                        onTypeToggled: (type, val) {
+                          setState(() {
+                            if (type == 'mcq') _includeMultipleChoice = val;
+                            if (type == 'tf') _includeTrueFalse = val;
+                            if (type == 'theory') _includeTheory = val;
+                            if (type == 'fib') _includeShortAnswer = val;
+                          });
+                        },
+                        evenTopicCoverage: _evenTopicCoverage,
+                        focusWeakAreas: _focusWeakAreas,
+                        onRuleToggled: (rule, val) {
+                          setState(() {
+                            if (rule == 'even') _evenTopicCoverage = val;
+                            if (rule == 'weak') _focusWeakAreas = val;
+                          });
+                        },
+                        onFinalize: () async {
+                          await _generateQuestions();
+                          if (_generatedQuestions.isNotEmpty) {
+                            _nextStep();
+                          }
+                        },
+                        onBack: _prevStep,
+                        isGenerating: _isGeneratingQuestions,
+                      ),
+                      // STEP 3: REVIEW
+                      WebExamReviewStep(
+                        questions: _generatedQuestions,
+                        onRegenerate: _regenerateQuestion,
+                        onQuestionChanged: (index, updatedQ) {
+                          setState(() {
+                            _generatedQuestions[index] = updatedQ;
+                          });
+                        },
+                        onBack: _prevStep,
+                        onSaveLibrary: () {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved to Library.')));
+                          context.go('/library');
+                        },
+                        onPdfExport: _exportExam,
+                        onPublish: () {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Publishing to Class...')));
+                        },
+                        easyCount: (_numberOfQuestions * _easyRatio).round(),
+                        mediumCount: (_numberOfQuestions * (1.0 - _easyRatio - _hardRatio)).round(),
+                        hardCount: (_numberOfQuestions * _hardRatio).round(),
+                        topicCounts: const {'Metabolism': 8, 'Cell Structures': 12, 'Genetics': 5},
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

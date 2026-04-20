@@ -63,8 +63,11 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
     final user = Provider.of<UserModel?>(context, listen: false);
 
     // Check if user has Pro access
-    // Check if user has Pro access OR has trial exams remaining
-    if (user != null && !user.isPro && user.examsGenerated >= 3) {
+    // Check if user has Pro access OR has trial exams remaining OR is a teacher
+    if (user != null &&
+        !user.isPro &&
+        user.role != UserRole.creator &&
+        user.examsGenerated >= 3) {
       // Show upgrade dialog if user is not Pro
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted) {

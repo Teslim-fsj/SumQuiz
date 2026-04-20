@@ -82,7 +82,7 @@ class MissionService {
     }
 
     // Combine and prioritize failed cards first, then due cards
-    final combinedPool = [...failedCardIds, ...dueCardIds].toSet().toList();
+    final List<String> combinedPool = [...failedCardIds, ...dueCardIds].toSet().toList();
     selectedFlashcards = combinedPool.take(targetCount).toList();
 
     // FALLBACK: If we don't have enough cards in the pool, pick random ones

@@ -22,27 +22,20 @@ class _CreatorTabViewState extends State<CreatorTabView> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    return Container(
+      color: Colors.white,
       child: SingleChildScrollView(
         controller: _scrollController,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1200),
-            child: Container(
-              color: Colors.white,
-              child: Column(
-                children: [
-                  _buildTabToggle(),
-                  _buildHeroSection(),
-                  _buildTrustBanner(),
-                  _buildEducatorFrameworkSection(),
-                  _buildDeepScanFeature(),
-                  _buildCtaFooter(),
-                  _buildFooter(),
-                ],
-              ),
-            ),
-          ),
+        child: Column(
+          children: [
+            _buildTabToggle(),
+            _buildHeroSection(),
+            _buildTrustBanner(),
+            _buildEducatorFrameworkSection(),
+            _buildDeepScanFeature(),
+            _buildCtaFooter(),
+            _buildFooter(),
+          ],
         ),
       ),
     );
@@ -183,7 +176,7 @@ class _CreatorTabViewState extends State<CreatorTabView> {
           ],
         )
       ],
-    ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1);
+    );
   }
 
   Widget _buildHeroImage({required bool isMobile}) {
@@ -211,7 +204,7 @@ class _CreatorTabViewState extends State<CreatorTabView> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10))],
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, 10))],
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,

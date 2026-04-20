@@ -16,6 +16,7 @@ class GeneratorAIService extends AIBaseService {
       {String? userId,
       String difficulty = 'intermediate',
       StudyArchetype archetype = StudyArchetype.architect,
+      bool isPro = false,
       CancellationToken? cancelToken}) async {
     developer.log(
         'Generating $difficulty summary for text length: ${text.length}',
@@ -59,6 +60,7 @@ Text: $text''';
       final response = await generateWithRetry(prompt,
           customModel: educatorModel,
           generationConfig: config,
+          isPro: isPro,
           cancelToken: cancelToken);
       developer.log('AI Response received for summary',
           name: 'GeneratorAIService');
@@ -100,6 +102,7 @@ Text: $text''';
       int questionCount = 10,
       String difficulty = 'intermediate',
       List<String>? questionTypes,
+      bool isPro = false,
       CancellationToken? cancelToken}) async {
     final types = questionTypes ?? ['Multiple Choice'];
     final typesStr = types.join(', ');
@@ -155,6 +158,7 @@ Text: $text''';
       final response = await generateWithRetry(prompt,
           customModel: educatorModel,
           generationConfig: config,
+          isPro: isPro,
           cancelToken: cancelToken);
       developer.log('AI Response received for quiz',
           name: 'GeneratorAIService');
@@ -203,6 +207,7 @@ Text: $text''';
       {String? userId,
       int cardCount = 15,
       String difficulty = 'intermediate',
+      bool isPro = false,
       CancellationToken? cancelToken}) async {
     developer.log(
         'Generating $difficulty flashcards ($cardCount) for text length: ${text.length}',

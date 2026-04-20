@@ -15,71 +15,59 @@ class WebPaymentResult {
 
 class WebPaymentConstants {
   static const Map<String, String> paymentLinks = {
-    'sumquiz_daily_pass': 'https://flutterwave.com/pay/w8eb6w1jnsox',
-    'sumquiz_weekly_pass': 'https://flutterwave.com/pay/zaaqcr9zpodx',
-    'sumquiz_pro_monthly': 'https://flutterwave.com/pay/gidkziu2moty',
-    'sumquiz_pro_yearly': 'https://flutterwave.com/pay/qmbmwzf3wgin',
-    'sumquiz_pro_lifetime': 'https://flutterwave.com/pay/zw38gkrfab5e',
+    'sumquiz_pro_starter': 'https://flutterwave.com/pay/k1ijhcevlnoy',
+    'sumquiz_pro_monthly': 'https://flutterwave.com/pay/utemnb0kmwqy',
+    'sumquiz_pro_elite': 'https://flutterwave.com/pay/pwd53ngb4wll',
+    'sumquiz_pro_creator': 'https://flutterwave.com/pay/hsa40yzdwv7l',
   };
 }
 
 class WebPaymentService {
-  static const String appName = "SumQuiz Pro";
+  static const String appName = "SumQuiz AI";
   static const String currency = "USD";
 
-  /// Centralized Product Definitions for Web
+  /// Centralized Product Definitions for Web (Aligned with 2026 Credit Economy)
   static final List<ProductDetails> webProducts = [
-    // Quick Access Passes
     ProductDetails(
-      id: 'sumquiz_daily_pass',
-      title: 'Daily Pass',
-      description: 'Unlimited access for 24 hours',
-      price: r'\$0.99',
-      rawPrice: 0.99,
+      id: 'sumquiz_pro_starter',
+      title: 'Starter Academic',
+      description: '50 Study Sessions + PDF Insights',
+      price: r'$7.99',
+      rawPrice: 7.99,
       currencyCode: 'USD',
     ),
-    ProductDetails(
-      id: 'sumquiz_weekly_pass',
-      title: 'Weekly Pass',
-      description: 'Unlimited access for 7 days',
-      price: r'\$4.99',
-      rawPrice: 4.99,
-      currencyCode: 'USD',
-    ),
-    // Subscription Plans
     ProductDetails(
       id: 'sumquiz_pro_monthly',
-      title: 'SumQuiz Pro Monthly',
-      description: 'Monthly Subscription',
-      price: r'\$14.99',
+      title: 'High-Performer Pro',
+      description: '160 Study Sessions + YouTube Analysis',
+      price: r'$14.99',
       rawPrice: 14.99,
       currencyCode: 'USD',
     ),
     ProductDetails(
-      id: 'sumquiz_pro_yearly',
-      title: 'SumQuiz Pro Annual',
-      description: 'Annual Subscription',
-      price: r'\$99.00',
-      rawPrice: 99.00,
+      id: 'sumquiz_pro_elite',
+      title: 'Dean\'s List Elite',
+      description: '400 Study Sessions + Exam Generation',
+      price: r'$29.99',
+      rawPrice: 29.99,
       currencyCode: 'USD',
     ),
     ProductDetails(
-      id: 'sumquiz_pro_lifetime',
-      title: 'SumQuiz Pro Lifetime',
-      description: 'Lifetime Access',
-      price: r'\$249.99',
-      rawPrice: 249.99,
+      id: 'sumquiz_pro_creator',
+      title: 'Master Educator',
+      description: '1,000+ Generations + Advanced Analytics',
+      price: r'$49.99',
+      rawPrice: 49.99,
       currencyCode: 'USD',
     ),
   ];
 
-  Future<List<ProductDetails>> getAvailableProducts() async {
+  Future<List<ProductDetails>> getAvailableProducts(bool isCreator) async {
     await Future.delayed(const Duration(milliseconds: 500));
-    // Only return Monthly and Yearly for the core subscription offering
-    return webProducts
-        .where((p) =>
-            p.id == 'sumquiz_pro_monthly' || p.id == 'sumquiz_pro_yearly')
-        .toList();
+    if (isCreator) {
+      return webProducts.where((p) => p.id == 'sumquiz_pro_creator').toList();
+    }
+    return webProducts.where((p) => p.id != 'sumquiz_pro_creator').toList();
   }
 
   Future<WebPaymentResult> processWebPurchase({

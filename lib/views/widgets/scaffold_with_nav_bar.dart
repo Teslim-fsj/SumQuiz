@@ -223,7 +223,13 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: _isExpanded ? 20 : 12, vertical: 12),
                         child: InkWell(
-                          onTap: () => goToBranch(2),
+                          onTap: () {
+                            if (isTeacher) {
+                              context.go('/create-content/exam-wizard');
+                            } else {
+                              goToBranch(2);
+                            }
+                          },
                           borderRadius: BorderRadius.circular(100),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 300),

@@ -53,9 +53,17 @@ class UserModel {
   final DateTime? lastVerified;
   final String? purchaseToken;
 
+  // Credit Economy Fields
+  final int credits;
+  final int lifetimeCreditsEarned;
+  final bool isTrialActive;
+  final DateTime? trialStartDate;
+  final DateTime? lastCreditRefillDate;
+
   // Creator Profile
   final Map<String, dynamic> creatorProfile;
   final bool isEmailVerified;
+  final String? tier; // Human-readable plan name for manual Firestore selection
 
   UserModel({
     required this.uid,
@@ -95,6 +103,12 @@ class UserModel {
     this.creatorProfile = const {},
     this.photoUrl,
     this.isEmailVerified = false,
+    this.credits = 20, // Default for 🆓 FREE TIER
+    this.lifetimeCreditsEarned = 20,
+    this.isTrialActive = false,
+    this.trialStartDate,
+    this.lastCreditRefillDate,
+    this.tier = 'free', // Default tier
   }) : _isTrialUser = isTrial;
 
   String? get photoURL => photoUrl;
@@ -102,15 +116,18 @@ class UserModel {
   /// Returns true if user has active Pro access
   /// Priority: Creator Pro > Active Subscription
   bool get isPro {
-    // 1. Creator Bonus (permanent Pro access)
+    // 1. Manual Tier Override (Firestore selection)
+    if (tier != null && tier != 'free') return true;
+
+    // 2. Creator Bonus (permanent Pro access)
     if (isCreatorPro) return true;
 
-    // 2. Active Subscription (includes trial and paid)
+    // 3. Active Subscription (includes trial and paid)
     if (subscriptionExpiry != null) {
       return subscriptionExpiry!.isAfter(TimeSyncService.now);
     }
 
-    // 3. Not Pro
+    // 4. Not Pro
     return false;
   }
 
@@ -171,6 +188,12 @@ class UserModel {
       creatorProfile: data['creatorProfile'] ?? {},
       photoUrl: data['photoUrl'] ?? data['photoURL'],
       isEmailVerified: data['isEmailVerified'] ?? false,
+      credits: data['credits'] ?? 20,
+      lifetimeCreditsEarned: data['lifetimeCreditsEarned'] ?? 20,
+      isTrialActive: data['isTrialActive'] ?? false,
+      trialStartDate: (data['trialStartDate'] as Timestamp?)?.toDate(),
+      lastCreditRefillDate: (data['lastCreditRefillDate'] as Timestamp?)?.toDate(),
+      tier: data['tier'] ?? 'free',
     );
   }
 
@@ -216,6 +239,12 @@ class UserModel {
       'creatorProfile': creatorProfile,
       'photoUrl': photoUrl,
       'isEmailVerified': isEmailVerified,
+      'credits': credits,
+      'lifetimeCreditsEarned': lifetimeCreditsEarned,
+      'isTrialActive': isTrialActive,
+      if (trialStartDate != null) 'trialStartDate': Timestamp.fromDate(trialStartDate!),
+      if (lastCreditRefillDate != null) 'lastCreditRefillDate': Timestamp.fromDate(lastCreditRefillDate!),
+      'tier': tier,
     };
   }
 
@@ -257,6 +286,11 @@ class UserModel {
     Map<String, dynamic>? creatorProfile,
     String? photoUrl,
     bool? isEmailVerified,
+    int? credits,
+    int? lifetimeCreditsEarned,
+    bool? isTrialActive,
+    DateTime? trialStartDate,
+    DateTime? lastCreditRefillDate,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -298,6 +332,12 @@ class UserModel {
       creatorProfile: creatorProfile ?? this.creatorProfile,
       photoUrl: photoUrl ?? this.photoUrl,
       isEmailVerified: isEmailVerified ?? this.isEmailVerified,
+      credits: credits ?? this.credits,
+      lifetimeCreditsEarned: lifetimeCreditsEarned ?? this.lifetimeCreditsEarned,
+      isTrialActive: isTrialActive ?? this.isTrialActive,
+      trialStartDate: trialStartDate ?? this.trialStartDate,
+      lastCreditRefillDate: lastCreditRefillDate ?? this.lastCreditRefillDate,
+      tier: tier ?? this.tier,
     );
   }
 }

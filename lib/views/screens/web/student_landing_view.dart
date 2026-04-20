@@ -22,27 +22,20 @@ class _StudentLandingViewState extends State<StudentLandingView> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    return Container(
+      color: Colors.white,
       child: SingleChildScrollView(
         controller: _scrollController,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1200),
-            child: Container(
-              color: Colors.white,
-              child: Column(
-                children: [
-                  _buildTabToggle(),
-                  _buildStudentHeroSection(),
-                  _buildStepsSection(),
-                  _buildFeatureGridSection(),
-                  _buildReviewsSection(),
-                  _buildCtaSection(),
-                  _buildStudentFooter(),
-                ],
-              ),
-            ),
-          ),
+        child: Column(
+          children: [
+            _buildTabToggle(),
+            _buildStudentHeroSection(),
+            _buildStepsSection(),
+            _buildFeatureGridSection(),
+            _buildReviewsSection(),
+            _buildCtaSection(),
+            _buildStudentFooter(),
+          ],
         ),
       ),
     );
@@ -66,7 +59,7 @@ class _StudentLandingViewState extends State<StudentLandingView> {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                    color: WebColors.purplePrimary.withOpacity(0.3),
+                    color: WebColors.purplePrimary.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 4))
               ],
@@ -269,7 +262,7 @@ class _StudentLandingViewState extends State<StudentLandingView> {
           ],
         )
       ],
-    ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1);
+    );
   }
 
   Widget _buildStudentHeroImage({required bool isMobile}) {

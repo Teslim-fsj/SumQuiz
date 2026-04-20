@@ -319,7 +319,7 @@ GoRouter createRouter(AuthService authService) {
             ],
           ),
 
-          // Branch 2: Create (Shared)
+          // Branch 2: Create (Shared context, role-aware)
           StatefulShellBranch(
             navigatorKey: _createShellNavigatorKey,
             routes: <RouteBase>[
@@ -335,6 +335,15 @@ GoRouter createRouter(AuthService authService) {
                     desktop: CreateContentScreenWeb(),
                   ),
                 ),
+                routes: [
+                  GoRoute(
+                    path: 'exam-wizard',
+                    builder: (context, state) => const ResponsiveView(
+                      mobile: ExamCreationScreen(),
+                      desktop: ExamCreationScreenWeb(),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

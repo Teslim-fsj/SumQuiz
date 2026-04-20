@@ -220,10 +220,12 @@ abstract class AIBaseService {
   Future<String> generateWithRetry(String prompt,
       {GenerativeModel? customModel,
       GenerationConfig? generationConfig,
+      bool isPro = false,
       CancellationToken? cancelToken}) async {
     return generateMultimodal([TextPart(prompt)],
         customModel: customModel,
         generationConfig: generationConfig,
+        isPro: isPro,
         cancelToken: cancelToken);
   }
 
@@ -234,6 +236,7 @@ abstract class AIBaseService {
     String mimeType, {
     GenerativeModel? customModel,
     GenerationConfig? generationConfig,
+    bool isPro = false,
     CancellationToken? cancelToken,
   }) async {
     developer.log('generateWithData called with mimeType: $mimeType',
@@ -245,6 +248,7 @@ abstract class AIBaseService {
       ],
       customModel: customModel,
       generationConfig: generationConfig,
+      isPro: isPro,
       cancelToken: cancelToken,
     );
   }
@@ -252,8 +256,9 @@ abstract class AIBaseService {
   Future<String> generateMultimodal(List<Part> parts,
       {GenerativeModel? customModel,
       GenerationConfig? generationConfig,
+      bool isPro = false,
       CancellationToken? cancelToken}) async {
-    developer.log('generateMultimodal called', name: 'AIBaseService');
+    developer.log('generateMultimodal called (isPro: $isPro)', name: 'AIBaseService');
     if (!await ensureInitialized()) {
       throw AIServiceException('AI Service not ready: $_initializationError',
           code: 'SERVICE_NOT_READY');
@@ -268,7 +273,7 @@ abstract class AIBaseService {
     }).toList();
 
     // Model cascade (2026 Edition): Primary → Secondary → Fallback
-    final List<GenerativeModel> modelChain = [];
+    List<GenerativeModel> modelChain = [];
     if (customModel != null) {
       modelChain.add(customModel);
       if (_secondaryModel != null && customModel != _secondaryModel) {
@@ -285,22 +290,47 @@ abstract class AIBaseService {
     if (modelChain.isEmpty) {
       throw AIServiceException('No models available', code: 'MODEL_NOT_AVAILABLE');
     }
+    
+    // Hard-stop cascades for free users to prevent cost leakage
+    if (!isPro && modelChain.length > 1) {
+      developer.log('Restricting model cascade for free user', name: 'AIBaseService');
+      modelChain.removeRange(1, modelChain.length);
+    }
 
     developer.log('Model cascade chain: ${modelChain.length} model(s)',
         name: 'AIBaseService');
 
+    // --- Adaptive Throttling (Power-User Abuse Protection) ---
+    if (AIConfig.isCriticalAnomaly) {
+      developer.log('CRITICAL ANOMALY: Hard-stopping cascade chain',
+          name: 'AIBaseService');
+      modelChain = [modelChain.first]; // Force single attempt only
+    } else if (AIConfig.isAnomalyDetected) {
+      developer.log('ANOMALY DETECTED: Throttling cascade chain length',
+          name: 'AIBaseService');
+      if (modelChain.length > 2) modelChain = modelChain.sublist(0, 2);
+    }
+
     int attempt = 0;
-    int modelIndex = 0;
+    int currentModelIndex = 0;
 
     while (attempt < AIConfig.maxRetries) {
-      cancelToken?.throwIfCancelled();
-      final targetModel = modelChain[modelIndex];
-
       try {
+        cancelToken?.throwIfCancelled();
+        
+        // Pick the model from the chain based on the current cascade level
+        final targetModel = modelChain[currentModelIndex % modelChain.length];
+
+        developer.log('AI CALL: Attempting model (ModelIndex: $currentModelIndex, Attempt: $attempt)',
+            name: 'AIBaseService');
+
         final response = await targetModel.generateContent(
           [Content.multi(sanitizedParts)],
           generationConfig: generationConfig,
         ).timeout(const Duration(seconds: AIConfig.requestTimeoutSeconds));
+
+        // Record for anomaly detector (Survival system)
+        AIConfig.recordAction(attempt * 10 + 5);
 
         cancelToken?.throwIfCancelled();
 
@@ -319,7 +349,6 @@ abstract class AIBaseService {
         developer.log('Successfully generated response', name: 'AIBaseService');
         return text.trim();
       } catch (e) {
-        attempt++;
         final errorMsg = e.toString().toLowerCase();
         final isQuotaError = errorMsg.contains('quota') ||
             errorMsg.contains('rate limit') ||
@@ -334,17 +363,22 @@ abstract class AIBaseService {
             errorMsg.contains('unavailable');
         final isTimeout = e is TimeoutException;
 
-        // Cascade to next model in chain on quota/server issues/timeout
-        if ((isQuotaError || isServerIssue || isTimeout) && modelIndex < modelChain.length - 1) {
-          modelIndex++;
+        // --- Model Cascade Logic ---
+        // If we hit a quota or server error, and we have more models in the chain,
+        // move immediately to the next model and reset the attempt counter for that model.
+        if ((isQuotaError || isServerIssue || isTimeout) && currentModelIndex < modelChain.length - 1) {
+          currentModelIndex++;
+          attempt = 0; // Reset retries to give the new model a fair chance
           developer.log(
-              'Cascading to next model (attempt $attempt) due to: $e',
+              'RETRY: Cascading to model at index $currentModelIndex due to error: $e',
               name: 'AIBaseService');
-          continue;
+          continue; 
         }
 
+        // --- Standard Retry Logic (Same Model) ---
+        attempt++;
         if (attempt >= AIConfig.maxRetries) {
-          developer.log('Max retries exceeded for generation',
+          developer.log('Max retries exceeded for current model pipeline',
               name: 'AIBaseService', error: e);
           rethrow;
         }
@@ -363,9 +397,10 @@ abstract class AIBaseService {
               'CRITICAL: API Key appears to be invalid or restricted (403 Forbidden).',
               name: 'AIBaseService',
               level: 1000);
+          rethrow; // Don't retry on auth errors
         }
 
-        developer.log('AI Retry attempt $attempt in ${delay}ms',
+        developer.log('AI Retry attempt $attempt in ${delay}ms on current model',
             name: 'AIBaseService', error: e);
         await Future.delayed(Duration(milliseconds: delay));
       }

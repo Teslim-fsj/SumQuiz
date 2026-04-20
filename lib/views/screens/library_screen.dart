@@ -244,7 +244,7 @@ class _LibraryViewState extends State<_LibraryView>
       actions: [
         if (viewModel.isSyncing)
           const Padding(
-            padding: EdgeInsets.only(right: 16.0),
+            padding: EdgeInsets.symmetric(horizontal: 16.0),
             child: SizedBox(
                 width: 20,
                 height: 20,

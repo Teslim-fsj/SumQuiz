@@ -26,6 +26,7 @@ import 'dart:developer' as developer;
 class YouTubeAIService extends AIBaseService {
   Future<Result<ExtractionResult>> analyzeVideo(
     String videoUrl, {
+    bool isPro = false,
     CancellationToken? cancelToken,
   }) async {
     if (!_isValidYouTubeUrl(videoUrl)) {

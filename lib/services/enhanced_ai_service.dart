@@ -95,7 +95,9 @@ class EnhancedAIService {
   Future<Result<ExtractionResult>> analyzeYouTubeVideo(String videoUrl,
       {required String userId, CancellationToken? cancelToken}) async {
     await _checkUsageLimits(userId);
-    return _youtubeService.analyzeVideo(videoUrl, cancelToken: cancelToken);
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    final isPro = userDoc.exists && (userDoc.data()?['isPro'] ?? false);
+    return _youtubeService.analyzeVideo(videoUrl, isPro: isPro, cancelToken: cancelToken);
   }
 
   Future<Result<ExtractionResult>> extractWebpageContent(
@@ -120,10 +122,13 @@ class EnhancedAIService {
     CancellationToken? cancelToken,
   }) async {
     onProgress?.call('Generating summary...');
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    final isPro = userDoc.exists && (userDoc.data()?['isPro'] ?? false);
     return _generatorService.generateSummary(text,
         userId: userId,
         difficulty: difficulty,
         archetype: archetype,
+        isPro: isPro,
         cancelToken: cancelToken);
   }
 
@@ -136,10 +141,13 @@ class EnhancedAIService {
     CancellationToken? cancelToken,
   }) async {
     onProgress?.call('Generating quiz...');
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    final isPro = userDoc.exists && (userDoc.data()?['isPro'] ?? false);
     return _generatorService.generateQuiz(text,
         userId: userId,
         questionCount: questionCount,
         difficulty: difficulty,
+        isPro: isPro,
         cancelToken: cancelToken);
   }
 
@@ -152,10 +160,13 @@ class EnhancedAIService {
     CancellationToken? cancelToken,
   }) async {
     onProgress?.call('Generating flashcards...');
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    final isPro = userDoc.exists && (userDoc.data()?['isPro'] ?? false);
     return _generatorService.generateFlashcards(text,
         userId: userId,
         cardCount: cardCount,
         difficulty: difficulty,
+        isPro: isPro,
         cancelToken: cancelToken);
   }
 

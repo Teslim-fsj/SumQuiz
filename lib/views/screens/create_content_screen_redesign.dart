@@ -140,11 +140,13 @@ class _CreateContentScreenState extends State<CreateContentScreen>
 
 
 
-  Future<bool> _checkProAccess(String feature, {String actionType = 'text'}) async {
+  Future<bool> _checkProAccess(String feature,
+      {String actionType = 'text'}) async {
     final user = Provider.of<UserModel?>(context, listen: false);
     if (user == null) return true;
 
-    if (user.isPro) return true;
+    // Educators and Pro users bypass limits during this phase
+    if (user.isPro || user.role == UserRole.creator) return true;
 
     final usageService = UsageService();
     final action = actionType == 'upload' ? 'upload' : 'generate';
@@ -152,18 +154,18 @@ class _CreateContentScreenState extends State<CreateContentScreen>
 
     if (!canProceed) {
       if (mounted) {
-        showDialog(
-          context: context,
-          builder: (_) => UpgradeDialog(
-            featureName: action == 'upload' ? 'Lifetime Upload Limit' : feature,
-          ),
-        );
+        setState(() {
+          _errorMessage =
+              "You've reached today's study limit. Upgrade to continue learning.";
+        });
       }
       return false;
     }
 
-    // Special case for Tutor Exam which is always Pro
-    if (feature == 'Tutor Exam' && !user.isPro) {
+    // Special case for Tutor Exam which is always Pro for students
+    if (feature == 'Tutor Exam' &&
+        !user.isPro &&
+        user.role != UserRole.creator) {
       if (mounted) {
         showDialog(
           context: context,
@@ -321,25 +323,75 @@ class _CreateContentScreenState extends State<CreateContentScreen>
   }
 
   Future<void> _processAndNavigate() async {
+    final user = Provider.of<UserModel?>(context, listen: false);
+    if (user == null) return;
+
     // Check if API key is configured
     if (!_isApiKeyConfigured()) {
       setState(() {
         _errorMessage =
-            '🔑 API key is not configured. Please set up your API key in the .env file.';
+            '🔑 Academic access is currently full. Please try again later.';
       });
       return;
     }
 
-    // Prevent multiple concurrent operations
-    if (_isProcessing || _isLoading) return;
+    _showSmartPreview(user);
+  }
 
-    final user = Provider.of<UserModel?>(context, listen: false);
-    if (user == null) {
-      setState(
-          () => _errorMessage = 'You must be logged in to create content.');
-      return;
-    }
+  void _showSmartPreview(UserModel user) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E293B),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(32)),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Study Session Preview', 
+              style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white)),
+            const SizedBox(height: 16),
+            _buildPreviewRow(Icons.quiz_rounded, '12-15 Intelligent Questions'),
+            const SizedBox(height: 12),
+            _buildPreviewRow(Icons.psychology_rounded, 'Difficulty-Balanced Adaptive Quiz'),
+            const SizedBox(height: 12),
+            _buildPreviewRow(Icons.timer_rounded, '~2 min Neural Processing'),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  context.pop();
+                  _executeGeneration(user);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6366F1),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: Text('Start Study Session', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
+  Widget _buildPreviewRow(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, color: const Color(0xFF6366F1), size: 20),
+        const SizedBox(width: 12),
+        Text(text, style: GoogleFonts.inter(color: Colors.white.withOpacity(0.8), fontSize: 14)),
+      ],
+    );
+  }
+
+  Future<void> _executeGeneration(UserModel user) async {
     setState(() {
       _isProcessing = true;
       _errorMessage = '';
@@ -427,7 +479,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
             return;
           }
           if (mounted) {
-            context.push('/exam-creation');
+            context.go('/create-content/exam-wizard');
           }
           return;
 

@@ -25,7 +25,10 @@ class _LandingPageWebState extends State<LandingPageWeb>
       vsync: this,
       initialIndex: widget.initialTab,
     );
-    _tabController.addListener(_handleTabSelection);
+    _tabController.addListener(() {
+      if (mounted) setState(() {});
+      _handleTabSelection();
+    });
   }
 
   void _handleTabSelection() {
@@ -63,13 +66,15 @@ class _LandingPageWebState extends State<LandingPageWeb>
         children: [
           _buildTopBar(context),
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              physics: const NeverScrollableScrollPhysics(),
-              children: const [
-                StudentLandingView(),
-                CreatorTabView(),
-              ],
+            child: Material(
+              color: Colors.white,
+              child: IndexedStack(
+                index: _tabController.index,
+                children: const [
+                  StudentLandingView(),
+                  CreatorTabView(),
+                ],
+              ),
             ),
           ),
         ],
@@ -120,6 +125,8 @@ class _LandingPageWebState extends State<LandingPageWeb>
                     _navLink('Features'),
                     const SizedBox(width: 32),
                     _navLink(isEducator ? 'Solutions' : 'How it Works'),
+                    const SizedBox(width: 32),
+                    _navLink('Pricing', onTap: () => context.push('/subscription')),
                     if (isEducator) ...[
                       const SizedBox(width: 32),
                       _navLink('Resources'),
@@ -182,9 +189,9 @@ class _LandingPageWebState extends State<LandingPageWeb>
     );
   }
 
-  Widget _navLink(String text) {
+  Widget _navLink(String text, {VoidCallback? onTap}) {
     return InkWell(
-      onTap: () {},
+      onTap: onTap ?? () {},
       child: Text(text, style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.w500)),
     );
   }
