@@ -388,7 +388,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                       ),
 
                       // Upgrade to Pro Card - Premium Design
-                      if (_isExpanded)
+                      if (_isExpanded && user?.isPro == false)
                         Padding(
                           padding: const EdgeInsets.all(20.0),
                           child: InkWell(

@@ -68,13 +68,9 @@ class _LandingPageWebState extends State<LandingPageWeb>
           Expanded(
             child: Material(
               color: Colors.white,
-              child: IndexedStack(
-                index: _tabController.index,
-                children: const [
-                  StudentLandingView(),
-                  CreatorTabView(),
-                ],
-              ),
+              child: _tabController.index == 0
+                  ? const StudentLandingView(key: ValueKey('student_view'))
+                  : const CreatorTabView(key: ValueKey('creator_view')),
             ),
           ),
         ],

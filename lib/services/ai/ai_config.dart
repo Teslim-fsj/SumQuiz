@@ -16,7 +16,7 @@ class AIConfig {
   static const String primaryModel = 'gemini-3.1-flash-lite-preview';
   static const String secondaryModel = 'gemini-3-flash-preview';
   static const String tertiaryModel = 'gemini-2.5-flash-lite';
-  static const String fallbackModel = 'gemini-flash-latest';
+  static const String fallbackModel = 'gemini-2.5-flash';
   static const String proModel = 'gemini-3.1-flash-lite-preview'; 
   static const String visionModel = 'gemini-3.1-flash-lite-preview';
   static const String youtubeModel = 'gemini-3.1-flash-lite-preview';
