@@ -555,7 +555,7 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                   ],
                 )
               : Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       flex: 1,

@@ -464,9 +464,20 @@ abstract class AIBaseService {
     try {
       final decoded = json.decode(jsonStr);
       if (decoded is Map<String, dynamic>) return decoded;
+      // If decoded is a Map but not Map<String, dynamic>, attempt cast
+      if (decoded is Map) {
+        return Map<String, dynamic>.from(decoded);
+      }
+      developer.log(
+          'JSON decoded but unexpected type: ${decoded.runtimeType}. First 200 chars: ${jsonStr.length > 200 ? jsonStr.substring(0, 200) : jsonStr}',
+          name: 'AIBaseService',
+          level: 1000);
       return fallback;
     } catch (e) {
-      developer.log('Safe JSON decode failed', name: 'AIBaseService', error: e);
+      developer.log(
+          'JSON decode FAILED: $e\nRaw input (first 500 chars): ${jsonStr.length > 500 ? jsonStr.substring(0, 500) : jsonStr}',
+          name: 'AIBaseService',
+          level: 1000);
       return fallback;
     }
   }

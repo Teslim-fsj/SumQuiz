@@ -21,9 +21,7 @@ class GeneratorAIService extends AIBaseService {
     developer.log(
         'Generating $difficulty summary for text length: ${text.length}',
         name: 'GeneratorAIService');
-    final config = GenerationConfig(
-      responseMimeType: 'application/json',
-    );
+    // Model-level config already has responseMimeType, temperature, and maxOutputTokens
 
     final prompt =
         '''Create a comprehensive, EXAM-FOCUSED study guide from the provided text.
@@ -56,7 +54,6 @@ Text: $text''';
     try {
       final response = await generateWithRetry(prompt,
           customModel: educatorModel,
-          generationConfig: config,
           isPro: isPro,
           cancelToken: cancelToken);
       developer.log('AI Response received for summary',
@@ -106,9 +103,7 @@ Text: $text''';
     developer.log(
         'Generating $difficulty quiz ($questionCount questions) for text length: ${text.length}',
         name: 'GeneratorAIService');
-    final config = GenerationConfig(
-      responseMimeType: 'application/json',
-    );
+    // Model-level config already has responseMimeType, temperature, and maxOutputTokens
 
     final prompt =
         '''Generate a professional $questionCount-question quiz using these formats: ($typesStr).
@@ -141,7 +136,6 @@ Text: $text''';
     try {
       final response = await generateWithRetry(prompt,
           customModel: educatorModel,
-          generationConfig: config,
           isPro: isPro,
           cancelToken: cancelToken);
       developer.log('AI Response received for quiz',
@@ -196,9 +190,7 @@ Text: $text''';
     developer.log(
         'Generating $difficulty flashcards ($cardCount) for text length: ${text.length}',
         name: 'GeneratorAIService');
-    final config = GenerationConfig(
-      responseMimeType: 'application/json',
-    );
+    // Model-level config already has responseMimeType, temperature, and maxOutputTokens
 
     final prompt = '''Create $cardCount active-recall flashcards from the text.
 TARGET DIFFICULTY: $difficulty
@@ -225,7 +217,6 @@ Text: $text''';
     try {
       final response = await generateWithRetry(prompt,
           customModel: educatorModel,
-          generationConfig: config,
           cancelToken: cancelToken);
       developer.log('AI Response received for flashcards',
           name: 'GeneratorAIService');
@@ -279,16 +270,6 @@ Text: $text''';
         prompt,
         customModel: extractorModel,
         cancelToken: cancelToken,
-        generationConfig: GenerationConfig(
-          responseMimeType: 'application/json',
-          responseSchema: Schema.object(
-            properties: {
-              'cleanedText': Schema.string(
-                  description: 'The extracted and cleaned content'),
-            },
-            requiredProperties: ['cleanedText'],
-          ),
-        ),
       );
       final jsonBlock = extractJson(response);
       final data = safeJsonDecode(jsonBlock);
@@ -355,10 +336,7 @@ Text: $text''';
     try {
       final response = await generateWithRetry(prompt,
           customModel: educatorModel,
-          cancelToken: cancelToken,
-          generationConfig: GenerationConfig(
-            responseMimeType: 'application/json',
-          ));
+          cancelToken: cancelToken);
       final jsonStr = extractJson(response);
       final data = safeJsonDecode(jsonStr);
       if (data.containsKey('title')) {
@@ -391,9 +369,7 @@ Text: $text''';
 
     final typesStr = questionTypes.join(', ');
 
-    final config = GenerationConfig(
-      responseMimeType: 'application/json',
-    );
+    // Model-level config already has responseMimeType, temperature, and maxOutputTokens
 
     final prompt =
         '''Create a formal exam paper named "$title" for $subject ($level).
@@ -435,7 +411,6 @@ Text: $text''';
       final response = await generateWithRetry(
         prompt,
         customModel: educatorModel,
-        generationConfig: config,
         cancelToken: cancelToken,
       );
 
@@ -496,14 +471,11 @@ Text: $text''';
     
     OUTPUT FORMAT: JSON with 'question', 'options' (if MC/TF), 'correctAnswer', 'explanation', 'questionType'.''';
 
-    final config = GenerationConfig(
-      responseMimeType: 'application/json',
-    );
+    // Model-level config already has responseMimeType, temperature, and maxOutputTokens
 
     final response = await generateWithRetry(
       prompt,
       customModel: educatorModel,
-      generationConfig: config,
       cancelToken: cancelToken,
     );
 
@@ -538,9 +510,7 @@ Text: $text''';
     developer.log('Verifying essay answer for question: $question',
         name: 'GeneratorAIService');
 
-    final config = GenerationConfig(
-      responseMimeType: 'application/json',
-    );
+    // Model-level config already has responseMimeType, temperature, and maxOutputTokens
 
     final prompt = '''As an AI Tutor, verify the student's answer to this study question.
     
@@ -565,7 +535,6 @@ Text: $text''';
     try {
       final response = await generateWithRetry(prompt,
           customModel: educatorModel,
-          generationConfig: config,
           cancelToken: cancelToken);
 
       final jsonStr = extractJson(response);

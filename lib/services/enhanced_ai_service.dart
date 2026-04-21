@@ -476,8 +476,13 @@ class EnhancedAIService {
         onProgress('All done! 🎉');
       }
 
-      // Trigger sync in background
-      SyncService(localDb).syncAllData();
+      // Trigger sync in background (non-fatal)
+      try {
+        SyncService(localDb).syncAllData();
+      } catch (syncError) {
+        developer.log('Background sync failed (non-fatal): $syncError',
+            name: 'EnhancedAIService');
+      }
 
       developer.log(
           'Generation completed successfully, returning folderId: $folderId',
@@ -628,19 +633,32 @@ class EnhancedAIService {
       );
       await localDb.saveFlashcardSet(flashcardSet, folderId);
 
-      // Schedule SRS
-      final srsService =
-          SpacedRepetitionService(localDb.getSpacedRepetitionBox());
-      for (final card in flashcards) {
-        await srsService.scheduleReview(card.id, userId);
+      // Schedule SRS (non-fatal — don't crash if this fails)
+      try {
+        final srsService =
+            SpacedRepetitionService(localDb.getSpacedRepetitionBox());
+        for (final card in flashcards) {
+          await srsService.scheduleReview(card.id, userId);
+        }
+      } catch (srsError) {
+        developer.log('SRS scheduling failed (non-fatal): $srsError',
+            name: 'EnhancedAIService');
       }
 
       onProgress?.call('Study deck ready!');
-      SyncService(localDb).syncAllData();
+
+      // Sync in background (non-fatal)
+      try {
+        SyncService(localDb).syncAllData();
+      } catch (syncError) {
+        developer.log('Background sync failed (non-fatal): $syncError',
+            name: 'EnhancedAIService');
+      }
+
       return folderId;
-    } catch (e) {
-      developer.log('Topic generation error',
-          name: 'EnhancedAIService', error: e);
+    } catch (e, stack) {
+      developer.log('Topic generation error: $e',
+          name: 'EnhancedAIService', error: e, stackTrace: stack);
 
       if (folderId != null) {
         onProgress?.call('Cleaning up...');
@@ -652,7 +670,8 @@ class EnhancedAIService {
             code: 'CANCELLED');
       }
 
-      throw EnhancedAIServiceException('Failed to generate study materials.',
+      throw EnhancedAIServiceException(
+          'Failed to generate study materials: ${e.toString().length > 100 ? e.toString().substring(0, 100) : e}',
           code: 'GENERATION_FAILED', originalError: e);
     }
   }
