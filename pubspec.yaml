@@ -100,17 +100,7 @@ flutter:
     - assets/fonts/
     - .env
 
-  fonts:
-    - family: Poppins
-      fonts:
-        - asset: assets/fonts/Poppins-Regular.ttf
-        - asset: assets/fonts/Poppins-Bold.ttf
-          weight: 700
-    - family: Inter
-      fonts:
-        - asset: assets/fonts/Inter-Regular.ttf
-        - asset: assets/fonts/Inter-Bold.ttf
-          weight: 700
+  # Removed broken local font definitions, google_fonts will dynamically fetch them.
 
 flutter_launcher_icons:
   android: true

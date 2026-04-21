@@ -468,16 +468,12 @@ abstract class AIBaseService {
       if (decoded is Map) {
         return Map<String, dynamic>.from(decoded);
       }
-      developer.log(
-          'JSON decoded but unexpected type: ${decoded.runtimeType}. First 200 chars: ${jsonStr.length > 200 ? jsonStr.substring(0, 200) : jsonStr}',
-          name: 'AIBaseService',
-          level: 1000);
+      print(
+          'JSON decoded but unexpected type: ${decoded.runtimeType}. First 200 chars: ${jsonStr.length > 200 ? jsonStr.substring(0, 200) : jsonStr}');
       return fallback;
     } catch (e) {
-      developer.log(
-          'JSON decode FAILED: $e\nRaw input (first 500 chars): ${jsonStr.length > 500 ? jsonStr.substring(0, 500) : jsonStr}',
-          name: 'AIBaseService',
-          level: 1000);
+      print(
+          'JSON decode FAILED: $e\nRaw input (first 500 chars): ${jsonStr.length > 500 ? jsonStr.substring(0, 500) : jsonStr}');
       return fallback;
     }
   }

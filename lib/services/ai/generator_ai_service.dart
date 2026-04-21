@@ -338,11 +338,32 @@ Text: $text''';
           customModel: educatorModel,
           cancelToken: cancelToken);
       final jsonStr = extractJson(response);
-      final data = safeJsonDecode(jsonStr);
+      var data = safeJsonDecode(jsonStr);
+      
+      // If safeJsonDecode failed, it returned an empty map
+      if (data.isEmpty) {
+        // Did the model return a list? Let's check manually
+        try {
+          final rawDecode = json.decode(jsonStr);
+          if (rawDecode is List && rawDecode.isNotEmpty && rawDecode.first is Map) {
+            data = Map<String, dynamic>.from(rawDecode.first);
+          }
+        } catch (_) {}
+      }
+
       if (data.containsKey('title')) {
         return data;
       }
-      throw AIServiceException('Malformed AI response for topic generation',
+      
+      // Secondary robustness check for nested wrappers
+      if (data.containsKey('topic') && data['topic'] is Map) {
+        return Map<String, dynamic>.from(data['topic']);
+      }
+      if (data.containsKey('data') && data['data'] is Map) {
+        return Map<String, dynamic>.from(data['data']);
+      }
+
+      throw AIServiceException('Malformed AI response for topic generation. Raw: ${jsonStr.length > 200 ? jsonStr.substring(0, 200) : jsonStr}',
           code: 'MALFORMED_RESPONSE');
     } catch (e) {
       developer.log('Topic generation failed',
