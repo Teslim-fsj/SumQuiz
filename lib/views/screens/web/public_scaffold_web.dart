@@ -2,61 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sumquiz/theme/web_theme.dart';
-import 'package:sumquiz/views/screens/web/creator_tab_view.dart';
-import 'package:sumquiz/views/screens/web/student_landing_view.dart';
 
-class LandingPageWeb extends StatefulWidget {
-  final int initialTab;
-  const LandingPageWeb({super.key, this.initialTab = 0});
+class PublicScaffoldWeb extends StatelessWidget {
+  final Widget child;
+  final bool isEducatorRoute;
 
-  @override
-  State<LandingPageWeb> createState() => _LandingPageWebState();
-}
-
-class _LandingPageWebState extends State<LandingPageWeb>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(
-      length: 2,
-      vsync: this,
-      initialIndex: widget.initialTab,
-    );
-    _tabController.addListener(() {
-      if (mounted) setState(() {});
-      _handleTabSelection();
-    });
-  }
-
-  void _handleTabSelection() {
-    if (_tabController.indexIsChanging) return;
-    // Prevent redundant navigation if we are already on the correct tab for the current route
-    if (_tabController.index == widget.initialTab) return;
-
-    if (_tabController.index == 0) {
-      context.go('/landing');
-    } else {
-      context.go('/Educators');
-    }
-  }
-
-  @override
-  void didUpdateWidget(LandingPageWeb oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.initialTab != widget.initialTab) {
-      _tabController.animateTo(widget.initialTab);
-    }
-  }
-
-  @override
-  void dispose() {
-    _tabController.removeListener(_handleTabSelection);
-    _tabController.dispose();
-    super.dispose();
-  }
+  const PublicScaffoldWeb({
+    super.key,
+    required this.child,
+    this.isEducatorRoute = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -68,9 +23,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
           Expanded(
             child: Material(
               color: Colors.white,
-              child: _tabController.index == 0
-                  ? const StudentLandingView(key: ValueKey('student_view'))
-                  : const CreatorTabView(key: ValueKey('creator_view')),
+              child: child,
             ),
           ),
         ],
@@ -79,30 +32,30 @@ class _LandingPageWebState extends State<LandingPageWeb>
   }
 
   Widget _buildTopBar(BuildContext context) {
-    bool isEducator = _tabController.index == 1;
     return LayoutBuilder(
       builder: (context, constraints) {
         final isMobile = constraints.maxWidth < 700;
         final horizontalPadding = isMobile ? 16.0 : 40.0;
         return Container(
           color: Colors.white,
-          padding:
-              EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 20),
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 20),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // Logo
               InkWell(
                 onTap: () {
-                  if (isEducator) {
-                    _tabController.animateTo(0);
+                  if (isEducatorRoute) {
+                    context.go('/landing');
                   }
                 },
                 child: Row(
                   children: [
                     Image.asset('assets/images/sumquiz_logo.png',
-                        width: 32, height: 32,
-                        errorBuilder: (_, __, ___) => const Icon(Icons.school, color: WebColors.purplePrimary, size: 32)),
+                        width: 32,
+                        height: 32,
+                        errorBuilder: (_, __, ___) => const Icon(Icons.school,
+                            color: WebColors.purplePrimary, size: 32)),
                     const SizedBox(width: 12),
                     Text('SumQuiz',
                         style: GoogleFonts.outfit(
@@ -120,10 +73,10 @@ class _LandingPageWebState extends State<LandingPageWeb>
                   children: [
                     _navLink('Features'),
                     const SizedBox(width: 32),
-                    _navLink(isEducator ? 'Solutions' : 'How it Works'),
+                    _navLink(isEducatorRoute ? 'Solutions' : 'How it Works'),
                     const SizedBox(width: 32),
                     _navLink('Pricing', onTap: () => context.push('/subscription')),
-                    if (isEducator) ...[
+                    if (isEducatorRoute) ...[
                       const SizedBox(width: 32),
                       _navLink('Resources'),
                     ]
@@ -133,9 +86,9 @@ class _LandingPageWebState extends State<LandingPageWeb>
               // Actions
               Row(
                 children: [
-                  if (!isEducator && !isMobile) ...[
+                  if (!isEducatorRoute && !isMobile) ...[
                     OutlinedButton(
-                      onPressed: () => _tabController.animateTo(1),
+                      onPressed: () => context.go('/Educators'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF1F1F1F),
                         side: BorderSide(color: Colors.grey[300]!),
@@ -150,7 +103,7 @@ class _LandingPageWebState extends State<LandingPageWeb>
                     ),
                     const SizedBox(width: 16),
                   ],
-                  if (isEducator && !isMobile) ...[
+                  if (isEducatorRoute && !isMobile) ...[
                     TextButton(
                       onPressed: () => context.go('/auth'),
                       child: Text('Sign In',
@@ -188,7 +141,11 @@ class _LandingPageWebState extends State<LandingPageWeb>
   Widget _navLink(String text, {VoidCallback? onTap}) {
     return InkWell(
       onTap: onTap ?? () {},
-      child: Text(text, style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.w500)),
+      child: Text(text,
+          style: GoogleFonts.inter(
+              fontSize: 14,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500)),
     );
   }
 }

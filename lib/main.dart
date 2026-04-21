@@ -41,7 +41,6 @@ import 'package:sumquiz/theme/web_theme.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:sumquiz/services/deep_link_service.dart';
-import 'package:sumquiz/router/app_router.dart';
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {

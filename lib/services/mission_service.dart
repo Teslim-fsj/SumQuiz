@@ -82,12 +82,12 @@ class MissionService {
     }
 
     // Combine and prioritize failed cards first, then due cards
-    final List<String> combinedPool = <String>{...failedCardIds, ...dueCardIds}.toList();
+    final List<String> combinedPool = <dynamic>{...failedCardIds, ...dueCardIds}.toList();
     selectedFlashcards = combinedPool.take(targetCount).toList();
 
     // FALLBACK: If we don't have enough cards in the pool, pick random ones
     if (selectedFlashcards.length < targetCount) {
-      final List<String> allTrackedIds = await _srs.getAllTrackedIds(userId);
+      final allTrackedIds = await _srs.getAllTrackedIds(userId);
       final nonSelectedIds =
           allTrackedIds.where((id) => !selectedFlashcards.contains(id)).toList();
 

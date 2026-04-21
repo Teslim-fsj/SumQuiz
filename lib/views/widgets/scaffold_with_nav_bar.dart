@@ -257,7 +257,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                 if (_isExpanded) ...[
                                   const SizedBox(width: 8),
                                   Text(
-                                    isTeacher ? 'Create Exam' : 'Build Study Pack',
+                                    isTeacher ? 'Create Exam' : 'Create Study Pack',
                                     style: GoogleFonts.inter(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,

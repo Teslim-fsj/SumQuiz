@@ -34,7 +34,9 @@ import 'package:sumquiz/views/screens/web/create_content_screen_web.dart';
 import 'package:sumquiz/views/screens/web/progress_screen_web.dart';
 import 'package:sumquiz/views/screens/web/results_view_screen_web.dart';
 import 'package:sumquiz/views/screens/web/teacher_dashboard_web.dart';
-import 'package:sumquiz/views/screens/web/landing_page_web.dart';
+import 'package:sumquiz/views/screens/web/public_scaffold_web.dart';
+import 'package:sumquiz/views/screens/web/student_landing_view.dart';
+import 'package:sumquiz/views/screens/web/creator_tab_view.dart';
 import 'package:sumquiz/views/screens/exam_creation_screen.dart';
 import 'package:sumquiz/views/screens/web/review_screen_web.dart';
 import 'package:sumquiz/views/screens/public_deck_screen.dart';
@@ -150,11 +152,17 @@ GoRouter createRouter(AuthService authService) {
       // Top-level standalone routes (no nav bar)
       GoRoute(
         path: '/landing',
-        builder: (context, state) => const LandingPageWeb(),
+        builder: (context, state) => const PublicScaffoldWeb(
+          isEducatorRoute: false,
+          child: StudentLandingView(),
+        ),
       ),
       GoRoute(
         path: '/Educators',
-        builder: (context, state) => const LandingPageWeb(initialTab: 1),
+        builder: (context, state) => const PublicScaffoldWeb(
+          isEducatorRoute: true,
+          child: CreatorTabView(),
+        ),
       ),
       GoRoute(
         path: '/onboarding',

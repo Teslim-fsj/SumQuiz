@@ -130,7 +130,7 @@ class AuthService {
         // 3. Authorize (Access Token)
         final auth.GoogleSignInClientAuthorization authz = 
             await googleUser.authorizationClient.authorizeScopes(['email', 'profile']);
-        final String? accessToken = authz.accessToken;
+        final String accessToken = authz.accessToken;
 
         if (idToken == null || idToken.isEmpty) {
           developer.log('Error: Google did not return an ID token');

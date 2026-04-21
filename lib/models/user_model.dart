@@ -337,7 +337,7 @@ class UserModel {
       isTrialActive: isTrialActive ?? this.isTrialActive,
       trialStartDate: trialStartDate ?? this.trialStartDate,
       lastCreditRefillDate: lastCreditRefillDate ?? this.lastCreditRefillDate,
-      tier: tier ?? this.tier,
+      tier: tier ?? tier,
     );
   }
 }

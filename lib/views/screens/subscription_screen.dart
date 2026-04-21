@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sumquiz/models/user_model.dart';
-import 'package:sumquiz/services/usage_service.dart';
 import 'package:sumquiz/providers/subscription_provider.dart';
 import 'package:sumquiz/theme/web_theme.dart';
 import 'package:sumquiz/services/web_payment_service.dart';
@@ -111,7 +109,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             const SizedBox(height: 40),
             ...(_isCreatorMode ? _creatorTiers : _studentTiers).asMap().entries.map((entry) {
               return _buildTierCard(entry.value, entry.key);
-            }).toList(),
+            }),
             const SizedBox(height: 48),
             _buildCreditInfo(),
           ],
