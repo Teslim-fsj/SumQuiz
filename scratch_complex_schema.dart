@@ -73,7 +73,7 @@ void main() async {
     final map = json.decode(cleaned);
     print('Decode successful. Contains title: \${map.containsKey('title')}');
     
-  } catch (e, st) {
+  } catch (e) {
     print('ERROR: \$e');
     print('STACKTRACE: \$st');
   }

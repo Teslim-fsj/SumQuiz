@@ -129,6 +129,7 @@ OUTPUT EXACTLY IN THIS JSON FORMAT:
       "question": "Sample text?",
       "options": ["A", "B", "C", "D"],
       "correctAnswer": "A",
+      "correctIndex": 0,
       "explanation": "Why this is right.",
       "questionType": "Multiple Choice"
     }
@@ -338,6 +339,7 @@ Text: $text''';
           "question": "Sample question text",
           "options": ["Option A", "Option B", "Option C", "Option D"],
           "correctAnswer": "Option A",
+          "correctIndex": 0,
           "explanation": "Why this is correct.",
           "questionType": "Multiple Choice"
         }
@@ -422,6 +424,7 @@ Text: $text''';
           "question": "Question text here?",
           "options": ["Option A", "Option B", "Option C", "Option D"],
           "correctAnswer": "Option A",
+          "correctIndex": 0,
           "explanation": "Why this is correct.",
           "questionType": "Multiple Choice"
         }
@@ -495,16 +498,6 @@ Text: $text''';
 
     final config = GenerationConfig(
       responseMimeType: 'application/json',
-      responseSchema: Schema.object(
-        properties: {
-          'question': Schema.string(),
-          'options': Schema.array(items: Schema.string()),
-          'correctAnswer': Schema.string(),
-          'explanation': Schema.string(),
-          'questionType': Schema.string(),
-        },
-        requiredProperties: ['question', 'correctAnswer', 'explanation', 'questionType'],
-      ),
     );
 
     final response = await generateWithRetry(
@@ -547,15 +540,6 @@ Text: $text''';
 
     final config = GenerationConfig(
       responseMimeType: 'application/json',
-      responseSchema: Schema.object(
-        properties: {
-          'score': Schema.integer(description: 'Score from 0 to 100'),
-          'feedback': Schema.string(description: 'Detailed tutoring feedback'),
-          'isCorrect': Schema.boolean(
-              description: 'Whether the answer is fundamentally correct'),
-        },
-        requiredProperties: ['score', 'feedback', 'isCorrect'],
-      ),
     );
 
     final prompt = '''As an AI Tutor, verify the student's answer to this study question.
@@ -570,7 +554,13 @@ Text: $text''';
     - Provide constructive feedback (what was good, what was missing).
     - Be encouraging but maintain academic standards.
     - Set isCorrect to true if the score is 40% or higher.
-    ''';
+
+    OUTPUT EXACTLY IN THIS JSON FORMAT:
+    {
+      "score": 85,
+      "feedback": "Your answer covered the main points but missed X...",
+      "isCorrect": true
+    }''';
 
     try {
       final response = await generateWithRetry(prompt,

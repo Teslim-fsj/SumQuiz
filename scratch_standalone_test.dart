@@ -28,7 +28,7 @@ void main() async {
     ]);
     print('Response received!');
     print(response.text);
-  } catch (e, st) {
+  } catch (e) {
     print('ERROR: \$e');
     print('STACKTRACE: \$st');
   }

@@ -62,60 +62,70 @@ abstract class AIBaseService {
         return;
       }
 
+      final defaultConfig = AIConfig.defaultGenerationConfig;
+      final proConfig = AIConfig.proGenerationConfig;
+      final eduInstruction = AIConfig.educatorSystemInstruction;
+
       _model = GenerativeModel(
         model: AIConfig.primaryModel,
         apiKey: apiKey,
-        generationConfig: AIConfig.defaultGenerationConfig,
+        generationConfig: defaultConfig,
+        systemInstruction: eduInstruction,
       );
       
       _secondaryModel = GenerativeModel(
         model: AIConfig.secondaryModel,
         apiKey: apiKey,
-        generationConfig: AIConfig.defaultGenerationConfig,
+        generationConfig: defaultConfig,
+        systemInstruction: eduInstruction,
       );
 
       _proModel = GenerativeModel(
         model: AIConfig.proModel,
         apiKey: apiKey,
-        generationConfig: AIConfig.proGenerationConfig,
+        generationConfig: proConfig,
+        systemInstruction: eduInstruction,
       );
 
       _tertiaryModel = GenerativeModel(
         model: AIConfig.tertiaryModel,
         apiKey: apiKey,
-        generationConfig: AIConfig.defaultGenerationConfig,
+        generationConfig: defaultConfig,
+        systemInstruction: eduInstruction,
       );
       
       _fallbackModel = GenerativeModel(
         model: AIConfig.fallbackModel,
         apiKey: apiKey,
-        generationConfig: AIConfig.defaultGenerationConfig,
+        generationConfig: defaultConfig,
+        systemInstruction: eduInstruction,
       );
 
       _visionModel = GenerativeModel(
         model: AIConfig.visionModel,
         apiKey: apiKey,
-        generationConfig: AIConfig.defaultGenerationConfig,
+        generationConfig: defaultConfig,
+        systemInstruction: eduInstruction,
       );
 
       _youtubeModel = GenerativeModel(
         model: AIConfig.youtubeModel,
         apiKey: apiKey,
-        generationConfig: AIConfig.proGenerationConfig,
-        systemInstruction: AIConfig.educatorSystemInstruction,
+        generationConfig: proConfig,
+        systemInstruction: eduInstruction,
       );
 
       _educatorModel = GenerativeModel(
         model: AIConfig.primaryModel,
         apiKey: apiKey,
-        generationConfig: AIConfig.defaultGenerationConfig,
-        systemInstruction: AIConfig.educatorSystemInstruction,
+        generationConfig: defaultConfig,
+        systemInstruction: eduInstruction,
       );
 
       _extractorModel = GenerativeModel(
         model: AIConfig.primaryModel,
         apiKey: apiKey,
-        generationConfig: AIConfig.defaultGenerationConfig,
+        generationConfig: defaultConfig,
         systemInstruction: AIConfig.extractorSystemInstruction,
       );
 
@@ -300,11 +310,8 @@ abstract class AIBaseService {
       throw AIServiceException('No models available', code: 'MODEL_NOT_AVAILABLE');
     }
     
-    // Hard-stop cascades for free users to prevent cost leakage
-    if (!isPro && modelChain.length > 1) {
-      developer.log('Restricting model cascade for free user', name: 'AIBaseService');
-      modelChain.removeRange(1, modelChain.length);
-    }
+    // 2026 Stability Update: Allowing cascade for all users.
+    // Fallback models are essential when the primary hits its 15 RPM free tier limit.
 
     developer.log('Model cascade chain: ${modelChain.length} model(s)',
         name: 'AIBaseService');
