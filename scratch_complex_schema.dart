@@ -71,9 +71,9 @@ void main() async {
     }
     print('Cleaned json length: \${cleaned.length}');
     final map = json.decode(cleaned);
-    print('Decode successful. Contains title: \${map.containsKey('title')}');
+    print('Decode successful. Contains title: \${map.containsKey("title")}');
     
-  } catch (e) {
+  } catch (e, st) {
     print('ERROR: \$e');
     print('STACKTRACE: \$st');
   }

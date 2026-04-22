@@ -8,6 +8,7 @@ import 'package:sumquiz/utils/cancellation_token.dart';
 import 'package:uuid/uuid.dart';
 import 'ai_base_service.dart';
 import 'package:sumquiz/providers/create_content_provider.dart';
+import 'dart:convert';
 
 import 'dart:developer' as developer;
 
@@ -289,8 +290,6 @@ Text: $text''';
     List<String>? questionTypes,
     CancellationToken? cancelToken,
   }) async {
-    final types = questionTypes ?? ['Multiple Choice'];
-    final typesStr = types.join(', ');
     developer.log(
         'Generating from topic: $topic (depth: $depth, cards: $cardCount)',
         name: 'GeneratorAIService');
@@ -387,8 +386,6 @@ Text: $text''';
   }) async {
     final difficultyDesc =
         difficultyMix < 0.4 ? 'Easy' : (difficultyMix > 0.6 ? 'Hard' : 'Mixed');
-
-    final typesStr = questionTypes.join(', ');
 
     // Model-level config already has responseMimeType, temperature, and maxOutputTokens
 
