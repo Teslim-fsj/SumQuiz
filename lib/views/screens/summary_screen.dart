@@ -341,7 +341,8 @@ class SummaryScreenState extends State<SummaryScreen> {
       );
 
       final firestoreService = FirestoreService();
-      final deckId = await firestoreService.publishDeck(publicDeck);
+      final published = await firestoreService.publishDeck(publicDeck);
+      final deckId = published.id;
 
       if (!mounted) return;
 

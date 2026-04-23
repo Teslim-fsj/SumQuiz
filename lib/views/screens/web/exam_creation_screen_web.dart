@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -303,7 +304,9 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
         publishedAt: DateTime.now(),
       );
 
-      await firestore.publishDeck(publicDeck);
+      final published = await firestore.publishDeck(publicDeck);
+      final origin = Uri.base.origin;
+      final slugUrl = '$origin/s/${published.slug}';
 
       final pdfGenerator = ExamPdfGenerator();
       final config = ExamPdfConfig(
@@ -345,6 +348,10 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
       }
 
       setState(() => _isGeneratingQuestions = false);
+
+      if (mounted) {
+        _showSuccessDialog(slugUrl, shareCode);
+      }
     } catch (e) {
       setState(() => _isGeneratingQuestions = false);
       _showError('Export failed: $e');
@@ -383,6 +390,73 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(msg), backgroundColor: Colors.red));
+  }
+
+  void _showSuccessDialog(String url, String code) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        content: Container(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.check_circle, color: Colors.green, size: 64),
+              const SizedBox(height: 24),
+              Text('Exam Published!', style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              const Text('Your professional exam has been generated and is now public. You can share this link with your students for direct access.', textAlign: TextAlign.center),
+              const SizedBox(height: 32),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(child: Text(url, style: const TextStyle(fontSize: 13, color: Colors.blue), overflow: TextOverflow.ellipsis)),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.copy, size: 18),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: url));
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Link copied!')));
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('Share Code: '),
+                  Text(code, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                ],
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => context.go('/library'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4F46E5),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Go to Content Manager'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _showYoutubeInputDialog() {

@@ -14,9 +14,10 @@ import 'package:sumquiz/models/local_flashcard.dart';
 import 'package:uuid/uuid.dart';
 
 class PublicDeckScreen extends StatefulWidget {
-  final String deckId;
+  final String? deckId;
+  final String? slug;
 
-  const PublicDeckScreen({super.key, required this.deckId});
+  const PublicDeckScreen({super.key, this.deckId, this.slug});
 
   @override
   State<PublicDeckScreen> createState() => _PublicDeckScreenState();
@@ -31,50 +32,65 @@ class _PublicDeckScreenState extends State<PublicDeckScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchDeck();
+    if (widget.slug != null) {
+      _fetchDeckBySlug();
+    } else if (widget.deckId != null) {
+      _fetchDeck();
+    }
+  }
+
+  Future<void> _fetchDeckBySlug() async {
+    try {
+      final deck = await FirestoreService().fetchPublicDeckBySlug(widget.slug!);
+      _handleDeckResponse(deck);
+    } catch (e) {
+      _handleError(e);
+    }
   }
 
   Future<void> _fetchDeck() async {
     try {
-      final deck = await FirestoreService().fetchPublicDeck(widget.deckId);
-
-      if (deck == null) {
-        if (mounted) {
-          setState(() {
-            _error = 'Deck not found or has been removed.';
-            _isLoading = false;
-          });
-        }
-        return;
-      }
-
-      // Record View for Creator Bonus
-      // Fire and forget - don't block UI
-      // Note: reading context in async method after await is risky for mounted check,
-      // but we need the user ID.
-      // Safer to rely on FirebaseAuth if we don't want to depend on Provider readiness here, matches other services
-      // But let's use the Provider if mounted.
-      if (mounted) {
-        final user = context.read<UserModel?>();
-        if (user != null) {
-          FirestoreService().recordDeckView(widget.deckId, user.uid);
-        }
-      }
-
-      if (mounted) {
-        setState(() {
-          _deck = deck;
-          _isLoading = false;
-        });
-      }
+      final deck = await FirestoreService().fetchPublicDeck(widget.deckId!);
+      _handleDeckResponse(deck);
     } catch (e) {
-      debugPrint('Error fetching deck: $e');
+      _handleError(e);
+    }
+  }
+
+  void _handleDeckResponse(PublicDeck? deck) {
+    if (deck == null) {
       if (mounted) {
         setState(() {
-          _error = 'Failed to load deck. Please check your connection.';
+          _error = 'Deck not found or has been removed.';
           _isLoading = false;
         });
       }
+      return;
+    }
+
+    // Record View for Creator Bonus
+    if (mounted) {
+      final user = context.read<UserModel?>();
+      if (user != null) {
+        FirestoreService().recordDeckView(deck.id, user.uid);
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _deck = deck;
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _handleError(dynamic e) {
+    debugPrint('Error fetching deck: $e');
+    if (mounted) {
+      setState(() {
+        _error = 'Failed to load deck. Please check your connection.';
+        _isLoading = false;
+      });
     }
   }
 
@@ -84,8 +100,11 @@ class _PublicDeckScreenState extends State<PublicDeckScreen> {
     final user = context.read<UserModel?>();
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please log in to import decks.')));
-      // Typically redirect to auth, but for now just show msg
+          const SnackBar(content: Text('Please log in to import this deck.')));
+      
+      // Save current location for post-login redirect
+      final currentPath = GoRouterState.of(context).uri.toString();
+      context.push('/auth?redirect=${Uri.encodeComponent(currentPath)}');
       return;
     }
 
@@ -196,7 +215,7 @@ class _PublicDeckScreenState extends State<PublicDeckScreen> {
 
       // 4. Update Metrics
       await FirestoreService()
-          .incrementDeckMetric(widget.deckId, 'startedCount');
+          .incrementDeckMetric(_deck!.id, 'startedCount');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -227,62 +246,265 @@ class _PublicDeckScreenState extends State<PublicDeckScreen> {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Public Deck')),
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 600),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(_deck!.title,
-                  style: Theme.of(context).textTheme.headlineMedium,
-                  textAlign: TextAlign.center),
-              const SizedBox(height: 8),
-              Text('Created by ${_deck!.creatorName}',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyLarge
-                      ?.copyWith(fontStyle: FontStyle.italic),
-                  textAlign: TextAlign.center),
-              const SizedBox(height: 32),
-              _buildContentCard(
-                  Icons.summarize, 'Summary', _deck!.summaryData.isNotEmpty),
-              _buildContentCard(Icons.quiz, 'Quiz', _deck!.quizData.isNotEmpty),
-              _buildContentCard(
-                  Icons.style, 'Flashcards', _deck!.flashcardData.isNotEmpty),
-              const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: _isImporting ? null : _importDeck,
-                icon: _isImporting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.download),
-                label: Text(_isImporting ? 'Importing...' : 'Add to Library'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.all(16),
-                  textStyle: const TextStyle(fontSize: 18),
+    return Title(
+      title: '${_deck!.title} | SumQuiz',
+      color: Colors.blue,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(_deck!.title),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.canPop() ? context.pop() : context.go('/'),
+          ),
+        ),
+        extendBodyBehindAppBar: true,
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.blue.shade50,
+                Colors.white,
+                Colors.purple.shade50,
+              ],
+            ),
+          ),
+          child: SafeArea(
+            child: SingleChildScrollView(
+              child: Center(
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 800),
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildHeader(),
+                      const SizedBox(height: 32),
+                      _buildContentOverview(),
+                      const SizedBox(height: 48),
+                      _buildImportSection(),
+                      const SizedBox(height: 48),
+                      _buildFooter(),
+                    ],
+                  ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1, end: 0),
                 ),
-              )
-            ],
-          ).animate().fadeIn().scale(),
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildContentCard(IconData icon, String label, bool exists) {
+  Widget _buildHeader() {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            _deck!.isExam ? 'PUBLIC EXAM' : 'STUDY DECK',
+            style: const TextStyle(
+              color: Colors.blue,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+              fontSize: 12,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          _deck!.title,
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF1E293B),
+              ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Curated by ${_deck!.creatorName}',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                fontStyle: FontStyle.italic,
+                color: Colors.grey[600],
+              ),
+          textAlign: TextAlign.center,
+        ),
+        if (_deck!.description.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text(
+            _deck!.description,
+            style: TextStyle(color: Colors.grey[700], height: 1.5),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildContentOverview() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'What\'s inside',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        _buildContentCard(
+          Icons.summarize,
+          'Comprehensive Summary',
+          'Key concepts and detailed analysis distilled from the source material.',
+          _deck!.summaryData.isNotEmpty,
+        ),
+        _buildContentCard(
+          Icons.quiz,
+          'Interactive Quiz',
+          'Practice questions to test your understanding and reinforce learning.',
+          _deck!.quizData.isNotEmpty,
+        ),
+        _buildContentCard(
+          Icons.style,
+          'Active Recall Flashcards',
+          'Spaced repetition cards for efficient long-term memorization.',
+          _deck!.flashcardData.isNotEmpty,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImportSection() {
+    final user = context.watch<UserModel?>();
+
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.auto_awesome, color: Colors.amber, size: 48),
+          const SizedBox(height: 16),
+          const Text(
+            'Ready to master this topic?',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            user == null
+                ? 'Join thousands of students using SumQuiz to accelerate their learning. Import this deck to your library for free.'
+                : 'Add this curated content to your personal library to start practicing immediately.',
+            style: TextStyle(color: Colors.grey[600]),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _isImporting ? null : _importDeck,
+              icon: _isImporting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : Icon(user == null ? Icons.login : Icons.add_to_photos),
+              label: Text(_isImporting
+                  ? 'Importing...'
+                  : (user == null ? 'Sign up to Import' : 'Add to My Library')),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.all(20),
+                backgroundColor: Colors.blue[600],
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+            ),
+          ),
+          if (user == null) ...[
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => context.push('/auth'),
+              child: const Text('Already have an account? Log in'),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFooter() {
+    return Column(
+      children: [
+        const Divider(),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('Powered by '),
+            Text(
+              'SumQuiz AI',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue[700]),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContentCard(IconData icon, String title, String subtitle, bool exists) {
     if (!exists) return const SizedBox.shrink();
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: ListTile(
-        leading: Icon(icon, color: Colors.blue),
-        title: Text(label),
-        trailing: const Icon(Icons.check_circle, color: Colors.green),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade100),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: Colors.blue),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.check_circle, color: Colors.green, size: 20),
+        ],
       ),
     );
   }

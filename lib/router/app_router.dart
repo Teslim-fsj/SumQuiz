@@ -112,13 +112,14 @@ GoRouter createRouter(AuthService authService) {
       final isLanding = state.matchedLocation == '/landing' || state.matchedLocation == '/Educators';
       final isSplash = state.matchedLocation == '/splash';
       final isOnboarding = state.matchedLocation == '/onboarding';
+      final isPublicDeck = state.matchedLocation.startsWith('/s/') || state.matchedLocation == '/deck';
 
       final userModel = Provider.of<UserModel?>(context);
       final firebaseUser = authService.currentUser;
 
       // 1. Handle Unauthenticated Users
       if (firebaseUser == null) {
-        if (isAuthRoute || isLanding || isSplash || isOnboarding) {
+        if (isAuthRoute || isLanding || isSplash || isOnboarding || isPublicDeck) {
           return null; // Stay on public pages
         }
         return kIsWeb ? '/landing' : '/onboarding';
@@ -143,6 +144,15 @@ GoRouter createRouter(AuthService authService) {
 
       // 4. Handle Authenticated Users on Public Routes
       if (isAuthRoute || isLanding || isSplash) {
+        // Respect explicit redirect if present
+        final redirectParam = state.uri.queryParameters['redirect'];
+        if (redirectParam != null && redirectParam.isNotEmpty) {
+          return redirectParam;
+        }
+
+        // If they are logged in and hit the landing page, we usually want them in the app
+        // BUT if they hit a public deck link, let them stay there!
+        if (isPublicDeck) return null;
         return '/';
       }
 
@@ -174,7 +184,17 @@ GoRouter createRouter(AuthService authService) {
       ),
       GoRoute(
         path: '/auth',
-        builder: (context, state) => const AuthScreen(),
+        builder: (context, state) {
+          final redirect = state.uri.queryParameters['redirect'];
+          return AuthScreen(redirectPath: redirect);
+        },
+      ),
+      GoRoute(
+        path: '/s/:slug',
+        builder: (context, state) {
+          final slug = state.pathParameters['slug'];
+          return PublicDeckScreen(slug: slug);
+        },
       ),
 
       // Main application shell with navigation

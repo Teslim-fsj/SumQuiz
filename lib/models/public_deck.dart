@@ -15,6 +15,7 @@ class PublicDeck {
   final DateTime publishedAt;
   final bool isExam;
   final bool isPublished;
+  final String? slug;
 
   String get type {
     if (isExam) return 'exam';
@@ -38,6 +39,7 @@ class PublicDeck {
     required this.publishedAt,
     this.isExam = false,
     this.isPublished = true,
+    this.slug,
   });
 
   factory PublicDeck.fromFirestore(DocumentSnapshot doc) {
@@ -58,6 +60,7 @@ class PublicDeck {
           (data['publishedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       isExam: data['isExam'] ?? false,
       isPublished: data['isPublished'] ?? true,
+      slug: data['slug'] as String?,
     );
   }
 
@@ -76,6 +79,7 @@ class PublicDeck {
       'publishedAt': Timestamp.fromDate(publishedAt),
       'isExam': isExam,
       'isPublished': isPublished,
+      'slug': slug,
     };
   }
 }

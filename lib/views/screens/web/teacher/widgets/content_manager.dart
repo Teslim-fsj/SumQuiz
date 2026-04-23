@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:sumquiz/models/public_deck.dart';
@@ -492,6 +493,25 @@ class _ContentManagerState extends State<ContentManager> {
                      tooltip: 'Download PDF',
                      icon: const Icon(Icons.picture_as_pdf_outlined, size: 18, color: Colors.grey), 
                      onPressed: () => _exportDeckPdf(deck),
+                   ),
+                   IconButton(
+                     tooltip: 'Copy Public Link',
+                     icon: const Icon(Icons.link, size: 18, color: WebColors.purplePrimary), 
+                     onPressed: () {
+                       final slug = deck.slug;
+                       if (slug != null) {
+                         final origin = Uri.base.origin;
+                         final url = '$origin/s/$slug';
+                         Clipboard.setData(ClipboardData(text: url));
+                         ScaffoldMessenger.of(context).showSnackBar(
+                           const SnackBar(content: Text('Public link copied to clipboard!')),
+                         );
+                       } else {
+                         ScaffoldMessenger.of(context).showSnackBar(
+                           const SnackBar(content: Text('Deck has no public link yet.')),
+                         );
+                       }
+                     },
                    ),
                    IconButton(
                      tooltip: 'Edit',

@@ -413,8 +413,21 @@ class FirestoreService {
   }
 
   // CREATOR TOOLS
+  
+  String _generateSlug(String title) {
+    // Basic slugification: lower case, replace spaces with dashes, remove special chars
+    final base = title
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9\s-]'), '')
+        .replaceAll(RegExp(r'\s+'), '-')
+        .trim();
+    
+    // Add 4 chars of entropy to ensure high likelihood of uniqueness
+    final entropy = DateTime.now().millisecondsSinceEpoch.toString().substring(9);
+    return '$base-$entropy';
+  }
 
-  Future<String> publishDeck(PublicDeck deck) async {
+  Future<PublicDeck> publishDeck(PublicDeck deck) async {
     try {
       final docRef = _db.collection('public_decks').doc();
       // We ignore deck.id if provided and generate new one for public listing?
@@ -434,10 +447,11 @@ class FirestoreService {
         flashcardData: deck.flashcardData,
         isExam: deck.isExam,
         publishedAt: DateTime.now(),
+        slug: deck.slug ?? _generateSlug(deck.title),
       );
 
       await docRef.set(deckToSave.toFirestore());
-      return docRef.id;
+      return deckToSave;
     } catch (e) {
       debugPrint('Error publishing deck: $e');
       rethrow; // Re-throw to let caller handle it appropriately
@@ -486,6 +500,24 @@ class FirestoreService {
       return null;
     } catch (e) {
       debugPrint('Error fetching public deck by code: $e');
+      return null;
+    }
+  }
+
+  Future<PublicDeck?> fetchPublicDeckBySlug(String slug) async {
+    try {
+      final snapshot = await _db
+          .collection('public_decks')
+          .where('slug', isEqualTo: slug.toLowerCase())
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        return PublicDeck.fromFirestore(snapshot.docs.first);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error fetching public deck by slug: $e');
       return null;
     }
   }

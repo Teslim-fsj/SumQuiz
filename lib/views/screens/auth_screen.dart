@@ -13,7 +13,8 @@ import 'package:sumquiz/utils/auth_error_messages.dart';
 enum AuthMode { login, signUp }
 
 class AuthScreen extends StatefulWidget {
-  const AuthScreen({super.key});
+  final String? redirectPath;
+  const AuthScreen({super.key, this.redirectPath});
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
