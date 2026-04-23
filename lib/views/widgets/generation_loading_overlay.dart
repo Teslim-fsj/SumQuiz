@@ -32,7 +32,7 @@ class GenerationLoadingOverlay extends StatelessWidget {
               margin: const EdgeInsets.symmetric(horizontal: 40),
               padding: const EdgeInsets.all(40),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surface.withValues(alpha: isDark ? 0.2 : 0.8),
+                color: theme.colorScheme.surface.withOpacity(isDark ? 0.2 : 0.8),
                 borderRadius: BorderRadius.circular(32),
                 border: Border.all(
                   color: theme.colorScheme.outline.withOpacity(0.2),

@@ -748,7 +748,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
         child: Container(
           padding: padding ?? const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: theme.cardColor.withValues(alpha: isDark ? 0.5 : 0.7),
+            color: theme.cardColor.withOpacity(isDark ? 0.5 : 0.7),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
                 color: borderColor ?? theme.dividerColor.withOpacity(0.2),

@@ -1242,7 +1242,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                 : Colors.white.withOpacity(0.06),
             borderRadius: BorderRadius.circular(100),
             border: Border.all(
-                color: Colors.white.withValues(alpha: isSelected ? 1 : 0.1)),
+                color: Colors.white.withOpacity(isSelected ? 1 : 0.1)),
           ),
           child: Center(
             child: Text(

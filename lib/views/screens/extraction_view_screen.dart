@@ -418,7 +418,7 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
                             ? [
                                 theme.colorScheme.surface,
                                 theme.colorScheme.primaryContainer
-                                    .withValues(alpha: colorOpacity),
+                                    .withOpacity(colorOpacity),
                               ]
                             : [
                                 const Color(0xFFE3F2FD),

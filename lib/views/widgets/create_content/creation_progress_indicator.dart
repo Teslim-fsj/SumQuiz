@@ -255,7 +255,7 @@ class CreationProgressIndicator extends StatelessWidget {
               fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
               color: isActive 
                   ? theme.colorScheme.onSurface 
-                  : theme.colorScheme.onSurface.withValues(alpha: isDone ? 0.6 : 0.2),
+                  : theme.colorScheme.onSurface.withOpacity(isDone ? 0.6 : 0.2),
             ),
           ),
         ],

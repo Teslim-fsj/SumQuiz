@@ -78,10 +78,10 @@ class ExamPdfGenerator {
   static const double _tinySize = 8.0;
 
   // ─── Spacing Constants ───
-  static const double _questionSpacing = 12.0;
-  static const double _sectionSpacing = 20.0;
-  static const double _optionSpacing = 3.0;
-  static const double _answerLineHeight = 18.0;
+  static const double _questionSpacing = 5.0;
+  static const double _sectionSpacing = 10.0;
+  static const double _optionSpacing = 0.5;
+  static const double _answerLineHeight = 14.0;
 
   // ─── Page format ───
   static const _pageMargin = pw.EdgeInsets.all(36); // ~1.27cm / 0.5in
@@ -222,8 +222,8 @@ class ExamPdfGenerator {
                   style: const pw.TextStyle(fontSize: _headerMetaSize)),
             ]),
             pw.SizedBox(height: 8),
-            pw.Divider(thickness: 1.5),
-            pw.SizedBox(height: 8),
+            pw.Divider(thickness: 1.0),
+            pw.SizedBox(height: 4),
           ],
         ),
         build: (pw.Context context) {
@@ -386,7 +386,7 @@ class ExamPdfGenerator {
         ),
         pw.SizedBox(height: 4),
         pw.Divider(thickness: 0.5, color: PdfColors.grey300),
-        pw.SizedBox(height: 8),
+        pw.SizedBox(height: 4),
       ]);
     }
 
@@ -406,7 +406,7 @@ class ExamPdfGenerator {
                 style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
           ),
         ],
-        pw.SizedBox(height: 12),
+        pw.SizedBox(height: 8),
 
         // Metadata row
         pw.Row(
@@ -418,19 +418,27 @@ class ExamPdfGenerator {
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  _headerMetaLine('SUBJECT', config.subject.toUpperCase()),
-                  pw.SizedBox(height: 5),
-                  _headerMetaLine('CLASS', config.classLevel.toUpperCase()),
-                  pw.SizedBox(height: 5),
-                  _headerMetaLine('DATE', '____________________'),
-                  pw.SizedBox(height: 5),
-                  _headerMetaLine('TIME ALLOWED', '${config.durationMinutes} MINUTES'),
-                  pw.SizedBox(height: 5),
+                  pw.Row(
+                    children: [
+                      _headerMetaLine('SUBJECT', config.subject.toUpperCase()),
+                      pw.SizedBox(width: 20),
+                      _headerMetaLine('CLASS', config.classLevel.toUpperCase()),
+                    ],
+                  ),
+                  pw.SizedBox(height: 3),
+                  pw.Row(
+                    children: [
+                      _headerMetaLine('DATE', '____________________'),
+                      pw.SizedBox(width: 20),
+                      _headerMetaLine('TIME ALLOWED', '${config.durationMinutes} MIN'),
+                    ],
+                  ),
+                  pw.SizedBox(height: 3),
                   _headerMetaLine('TOTAL MARKS', '${config.totalMarks(questions)}'),
-                  pw.SizedBox(height: 10),
+                  pw.SizedBox(height: 6),
                   pw.Text('STUDENT NAME: _____________________________________________',
                       style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: _headerMetaSize)),
-                  pw.SizedBox(height: 5),
+                  pw.SizedBox(height: 3),
                   pw.Text('CANDIDATE NO: ___________________',
                       style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: _headerMetaSize)),
                 ],
@@ -469,12 +477,12 @@ class ExamPdfGenerator {
           ],
         ),
 
-        pw.SizedBox(height: 12),
+        pw.SizedBox(height: 8),
 
         // Instructions box
         pw.Container(
           width: double.infinity,
-          padding: const pw.EdgeInsets.all(10),
+          padding: const pw.EdgeInsets.all(8),
           decoration: pw.BoxDecoration(
             border: pw.Border.all(width: 1),
           ),
@@ -483,7 +491,7 @@ class ExamPdfGenerator {
             children: [
               pw.Text('INSTRUCTIONS:',
                   style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: _headerMetaSize)),
-              pw.SizedBox(height: 3),
+              pw.SizedBox(height: 2),
               pw.Text('1. Answer ALL questions in the spaces provided.',
                   style: const pw.TextStyle(fontSize: _smallSize)),
               pw.Text('2. Section A carries ${config.marksA} mark${config.marksA > 1 ? 's' : ''} each.',
@@ -497,7 +505,7 @@ class ExamPdfGenerator {
             ],
           ),
         ),
-        pw.SizedBox(height: 16),
+        pw.SizedBox(height: 12),
       ],
     );
   }
@@ -516,7 +524,7 @@ class ExamPdfGenerator {
 
   pw.Widget _buildFooter(pw.Context context, ExamPdfConfig config, {bool isMarkingScheme = false}) {
     return pw.Container(
-      margin: const pw.EdgeInsets.only(top: 8),
+      margin: const pw.EdgeInsets.only(top: 4),
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
@@ -543,7 +551,7 @@ class ExamPdfGenerator {
 
   pw.Widget _buildSectionTitle(String title) {
     return pw.Container(
-      padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+      padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 10),
       decoration: const pw.BoxDecoration(
         color: PdfColors.grey100,
         border: pw.Border(
@@ -585,16 +593,20 @@ class ExamPdfGenerator {
                 ),
               ],
             ),
-            pw.SizedBox(height: 4),
+            pw.SizedBox(height: 2),
             pw.Padding(
               padding: const pw.EdgeInsets.only(left: 18),
-              child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
+              child: pw.Wrap(
+                spacing: 15,
+                runSpacing: 2,
                 children: q.options.asMap().entries.map((entry) {
                   final letter = String.fromCharCode(65 + entry.key);
-                  return pw.Padding(
+                  // Estimate if option is short enough for multi-column
+                  final bool isShort = entry.value.length < 25;
+                  return pw.Container(
+                    width: isShort ? 120 : null,
                     padding: const pw.EdgeInsets.only(bottom: _optionSpacing),
-                    child: pw.Text('$letter.  ${entry.value}',
+                    child: pw.Text('$letter. ${entry.value}',
                         style: const pw.TextStyle(fontSize: _optionSize)),
                   );
                 }).toList(),
@@ -636,7 +648,7 @@ class ExamPdfGenerator {
                 ),
               ],
             ),
-            pw.SizedBox(height: 6),
+            pw.SizedBox(height: 4),
             // 2 ruled answer lines
             for (int i = 0; i < 2; i++)
               pw.Container(
@@ -684,9 +696,9 @@ class ExamPdfGenerator {
                 ),
               ],
             ),
-            pw.SizedBox(height: 6),
-            // 6 ruled lines for essay
-            for (int i = 0; i < 6; i++)
+            pw.SizedBox(height: 4),
+            // 4 ruled lines for essay (reduced from 6 for compactness)
+            for (int i = 0; i < 4; i++)
               pw.Container(
                 margin: const pw.EdgeInsets.only(left: 18, bottom: 2),
                 height: _answerLineHeight,

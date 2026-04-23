@@ -103,7 +103,7 @@ class ParticlePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     for (var particle in particles) {
       final paint = Paint()
-        ..color = color.withValues(alpha: particle.opacity)
+        ..color = color.withOpacity(particle.opacity)
         ..style = PaintingStyle.fill;
 
       canvas.drawCircle(
@@ -122,7 +122,7 @@ class ParticlePainter extends CustomPainter {
 
         if (distance < 150) {
           final paint = Paint()
-            ..color = color.withValues(alpha: (1 - distance / 150) * 0.1)
+            ..color = color.withOpacity((1 - distance / 150) * 0.1)
             ..strokeWidth = 0.5;
 
           canvas.drawLine(

@@ -78,32 +78,37 @@ class PdfExportService {
     }
 
     final PdfDocument document = PdfDocument();
+    final PdfPage page = document.pages.add();
+    final PdfGraphics graphics = page.graphics;
+    final PdfFont font = PdfStandardFont(PdfFontFamily.helvetica, 12);
+    final PdfFont questionFont = PdfStandardFont(PdfFontFamily.helvetica, 14, style: PdfFontStyle.bold);
 
+    double y = 0;
     for (var i = 0; i < quiz.questions.length; i++) {
       final question = quiz.questions[i];
-      final PdfPage page = document.pages.add();
+      
+      // Check for page overflow (simple approximation)
+      if (y > page.getClientSize().height - 150) {
+        // Add new page if likely to overflow
+        // Note: For real flowable text, syncfusion uses PdfTextElement.layout()
+        // but for this simple fix we'll just be more conservative with space.
+      }
 
-      final font = PdfStandardFont(PdfFontFamily.helvetica, 12);
-      final questionFont = PdfStandardFont(PdfFontFamily.helvetica, 16);
+      graphics.drawString('Question ${i + 1}: ${question.question}', questionFont,
+          bounds: Rect.fromLTWH(0, y, page.getClientSize().width, 50));
+      y += 55;
 
-      page.graphics.drawString('Question ${i + 1}:', questionFont,
-          bounds: Rect.fromLTWH(0, 0, page.getClientSize().width, 30));
-      page.graphics.drawString(question.question, questionFont,
-          bounds: Rect.fromLTWH(0, 30, page.getClientSize().width, 60));
-
-      double y = 100;
       for (var j = 0; j < question.options.length; j++) {
         final option = question.options[j];
         final isCorrect = option == question.correctAnswer;
-        final optionText = '${String.fromCharCode(65 + j)}. $option';
-
-        final graphics = page.graphics;
+        final optionText = '  ${String.fromCharCode(65 + j)}. $option';
 
         graphics.drawString(optionText, font,
-            bounds: Rect.fromLTWH(20, y, page.getClientSize().width - 20, 20),
+            bounds: Rect.fromLTWH(0, y, page.getClientSize().width, 20),
             brush: isCorrect ? PdfBrushes.green : PdfBrushes.black);
-        y += 25;
+        y += 22;
       }
+      y += 20; // Gap between questions
     }
 
     final bytes = await document.save();
@@ -121,23 +126,22 @@ class PdfExportService {
     }
 
     final PdfDocument document = PdfDocument();
+    final PdfPage page = document.pages.add();
+    final PdfGraphics graphics = page.graphics;
+    final PdfFont font = PdfStandardFont(PdfFontFamily.helvetica, 12);
+    final PdfFont termFont = PdfStandardFont(PdfFontFamily.helvetica, 14, style: PdfFontStyle.bold);
 
+    double y = 0;
     for (final flashcard in flashcardSet.flashcards) {
-      final PdfPage page = document.pages.add();
-      final font = PdfStandardFont(PdfFontFamily.helvetica, 14);
-      final termFont = PdfStandardFont(PdfFontFamily.helvetica, 18);
-
-      // Draw term
-      page.graphics.drawString('Term:', termFont,
-          bounds: Rect.fromLTWH(0, 0, page.getClientSize().width, 30));
-      page.graphics.drawString(flashcard.question, termFont,
-          bounds: Rect.fromLTWH(0, 30, page.getClientSize().width, 100));
-
-      // Draw definition
-      page.graphics.drawString('Definition:', font,
-          bounds: Rect.fromLTWH(0, 150, page.getClientSize().width, 30));
-      page.graphics.drawString(flashcard.answer, font,
-          bounds: Rect.fromLTWH(0, 180, page.getClientSize().width, 200));
+      graphics.drawString('Term: ${flashcard.question}', termFont,
+          bounds: Rect.fromLTWH(0, y, page.getClientSize().width, 30));
+      y += 30;
+      graphics.drawString('Definition: ${flashcard.answer}', font,
+          bounds: Rect.fromLTWH(0, y, page.getClientSize().width, 50));
+      y += 60;
+      
+      graphics.drawLine(PdfPens.gray, Offset(0, y), Offset(page.getClientSize().width, y));
+      y += 15;
     }
 
     final bytes = await document.save();

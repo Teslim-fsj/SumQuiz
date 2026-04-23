@@ -241,9 +241,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: WebColors.purplePrimary.withValues(alpha: 0.05), 
+        color: WebColors.purplePrimary.withOpacity(0.05), 
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: WebColors.purplePrimary.withValues(alpha: 0.1)),
+        border: Border.all(color: WebColors.purplePrimary.withOpacity(0.1)),
       ),
       child: Column(
         children: [

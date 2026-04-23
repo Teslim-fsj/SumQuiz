@@ -180,7 +180,7 @@ class _ContentManagerState extends State<ContentManager> {
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
                 child: Text('CURRICULUM INTELLIGENCE', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white70, letterSpacing: 1.2)),
               ),
               const SizedBox(height: 16),
@@ -207,7 +207,7 @@ class _ContentManagerState extends State<ContentManager> {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
+                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
                       child: Text('CURRICULUM INTELLIGENCE', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white70, letterSpacing: 1.2)),
                     ),
                     const SizedBox(height: 12),
@@ -240,9 +240,9 @@ class _ContentManagerState extends State<ContentManager> {
       width: isMobile ? null : 150,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,7 +339,7 @@ class _ContentManagerState extends State<ContentManager> {
             if (isMobile) const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(color: isActive ? Colors.white.withValues(alpha: 0.2) : const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(color: isActive ? Colors.white.withOpacity(0.2) : const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(12)),
               child: Text('$count', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: isActive ? Colors.white : Colors.grey[700])),
             ),
           ],
@@ -423,7 +423,7 @@ class _ContentManagerState extends State<ContentManager> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: WebColors.cardShadow,
-        border: Border.all(color: WebColors.border.withValues(alpha: 0.5)),
+        border: Border.all(color: WebColors.border.withOpacity(0.5)),
       ),
       padding: EdgeInsets.all(isMobile ? 12 : 16),
       child: Column(
@@ -589,7 +589,7 @@ class _ContentManagerState extends State<ContentManager> {
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
             child: Text('RECOMMENDED AI GENERATION', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white70, letterSpacing: 1)),
           ),
           const SizedBox(height: 20),
@@ -610,7 +610,7 @@ class _ContentManagerState extends State<ContentManager> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {},
-                  style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: BorderSide(color: Colors.white.withValues(alpha: 0.2)), padding: const EdgeInsets.symmetric(vertical: 24), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: BorderSide(color: Colors.white.withOpacity(0.2)), padding: const EdgeInsets.symmetric(vertical: 24), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                   child: const Text('Dismiss'),
                 ),
               ),
@@ -629,10 +629,10 @@ class _ContentManagerState extends State<ContentManager> {
         decoration: BoxDecoration(
           color: const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: WebColors.purplePrimary.withValues(alpha: 0.3), style: BorderStyle.none),
+          border: Border.all(color: WebColors.purplePrimary.withOpacity(0.3), style: BorderStyle.none),
         ),
         child: CustomPaint(
-          painter: DashedBorderPainter(color: WebColors.purplePrimary.withValues(alpha: 0.4)),
+          painter: DashedBorderPainter(color: WebColors.purplePrimary.withOpacity(0.4)),
           child: Padding(
             padding: const EdgeInsets.all(32),
             child: Column(
