@@ -43,7 +43,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final user = context.watch<UserModel?>();
-    final isPro = user?.isPro ?? false;
+    final isCreator = user?.role == UserRole.creator;
+    final canAccess = isPro || isCreator;
 
     return Scaffold(
       backgroundColor: WebColors.background,
@@ -67,7 +68,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             ),
             child: IconButton(
               icon: Icon(Icons.refresh, color: WebColors.primary),
-              onPressed: isPro
+              onPressed: canAccess
                   ? () {
                       setState(() => _isLoading = true);
                       _loadDecks();
@@ -77,12 +78,18 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           )
         ],
       ),
-      body: !isPro
+      body: !canAccess
           ? _buildProTeaser(theme)
           : _isLoading
               ? Center(child: CircularProgressIndicator(color: WebColors.primary))
-              : _decks.isEmpty
-                  ? Center(
+              : Column(
+                  children: [
+                    if (!isPro && isCreator)
+                      _buildFreeTierBanner(theme),
+                    Expanded(
+                      child: _decks.isEmpty
+                          ? Center(
+
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -263,7 +270,51 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
+  Widget _buildFreeTierBanner(ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline, color: Colors.white),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'You are on the Free Educator plan. Upgrade to unlock unlimited exams and analytics.',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton(
+            onPressed: () => context.push('/settings/subscription'),
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: theme.colorScheme.primary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            ),
+            child: const Text('Upgrade', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildProTeaser(ThemeData theme) {
+
     return Center(
       child: Container(
         constraints: const BoxConstraints(maxWidth: 400),

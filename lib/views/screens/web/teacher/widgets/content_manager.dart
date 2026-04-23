@@ -141,9 +141,11 @@ class _ContentManagerState extends State<ContentManager> {
         classLevel: 'General',
         durationMinutes: 60,
         shareCode: deck.shareCode,
+        creatorName: deck.creatorName,
         includeAnswerSheet: true,
         includeMarkingScheme: false,
       );
+
       final doc = pdfGen.generateStudentPaper(
         questions: questions,
         config: config,

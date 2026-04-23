@@ -10,6 +10,8 @@ class ExamPdfConfig {
   final String classLevel;
   final int durationMinutes;
   final String? shareCode;
+  final String? creatorName;
+
 
   // Marks per section
   final int marksA; // MCQ / True-False
@@ -29,7 +31,9 @@ class ExamPdfConfig {
     required this.classLevel,
     required this.durationMinutes,
     this.shareCode,
+    this.creatorName,
     this.marksA = 2,
+
     this.marksB = 5,
     this.marksC = 10,
     this.includeAnswerSheet = true,
@@ -435,7 +439,12 @@ class ExamPdfGenerator {
                   ),
                   pw.SizedBox(height: 3),
                   _headerMetaLine('TOTAL MARKS', '${config.totalMarks(questions)}'),
+                  if (config.creatorName != null) ...[
+                    pw.SizedBox(height: 3),
+                    _headerMetaLine('CREATED BY', config.creatorName!.toUpperCase()),
+                  ],
                   pw.SizedBox(height: 6),
+
                   pw.Text('STUDENT NAME: _____________________________________________',
                       style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: _headerMetaSize)),
                   pw.SizedBox(height: 3),

@@ -38,7 +38,7 @@ class ProStatusWidget extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Text(
-                isPro ? 'Pro Member' : 'Upgrade to Pro',
+                user.planName,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: isPro
@@ -46,6 +46,7 @@ class ProStatusWidget extends StatelessWidget {
                       : theme.colorScheme.onTertiaryContainer,
                 ),
               ),
+
               const Spacer(),
               if (!isPro)
                 Icon(

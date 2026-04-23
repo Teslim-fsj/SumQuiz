@@ -318,12 +318,14 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
         classLevel: _selectedLevel,
         durationMinutes: int.tryParse(_durationController.text) ?? 60,
         shareCode: shareCode,
+        creatorName: user?.displayName ?? 'SumQuiz Tutor',
         marksA: _marksA,
         marksB: _marksB,
         marksC: _marksC,
         includeAnswerSheet: true,
         includeMarkingScheme: true,
       );
+
 
       final studentPaper = pdfGenerator.generateStudentPaper(
         questions: _generatedQuestions,

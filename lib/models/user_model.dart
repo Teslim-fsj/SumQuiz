@@ -143,6 +143,18 @@ class UserModel {
     return subscriptionExpiry!.isAfter(TimeSyncService.now);
   }
 
+  /// Returns a human-readable name for the user's current plan
+  String get planName {
+    if (tier != null && tier != 'free') {
+      // Capitalize first letter of tier
+      return tier![0].toUpperCase() + tier!.substring(1);
+    }
+    if (isCreatorPro) return 'Creator Pro';
+    if (isPro) return 'Pro Member';
+    return role == UserRole.creator ? 'Free Educator' : 'Free Scholar';
+  }
+
+
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return UserModel(

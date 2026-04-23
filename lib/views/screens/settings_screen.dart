@@ -142,11 +142,12 @@ class SettingsScreen extends StatelessWidget {
                         context,
                         icon: Icons.workspace_premium_outlined,
                         title: 'Subscription',
-                        subtitle: 'Manage your plan',
+                        subtitle: user?.planName ?? 'Manage your plan',
                         onTap: () => context.push('/settings/subscription'),
                         delay: 200.ms,
                         theme: theme,
                       ),
+
                       const SizedBox(height: 32),
                       _buildSectionTitle('App Settings', theme)
                           .animate()

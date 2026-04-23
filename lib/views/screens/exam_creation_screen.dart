@@ -1942,7 +1942,9 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
         classLevel: widget.classLevel,
         durationMinutes: widget.duration,
         shareCode: shareCode,
+        creatorName: user.displayName,
         marksA: _marksA,
+
         marksB: _marksB,
         marksC: _marksC,
         includeAnswerSheet: _includeAnswerSheet,
