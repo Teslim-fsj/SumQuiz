@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sumquiz/theme/web_theme.dart';
@@ -59,7 +58,7 @@ class _StudentLandingViewState extends State<StudentLandingView> {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                    color: WebColors.purplePrimary.withOpacity(0.3),
+                    color: WebColors.purplePrimary.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 4))
               ],
@@ -279,7 +278,7 @@ class _StudentLandingViewState extends State<StudentLandingView> {
             color: const Color(0xFFEEF2FF),
             boxShadow: [
               BoxShadow(
-                color: WebColors.purplePrimary.withOpacity(0.1),
+                color: WebColors.purplePrimary.withValues(alpha: 0.1),
                 blurRadius: 40,
                 offset: const Offset(0, 20),
               )
@@ -307,7 +306,7 @@ class _StudentLandingViewState extends State<StudentLandingView> {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 )
@@ -637,7 +636,7 @@ class _StudentLandingViewState extends State<StudentLandingView> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 20,
               offset: const Offset(0, 10))
         ],
@@ -807,183 +806,264 @@ class _StudentLandingViewState extends State<StudentLandingView> {
     );
   }
 
-                padding: const EdgeInsets.symmetric(),
-                elevation: 0,
-                shape: void RoundedRectangleBorder(
-                    borderRadius = BorderRadius.circular(30)),
-              ),
-              child: void Text('Get Started for Free',
-                  style = GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16)),
-            ),
-            const void SizedBox(height = 24),
-            void Row(
-              mainAxisAlignment = MainAxisAlignment.center,
-              children = [
-                const Icon(Icons.check_circle, color: Colors.white54, size: 14),
-                const SizedBox(width: 8),
-                Text('No credit card',
-                    style: GoogleFonts.inter(fontSize: 12, color: Colors.white70)),
-                const SizedBox(width: 24),
-                const Icon(Icons.check_circle, color: Colors.white54, size: 14),
-                const SizedBox(width: 8),
-                Text('Cancel anytime',
-                    style: GoogleFonts.inter(fontSize: 12, color: Colors.white70)),
+  Widget _buildCtaSection() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 900;
+        final hPad = isMobile ? 24.0 : 80.0;
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 80),
+          child: Container(
+            padding: const EdgeInsets.all(48),
+            decoration: BoxDecoration(
+              color: WebColors.purplePrimary,
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: [
+                BoxShadow(
+                  color: WebColors.purplePrimary.withValues(alpha: 0.3),
+                  blurRadius: 30,
+                  offset: const Offset(0, 15),
+                )
               ],
-            )
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStudentFooter(bool isMobile) {
-    final hPad = isMobile ? 24.0 : 80.0;
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 60),
-      color: const Color(0xFF1E293B),
-      child: isMobile
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+            child: Column(
               children: [
-                Row(
-                  children: [
-                    Image.asset('assets/images/sumquiz_logo.png',
-                        width: 24,
-                        height: 24,
-                        color: Colors.white,
-                        errorBuilder: (_, __, ___) =>
-                            const Icon(Icons.school, color: Colors.white, size: 24)),
-                    const SizedBox(width: 8),
-                    Text('SumQuiz',
-                        style: GoogleFonts.outfit(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: -0.5)),
-                  ],
+                Text(
+                  'Ready to transform your study habits?',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.outfit(
+                    fontSize: isMobile ? 28 : 40,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                    'Empowering the next generation of Nigerian scholars through AI.',
-                    style: GoogleFonts.inter(
-                        fontSize: 12, color: Colors.grey[400], height: 1.6)),
-                const SizedBox(height: 32),
-                _footerCol('COMPANY',
-                    ['About Us', 'Careers', 'Privacy Policy', 'Terms of Service']),
-                const SizedBox(height: 24),
-                _footerCol('RESOURCES', [
-                  'Academic Library',
-                  'JAMB Prep 2024',
-                  'Success Stories',
-                  'Help Center'
-                ]),
-                const SizedBox(height: 24),
-                Text('© 2024 SumQuiz AI Labs. All rights reserved.',
-                    style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600])),
-              ],
-            )
-          : Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Image.asset('assets/images/sumquiz_logo.png',
-                              width: 24,
-                              height: 24,
-                              color: Colors.white,
-                              errorBuilder: (_, __, ___) => const Icon(
-                                  Icons.school,
-                                  color: Colors.white,
-                                  size: 24)),
-                          const SizedBox(width: 8),
-                          Text('SumQuiz',
-                              style: GoogleFonts.outfit(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                  letterSpacing: -0.5)),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                          'Empowering the next generation of\nNigerian scholars through cutting-\nedge AI technology and personalized\nlearning paths.',
-                          style: GoogleFonts.inter(
-                              fontSize: 12, color: Colors.grey[400], height: 1.6)),
-                      const SizedBox(height: 40),
-                      Row(
-                        children: [
-                          const Icon(Icons.language,
-                              color: Colors.white, size: 20),
-                          const SizedBox(width: 16),
-                          const Icon(Icons.code, color: Colors.white, size: 20),
-                        ],
-                      )
-                    ],
+                  'Join 18,000+ Nigerian students who are already using AI to master their courses and pass their exams with confidence.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: isMobile ? 14 : 16,
+                    color: Colors.white.withValues(alpha: 0.8),
+                    height: 1.5,
                   ),
                 ),
-                Expanded(
-                  flex: 1,
-                  child: _footerCol('COMPANY',
-                      ['About Us', 'Careers', 'Privacy Policy', 'Terms of Service']),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: _footerCol('RESOURCES', [
-                    'Academic Library',
-                    'JAMB Prep 2024',
-                    'Success Stories',
-                    'Help Center'
-                  ]),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('JOIN US',
-                          style: GoogleFonts.inter(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.5,
-                              color: Colors.white)),
-                      const SizedBox(height: 24),
-                      Text('Study tips and AI updates delivered to your inbox.',
-                          style: GoogleFonts.inter(
-                              fontSize: 12, color: Colors.grey[400], height: 1.5)),
-                      const SizedBox(height: 16),
-                      Container(
-                        decoration: BoxDecoration(
-                            color: const Color(0xFF334155),
-                            borderRadius: BorderRadius.circular(8)),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        child: Row(
-                          children: [
-                            Expanded(
-                                child: Text('Your email address...',
-                                    style: GoogleFonts.inter(
-                                        fontSize: 12, color: Colors.grey[500]))),
-                            Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                    color: WebColors.purplePrimary,
-                                    borderRadius: BorderRadius.circular(8)),
-                                child: const Icon(Icons.arrow_forward,
-                                    color: Colors.white, size: 16))
-                          ],
-                        ),
-                      ),
-                    ],
+                const SizedBox(height: 40),
+                ElevatedButton(
+                  onPressed: () => context.go('/auth'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: WebColors.purplePrimary,
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
                   ),
+                  child: Text(
+                    'Get Started for Free',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.white54, size: 14),
+                    const SizedBox(width: 8),
+                    Text(
+                      'No credit card',
+                      style: GoogleFonts.inter(fontSize: 12, color: Colors.white70),
+                    ),
+                    const SizedBox(width: 24),
+                    const Icon(Icons.check_circle, color: Colors.white54, size: 14),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Cancel anytime',
+                      style: GoogleFonts.inter(fontSize: 12, color: Colors.white70),
+                    ),
+                  ],
                 ),
               ],
             ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStudentFooter() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 900;
+        final hPad = isMobile ? 24.0 : 80.0;
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 60),
+          color: const Color(0xFF1E293B),
+          child: isMobile
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Image.asset('assets/images/sumquiz_logo.png',
+                            width: 24,
+                            height: 24,
+                            color: Colors.white,
+                            errorBuilder: (_, __, ___) => const Icon(
+                                Icons.school,
+                                color: Colors.white,
+                                size: 24)),
+                        const SizedBox(width: 8),
+                        Text('SumQuiz',
+                            style: GoogleFonts.outfit(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: -0.5)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                        'Empowering the next generation of Nigerian scholars through AI.',
+                        style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: Colors.grey[400],
+                            height: 1.6)),
+                    const SizedBox(height: 32),
+                    _footerCol('COMPANY', [
+                      'About Us',
+                      'Careers',
+                      'Privacy Policy',
+                      'Terms of Service'
+                    ]),
+                    const SizedBox(height: 24),
+                    _footerCol('RESOURCES', [
+                      'Academic Library',
+                      'JAMB Prep 2024',
+                      'Success Stories',
+                      'Help Center'
+                    ]),
+                    const SizedBox(height: 24),
+                    Text('© 2024 SumQuiz AI Labs. All rights reserved.',
+                        style: GoogleFonts.inter(
+                            fontSize: 11, color: Colors.grey[600])),
+                  ],
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Image.asset('assets/images/sumquiz_logo.png',
+                                  width: 24,
+                                  height: 24,
+                                  color: Colors.white,
+                                  errorBuilder: (_, __, ___) => const Icon(
+                                      Icons.school,
+                                      color: Colors.white,
+                                      size: 24)),
+                              const SizedBox(width: 8),
+                              Text('SumQuiz',
+                                  style: GoogleFonts.outfit(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                      letterSpacing: -0.5)),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                              'Empowering the next generation of\nNigerian scholars through cutting-\nedge AI technology and personalized\nlearning paths.',
+                              style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: Colors.grey[400],
+                                  height: 1.6)),
+                          const SizedBox(height: 40),
+                          Row(
+                            children: [
+                              const Icon(Icons.language,
+                                  color: Colors.white, size: 20),
+                              const SizedBox(width: 16),
+                              const Icon(Icons.code,
+                                  color: Colors.white, size: 20),
+                            ],
+                          )
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: _footerCol('COMPANY', [
+                        'About Us',
+                        'Careers',
+                        'Privacy Policy',
+                        'Terms of Service'
+                      ]),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: _footerCol('RESOURCES', [
+                        'Academic Library',
+                        'JAMB Prep 2024',
+                        'Success Stories',
+                        'Help Center'
+                      ]),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('JOIN US',
+                              style: GoogleFonts.inter(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.5,
+                                  color: Colors.white)),
+                          const SizedBox(height: 24),
+                          Text(
+                              'Study tips and AI updates delivered to your inbox.',
+                              style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: Colors.grey[400],
+                                  height: 1.5)),
+                          const SizedBox(height: 16),
+                          Container(
+                            decoration: BoxDecoration(
+                                color: const Color(0xFF334155),
+                                borderRadius: BorderRadius.circular(8)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                    child: Text('Your email address...',
+                                        style: GoogleFonts.inter(
+                                            fontSize: 12,
+                                            color: Colors.grey[500]))),
+                                Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                        color: WebColors.purplePrimary,
+                                        borderRadius: BorderRadius.circular(8)),
+                                    child: const Icon(Icons.arrow_forward,
+                                        color: Colors.white, size: 16))
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+        );
+      },
     );
   }
 
