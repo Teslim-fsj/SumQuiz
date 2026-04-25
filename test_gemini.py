@@ -3,7 +3,8 @@ import json
 import sys
 
 def test_gemini():
-    api_key = 'AIzaSyDWEUCZ9lfq7yspgl6fMt84jIUOAN9mItI'
+    import os
+    api_key = os.environ.get('API_KEY', '')
     model = 'gemini-3.1-flash-lite'
     # Try gemini-1.5-flash if 3.1 fails
     

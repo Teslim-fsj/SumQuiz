@@ -1,7 +1,7 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 void main() async {
-  const String apiKey = 'AIzaSyDWEUCZ9lfq7yspgl6fMt84jIUOAN9mItI';
+  const String apiKey = String.fromEnvironment('API_KEY');
 
   try {
     // This is a placeholder since the official Dart SDK doesn't have listModels directly in many versions

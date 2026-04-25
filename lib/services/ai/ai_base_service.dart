@@ -54,8 +54,8 @@ abstract class AIBaseService {
 
   Future<void> _initializeModelsAsync() async {
     try {
-      // API Key hardcoded for production/GitHub builds as requested by user
-      const String apiKey = 'AIzaSyDWEUCZ9lfq7yspgl6fMt84jIUOAN9mItI';
+      // API Key loaded from build arguments via --dart-define=API_KEY
+      const String apiKey = String.fromEnvironment('API_KEY');
 
       if (apiKey.isEmpty) {
         _initializationError = 'API key is not configured.';

@@ -84,10 +84,9 @@ jobs:
 
           sed -i "s/^version: .*/version: $NEW_VERSION+$BUILD_NUMBER/" pubspec.yaml
 
-      # 7️⃣ Inject secrets into .env
-      - name: Create .env file
-        run: |
-          echo "API_KEY=${{ secrets.API_KEY }}" > .env
+      # 7️⃣ Pass API_KEY to Flutter via dart-define (No longer uses .env)
+      - name: Verify API Key
+        run: echo "API_KEY is available from variables"
 
       # 8️⃣ Install dependencies
       - name: Install Flutter dependencies
@@ -105,7 +104,7 @@ jobs:
 
       # 1️⃣1️⃣ Build release app bundle
       - name: Build app bundle
-        run: flutter build appbundle --release
+        run: flutter build appbundle --release --dart-define=API_KEY=${{ vars.API_KEY }}
 
       # 1️⃣2️⃣ Upload AAB as artifact
       - name: Upload AAB

@@ -5,7 +5,7 @@ import 'dart:io';
 void main() async {
   print('--- AI Connection Diagnostic (2026 Edition) ---');
 
-  const String apiKey = 'AIzaSyDWEUCZ9lfq7yspgl6fMt84jIUOAN9mItI';
+  const String apiKey = String.fromEnvironment('API_KEY');
   final String modelName = AIConfig.primaryModel;
 
   if (apiKey.isEmpty || apiKey.startsWith('YOUR_API_KEY')) {

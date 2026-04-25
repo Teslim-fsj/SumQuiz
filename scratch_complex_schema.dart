@@ -5,7 +5,7 @@ void main() async {
   print('Starting complex schema test...');
   final apiKey = 'AIzaSyDWEUCZ9lfq7yspgl6fMt84jIUOAN9mItI';
   final modelStr = 'gemini-3.1-flash-lite-preview';
-  
+
   final config = GenerationConfig(
     responseMimeType: 'application/json',
     responseSchema: Schema.object(
@@ -58,11 +58,12 @@ void main() async {
   try {
     print('Sending complex prompt...');
     final response = await model.generateContent([
-      Content.text('Generate a short study guide on Photosynthesis. Include 1 quiz question and 1 flashcard.')
+      Content.text(
+          'Generate a short study guide on Photosynthesis. Include 1 quiz question and 1 flashcard.')
     ]);
     print('Response received! Length: \${response.text?.length}');
     print(response.text);
-    
+
     // Test the parsing
     String cleaned = response.text!.trim();
     if (cleaned.startsWith('```')) {
@@ -72,8 +73,7 @@ void main() async {
     print('Cleaned json length: \${cleaned.length}');
     final map = json.decode(cleaned);
     print('Decode successful. Contains title: \${map.containsKey("title")}');
-    
-  } catch (e, st) {
+  } catch (e) {
     print('ERROR: \$e');
     print('STACKTRACE: \$st');
   }

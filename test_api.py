@@ -1,7 +1,9 @@
 import urllib.request
 import json
 
-api_key = 'AIzaSyDWEUCZ9lfq7yspgl6fMt84jIUOAN9mItI'
+import os
+
+api_key = os.environ.get('API_KEY', '')
 url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key={api_key}'
 
 payload = {

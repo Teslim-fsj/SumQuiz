@@ -1,4 +1,3 @@
-import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:sumquiz/models/local_summary.dart';
 import 'package:sumquiz/models/local_quiz.dart';
 import 'package:sumquiz/models/local_flashcard_set.dart';
@@ -54,9 +53,7 @@ Text: $text''';
 
     try {
       final response = await generateWithRetry(prompt,
-          customModel: educatorModel,
-          isPro: isPro,
-          cancelToken: cancelToken);
+          customModel: educatorModel, isPro: isPro, cancelToken: cancelToken);
       developer.log('AI Response received for summary',
           name: 'GeneratorAIService');
       final jsonStr = extractJson(response);
@@ -136,9 +133,7 @@ Text: $text''';
 
     try {
       final response = await generateWithRetry(prompt,
-          customModel: educatorModel,
-          isPro: isPro,
-          cancelToken: cancelToken);
+          customModel: educatorModel, isPro: isPro, cancelToken: cancelToken);
       developer.log('AI Response received for quiz',
           name: 'GeneratorAIService');
       final jsonStr = extractJson(response);
@@ -217,8 +212,7 @@ Text: $text''';
 
     try {
       final response = await generateWithRetry(prompt,
-          customModel: educatorModel,
-          cancelToken: cancelToken);
+          customModel: educatorModel, cancelToken: cancelToken);
       developer.log('AI Response received for flashcards',
           name: 'GeneratorAIService');
       final jsonStr = extractJson(response);
@@ -334,17 +328,18 @@ Text: $text''';
 
     try {
       final response = await generateWithRetry(prompt,
-          customModel: educatorModel,
-          cancelToken: cancelToken);
+          customModel: educatorModel, cancelToken: cancelToken);
       final jsonStr = extractJson(response);
       var data = safeJsonDecode(jsonStr);
-      
+
       // If safeJsonDecode failed, it returned an empty map
       if (data.isEmpty) {
         // Did the model return a list? Let's check manually
         try {
           final rawDecode = json.decode(jsonStr);
-          if (rawDecode is List && rawDecode.isNotEmpty && rawDecode.first is Map) {
+          if (rawDecode is List &&
+              rawDecode.isNotEmpty &&
+              rawDecode.first is Map) {
             data = Map<String, dynamic>.from(rawDecode.first);
           }
         } catch (_) {}
@@ -353,7 +348,7 @@ Text: $text''';
       if (data.containsKey('title')) {
         return data;
       }
-      
+
       // Secondary robustness check for nested wrappers
       if (data.containsKey('topic') && data['topic'] is Map) {
         return Map<String, dynamic>.from(data['topic']);
@@ -362,7 +357,8 @@ Text: $text''';
         return Map<String, dynamic>.from(data['data']);
       }
 
-      throw AIServiceException('Malformed AI response for topic generation. Raw: ${jsonStr.length > 200 ? jsonStr.substring(0, 200) : jsonStr}',
+      throw AIServiceException(
+          'Malformed AI response for topic generation. Raw: ${jsonStr.length > 200 ? jsonStr.substring(0, 200) : jsonStr}',
           code: 'MALFORMED_RESPONSE');
     } catch (e) {
       developer.log('Topic generation failed',
@@ -453,7 +449,9 @@ Text: $text''';
               options: options,
               correctAnswer: q['correctAnswer']?.toString() ?? '',
               explanation: q['explanation']?.toString(),
-              questionType: q['questionType']?.toString() ?? q['type']?.toString() ?? 'Theory',
+              questionType: q['questionType']?.toString() ??
+                  q['type']?.toString() ??
+                  'Theory',
             ));
           }
         }
@@ -479,7 +477,8 @@ Text: $text''';
     CancellationToken? cancelToken,
   }) async {
     final type = oldQuestion.questionType;
-    final prompt = '''You are an expert examiner. Regenerate this $type question for a $level $subject exam.
+    final prompt =
+        '''You are an expert examiner. Regenerate this $type question for a $level $subject exam.
     The new question must be based on the source text but different from the previous one.
     
     OLD QUESTION: ${oldQuestion.question}
@@ -530,7 +529,8 @@ Text: $text''';
 
     // Model-level config already has responseMimeType, temperature, and maxOutputTokens
 
-    final prompt = '''As an AI Tutor, verify the student's answer to this study question.
+    final prompt =
+        '''As an AI Tutor, verify the student's answer to this study question.
     
     QUESTION: $question
     REFERENCE ANSWER / KEY POINTS: $referenceAnswer
@@ -552,8 +552,7 @@ Text: $text''';
 
     try {
       final response = await generateWithRetry(prompt,
-          customModel: educatorModel,
-          cancelToken: cancelToken);
+          customModel: educatorModel, cancelToken: cancelToken);
 
       final jsonStr = extractJson(response);
       return safeJsonDecode(jsonStr);

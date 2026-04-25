@@ -2,7 +2,8 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 
 void main() async {
   print('Starting standalone API test...');
-  final apiKey = 'AIzaSyDWEUCZ9lfq7yspgl6fMt84jIUOAN9mItI';
+  // API Key loaded from build arguments via --dart-define=API_KEY
+  const apiKey = String.fromEnvironment('API_KEY');
   final modelStr = 'gemini-3.1-flash-lite-preview';
   
   print('Initializing model \$modelStr...');
