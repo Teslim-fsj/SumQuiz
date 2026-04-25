@@ -183,7 +183,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
                       decoration: BoxDecoration(
                         color: theme.colorScheme.primaryContainer,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
+                        border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.2)),
                       ),
                       child: Row(
                         children: [
@@ -680,7 +680,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
         border: Border.all(color: theme.dividerColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1942,7 +1942,7 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
         classLevel: widget.classLevel,
         durationMinutes: widget.duration,
         shareCode: shareCode,
-        creatorName: user.displayName,
+        creatorName: user?.displayName ?? 'Educator',
         marksA: _marksA,
 
         marksB: _marksB,
