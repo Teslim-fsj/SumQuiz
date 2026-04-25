@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sumquiz/theme/web_theme.dart';
@@ -652,7 +651,7 @@ class _StudentLandingViewState extends State<StudentLandingView> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 20,
               offset: const Offset(0, 10))
         ],
@@ -788,7 +787,7 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                   (index) =>
                       const Icon(Icons.star, color: Colors.amber, size: 16))),
           const SizedBox(height: 24),
-          Text('\"$quote\"',
+          Text('"$quote"',
               style: GoogleFonts.inter(
                   fontSize: 14,
                   color: Colors.grey[700],
