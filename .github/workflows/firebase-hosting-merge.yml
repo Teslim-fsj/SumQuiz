@@ -21,7 +21,7 @@ jobs:
         run: dart run build_runner build --delete-conflicting-outputs
         
       - name: Build Web
-        run: flutter build web --release --base-href / --dart-define=API_KEY=${{ vars.API_KEY }}
+        run: flutter build web --release --base-href / --dart-define=API_KEY=${{ secrets.API_KEY || vars.API_KEY }}
         
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0

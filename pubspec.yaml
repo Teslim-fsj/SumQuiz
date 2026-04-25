@@ -23,7 +23,6 @@ dependencies:
   firebase_messaging: ^16.0.3
   firebase_crashlytics: 5.0.6
   google_generative_ai: ^0.4.7
-  flutter_dotenv: ^6.0.0
 
   # Notification Packages (Updated notifications to latest for better compatibility)
   flutter_local_notifications: ^19.5.0
@@ -98,7 +97,6 @@ flutter:
     - assets/icons/
     - assets/notification_templates.json
     - assets/fonts/
-    - .env
 
   # Removed broken local font definitions, google_fonts will dynamically fetch them.
 
