@@ -1,7 +1,7 @@
 name: sumquiz
 description: "A new Flutter project."
 publish_to: 'none'
-version: 1.0.16+142
+version: 1.0.17+146
 
 environment:
   sdk: '>=3.5.0-18.0.dev <4.0.0'
