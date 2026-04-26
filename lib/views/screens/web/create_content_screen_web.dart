@@ -193,6 +193,21 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
 
   Widget _buildErrorView(BuildContext context, CreateContentProvider provider) {
     final colorScheme = Theme.of(context).colorScheme;
+    
+    // Friendly error mapping
+    String displayMessage = provider.errorMessage;
+    String displayTitle = 'Extraction Failed';
+
+    if (provider.errorMessage.contains('USAGE_LIMIT_REACHED')) {
+      displayTitle = 'Study Limit Reached';
+      displayMessage = "You've reached your daily generation limit. Educators and Pro members get unlimited AI extractions!";
+    } else if (provider.errorMessage.contains('API key is not configured')) {
+      displayMessage = "Our AI system is currently undergoing maintenance. Please try again in a few minutes.";
+    } else if (provider.errorMessage.contains('YouTube Error')) {
+      displayTitle = 'YouTube Analysis Error';
+      displayMessage = "We couldn't process this video. It might be too long, private, or have transcripts disabled.";
+    }
+
     return Container(
       width: 600,
       padding: const EdgeInsets.all(40),
@@ -206,20 +221,30 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
         children: [
           Icon(Icons.error_outline_rounded, color: colorScheme.error, size: 60),
           const SizedBox(height: 32),
-          Text('Extraction Failed', style: GoogleFonts.outfit(fontSize: 28, fontWeight: FontWeight.w900, color: colorScheme.onSurface)),
+          Text(displayTitle, 
+            style: GoogleFonts.outfit(fontSize: 28, fontWeight: FontWeight.w900, color: colorScheme.onSurface)),
           const SizedBox(height: 16),
-          Text(provider.errorMessage, textAlign: TextAlign.center, style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w500, color: colorScheme.onSurfaceVariant)),
+          Text(displayMessage, 
+            textAlign: TextAlign.center, 
+            style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w500, color: colorScheme.onSurfaceVariant, height: 1.5)),
           const SizedBox(height: 48),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TextButton(onPressed: provider.reset, child: const Text('Choose Different Source')),
               const SizedBox(width: 20),
-              ElevatedButton(
-                onPressed: provider.backToConfig,
-                style: ElevatedButton.styleFrom(backgroundColor: colorScheme.onSurface, foregroundColor: colorScheme.surface),
-                child: const Text('Try Again'),
-              ),
+              if (!provider.errorMessage.contains('USAGE_LIMIT_REACHED'))
+                ElevatedButton(
+                  onPressed: provider.backToConfig,
+                  style: ElevatedButton.styleFrom(backgroundColor: colorScheme.onSurface, foregroundColor: colorScheme.surface),
+                  child: const Text('Try Again'),
+                )
+              else
+                ElevatedButton(
+                  onPressed: () => context.push('/settings/subscription'),
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF3300FF), foregroundColor: Colors.white),
+                  child: const Text('Upgrade to Pro'),
+                ),
             ],
           ),
         ],
