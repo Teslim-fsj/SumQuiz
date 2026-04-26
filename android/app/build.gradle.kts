@@ -32,12 +32,19 @@ android {
         jvmTarget = "11"
     }
 
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localProperties.load(FileInputStream(localPropertiesFile))
+    }
+
     defaultConfig {
         applicationId = "com.sumquiz.app"
         minSdk = 26
         targetSdk = 35  // ← Updated to 35 (safe & recommended)
-        val flutterVersionCode = (project.findProperty("flutter.versionCode") as String?)?.toInt() ?: 1
-        val flutterVersionName = project.findProperty("flutter.versionName") as String? ?: "1.0"
+        
+        val flutterVersionCode = localProperties.getProperty("flutter.versionCode")?.toInt() ?: 1
+        val flutterVersionName = localProperties.getProperty("flutter.versionName") ?: "1.0"
 
         versionCode = flutterVersionCode
         versionName = flutterVersionName
