@@ -23,13 +23,13 @@ jobs:
       - name: Build Web
         run: flutter build web --release --base-href / --dart-define=API_KEY=${{ secrets.API_KEY || vars.API_KEY }}
         
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      # - name: Setup Node.js
+      #   uses: actions/setup-node@v4
+      #   with:
+      #     node-version: '20'
 
-      - name: Install Functions Dependencies
-        run: npm ci --prefix functions
+      # - name: Install Functions Dependencies
+      #   run: npm ci --prefix functions
 
       - name: Deploy to Firebase
         run: |
@@ -37,4 +37,4 @@ jobs:
           export GOOGLE_APPLICATION_CREDENTIALS_JSON='${{ secrets.FIREBASE_SERVICE_ACCOUNT_SUMQUIZ_3D54E }}'
           echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > gcp-key.json
           export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/gcp-key.json
-          firebase deploy --project sumquiz-3d54e --non-interactive
+          firebase deploy --only hosting,firestore --project sumquiz-3d54e --non-interactive
