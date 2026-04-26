@@ -20,6 +20,15 @@ jobs:
       - name: Run code generation
         run: dart run build_runner build --delete-conflicting-outputs
         
+      - name: Check API Configuration
+        run: |
+          if [ -z "${{ secrets.API_KEY }}" ] && [ -z "${{ vars.API_KEY }}" ]; then
+            echo "::error::API_KEY is missing from both Secrets and Variables! AI features will fail."
+            exit 1
+          else
+            echo "API_KEY configuration found."
+          fi
+
       - name: Build Web
         run: flutter build web --release --base-href / --dart-define=API_KEY=${{ secrets.API_KEY || vars.API_KEY }}
         
