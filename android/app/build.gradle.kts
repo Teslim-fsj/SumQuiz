@@ -36,8 +36,11 @@ android {
         applicationId = "com.sumquiz.app"
         minSdk = 26
         targetSdk = 35  // ← Updated to 35 (safe & recommended)
-        versionCode = 113
-        versionName = "1.16.1"
+        val flutterVersionCode = (project.findProperty("flutter.versionCode") as String?)?.toInt() ?: 1
+        val flutterVersionName = project.findProperty("flutter.versionName") as String? ?: "1.0"
+
+        versionCode = flutterVersionCode
+        versionName = flutterVersionName
         multiDexEnabled = true
     }
 
