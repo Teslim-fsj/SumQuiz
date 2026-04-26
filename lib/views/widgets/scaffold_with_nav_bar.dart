@@ -24,13 +24,13 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
     final isTeacher = user?.role == UserRole.creator;
     final isDark = theme.brightness == Brightness.dark;
 
-    // For teachers on mobile: map 5 visible tabs to branches 0, 1, 2, 4, 3
-    final List<int> teacherMobileBranches = [0, 1, 2, 4, 3];
+    // For teachers on mobile: map 4 visible tabs to branches 0, 1, 4, 5
+    final List<int> teacherMobileBranches = [0, 1, 4, 5];
 
     int branchToIndex(int branch) {
       if (isTeacher) {
         final idx = teacherMobileBranches.indexOf(branch);
-        return idx; // -1 if not in list (e.g. branch 5,6,7)
+        return idx; // -1 if not in list (e.g. branch 2, 3, 6, 7)
       }
       if (branch > 3) return -1;
       return branch;
@@ -44,10 +44,64 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
       );
     }
 
-    void goToBranch(int branch) {
-      widget.navigationShell.goBranch(
-        branch,
-        initialLocation: branch == widget.navigationShell.currentIndex,
+    void _showCreateOptions(BuildContext context) {
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.transparent,
+        builder: (context) => Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.dividerColor.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Create New Content',
+                style: GoogleFonts.outfit(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 24),
+              _buildCreateOption(
+                context,
+                title: 'Exam / Quiz',
+                subtitle: 'Structured assessment with advanced analytics',
+                icon: Icons.assignment_outlined,
+                color: WebColors.purplePrimary,
+                onTap: () {
+                  Navigator.pop(context);
+                  context.go('/create-content/exam-wizard');
+                },
+              ),
+              const SizedBox(height: 16),
+              _buildCreateOption(
+                context,
+                title: 'Study Pack',
+                subtitle: 'Summaries, Quizzes, and Flashcards from any source',
+                icon: Icons.auto_awesome_outlined,
+                color: const Color(0xFF0D9488),
+                onTap: () {
+                  Navigator.pop(context);
+                  widget.navigationShell.goBranch(2);
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
       );
     }
 
@@ -58,44 +112,54 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
           return Scaffold(
             backgroundColor: theme.scaffoldBackgroundColor,
             body: widget.navigationShell,
+            floatingActionButtonLocation: isTeacher ? FloatingActionButtonLocation.centerDocked : null,
+            floatingActionButton: isTeacher ? FloatingActionButton(
+              onPressed: () => _showCreateOptions(context),
+              backgroundColor: WebColors.purplePrimary,
+              elevation: 4,
+              shape: const CircleBorder(),
+              child: const Icon(Icons.add, color: Colors.white, size: 32),
+            ) : null,
             bottomNavigationBar: isTeacher
-              ? BottomNavigationBar(
-                  items: const [
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.dashboard_outlined),
-                      activeIcon: Icon(Icons.dashboard),
-                      label: 'Dashboard',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.inventory_2_outlined),
-                      activeIcon: Icon(Icons.inventory_2),
-                      label: 'Content',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.add_circle_outline),
-                      activeIcon: Icon(Icons.add_circle),
-                      label: 'Create',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.people_outline),
-                      activeIcon: Icon(Icons.people),
-                      label: 'Students',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.analytics_outlined),
-                      activeIcon: Icon(Icons.analytics),
-                      label: 'Analytics',
-                    ),
-                  ],
-                  currentIndex: currentIdx < 0 ? 0 : currentIdx,
-                  onTap: onTap,
-                  type: BottomNavigationBarType.fixed,
-                  selectedItemColor: WebColors.purplePrimary,
-                  unselectedItemColor: Colors.grey[500],
-                  selectedFontSize: 10,
-                  unselectedFontSize: 10,
-                  selectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.bold),
-                  unselectedLabelStyle: GoogleFonts.inter(),
+              ? BottomAppBar(
+                  padding: EdgeInsets.zero,
+                  notchMargin: 8,
+                  shape: const CircularNotchedRectangle(),
+                  color: theme.cardColor.withOpacity(0.9),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildMobileNavItem(
+                        icon: Icons.dashboard_outlined,
+                        activeIcon: Icons.dashboard,
+                        label: 'Home',
+                        isActive: currentIdx == 0,
+                        onTap: () => onTap(0),
+                      ),
+                      _buildMobileNavItem(
+                        icon: Icons.inventory_2_outlined,
+                        activeIcon: Icons.inventory_2,
+                        label: 'Content',
+                        isActive: currentIdx == 1,
+                        onTap: () => onTap(1),
+                      ),
+                      const SizedBox(width: 48), // Space for FAB
+                      _buildMobileNavItem(
+                        icon: Icons.people_outline,
+                        activeIcon: Icons.people,
+                        label: 'Class',
+                        isActive: currentIdx == 2,
+                        onTap: () => onTap(2),
+                      ),
+                      _buildMobileNavItem(
+                        icon: Icons.auto_awesome_rounded,
+                        activeIcon: Icons.auto_awesome,
+                        label: 'Insights',
+                        isActive: currentIdx == 3,
+                        onTap: () => onTap(3),
+                      ),
+                    ],
+                  ),
                 )
               : BottomNavigationBar(
                   items: const [
@@ -503,6 +567,101 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
           );
         }
       },
+    );
+  }
+
+    );
+  }
+
+  Widget _buildMobileNavItem({
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isActive ? activeIcon : icon,
+              color: isActive ? WebColors.purplePrimary : Colors.grey[500],
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                color: isActive ? WebColors.purplePrimary : Colors.grey[500],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCreateOption(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: theme.dividerColor),
+          ],
+        ),
+      ),
     );
   }
 

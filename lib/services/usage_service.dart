@@ -35,13 +35,18 @@ class UsageService {
       // 1. Invisible Cost Calculation
       int approximateCost = _calculateInternalCost(actionType);
       
-      // 2. Burst Control (Abuse protection)
+      // 2. Bypass for Pro/Creators during testing
+      if (user.isPro || user.role == UserRole.creator) {
+        return true;
+      }
+
+      // 3. Burst Control (Abuse protection for free users)
       if (await _isBursting(uid, user)) {
         developer.log('Burst control triggered for user: $uid', name: 'UsageService');
         return false;
       }
 
-      // 3. Adaptive Throttling (Protect margins)
+      // 4. Credit Check for free users
       if (user.credits < approximateCost) {
         developer.log('Credit block (Hidden as Daily Limit) for user: $uid', name: 'UsageService');
         return false;
