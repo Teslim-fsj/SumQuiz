@@ -86,7 +86,13 @@ jobs:
 
       # 7️⃣ Pass API_KEY to Flutter via dart-define (No longer uses .env)
       - name: Verify API Key
-        run: echo "API_KEY is available from variables"
+        run: |
+          if [ -z "${{ secrets.API_KEY }}" ] && [ -z "${{ vars.API_KEY }}" ]; then
+            echo "::error::API_KEY is missing from both Secrets and Variables! AI features will fail."
+            exit 1
+          else
+            echo "API_KEY configuration found."
+          fi
 
       # 8️⃣ Install dependencies
       - name: Install Flutter dependencies
@@ -104,7 +110,7 @@ jobs:
 
       # 1️⃣1️⃣ Build release app bundle
       - name: Build app bundle
-        run: flutter build appbundle --release --dart-define=API_KEY=${{ vars.API_KEY }}
+        run: flutter build appbundle --release --dart-define=API_KEY=${{ secrets.API_KEY || vars.API_KEY }}
 
       # 1️⃣2️⃣ Upload AAB as artifact
       - name: Upload AAB
