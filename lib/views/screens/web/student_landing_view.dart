@@ -225,6 +225,7 @@ class _StudentLandingViewState extends State<StudentLandingView> {
           children: [
             SizedBox(
               width: 100,
+              height: 40,
               child: Stack(
                 children: [
                   _buildAvatar('assets/images/sumquiz_logo.png', 0),

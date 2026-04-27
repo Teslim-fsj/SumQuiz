@@ -322,10 +322,9 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
         final filtered = items
             .where((i) => i.title.toLowerCase().contains(_searchQuery))
             .toList();
-
         if (filtered.isEmpty) {
           return WebLibraryEmptyState(
-            onBuildPack: () => context.push('/create'),
+            onBuildPack: () => context.push('/create-content'),
             onCreateNew: () => context.push('/create-content'),
           );
         }

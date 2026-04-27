@@ -85,8 +85,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
   final _topicController = TextEditingController();
   String? _pdfName;
   Uint8List? _pdfBytes;
-  String? _imageName;
-  Uint8List? _imageBytes;
+  List<Map<String, dynamic>> _selectedImages = []; // Each map: { 'name': String, 'bytes': Uint8List }
   String? _mimeType;
   String _errorMessage = '';
 
@@ -131,8 +130,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
     setState(() {
       _pdfName = null;
       _pdfBytes = null;
-      _imageName = null;
-      _imageBytes = null;
+      _selectedImages = [];
       _mimeType = null;
       _errorMessage = '';
     });
@@ -278,40 +276,72 @@ class _CreateContentScreenState extends State<CreateContentScreen>
     if (_isLoading || _isProcessing) return;
 
     if (!await _checkProAccess('Image Scan', actionType: 'upload')) return;
-    _resetInputs(); // Clear other inputs
+    
+    // Clear non-image inputs if this is the first image
+    if (_selectedImages.isEmpty) {
+      _textController.clear();
+      _linkController.clear();
+      _topicController.clear();
+      _pdfName = null;
+      _pdfBytes = null;
+    }
 
     setState(() => _isLoading = true);
 
     try {
-      final XFile? image = await _imagePicker.pickImage(
-        source: source,
-        imageQuality: 80,
-        maxHeight: 1920,
-        maxWidth: 1920,
-      );
+      if (source == ImageSource.gallery) {
+        final List<XFile> images = await _imagePicker.pickMultiImage(
+          imageQuality: 80,
+          maxHeight: 1920,
+          maxWidth: 1920,
+        );
 
-      if (image != null) {
-        // Validate file size (10MB limit)
-        final fileStat = await image.length();
-        final fileSizeMb = fileStat / (1024 * 1024);
-        if (fileSizeMb > 10) {
-          throw Exception(
-              'Image file is too large. Maximum size is 10MB. Selected image is ${fileSizeMb.toStringAsFixed(1)}MB');
+        if (images.isNotEmpty) {
+          for (final image in images) {
+            final fileStat = await image.length();
+            final fileSizeMb = fileStat / (1024 * 1024);
+            if (fileSizeMb > 10) continue; // Skip large images
+
+            final bytes = await image.readAsBytes();
+            if (bytes.isNotEmpty) {
+              setState(() {
+                _selectedImages.add({
+                  'name': 'gallery_${image.name}',
+                  'bytes': bytes,
+                });
+                _mimeType = _getMimeType(image.name);
+              });
+            }
+          }
         }
+      } else {
+        final XFile? image = await _imagePicker.pickImage(
+          source: source,
+          imageQuality: 80,
+          maxHeight: 1920,
+          maxWidth: 1920,
+        );
 
-        final bytes = await image.readAsBytes();
+        if (image != null) {
+          final fileStat = await image.length();
+          final fileSizeMb = fileStat / (1024 * 1024);
+          if (fileSizeMb > 10) {
+            throw Exception('Image file is too large. Maximum size is 10MB.');
+          }
 
-        // Validate that we got data
-        if (bytes.isEmpty) {
-          throw Exception('Failed to read image data');
+          final bytes = await image.readAsBytes();
+          if (bytes.isEmpty) {
+            throw Exception('Failed to read image data');
+          }
+
+          setState(() {
+            _selectedImages.add({
+              'name': 'camera_${image.name}',
+              'bytes': bytes,
+            });
+            _mimeType = _getMimeType(image.name);
+          });
         }
-
-        setState(() {
-          _imageName =
-              '${source == ImageSource.camera ? "camera_" : "gallery_"}${image.name}';
-          _imageBytes = bytes;
-          _mimeType = _getMimeType(image.name);
-        });
       }
     } catch (e) {
       setState(() => _errorMessage = _getUserFriendlyError(e));
@@ -386,7 +416,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
       children: [
         Icon(icon, color: const Color(0xFF6366F1), size: 20),
         const SizedBox(width: 12),
-        Text(text, style: GoogleFonts.inter(color: Colors.white.withOpacity(0.8), fontSize: 14)),
+        Text(text, style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.8), fontSize: 14)),
       ],
     );
   }
@@ -466,13 +496,11 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           if (!await _checkProAccess('Image/Snap Scan')) {
             return;
           }
-          if (_imageBytes == null) {
+          if (_selectedImages.isEmpty) {
             validationError = 'Please capture or select an image';
-          } else if (_imageBytes!.length > 10 * 1024 * 1024) {
-            validationError = 'Image file is too large. Maximum size is 10MB';
           }
           type = 'image';
-          input = _imageBytes;
+          input = _selectedImages.map((e) => e['bytes'] as Uint8List).toList();
           break;
         case 'exam':
           if (!await _checkProAccess('Tutor Exam')) {
@@ -588,15 +616,50 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           // Wait for dialog dismissal to fully settle
           await Future.delayed(const Duration(milliseconds: 100));
           if (mounted) {
-            ExtractionResultCache.set(extractionResult);
-            await Future.delayed(const Duration(milliseconds: 100));
-            if (mounted) {
+            try {
+              final aiService = Provider.of<EnhancedAIService>(context, listen: false);
+              final localDb = Provider.of<LocalDatabaseService>(context, listen: false);
+
+              progressNotifier.value = 'Neural processing started...';
+              
               if (mounted) {
-                await FirebaseCrashlytics.instance.log(
-                    'Navigating to extraction-view. Type: $type. Text length: ${extractionResult.text.length}');
-                if (mounted) {
-                  context.push('/create/extraction-view');
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => PopScope(
+                    canPop: false,
+                    onPopInvokedWithResult: (didPop, result) {
+                      if (didPop) return;
+                      cancelToken.cancel();
+                    },
+                    child: ExtractionProgressDialog(messageNotifier: progressNotifier),
+                  ),
+                );
+              }
+
+              final folderId = await aiService.generateAndStoreOutputs(
+                text: extractionResult.text,
+                title: extractionResult.suggestedTitle.isEmpty ? 'Untitled Study Pack' : extractionResult.suggestedTitle,
+                requestedOutputs: ['summary', 'quiz', 'flashcards'],
+                userId: user.uid,
+                localDb: localDb,
+                onProgress: (msg) {
+                  progressNotifier.value = msg;
+                },
+                cancelToken: cancelToken,
+              );
+
+              if (!cancelToken.isCancelled && mounted) {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
                 }
+                context.push('/library/results-view/$folderId');
+              }
+            } catch (e) {
+              debugPrint('Generation error: $e');
+              if (mounted) {
+                if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+                setState(() => _errorMessage = 'Generation failed: ${_getUserFriendlyError(e)}');
               }
             }
           }
@@ -761,7 +824,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF6366F1).withOpacity(0.08),
+                color: const Color(0xFF6366F1).withValues(alpha: 0.08),
               ),
             ),
           )
@@ -775,7 +838,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
               height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFEC4899).withOpacity(0.05),
+                color: const Color(0xFFEC4899).withValues(alpha: 0.05),
               ),
             ),
           )
@@ -796,7 +859,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
             icon: const Icon(Icons.arrow_back_ios_new_rounded,
                 color: Colors.white, size: 20),
             style: IconButton.styleFrom(
-              backgroundColor: Colors.white.withOpacity(0.05),
+              backgroundColor: Colors.white.withValues(alpha: 0.05),
               padding: const EdgeInsets.all(12),
             ),
           ),
@@ -818,7 +881,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
         borderRadius: BorderRadius.circular(100),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFACC15).withOpacity(0.3),
+            color: const Color(0xFFFACC15).withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -876,14 +939,13 @@ class _CreateContentScreenState extends State<CreateContentScreen>
   }
 
   Widget _buildMaterialSection() {
-    final bool hasFile = _pdfBytes != null || _imageBytes != null;
-    final String? fileName = _pdfName ?? _imageName;
+    final bool hasFile = _pdfBytes != null || _selectedImages.isNotEmpty;
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: Column(
         children: [
@@ -892,32 +954,74 @@ class _CreateContentScreenState extends State<CreateContentScreen>
               margin: const EdgeInsets.all(12),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFF6366F1).withOpacity(0.15),
+                color: const Color(0xFF6366F1).withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                    color: const Color(0xFF6366F1).withOpacity(0.3)),
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  const Icon(Icons.description_rounded,
-                      color: Color(0xFF6366F1), size: 20),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      fileName!,
-                      style: GoogleFonts.outfit(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  if (_pdfBytes != null)
+                    Row(
+                      children: [
+                        const Icon(Icons.description_rounded,
+                            color: Color(0xFF6366F1), size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _pdfName!,
+                            style: GoogleFonts.outfit(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: _resetInputs,
+                          icon: const Icon(Icons.close_rounded,
+                              color: Colors.white54, size: 20),
+                        ),
+                      ],
                     ),
-                  ),
-                  IconButton(
-                    onPressed: _resetInputs,
-                    icon: const Icon(Icons.close_rounded,
-                        color: Colors.white54, size: 20),
-                  ),
+                  if (_selectedImages.isNotEmpty) ...[
+                    if (_pdfBytes != null) const Divider(color: Colors.white10),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: _selectedImages.asMap().entries.map((entry) {
+                          final idx = entry.key;
+                          return Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.image_rounded, color: Color(0xFFEC4899), size: 16),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Image ${idx + 1}',
+                                  style: GoogleFonts.outfit(color: Colors.white, fontSize: 13),
+                                ),
+                                IconButton(
+                                  onPressed: () => setState(() {
+                                    _selectedImages.removeAt(idx);
+                                  }),
+                                  icon: const Icon(Icons.close_rounded, color: Colors.white54, size: 16),
+                                  constraints: const BoxConstraints(),
+                                  padding: const EdgeInsets.only(left: 8),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -934,7 +1038,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                     decoration: InputDecoration(
                       hintText: 'Paste link or material...',
                       hintStyle: GoogleFonts.outfit(
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.white.withValues(alpha: 0.3),
                       ),
                       border: InputBorder.none,
                       contentPadding:
@@ -966,7 +1070,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           _pickPdf();
         }
       },
-      icon: Icon(icon, color: color.withOpacity(0.8), size: 22),
+      icon: Icon(icon, color: color.withValues(alpha: 0.8), size: 22),
       tooltip: 'Upload ${type.toUpperCase()}',
     );
   }
@@ -974,7 +1078,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
   Widget _buildQuickActionsRow() {
     final bool hasInput = _linkController.text.trim().isNotEmpty ||
         _pdfBytes != null ||
-        _imageBytes != null;
+        _selectedImages.isNotEmpty;
 
     return Row(
       children: [
@@ -1001,12 +1105,12 @@ class _CreateContentScreenState extends State<CreateContentScreen>
             padding: const EdgeInsets.symmetric(vertical: 16),
             decoration: BoxDecoration(
               gradient: enabled ? gradient : null,
-              color: enabled ? null : Colors.white.withOpacity(0.05),
+              color: enabled ? null : Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(16),
               boxShadow: enabled
                   ? [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       )
@@ -1037,18 +1141,18 @@ class _CreateContentScreenState extends State<CreateContentScreen>
   Widget _buildSeparator() {
     return Row(
       children: [
-        Expanded(child: Divider(color: Colors.white.withOpacity(0.1))),
+        Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.1))),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             'Or',
             style: GoogleFonts.outfit(
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha: 0.3),
               fontWeight: FontWeight.w600,
             ),
           ),
         ),
-        Expanded(child: Divider(color: Colors.white.withOpacity(0.1))),
+        Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.1))),
       ],
     );
   }
@@ -1057,14 +1161,14 @@ class _CreateContentScreenState extends State<CreateContentScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
           Icon(Icons.search_rounded,
-              color: Colors.white.withOpacity(0.3), size: 24),
+              color: Colors.white.withValues(alpha: 0.3), size: 24),
           const SizedBox(width: 12),
           Expanded(
             child: TextField(
@@ -1082,7 +1186,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
               decoration: InputDecoration(
                 hintText: 'Type a topic...',
                 hintStyle: GoogleFonts.outfit(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha: 0.3),
                 ),
                 border: InputBorder.none,
               ),
@@ -1152,7 +1256,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           style: GoogleFonts.outfit(
             fontSize: 11,
             fontWeight: FontWeight.w800,
-            color: Colors.white.withOpacity(0.4),
+            color: Colors.white.withValues(alpha: 0.4),
             letterSpacing: 1.5,
           ),
         ),
@@ -1179,17 +1283,17 @@ class _CreateContentScreenState extends State<CreateContentScreen>
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: const Color(0xFF10B981).withOpacity(0.05),
+          color: const Color(0xFF10B981).withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(24),
           border:
-              Border.all(color: const Color(0xFF10B981).withOpacity(0.2)),
+              Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.2)),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withOpacity(0.1),
+                color: const Color(0xFF10B981).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: const Icon(Icons.biotech_rounded,
@@ -1211,7 +1315,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                   Text(
                     'Strategic Tutoring & Exam Solver',
                     style: GoogleFonts.outfit(
-                      color: Colors.white.withOpacity(0.5),
+                      color: Colors.white.withValues(alpha: 0.5),
                       fontSize: 13,
                     ),
                   ),
@@ -1239,10 +1343,10 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           decoration: BoxDecoration(
             color: isSelected
                 ? Colors.white
-                : Colors.white.withOpacity(0.06),
+                : Colors.white.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(100),
             border: Border.all(
-                color: Colors.white.withOpacity(isSelected ? 1 : 0.1)),
+                color: Colors.white.withValues(alpha: isSelected ? 1 : 0.1)),
           ),
           child: Center(
             child: Text(
@@ -1252,7 +1356,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                 fontWeight: FontWeight.w800,
                 color: isSelected
                     ? Colors.black
-                    : Colors.white.withOpacity(0.6),
+                    : Colors.white.withValues(alpha: 0.6),
               ),
             ),
           ),
@@ -1271,11 +1375,11 @@ class _CreateContentScreenState extends State<CreateContentScreen>
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFEF4444).withOpacity(0.95),
+          color: const Color(0xFFEF4444).withValues(alpha: 0.95),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.3), blurRadius: 20),
+                color: Colors.black.withValues(alpha: 0.3), blurRadius: 20),
           ],
         ),
         child: Row(
@@ -1329,7 +1433,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
@@ -1381,9 +1485,9 @@ class _CreateContentScreenState extends State<CreateContentScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 24),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
           ),
           child: Column(
             children: [

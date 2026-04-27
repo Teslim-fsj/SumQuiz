@@ -52,9 +52,9 @@ service cloud.firestore {
     match /public_decks/{deckId} {
       allow read: if true; // Publicly accessible
       
-      // Allow creation if user is authenticated and has the creator role
-      allow create: if isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'creator';
+      // Allow creation if user is authenticated
+      // Both teachers and students can now share decks
+      allow create: if isAuthenticated();
       
       // Allow update/delete if the user is the original creator
       allow update, delete: if isAuthenticated() && 

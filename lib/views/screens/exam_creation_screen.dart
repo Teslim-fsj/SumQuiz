@@ -19,6 +19,7 @@ import 'package:sumquiz/models/public_deck.dart';
 import 'package:sumquiz/utils/share_code_generator.dart';
 import 'package:sumquiz/services/youtube_service.dart';
 import 'package:sumquiz/utils/youtube_pro_gate.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ExamCreationScreen extends StatefulWidget {
   const ExamCreationScreen({super.key});
@@ -46,6 +47,8 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
   bool _showFullPreview = false;
   bool _isProcessing = false;
   String _processingMessage = '';
+  final ImagePicker _imagePicker = ImagePicker();
+  List<Map<String, dynamic>> _selectedSourceFiles = []; // { 'name': String, 'bytes': Uint8List, 'type': String }
   CancellationToken? _cancelToken;
 
   @override
@@ -323,8 +326,8 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
                             _buildUploadOption('PDF', Icons.picture_as_pdf, () {
                               _selectSourceMaterial('PDF');
                             }),
-                            _buildUploadOption('Scan / Image', Icons.image, () {
-                              _selectSourceMaterial('Image');
+                            _buildUploadOption('Scan / Image', Icons.camera_alt, () {
+                              _showImageSourceSelection();
                             }),
                             _buildUploadOption('Notes', Icons.note_alt, () {
                               _selectSourceMaterial('Notes');
@@ -739,6 +742,152 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
     );
   }
 
+  void _showImageSourceSelection() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text(
+                'Select Image Source',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Take a Photo (Snap)'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickFromImagePicker(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Pick from Gallery'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickFromImagePicker(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.folder),
+              title: const Text('Select Files'),
+              onTap: () {
+                Navigator.pop(context);
+                _selectSourceMaterial('Image');
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickFromImagePicker(ImageSource source) async {
+    try {
+      if (source == ImageSource.gallery) {
+        final List<XFile> images = await _imagePicker.pickMultiImage(
+          imageQuality: 80,
+          maxHeight: 1920,
+          maxWidth: 1920,
+        );
+
+        if (images.isNotEmpty) {
+          List<Map<String, dynamic>> newFiles = [];
+          for (final image in images) {
+            final bytes = await image.readAsBytes();
+            newFiles.add({
+              'name': image.name,
+              'bytes': bytes,
+              'type': 'image',
+            });
+          }
+          _processSelectedFiles(newFiles);
+        }
+      } else {
+        final XFile? image = await _imagePicker.pickImage(
+          source: source,
+          imageQuality: 80,
+          maxHeight: 1920,
+          maxWidth: 1920,
+        );
+
+        if (image != null) {
+          final bytes = await image.readAsBytes();
+          _processSelectedFiles([{
+            'name': image.name,
+            'bytes': bytes,
+            'type': 'image',
+          }]);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error picking image: $e');
+    }
+  }
+
+  Future<void> _processSelectedFiles(List<Map<String, dynamic>> files) async {
+    if (files.isEmpty) return;
+
+    setState(() {
+      _isProcessing = true;
+      _processingMessage = 'Extracting content...';
+    });
+
+    try {
+      final user = Provider.of<UserModel?>(context, listen: false);
+      final enhancedAiService = Provider.of<EnhancedAIService>(context, listen: false);
+      final extractionService = ContentExtractionService(enhancedAiService);
+      _cancelToken = CancellationToken();
+
+      String combinedText = _sourceMaterial;
+      if (combinedText.isNotEmpty) combinedText += '\n\n';
+
+      for (int i = 0; i < files.length; i++) {
+        final file = files[i];
+        setState(() => _processingMessage = 'Extracting from ${file['name']} (${i + 1}/${files.length})...');
+
+        final extractionResult = await extractionService.extractContent(
+          type: file['type'] ?? 'image',
+          input: file['bytes'],
+          userId: user?.uid,
+          mimeType: (file['type'] == 'pdf') ? 'application/pdf' : 'image/jpeg',
+          allowYouTubeImport: userMayImportFromYouTube(user),
+          onProgress: (msg) {
+            if (mounted) setState(() => _processingMessage = msg);
+          },
+          cancelToken: _cancelToken,
+        );
+
+        if (combinedText.isNotEmpty && !combinedText.endsWith('\n\n')) {
+          combinedText += '\n\n';
+        }
+        combinedText += '--- Source: ${file['name']} ---\n${extractionResult.text}';
+      }
+
+      if (mounted) {
+        setState(() {
+          _sourceMaterial = combinedText;
+          _isProcessing = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   Future<void> _selectSourceMaterial(String type) async {
     setState(() {
       _isProcessing = true;
@@ -777,47 +926,17 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
       if (!mounted) return;
 
       if (result != null && result.files.isNotEmpty) {
-        setState(() => _isProcessing = true);
-        final user = Provider.of<UserModel?>(context, listen: false);
-        final enhancedAiService = Provider.of<EnhancedAIService>(context, listen: false);
-        final extractionService = ContentExtractionService(enhancedAiService);
-        _cancelToken = CancellationToken();
-
-        String combinedText = '';
-
-        for (int i = 0; i < result.files.length; i++) {
-          final file = result.files[i];
-          final bytes = file.bytes;
-          final name = file.name;
-
-          if (bytes != null) {
-            setState(() => _processingMessage = 'Extracting content from $name (${i + 1}/${result!.files.length})...');
-            
-            final extractionResult = await extractionService.extractContent(
-              type: type.toLowerCase(),
-              input: bytes,
-              userId: user?.uid,
-              mimeType: type == 'PDF' ? 'application/pdf' : 'image/jpeg',
-              allowYouTubeImport: userMayImportFromYouTube(user),
-              onProgress: (msg) {
-                if (mounted) setState(() => _processingMessage = msg);
-              },
-              cancelToken: _cancelToken,
-            );
-
-            if (!mounted) return;
-            if (combinedText.isNotEmpty) {
-               combinedText += '\n\n--- Source: $name ---\n\n';
-            }
-            combinedText += extractionResult.text;
+        List<Map<String, dynamic>> newFiles = [];
+        for (final file in result.files) {
+          if (file.bytes != null) {
+            newFiles.add({
+              'name': file.name,
+              'bytes': file.bytes,
+              'type': type.toLowerCase(),
+            });
           }
         }
-
-        if (!mounted) return;
-        setState(() {
-          _sourceMaterial = combinedText;
-          _isProcessing = false;
-        });
+        _processSelectedFiles(newFiles);
       } else {
         setState(() => _isProcessing = false);
       }
@@ -826,7 +945,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
         setState(() => _isProcessing = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Error extracting content: $e'),
+              content: Text('Error: $e'),
               backgroundColor: Colors.red),
         );
       }

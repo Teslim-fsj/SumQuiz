@@ -57,7 +57,10 @@ class MissionService {
     // 3. Generate New Mission if none found
     UserModel? user;
     try {
-      user = await _firestoreService.streamUser(userId).first;
+      final userDoc = await _firestoreService.db.collection('users').doc(userId).get();
+      if (userDoc.exists) {
+        user = UserModel.fromFirestore(userDoc);
+      }
     } catch (e) {
       debugPrint('Error fetching user for mission generation: $e');
     }

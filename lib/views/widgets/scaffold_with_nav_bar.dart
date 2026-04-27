@@ -17,6 +17,43 @@ class ScaffoldWithNavBar extends StatefulWidget {
 class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
   bool _isExpanded = true;
 
+  int _branchToIndex(int branch, bool isTeacher) {
+    if (isTeacher) {
+      final List<int> teacherMobileBranches = [0, 1, 4, 5];
+      final idx = teacherMobileBranches.indexOf(branch);
+      return idx;
+    }
+    // Student mapping: Home(0), Library(1), Progress(3), Profile(6)
+    if (branch == 0) return 0;
+    if (branch == 1) return 1;
+    if (branch == 3) return 2;
+    if (branch == 6) return 3;
+    return -1;
+  }
+
+  void _onTap(int index, bool isTeacher) {
+    int targetBranch;
+    if (isTeacher) {
+      final List<int> teacherMobileBranches = [0, 1, 4, 5];
+      targetBranch = teacherMobileBranches[index];
+    } else {
+      // Student mapping: index 0 -> branch 0, 1 -> 1, 2 -> 3, 3 -> 6
+      final studentBranches = [0, 1, 3, 6];
+      targetBranch = studentBranches[index];
+    }
+    widget.navigationShell.goBranch(
+      targetBranch,
+      initialLocation: targetBranch == widget.navigationShell.currentIndex,
+    );
+  }
+
+  void _goToBranch(int index) {
+    widget.navigationShell.goBranch(
+      index,
+      initialLocation: index == widget.navigationShell.currentIndex,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -24,108 +61,33 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
     final isTeacher = user?.role == UserRole.creator;
     final isDark = theme.brightness == Brightness.dark;
 
-    // For teachers on mobile: map 4 visible tabs to branches 0, 1, 4, 5
-    final List<int> teacherMobileBranches = [0, 1, 4, 5];
-
-    int branchToIndex(int branch) {
-      if (isTeacher) {
-        final idx = teacherMobileBranches.indexOf(branch);
-        return idx; // -1 if not in list (e.g. branch 2, 3, 6, 7)
-      }
-      if (branch > 3) return -1;
-      return branch;
-    }
-
-    void onTap(int index) {
-      final targetBranch = isTeacher ? teacherMobileBranches[index] : index;
-      widget.navigationShell.goBranch(
-        targetBranch,
-        initialLocation: targetBranch == widget.navigationShell.currentIndex,
-      );
-    }
-
-    void _showCreateOptions(BuildContext context) {
-      showModalBottomSheet(
-        context: context,
-        backgroundColor: Colors.transparent,
-        builder: (context) => Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.dividerColor.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Create New Content',
-                style: GoogleFonts.outfit(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              const SizedBox(height: 24),
-              _buildCreateOption(
-                context,
-                title: 'Exam / Quiz',
-                subtitle: 'Structured assessment with advanced analytics',
-                icon: Icons.assignment_outlined,
-                color: WebColors.purplePrimary,
-                onTap: () {
-                  Navigator.pop(context);
-                  context.go('/create-content/exam-wizard');
-                },
-              ),
-              const SizedBox(height: 16),
-              _buildCreateOption(
-                context,
-                title: 'Study Pack',
-                subtitle: 'Summaries, Quizzes, and Flashcards from any source',
-                icon: Icons.auto_awesome_outlined,
-                color: const Color(0xFF0D9488),
-                onTap: () {
-                  Navigator.pop(context);
-                  widget.navigationShell.goBranch(2);
-                },
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
-      );
-    }
-
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < 900) {
-          final currentIdx = branchToIndex(widget.navigationShell.currentIndex);
+          final currentIdx = _branchToIndex(widget.navigationShell.currentIndex, isTeacher);
           return Scaffold(
             backgroundColor: theme.scaffoldBackgroundColor,
             body: widget.navigationShell,
-            floatingActionButtonLocation: isTeacher ? FloatingActionButtonLocation.centerDocked : null,
-            floatingActionButton: isTeacher ? FloatingActionButton(
-              onPressed: () => _showCreateOptions(context),
+            floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+            floatingActionButton: FloatingActionButton(
+              onPressed: () {
+                if (isTeacher) {
+                  _showCreateOptions(context, theme);
+                } else {
+                  context.go('/create-content');
+                }
+              },
               backgroundColor: WebColors.purplePrimary,
               elevation: 4,
               shape: const CircleBorder(),
               child: const Icon(Icons.add, color: Colors.white, size: 32),
-            ) : null,
+            ),
             bottomNavigationBar: isTeacher
               ? BottomAppBar(
                   padding: EdgeInsets.zero,
                   notchMargin: 8,
                   shape: const CircularNotchedRectangle(),
-                  color: theme.cardColor.withOpacity(0.9),
+                  color: theme.cardColor.withValues(alpha: 0.9),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
@@ -134,14 +96,14 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                         activeIcon: Icons.dashboard,
                         label: 'Home',
                         isActive: currentIdx == 0,
-                        onTap: () => onTap(0),
+                        onTap: () => _onTap(0, isTeacher),
                       ),
                       _buildMobileNavItem(
                         icon: Icons.inventory_2_outlined,
                         activeIcon: Icons.inventory_2,
                         label: 'Content',
                         isActive: currentIdx == 1,
-                        onTap: () => onTap(1),
+                        onTap: () => _onTap(1, isTeacher),
                       ),
                       const SizedBox(width: 48), // Space for FAB
                       _buildMobileNavItem(
@@ -149,50 +111,57 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                         activeIcon: Icons.people,
                         label: 'Class',
                         isActive: currentIdx == 2,
-                        onTap: () => onTap(2),
+                        onTap: () => _onTap(2, isTeacher),
                       ),
                       _buildMobileNavItem(
                         icon: Icons.auto_awesome_rounded,
                         activeIcon: Icons.auto_awesome,
                         label: 'Insights',
                         isActive: currentIdx == 3,
-                        onTap: () => onTap(3),
+                        onTap: () => _onTap(3, isTeacher),
                       ),
                     ],
                   ),
                 )
-              : BottomNavigationBar(
-                  items: const [
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.auto_awesome_mosaic_outlined),
-                      activeIcon: Icon(Icons.auto_awesome_mosaic),
-                      label: 'Home',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.book_outlined),
-                      activeIcon: Icon(Icons.book),
-                      label: 'Library',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.add_circle_outline),
-                      activeIcon: Icon(Icons.add_circle),
-                      label: 'New Set',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.insights_outlined),
-                      activeIcon: Icon(Icons.insights),
-                      label: 'Progress',
-                    ),
-                  ],
-                  currentIndex: currentIdx == -1 ? 0 : currentIdx,
-                  onTap: onTap,
-                  type: BottomNavigationBarType.fixed,
-                  selectedItemColor: WebColors.purplePrimary,
-                  unselectedItemColor: Colors.grey[500],
-                  selectedFontSize: 11,
-                  unselectedFontSize: 11,
-                  selectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.bold),
-                  unselectedLabelStyle: GoogleFonts.inter(),
+              : BottomAppBar(
+                  padding: EdgeInsets.zero,
+                  notchMargin: 8,
+                  shape: const CircularNotchedRectangle(),
+                  color: theme.cardColor.withValues(alpha: 0.9),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildMobileNavItem(
+                        icon: Icons.auto_awesome_mosaic_outlined,
+                        activeIcon: Icons.auto_awesome_mosaic,
+                        label: 'Home',
+                        isActive: currentIdx == 0,
+                        onTap: () => _onTap(0, isTeacher),
+                      ),
+                      _buildMobileNavItem(
+                        icon: Icons.book_outlined,
+                        activeIcon: Icons.book,
+                        label: 'Library',
+                        isActive: currentIdx == 1,
+                        onTap: () => _onTap(1, isTeacher),
+                      ),
+                      const SizedBox(width: 48), // Space for FAB
+                      _buildMobileNavItem(
+                        icon: Icons.insights_outlined,
+                        activeIcon: Icons.insights,
+                        label: 'Progress',
+                        isActive: currentIdx == 2,
+                        onTap: () => _onTap(2, isTeacher),
+                      ),
+                      _buildMobileNavItem(
+                        icon: Icons.person_outline,
+                        activeIcon: Icons.person,
+                        label: 'Profile',
+                        isActive: currentIdx == 3,
+                        onTap: () => _onTap(3, isTeacher),
+                      ),
+                    ],
+                  ),
                 ),
           );
         } else {
@@ -208,14 +177,13 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                     color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
                     border: Border(
                       right: BorderSide(
-                        color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200]!,
+                        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[200]!,
                         width: 1,
                       ),
                     ),
                   ),
                   child: Column(
                     children: [
-                      // Header / Logo
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
                         child: Row(
@@ -283,7 +251,6 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                           tooltip: 'Expand',
                         ),
 
-                      // Primary Action - Pill Design
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: _isExpanded ? 20 : 12, vertical: 12),
                         child: InkWell(
@@ -291,7 +258,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                             if (isTeacher) {
                               context.go('/create-content/exam-wizard');
                             } else {
-                              goToBranch(2);
+                              _goToBranch(2);
                             }
                           },
                           borderRadius: BorderRadius.circular(100),
@@ -306,16 +273,14 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               borderRadius: BorderRadius.circular(100),
                               boxShadow: [
                                 BoxShadow(
-                                  color: WebColors.purplePrimary.withOpacity(0.3),
+                                  color: WebColors.purplePrimary.withValues(alpha: 0.3),
                                   blurRadius: 12,
                                   offset: const Offset(0, 4),
                                 )
                               ],
                             ),
                             child: Row(
-                              mainAxisAlignment: _isExpanded
-                                  ? MainAxisAlignment.center
-                                  : MainAxisAlignment.center,
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 const Icon(Icons.add, color: Colors.white, size: 20),
                                 if (_isExpanded) ...[
@@ -337,7 +302,6 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
 
                       const SizedBox(height: 16),
 
-                      // Navigation Items
                       Expanded(
                         child: ListView(
                           padding: EdgeInsets.symmetric(horizontal: _isExpanded ? 16 : 8),
@@ -348,7 +312,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                 activeIcon: Icons.dashboard_rounded,
                                 label: 'Dashboard',
                                 isActive: widget.navigationShell.currentIndex == 0,
-                                onTap: () => goToBranch(0),
+                                onTap: () => _goToBranch(0),
                                 isExpanded: _isExpanded,
                                 isDark: isDark,
                               ),
@@ -357,7 +321,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                 activeIcon: Icons.inventory_2_rounded,
                                 label: 'Content Manager',
                                 isActive: widget.navigationShell.currentIndex == 1,
-                                onTap: () => goToBranch(1),
+                                onTap: () => _goToBranch(1),
                                 isExpanded: _isExpanded,
                                 isDark: isDark,
                               ),
@@ -366,7 +330,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                 activeIcon: Icons.people_rounded,
                                 label: 'Student Roster',
                                 isActive: widget.navigationShell.currentIndex == 4,
-                                onTap: () => goToBranch(4),
+                                onTap: () => _goToBranch(4),
                                 isExpanded: _isExpanded,
                                 isDark: isDark,
                               ),
@@ -375,7 +339,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                 activeIcon: Icons.analytics_rounded,
                                 label: 'Analytics',
                                 isActive: widget.navigationShell.currentIndex == 3,
-                                onTap: () => goToBranch(3),
+                                onTap: () => _goToBranch(3),
                                 isExpanded: _isExpanded,
                                 isDark: isDark,
                               ),
@@ -384,7 +348,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                 activeIcon: Icons.auto_awesome,
                                 label: 'Class Intelligence',
                                 isActive: widget.navigationShell.currentIndex == 5,
-                                onTap: () => goToBranch(5),
+                                onTap: () => _goToBranch(5),
                                 isExpanded: _isExpanded,
                                 isDark: isDark,
                               ),
@@ -394,7 +358,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                 activeIcon: Icons.auto_awesome_mosaic_rounded,
                                 label: 'Home',
                                 isActive: widget.navigationShell.currentIndex == 0,
-                                onTap: () => goToBranch(0),
+                                onTap: () => _goToBranch(0),
                                 isExpanded: _isExpanded,
                                 isDark: isDark,
                               ),
@@ -403,7 +367,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                 activeIcon: Icons.book_rounded,
                                 label: 'My Library',
                                 isActive: widget.navigationShell.currentIndex == 1,
-                                onTap: () => goToBranch(1),
+                                onTap: () => _goToBranch(1),
                                 isExpanded: _isExpanded,
                                 isDark: isDark,
                               ),
@@ -412,7 +376,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                 activeIcon: Icons.insights_rounded,
                                 label: 'Progress',
                                 isActive: widget.navigationShell.currentIndex == 3,
-                                onTap: () => goToBranch(3),
+                                onTap: () => _goToBranch(3),
                                 isExpanded: _isExpanded,
                                 isDark: isDark,
                               ),
@@ -424,7 +388,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                 vertical: 24,
                               ),
                               child: Divider(
-                                color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey[200]!,
+                                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey[200]!,
                                 thickness: 1,
                               ),
                             ),
@@ -434,7 +398,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               activeIcon: Icons.person_rounded,
                               label: 'Profile',
                               isActive: widget.navigationShell.currentIndex == 6,
-                              onTap: () => goToBranch(6),
+                              onTap: () => _goToBranch(6),
                               isExpanded: _isExpanded,
                               isDark: isDark,
                             ),
@@ -443,7 +407,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               activeIcon: Icons.settings_rounded,
                               label: 'Settings',
                               isActive: widget.navigationShell.currentIndex == 7,
-                              onTap: () => goToBranch(7),
+                              onTap: () => _goToBranch(7),
                               isExpanded: _isExpanded,
                               isDark: isDark,
                             ),
@@ -451,7 +415,6 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                         ),
                       ),
 
-                      // Upgrade to Pro Card - Premium Design
                       if (_isExpanded && user?.isPro == false)
                         Padding(
                           padding: const EdgeInsets.all(20.0),
@@ -496,13 +459,12 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                           ),
                         ),
 
-                      // Minimal User Profile Footer
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: _isExpanded ? 24 : 16, vertical: 24),
                         decoration: BoxDecoration(
                           border: Border(
                             top: BorderSide(
-                              color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey[200]!,
+                              color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey[200]!,
                             ),
                           ),
                         ),
@@ -511,7 +473,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                           children: [
                             CircleAvatar(
                               radius: 20,
-                              backgroundColor: WebColors.purplePrimary.withOpacity(0.1),
+                              backgroundColor: WebColors.purplePrimary.withValues(alpha: 0.1),
                               backgroundImage: user?.photoURL != null ? NetworkImage(user!.photoURL!) : null,
                               child: user?.photoURL == null
                                   ? Text(
@@ -570,6 +532,64 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
     );
   }
 
+  void _showCreateOptions(BuildContext context, ThemeData theme) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.dividerColor.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Create New Content',
+              style: GoogleFonts.outfit(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 24),
+            _buildCreateOption(
+              context,
+              title: 'Exam / Quiz',
+              subtitle: 'Structured assessment with advanced analytics',
+              icon: Icons.assignment_outlined,
+              color: WebColors.purplePrimary,
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/create-content/exam-wizard');
+              },
+            ),
+            const SizedBox(height: 16),
+            _buildCreateOption(
+              context,
+              title: 'Study Pack',
+              subtitle: 'Summaries, Quizzes, and Flashcards from any source',
+              icon: Icons.auto_awesome_outlined,
+              color: const Color(0xFF0D9488),
+              onTap: () {
+                Navigator.pop(context);
+                _goToBranch(2);
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
     );
   }
 
@@ -580,7 +600,6 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
     required bool isActive,
     required VoidCallback onTap,
   }) {
-    final theme = Theme.of(context);
     return Expanded(
       child: InkWell(
         onTap: onTap,
@@ -623,7 +642,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -631,7 +650,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 24),
@@ -652,7 +671,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                     subtitle,
                     style: GoogleFonts.inter(
                       fontSize: 12,
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -674,7 +693,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
     required bool isExpanded,
     required bool isDark,
   }) {
-    Color activeBg = isDark ? WebColors.purplePrimary.withOpacity(0.2) : const Color(0xFFEEF2FF);
+    Color activeBg = isDark ? WebColors.purplePrimary.withValues(alpha: 0.2) : const Color(0xFFEEF2FF);
     Color activeForeground = isDark ? Colors.white : WebColors.purplePrimary;
     Color inactiveForeground = isDark ? Colors.grey[400]! : Colors.grey[600]!;
 
@@ -717,7 +736,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
           ? InkWell(
               onTap: onTap,
               borderRadius: BorderRadius.circular(12),
-              hoverColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200],
+              hoverColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[200],
               child: content,
             )
           : Tooltip(
@@ -725,13 +744,13 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
               preferBelow: false,
               textStyle: GoogleFonts.inter(color: Colors.white, fontSize: 12),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.8),
+                color: Colors.black.withValues(alpha: 0.8),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: InkWell(
                 onTap: onTap,
                 borderRadius: BorderRadius.circular(12),
-                hoverColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200],
+                hoverColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[200],
                 child: content,
               ),
             ),

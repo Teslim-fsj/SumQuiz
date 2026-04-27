@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sumquiz/models/public_deck.dart';
 import 'package:sumquiz/models/teacher_models.dart';
 import 'package:sumquiz/theme/web_theme.dart';
@@ -497,22 +499,16 @@ class _ContentManagerState extends State<ContentManager> {
                      onPressed: () => _exportDeckPdf(deck),
                    ),
                    IconButton(
-                     tooltip: 'Copy Public Link',
-                     icon: const Icon(Icons.link, size: 18, color: WebColors.purplePrimary), 
+                     tooltip: 'Share Public Link',
+                     icon: const Icon(Icons.share_rounded, size: 18, color: WebColors.purplePrimary), 
                      onPressed: () {
-                       final slug = deck.slug;
-                       if (slug != null) {
-                         final origin = Uri.base.origin;
-                         final url = '$origin/s/$slug';
-                         Clipboard.setData(ClipboardData(text: url));
-                         ScaffoldMessenger.of(context).showSnackBar(
-                           const SnackBar(content: Text('Public link copied to clipboard!')),
-                         );
-                       } else {
-                         ScaffoldMessenger.of(context).showSnackBar(
-                           const SnackBar(content: Text('Deck has no public link yet.')),
-                         );
-                       }
+                        final slug = deck.slug;
+                        final origin = kIsWeb ? Uri.base.origin : 'https://sumquiz.xyz';
+                        final url = (slug != null && slug.isNotEmpty) 
+                            ? '$origin/s/$slug' 
+                            : '$origin/deck?code=${deck.shareCode}';
+                        
+                        Share.share('Check out this study material on SumQuiz: $url', subject: deck.title);
                      },
                    ),
                    IconButton(
@@ -689,11 +685,11 @@ class DashedBorderPainter extends CustomPainter {
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
       
-    final path = Path()
+    final paintPath = Path()
       ..addRRect(RRect.fromRectAndRadius(Rect.fromLTWH(0, 0, size.width, size.height), const Radius.circular(24)));
       
     // A proper dashed dash effect would require PathMetrics, but for simplicity:
-    canvas.drawPath(path, paint);
+    canvas.drawPath(paintPath, paint);
   }
 
   @override

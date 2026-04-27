@@ -16,8 +16,9 @@ import 'package:uuid/uuid.dart';
 class PublicDeckScreen extends StatefulWidget {
   final String? deckId;
   final String? slug;
+  final String? code;
 
-  const PublicDeckScreen({super.key, this.deckId, this.slug});
+  const PublicDeckScreen({super.key, this.deckId, this.slug, this.code});
 
   @override
   State<PublicDeckScreen> createState() => _PublicDeckScreenState();
@@ -36,6 +37,17 @@ class _PublicDeckScreenState extends State<PublicDeckScreen> {
       _fetchDeckBySlug();
     } else if (widget.deckId != null) {
       _fetchDeck();
+    } else if (widget.code != null) {
+      _fetchDeckByCode();
+    }
+  }
+
+  Future<void> _fetchDeckByCode() async {
+    try {
+      final deck = await FirestoreService().fetchPublicDeckByCode(widget.code!);
+      _handleDeckResponse(deck);
+    } catch (e) {
+      _handleError(e);
     }
   }
 

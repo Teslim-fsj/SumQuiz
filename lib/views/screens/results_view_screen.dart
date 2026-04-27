@@ -20,8 +20,12 @@ import 'package:sumquiz/models/public_deck.dart';
 import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/services/firestore_service.dart';
 import 'package:uuid/uuid.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sumquiz/views/widgets/share_deck_dialog.dart';
 import 'package:sumquiz/utils/share_code_generator.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ResultsViewScreen extends StatefulWidget {
   final String folderId;
@@ -37,6 +41,7 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   bool _isSaved = false; // Track save status
+  bool _isPublishing = false;
 
   LocalSummary? _summary;
   LocalQuiz? _quiz;
@@ -178,13 +183,9 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
       return;
     }
 
-    if (!user.isPro) {
-      showDialog(
-        context: context,
-        builder: (context) => const UpgradeDialog(featureName: 'Sharing Decks'),
-      );
-      return;
-    }
+    setState(() => _isPublishing = true);
+
+    // Removed Pro check to allow viral growth
 
     try {
       final shareCode = ShareCodeGenerator.generate();
@@ -211,21 +212,28 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
         publishedAt: DateTime.now(),
       );
 
-      await FirestoreService().publishDeck(publicDeck);
+      final publishedDeck = await FirestoreService().publishDeck(publicDeck);
 
       if (!mounted) return;
 
-      showDialog(
-        context: context,
-        builder: (_) => ShareDeckDialog(
-          shareCode: shareCode,
-          deckTitle: _currentTitle,
-        ),
-      );
+      final origin = kIsWeb ? Uri.base.origin : 'https://sumquiz.xyz';
+      final shareLink = (publishedDeck.slug != null && publishedDeck.slug!.isNotEmpty)
+          ? '$origin/s/${publishedDeck.slug}'
+          : '$origin/deck?code=$shareCode';
+
+      final String message = user.role == UserRole.student
+          ? '🔥 I challenge you! I just finished "${_currentTitle}" on SumQuiz. Can you beat my knowledge score? Try it here: $shareLink #SumQuiz #StudyHard'
+          : 'Check out this study pack I created on SumQuiz: "${_currentTitle}". It will save you hours of reading! Access it here: $shareLink';
+
+      await Share.share(message, subject: 'SumQuiz: $_currentTitle');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Error publishing: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isPublishing = false);
       }
     }
   }
@@ -309,7 +317,7 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
                   isStudent ? Icons.share_rounded : Icons.public,
                   color: theme.colorScheme.primary,
                 ),
-                tooltip: isStudent ? 'Share with Friends' : 'Publish Deck',
+                tooltip: isStudent ? 'Challenge Study Buddy' : 'Publish Deck',
                 onPressed: _publishDeck,
               );
             }
@@ -367,7 +375,7 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
                 ? Center(
                     child: CircularProgressIndicator(
                         color: theme.colorScheme.primary))
-                : _errorMessage != null
+                    : _errorMessage != null
                     ? Center(
                         child: Text(_errorMessage!,
                             style: theme.textTheme.bodyLarge
@@ -382,6 +390,7 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
                               child: _buildSelectedTabView(theme)
                                   .animate()
                                   .fadeIn(delay: 200.ms)),
+                          _buildSharingCTA(theme, isDark),
                         ],
                       ),
           ),
@@ -530,5 +539,67 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
         }
       },
     );
+  }
+
+  Widget _buildSharingCTA(ThemeData theme, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.cardColor.withOpacity(0.9),
+        border: Border(
+          top: BorderSide(
+            color: theme.dividerColor.withOpacity(0.1),
+            width: 1,
+          ),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton.icon(
+                onPressed: _isPublishing ? null : _publishDeck,
+                icon: _isPublishing
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.share_rounded, size: 24),
+                label: Text(
+                  _isPublishing ? 'PUBLISHING...' : 'CHALLENGE A STUDY BUDDY',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: theme.colorScheme.onPrimary,
+                  elevation: 8,
+                  shadowColor: theme.colorScheme.primary.withOpacity(0.4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Share this study pack and track who beats your score!',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ).animate().slideY(begin: 1.0, curve: Curves.easeOutQuad, duration: 600.ms);
   }
 }

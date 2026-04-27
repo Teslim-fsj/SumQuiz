@@ -412,7 +412,7 @@ class SummaryScreenState extends State<SummaryScreen> {
       if (!mounted) return;
 
       // Navigate to quiz creation with summary content
-      context.push('/create', extra: {
+      context.push('/create-content', extra: {
         'initialText': _summaryContent,
         'initialTitle': _summaryTitle,
         'mode': 'quiz'

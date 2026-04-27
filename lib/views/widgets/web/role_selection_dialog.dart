@@ -36,7 +36,7 @@ class _RoleSelectionDialogState extends State<RoleSelectionDialog> {
     if (_selectedRole == UserRole.creator) {
       context.go('/'); // Home now shows TeacherDashboard for creators
     } else {
-      context.go('/create');
+      context.go('/create-content');
     }
   }
 

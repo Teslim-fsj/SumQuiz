@@ -39,8 +39,8 @@ import 'package:sumquiz/views/screens/web/student_landing_view.dart';
 import 'package:sumquiz/views/screens/web/creator_tab_view.dart';
 import 'package:sumquiz/views/screens/exam_creation_screen.dart';
 import 'package:sumquiz/views/screens/web/review_screen_web.dart';
-import 'package:sumquiz/views/screens/public_deck_screen.dart';
 import 'package:sumquiz/views/screens/web/exam_creation_screen_web.dart';
+import 'package:sumquiz/views/screens/public_deck_screen.dart';
 
 // Role-Aware view helper
 class RoleAwareView extends StatelessWidget {
@@ -127,8 +127,6 @@ GoRouter createRouter(AuthService authService) {
 
       // 2. Handle Users Waiting for Firestore Profile
       if (userModel == null) {
-        // If logged in but profile is still loading, stay on the current shell
-        // (ScaffoldWithNavBar) so the nested view (RoleAwareView) can show its own loader.
         if (isAuthRoute || isLanding || isSplash || isOnboarding) {
           return '/';
         }
@@ -137,21 +135,15 @@ GoRouter createRouter(AuthService authService) {
 
       // 3. Handle Email Verification for Creators
       if (!userModel.isEmailVerified && userModel.role == UserRole.creator) {
-        // Allow them to stay on the page they are on (which should show a verification banner)
-        // or redirect to a specific verification screen if one exists.
         return null; 
       }
 
       // 4. Handle Authenticated Users on Public Routes
       if (isAuthRoute || isLanding || isSplash) {
-        // Respect explicit redirect if present
         final redirectParam = state.uri.queryParameters['redirect'];
         if (redirectParam != null && redirectParam.isNotEmpty) {
           return redirectParam;
         }
-
-        // If they are logged in and hit the landing page, we usually want them in the app
-        // BUT if they hit a public deck link, let them stay there!
         if (isPublicDeck) return null;
         return '/';
       }
@@ -159,7 +151,7 @@ GoRouter createRouter(AuthService authService) {
       return null;
     },
     routes: <RouteBase>[
-      // Top-level standalone routes (no nav bar)
+      // Top-level standalone routes
       GoRoute(
         path: '/landing',
         builder: (context, state) => const PublicScaffoldWeb(
@@ -196,14 +188,21 @@ GoRouter createRouter(AuthService authService) {
           return PublicDeckScreen(slug: slug);
         },
       ),
+      GoRoute(
+        path: '/deck',
+        builder: (context, state) {
+          final deckId = state.uri.queryParameters['id'];
+          final code = state.uri.queryParameters['code'];
+          return PublicDeckScreen(deckId: deckId, code: code);
+        },
+      ),
 
-      // Main application shell with navigation
+      // Main application shell
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return ScaffoldWithNavBar(navigationShell: navigationShell);
         },
         branches: <StatefulShellBranch>[
-          // Branch 0: Home/Dashboard
           StatefulShellBranch(
             navigatorKey: _reviewShellNavigatorKey,
             routes: <RouteBase>[
@@ -219,12 +218,9 @@ GoRouter createRouter(AuthService authService) {
                     desktop: TeacherDashboardWeb(module: 'dashboard'),
                   ),
                 ),
-                routes: [],
               ),
             ],
           ),
-
-          // Branch 1: Library/Content Manager
           StatefulShellBranch(
             navigatorKey: _libraryShellNavigatorKey,
             routes: <RouteBase>[
@@ -246,21 +242,9 @@ GoRouter createRouter(AuthService authService) {
                     name: 'library-summary',
                     parentNavigatorKey: rootNavigatorKey,
                     builder: (context, state) {
-                      try {
-                        final summary = state.extra is LocalSummary
-                            ? state.extra as LocalSummary?
-                            : null;
-                        final id = state.pathParameters['id'];
-                        return SummaryScreen(summary: summary, id: id);
-                      } catch (e) {
-                        debugPrint('Error in summary route: $e');
-                        return Scaffold(
-                          appBar: AppBar(title: Text('Error')),
-                          body: Center(
-                              child: Text(
-                                  'Failed to load summary. Please try again.')),
-                        );
-                      }
+                      final summary = state.extra is LocalSummary ? state.extra as LocalSummary : null;
+                      final id = state.pathParameters['id'];
+                      return SummaryScreen(summary: summary, id: id);
                     },
                   ),
                   GoRoute(
@@ -268,21 +252,9 @@ GoRouter createRouter(AuthService authService) {
                     name: 'library-quiz',
                     parentNavigatorKey: rootNavigatorKey,
                     builder: (context, state) {
-                      try {
-                        final quiz = state.extra is LocalQuiz
-                            ? state.extra as LocalQuiz?
-                            : null;
-                        final id = state.pathParameters['id'];
-                        return QuizScreen(quiz: quiz, id: id);
-                      } catch (e) {
-                        debugPrint('Error in quiz route: $e');
-                        return Scaffold(
-                          appBar: AppBar(title: Text('Error')),
-                          body: Center(
-                              child: Text(
-                                  'Failed to load quiz. Please try again.')),
-                        );
-                      }
+                      final quiz = state.extra is LocalQuiz ? state.extra as LocalQuiz : null;
+                      final id = state.pathParameters['id'];
+                      return QuizScreen(quiz: quiz, id: id);
                     },
                   ),
                   GoRoute(
@@ -290,21 +262,9 @@ GoRouter createRouter(AuthService authService) {
                     name: 'library-flashcards',
                     parentNavigatorKey: rootNavigatorKey,
                     builder: (context, state) {
-                      try {
-                        final set = state.extra is FlashcardSet
-                            ? state.extra as FlashcardSet?
-                            : null;
-                        final id = state.pathParameters['id'];
-                        return FlashcardsScreen(flashcardSet: set, id: id);
-                      } catch (e) {
-                        debugPrint('Error in flashcards route: $e');
-                        return Scaffold(
-                          appBar: AppBar(title: Text('Error')),
-                          body: Center(
-                              child: Text(
-                                  'Failed to load flashcards. Please try again.')),
-                        );
-                      }
+                      final set = state.extra is FlashcardSet ? state.extra as FlashcardSet : null;
+                      final id = state.pathParameters['id'];
+                      return FlashcardsScreen(flashcardSet: set, id: id);
                     },
                   ),
                   GoRoute(
@@ -312,42 +272,19 @@ GoRouter createRouter(AuthService authService) {
                     name: 'results-view',
                     parentNavigatorKey: rootNavigatorKey,
                     builder: (context, state) {
-                      try {
-                        final folderId = state.pathParameters['folderId'];
-                        final tabParam = state.uri.queryParameters['tab'];
-                        final initialTab = int.tryParse(tabParam ?? '') ?? 0;
-
-                        if (folderId == null || folderId.isEmpty) {
-                          debugPrint('Missing folderId in results-view route');
-                          return Scaffold(
-                            appBar: AppBar(title: Text('Error')),
-                            body: Center(
-                                child: Text(
-                                    'Missing content identifier. Please try again.')),
-                          );
-                        }
-                        return ResponsiveView(
-                          mobile: ResultsViewScreen(folderId: folderId),
-                          desktop: ResultsViewScreenWeb(
-                              folderId: folderId, initialTab: initialTab),
-                        );
-                      } catch (e) {
-                        debugPrint('Error in results-view route: $e');
-                        return Scaffold(
-                          appBar: AppBar(title: Text('Error')),
-                          body: Center(
-                              child: Text(
-                                  'Failed to load results. Please try again.')),
-                        );
-                      }
+                      final folderId = state.pathParameters['folderId'];
+                      final tabParam = state.uri.queryParameters['tab'];
+                      final initialTab = int.tryParse(tabParam ?? '') ?? 0;
+                      return ResponsiveView(
+                        mobile: ResultsViewScreen(folderId: folderId!),
+                        desktop: ResultsViewScreenWeb(folderId: folderId, initialTab: initialTab),
+                      );
                     },
                   ),
                 ],
               ),
             ],
           ),
-
-          // Branch 2: Create (Shared context, role-aware)
           StatefulShellBranch(
             navigatorKey: _createShellNavigatorKey,
             routes: <RouteBase>[
@@ -375,8 +312,6 @@ GoRouter createRouter(AuthService authService) {
               ),
             ],
           ),
-
-          // Branch 3: Progress/Analytics
           StatefulShellBranch(
             navigatorKey: _progressShellNavigatorKey,
             routes: <RouteBase>[
@@ -387,23 +322,14 @@ GoRouter createRouter(AuthService authService) {
                     mobile: ProgressScreen(),
                     desktop: ProgressScreenWeb(),
                   ),
-                  creatorView: ResponsiveView(
-                    mobile: TeacherDashboardWeb(
-                      module: 'analytics',
-                      studentId: state.uri.queryParameters['studentId'],
-                    ),
-                    desktop: TeacherDashboardWeb(
-                      module: 'analytics',
-                      studentId: state.uri.queryParameters['studentId'],
-                    ),
+                  creatorView: TeacherDashboardWeb(
+                    module: 'analytics',
+                    studentId: state.uri.queryParameters['studentId'],
                   ),
                 ),
-                routes: [],
               ),
             ],
           ),
-
-          // Branch 4: Students (Teacher Only)
           StatefulShellBranch(
             navigatorKey: _studentsShellNavigatorKey,
             routes: <RouteBase>[
@@ -416,8 +342,6 @@ GoRouter createRouter(AuthService authService) {
               ),
             ],
           ),
-
-          // Branch 5: AI Insights (Teacher Only)
           StatefulShellBranch(
             navigatorKey: _feedbackShellNavigatorKey,
             routes: <RouteBase>[
@@ -430,8 +354,6 @@ GoRouter createRouter(AuthService authService) {
               ),
             ],
           ),
-
-          // Branch 6: Profile (Shared)
           StatefulShellBranch(
             navigatorKey: _profileShellNavigatorKey,
             routes: <RouteBase>[
@@ -441,8 +363,6 @@ GoRouter createRouter(AuthService authService) {
               ),
             ],
           ),
-
-          // Branch 7: Settings (Shared)
           StatefulShellBranch(
             navigatorKey: _settingsShellNavigatorKey,
             routes: <RouteBase>[
@@ -450,46 +370,23 @@ GoRouter createRouter(AuthService authService) {
                 path: '/settings',
                 builder: (context, state) => const SettingsScreen(),
                 routes: [
-                  GoRoute(
-                    path: 'preferences',
-                    builder: (context, state) => const PreferencesScreen(),
-                  ),
-                  GoRoute(
-                    path: 'data-storage',
-                    builder: (context, state) => const DataStorageScreen(),
-                  ),
-                  GoRoute(
-                    path: 'privacy-about',
-                    builder: (context, state) => const PrivacyAboutScreen(),
-                  ),
-                  GoRoute(
-                    path: 'subscription',
-                    builder: (context, state) => const SubscriptionScreen(),
-                  ),
-                  GoRoute(
-                    path: 'account-profile',
-                    builder: (context, state) => const AccountProfileScreen(),
-                  ),
-                  GoRoute(
-                    path: 'referral',
-                    builder: (context, state) => const ReferralScreen(),
-                  ),
+                  GoRoute(path: 'preferences', builder: (context, state) => const PreferencesScreen()),
+                  GoRoute(path: 'data-storage', builder: (context, state) => const DataStorageScreen()),
+                  GoRoute(path: 'privacy-about', builder: (context, state) => const PrivacyAboutScreen()),
+                  GoRoute(path: 'subscription', builder: (context, state) => const SubscriptionScreen()),
+                  GoRoute(path: 'account-profile', builder: (context, state) => const AccountProfileScreen()),
+                  GoRoute(path: 'referral', builder: (context, state) => const ReferralScreen()),
                 ],
               ),
             ],
           ),
         ],
       ),
-
-      // Standalone routes outside shell
       GoRoute(
         path: '/deck',
         builder: (context, state) {
-          final id = state.uri.queryParameters['id'];
-          if (id == null) {
-            return const Scaffold(
-                body: Center(child: Text('Invalid Deck Link')));
-          }
+          final id = state.uri.queryParameters['id'] ?? state.uri.queryParameters['code'];
+          if (id == null) return const Scaffold(body: Center(child: Text('Invalid Deck Link')));
           return PublicDeckScreen(deckId: id);
         },
       ),

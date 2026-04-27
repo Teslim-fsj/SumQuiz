@@ -23,6 +23,7 @@ import 'package:sumquiz/views/widgets/web/web_quiz_view.dart';
 import 'package:sumquiz/views/widgets/web/web_flashcards_view.dart';
 import 'package:sumquiz/services/enhanced_ai_service.dart';
 import 'package:sumquiz/theme/web_theme.dart';
+import 'package:share_plus/share_plus.dart';
 
 class ResultsViewScreenWeb extends StatefulWidget {
   final String folderId;
@@ -123,13 +124,8 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
       return;
     }
 
-    if (!user.isPro) {
-      showDialog(
-        context: context,
-        builder: (context) => const UpgradeDialog(featureName: 'Sharing Packs'),
-      );
-      return;
-    }
+    // Students and Teachers can now share decks regardless of Pro status
+    // to allow for viral growth and student collaboration.
 
     try {
       final shareCode = ShareCodeGenerator.generate();
@@ -155,17 +151,20 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
         publishedAt: DateTime.now(),
       );
 
-      await FirestoreService().publishDeck(publicDeck);
+      final publishedDeck = await FirestoreService().publishDeck(publicDeck);
 
       if (!mounted) return;
 
-      showDialog(
-        context: context,
-        builder: (_) => ShareDeckDialog(
-          shareCode: shareCode,
-          deckTitle: publicDeck.title,
-        ),
-      );
+      final origin = Uri.base.origin;
+      final shareLink = (publishedDeck.slug != null && publishedDeck.slug!.isNotEmpty)
+          ? '$origin/s/${publishedDeck.slug}'
+          : '$origin/deck?code=$shareCode';
+
+      final String message = user.role == UserRole.student
+          ? 'I just finished "${publicDeck.title}" on SumQuiz! Can you beat my score? Check it out here: $shareLink'
+          : 'Check out this study pack I created on SumQuiz: "${publicDeck.title}". Access it here: $shareLink';
+
+      await Share.share(message, subject: 'SumQuiz: ${publicDeck.title}');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -289,7 +288,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
                       color: WebColors.purplePrimary,
                       size: 24,
                     ),
-                    tooltip: isStudent ? 'Share with Friends' : 'Publish Deck',
+                    tooltip: isStudent ? 'Challenge Study Buddy' : 'Publish to World',
                   ),
                 );
               }),

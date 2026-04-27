@@ -92,16 +92,27 @@ class ContentExtractionService {
         if (input == null) {
           throw Exception('Image input cannot be null');
         }
-        if (input is Uint8List) {
+        if (input is List<Uint8List>) {
+          if (input.isEmpty) {
+            throw Exception('No images provided');
+          }
+          for (final bytes in input) {
+            if (bytes.isEmpty) {
+              throw Exception('One of the image files is empty');
+            }
+            if (bytes.length > 10 * 1024 * 1024) {
+              throw Exception('One of the image files is too large. Maximum 10MB allowed per image.');
+            }
+          }
+        } else if (input is Uint8List) {
           if (input.isEmpty) {
             throw Exception('Image file is empty');
           }
           if (input.length > 10 * 1024 * 1024) {
-            // 10MB limit
             throw Exception('Image file too large. Maximum 10MB allowed.');
           }
         } else {
-          throw Exception('Image input must be Uint8List');
+          throw Exception('Image input must be Uint8List or List<Uint8List>');
         }
         break;
       case 'audio':
@@ -428,79 +439,95 @@ class ContentExtractionService {
           suggestedTitle = 'Document Content';
           break;
         case 'image':
-          developer.log('Processing image with mimeType: $mimeType',
+          developer.log('Processing image(s) with mimeType: $mimeType',
               name: 'ContentExtractionService');
 
-          if (input == null || input is! Uint8List) {
-            developer.log('Invalid image input type: ${input?.runtimeType}',
-                name: 'ContentExtractionService');
-            throw Exception(
-                'Invalid image data provided. Please try with a valid image file.');
+          final List<Uint8List> imageList = input is List<Uint8List> 
+              ? input 
+              : [input as Uint8List];
+
+          if (imageList.isEmpty) {
+            throw Exception('No image data provided.');
           }
 
-          final inputBytes = input;
-          if (inputBytes.isEmpty) {
-            developer.log('Empty image input',
-                name: 'ContentExtractionService');
-            throw Exception(
-                'Image file is empty. Please try with a valid image file.');
-          }
-
-          if (!kIsWeb) {
-            onProgress?.call('Scanning image with on-device OCR...');
-            try {
-              rawText = await _extractFromImageBytes(inputBytes);
-            } catch (e, stack) {
-              developer.log('Image processing error: $e',
-                  name: 'ContentExtractionService',
-                  error: e,
-                  stackTrace: stack);
-              rawText = '';
-            }
-          } else {
-            // On web, we can't use on-device OCR, so return appropriate message
-            rawText =
-                '[Image processing requires native device capabilities. On web, please use text input or paste extracted text directly.]';
-          }
-
-          if (localOnlyTest) {
-            return ExtractionResult(
-                text: rawText.isNotEmpty ? rawText : 'Local extraction test',
-                suggestedTitle: 'Test Image');
-          }
+          List<String> extractedTexts = [];
+          String finalTitle = 'Scanned Content';
 
           // ── Tier 1: Native Gemini Vision Analysis (Gemini 2.5+) ──
-          // Better for layouts, handwriting, and diagrams
           if (!localOnlyTest && userId != null) {
-            onProgress?.call('Analyzing image with Gemini AI...');
-            developer.log('Trying native Gemini vision (Tier 1)',
+            onProgress?.call('Analyzing ${imageList.length} image(s) with Gemini AI...');
+            developer.log('Trying native Gemini vision (Tier 1) for ${imageList.length} images',
                 name: 'ContentExtractionService');
+            
             try {
-              final visionResult = await _pdfAiService.extractImage(
-                inputBytes,
-                mimeType ?? 'image/jpeg',
-                filename: 'image.jpg',
-                cancelToken: cancelToken,
-              );
-              if (visionResult is Ok<ExtractionResult>) {
-                developer.log('Native Gemini vision extraction succeeded',
-                    name: 'ContentExtractionService');
-                return visionResult.value;
+              // For multiple images, we send them all to Gemini if supported, 
+              // or process them individually and combine.
+              // For now, let's process individually for maximum reliability 
+              // unless we add a dedicated multi-image method in PdfAIService.
+              
+              for (int i = 0; i < imageList.length; i++) {
+                if (cancelToken?.isCancelled ?? false) break;
+                
+                if (imageList.length > 1) {
+                  onProgress?.call('Analyzing image ${i + 1} of ${imageList.length}...');
+                }
+
+                final visionResult = await _pdfAiService.extractImage(
+                  imageList[i],
+                  mimeType ?? 'image/jpeg',
+                  filename: 'image_${i + 1}.jpg',
+                  cancelToken: cancelToken,
+                );
+
+                if (visionResult is Ok<ExtractionResult>) {
+                  extractedTexts.add(visionResult.value.text);
+                  if (i == 0) finalTitle = visionResult.value.suggestedTitle ?? finalTitle;
+                }
               }
-              developer.log('Native Gemini vision sparse, falling to OCR',
-                  name: 'ContentExtractionService');
+
+              if (extractedTexts.isNotEmpty) {
+                return ExtractionResult(
+                  text: extractedTexts.join('\n\n---\n\n'),
+                  suggestedTitle: finalTitle,
+                );
+              }
             } catch (e) {
               developer.log('Native Gemini vision failed: $e',
                   name: 'ContentExtractionService');
             }
           }
 
-          // ── Tier 2: On-device OCR ──
-          if (rawText.isEmpty || rawText.contains('[No text found in image.')) {
-            // ... (rest of old logic already handles rawText checking)
+          // ── Tier 2: On-device OCR (Fallback) ──
+          if (extractedTexts.isEmpty) {
+            for (int i = 0; i < imageList.length; i++) {
+              if (cancelToken?.isCancelled ?? false) break;
+              
+              if (!kIsWeb) {
+                onProgress?.call('Scanning image ${i + 1} with on-device OCR...');
+                try {
+                  final text = await _extractFromImageBytes(imageList[i]);
+                  if (text.isNotEmpty && !text.contains('[No text found')) {
+                    extractedTexts.add(text);
+                  }
+                } catch (e) {
+                  developer.log('OCR failed for image $i: $e', name: 'ContentExtractionService');
+                }
+              }
+            }
           }
-          suggestedTitle = 'Scanned Image';
-          break;
+
+          if (extractedTexts.isEmpty) {
+            if (kIsWeb) {
+              throw Exception('Image processing requires native device capabilities or AI access. Please try again.');
+            } else {
+              throw Exception('No readable text found in the image(s).');
+            }
+          }
+
+          return ExtractionResult(
+            text: extractedTexts.join('\n\n---\n\n'),
+            suggestedTitle: finalTitle,
+          );
         case 'audio':
           developer.log('Processing audio with mimeType: $mimeType',
               name: 'ContentExtractionService');

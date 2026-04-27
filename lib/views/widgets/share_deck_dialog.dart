@@ -5,17 +5,28 @@ import 'package:flutter_animate/flutter_animate.dart';
 class ShareDeckDialog extends StatelessWidget {
   final String shareCode;
   final String deckTitle;
+  final String? slug;
 
   const ShareDeckDialog({
     super.key,
     required this.shareCode,
     required this.deckTitle,
+    this.slug,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final shareLink = 'https://sumquiz.xyz/deck?code=$shareCode';
+    
+    // Determine the share link: use slug if available, otherwise use shareCode
+    String shareLink;
+    if (slug != null && slug!.isNotEmpty) {
+      final origin = Uri.base.origin;
+      shareLink = '$origin/s/$slug';
+    } else {
+      final origin = Uri.base.origin;
+      shareLink = '$origin/deck?code=$shareCode';
+    }
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -121,7 +132,7 @@ class ShareDeckDialog extends StatelessWidget {
 
             // Info Text
             Text(
-              'Share this code or link with students so they can import your deck!',
+              'Share this code or link with friends so they can import your deck!',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.hintColor,
                 fontStyle: FontStyle.italic,

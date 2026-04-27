@@ -153,17 +153,7 @@ class _LibraryViewState extends State<_LibraryView>
 
     return Scaffold(
       appBar: _buildAppBar(context, theme, viewModel),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (_) => const EnterCodeDialog(),
-          );
-        },
-        icon: const Icon(Icons.qr_code_scanner),
-        label: const Text('Enter Code'),
-        backgroundColor: theme.colorScheme.primary,
-      ),
+      floatingActionButton: null,
       body: Column(
         children: [
           _buildSearchAndTabs(context, theme, viewModel),
@@ -263,6 +253,28 @@ class _LibraryViewState extends State<_LibraryView>
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Column(
         children: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (_) => const EnterCodeDialog(),
+                );
+              },
+              icon: const Icon(Icons.add_link_rounded, size: 18),
+              label: const Text('Import Deck via Code'),
+              style: ElevatedButton.styleFrom(
+                elevation: 0,
+                backgroundColor: theme.colorScheme.primaryContainer.withAlpha(128),
+                foregroundColor: theme.colorScheme.primary,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
           Container(
             decoration: BoxDecoration(
               color: theme.cardColor.withAlpha((255 * 0.7).round()),
@@ -576,16 +588,16 @@ class _LibraryViewState extends State<_LibraryView>
     Widget? trailing,
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: theme.cardColor.withAlpha(153),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.cardColor.withAlpha(178), width: 1.5),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.cardColor.withAlpha(178), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(13),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withAlpha(10),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -595,33 +607,33 @@ class _LibraryViewState extends State<_LibraryView>
           borderRadius: BorderRadius.circular(20),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(12.0),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: iconColor.withAlpha(26),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(icon, color: iconColor, size: 24),
+                  child: Icon(icon, color: iconColor, size: 20),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(title,
                           style: theme.textTheme.titleMedium?.copyWith(
-                              fontSize: 16,
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: theme.colorScheme.onSurface),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(subtitle,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                              fontSize: 12,
+                              fontSize: 11,
                               color: theme.colorScheme.onSurface.withAlpha(153),
                               fontWeight: FontWeight.w500)),
                     ],

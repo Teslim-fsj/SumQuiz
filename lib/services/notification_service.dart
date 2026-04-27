@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -244,21 +245,24 @@ class NotificationService {
         ? scheduledDate.difference(tz.TZDateTime.now(tz.local))
         : const Duration(seconds: 5);
 
-    await Workmanager().registerOneOffTask(
-      id.toString(),
-      'notification_task',
-      initialDelay: delay,
-      inputData: {
-        'id': id,
-        'title': title,
-        'message': message,
-        'payload': json.encode({'route': payloadRoute}),
-        'category': category,
-      },
-      existingWorkPolicy: ExistingWorkPolicy.replace,
-    );
-
-    debugPrint('⏰ Scheduled notification $id via WorkManager with delay: $delay');
+    if (!kIsWeb) {
+      await Workmanager().registerOneOffTask(
+        id.toString(),
+        'notification_task',
+        initialDelay: delay,
+        inputData: {
+          'id': id,
+          'title': title,
+          'message': message,
+          'payload': json.encode({'route': payloadRoute}),
+          'category': category,
+        },
+        existingWorkPolicy: ExistingWorkPolicy.replace,
+      );
+      debugPrint('⏰ Scheduled notification $id via WorkManager with delay: $delay');
+    } else {
+      debugPrint('🔔 Skipping WorkManager notification $id on Web platform');
+    }
   }
 
   /// Helper to show a notification immediately (called by WorkManager)
@@ -381,19 +385,21 @@ class NotificationService {
 
     final Duration delay = scheduledDate.difference(now);
 
-    await Workmanager().registerOneOffTask(
-      'priming_$userId',
-      'notification_task',
-      initialDelay: delay,
-      inputData: {
-        'id': 1001,
-        'title': '🧠 Today\'s Mission is Ready',
-        'message': '$cardCount cards • $estimatedMinutes min',
-        'payload': json.encode({'route': '/'}),
-        'category': 'mission_priming',
-      },
-      existingWorkPolicy: ExistingWorkPolicy.replace,
-    );
+    if (!kIsWeb) {
+      await Workmanager().registerOneOffTask(
+        'priming_$userId',
+        'notification_task',
+        initialDelay: delay,
+        inputData: {
+          'id': 1001,
+          'title': '🧠 Today\'s Mission is Ready',
+          'message': '$cardCount cards • $estimatedMinutes min',
+          'payload': json.encode({'route': '/'}),
+          'category': 'mission_priming',
+        },
+        existingWorkPolicy: ExistingWorkPolicy.replace,
+      );
+    }
   }
 
   /// Schedules a "Recall" notification 20 hours after mission completion
@@ -403,19 +409,21 @@ class NotificationService {
     final prefs = await SharedPreferences.getInstance();
     if (!(prefs.getBool(notificationEnabledKey) ?? true)) return;
 
-    await Workmanager().registerOneOffTask(
-      'recall_notification',
-      'notification_task',
-      initialDelay: const Duration(hours: 20),
-      inputData: {
-        'id': 1002,
-        'title': '🚀 Yesterday: +$momentumGain Momentum',
-        'message': 'Keep the habit alive today!',
-        'payload': json.encode({'route': '/'}),
-        'category': 'mission_recall',
-      },
-      existingWorkPolicy: ExistingWorkPolicy.replace,
-    );
+    if (!kIsWeb) {
+      await Workmanager().registerOneOffTask(
+        'recall_notification',
+        'notification_task',
+        initialDelay: const Duration(hours: 20),
+        inputData: {
+          'id': 1002,
+          'title': '🚀 Yesterday: +$momentumGain Momentum',
+          'message': 'Keep the habit alive today!',
+          'payload': json.encode({'route': '/'}),
+          'category': 'mission_recall',
+        },
+        existingWorkPolicy: ExistingWorkPolicy.replace,
+      );
+    }
   }
 
   /// Schedules a "Streak Saver" notification at 8 PM if mission is incomplete
@@ -443,18 +451,20 @@ class NotificationService {
 
     final Duration delay = scheduledDate.difference(now);
 
-    await Workmanager().registerOneOffTask(
-      'streak_saver',
-      'notification_task',
-      initialDelay: delay,
-      inputData: {
-        'id': 1003,
-        'title': '🔥 Save Your $currentStreak-Day Streak!',
-        'message': '$remainingCards cards left • 3 mins to complete',
-        'payload': json.encode({'route': '/'}),
-        'category': 'streak_saver',
-      },
-      existingWorkPolicy: ExistingWorkPolicy.replace,
-    );
+    if (!kIsWeb) {
+      await Workmanager().registerOneOffTask(
+        'streak_saver',
+        'notification_task',
+        initialDelay: delay,
+        inputData: {
+          'id': 1003,
+          'title': '🔥 Save Your $currentStreak-Day Streak!',
+          'message': '$remainingCards cards left • 3 mins to complete',
+          'payload': json.encode({'route': '/'}),
+          'category': 'streak_saver',
+        },
+        existingWorkPolicy: ExistingWorkPolicy.replace,
+      );
+    }
   }
 }
