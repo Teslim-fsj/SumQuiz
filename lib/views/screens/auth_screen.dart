@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sumquiz/models/user_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sumquiz/utils/auth_error_messages.dart';
+import 'package:go_router/go_router.dart';
 
 enum AuthMode { login, signUp }
 
@@ -59,6 +60,12 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           _emailController.text.trim(),
           _passwordController.text.trim(),
         );
+        if (!mounted) return;
+        if (widget.redirectPath != null && widget.redirectPath!.isNotEmpty) {
+          context.go(widget.redirectPath!);
+        } else {
+          context.go('/');
+        }
       } else {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('intended_role', _signUpRole.name);
@@ -72,6 +79,11 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         );
         if (!mounted) return;
         developer.log('Sign-Up successful, user document creation initiated with role: ${_signUpRole.name}');
+        if (widget.redirectPath != null && widget.redirectPath!.isNotEmpty) {
+          context.go(widget.redirectPath!);
+        } else {
+          context.go('/');
+        }
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) _showError(theme, messageForFirebaseAuth(e));
@@ -100,6 +112,12 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       if (!mounted) return;
       if (prefs.getBool('is_new_user') ?? false) {
         developer.log('Google Sign-In successful for new user, role: ${prefs.getString('intended_role')}');
+      }
+      
+      if (widget.redirectPath != null && widget.redirectPath!.isNotEmpty) {
+        context.go(widget.redirectPath!);
+      } else {
+        context.go('/');
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) _showError(theme, messageForFirebaseAuth(e));

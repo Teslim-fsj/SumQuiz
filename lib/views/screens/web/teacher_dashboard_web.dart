@@ -88,7 +88,7 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
   }
 
   void _onModuleChanged() {
-    if (_activeModule == _NavModule.analytics && _trends.isEmpty) {
+    if ((_activeModule == _NavModule.analytics || _activeModule == _NavModule.students) && _trends.isEmpty) {
       _loadTrends();
       for (final deck in _content) {
         _loadAnalyticsForContent(deck);
@@ -149,7 +149,7 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
         _activity = results[3] as List<ActivityItem>;
       });
 
-      if (_activeModule == _NavModule.analytics) {
+      if (_activeModule == _NavModule.analytics || _activeModule == _NavModule.students) {
         _loadTrends();
       }
     } catch (e) {
@@ -284,9 +284,48 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
           onCreateExam: () => context.go('/create-content/exam-wizard'),
           onCreatePack: () => context.go('/create-content'),
         ),
-      _NavModule.students => StudentRegistry(
-          students: _students,
-          onInviteStudent: _showInviteStudentDialog,
+      _NavModule.students => LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth < 900) {
+              return DefaultTabController(
+                length: 2,
+                child: Column(
+                  children: [
+                    Container(
+                      color: Theme.of(context).cardColor,
+                      child: TabBar(
+                        labelColor: Theme.of(context).colorScheme.primary,
+                        unselectedLabelColor: Colors.grey,
+                        indicatorColor: Theme.of(context).colorScheme.primary,
+                        tabs: const [Tab(text: 'Roster'), Tab(text: 'Analytics')],
+                      ),
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          StudentRegistry(
+                            students: _students,
+                            onInviteStudent: _showInviteStudentDialog,
+                          ),
+                          AnalyticsView(
+                            content: _content,
+                            students: _students,
+                            trends: _trends,
+                            analytics: _analytics,
+                            selectedStudentId: widget.studentId,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+            return StudentRegistry(
+              students: _students,
+              onInviteStudent: _showInviteStudentDialog,
+            );
+          },
         ),
       _NavModule.analytics => AnalyticsView(
           content: _content,
