@@ -315,32 +315,62 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           }
         }
       } else {
-        final XFile? image = await _imagePicker.pickImage(
-          source: source,
-          imageQuality: 80,
-          maxHeight: 1920,
-          maxWidth: 1920,
-        );
+        bool keepSnapping = true;
+        while (keepSnapping) {
+          final XFile? image = await _imagePicker.pickImage(
+            source: source,
+            imageQuality: 80,
+            maxHeight: 1920,
+            maxWidth: 1920,
+          );
 
-        if (image != null) {
-          final fileStat = await image.length();
-          final fileSizeMb = fileStat / (1024 * 1024);
-          if (fileSizeMb > 10) {
-            throw Exception('Image file is too large. Maximum size is 10MB.');
-          }
+          if (image != null) {
+            final fileStat = await image.length();
+            final fileSizeMb = fileStat / (1024 * 1024);
+            if (fileSizeMb > 10) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Image file is too large. Maximum size is 10MB.')));
+              }
+              continue;
+            }
 
-          final bytes = await image.readAsBytes();
-          if (bytes.isEmpty) {
-            throw Exception('Failed to read image data');
-          }
+            final bytes = await image.readAsBytes();
+            if (bytes.isEmpty) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Failed to read image data')));
+              }
+              continue;
+            }
 
-          setState(() {
-            _selectedImages.add({
-              'name': 'camera_${image.name}',
-              'bytes': bytes,
+            setState(() {
+              _selectedImages.add({
+                'name': 'camera_${image.name}',
+                'bytes': bytes,
+              });
+              _mimeType = _getMimeType(image.name);
             });
-            _mimeType = _getMimeType(image.name);
-          });
+
+            if (mounted) {
+              final shouldContinue = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Add Another Page?'),
+                  content: const Text('Would you like to snap another photo to add to this document?'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Done')),
+                    ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Snap Another')),
+                  ],
+                ),
+              );
+              keepSnapping = shouldContinue ?? false;
+            } else {
+              keepSnapping = false;
+            }
+          } else {
+            keepSnapping = false;
+          }
         }
       }
     } catch (e) {

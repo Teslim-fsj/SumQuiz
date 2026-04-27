@@ -145,8 +145,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _toggleButton('Student', !_isCreatorMode, () => setState(() => _isCreatorMode = false)),
-          _toggleButton('Creator', _isCreatorMode, () => setState(() => _isCreatorMode = true)),
+          _toggleButton('Student', !_isCreatorMode, () => setState(() {
+            _isCreatorMode = false;
+            _selectedTierIndex = 1; // Default to mid-tier
+          })),
+          _toggleButton('Creator', _isCreatorMode, () => setState(() {
+            _isCreatorMode = true;
+            _selectedTierIndex = 0; // Only one tier for creators
+          })),
         ],
       ),
     );
@@ -274,33 +280,59 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         border: Border(top: BorderSide(color: Colors.grey[100]!)),
       ),
       child: SafeArea(
-        child: ElevatedButton(
-          onPressed: () {
-            if (kIsWeb && user != null) {
-              final tier = _isCreatorMode ? _creatorTiers[_selectedTierIndex] : _studentTiers[_selectedTierIndex];
-              final productId = tier['id'];
-              
-              final webService = WebPaymentService();
-              final product = WebPaymentService.webProducts.firstWhere((p) => p.id == productId);
-              
-              webService.processWebPurchase(
-                context: context,
-                product: product,
-                user: user,
-              );
-            } else if (user != null) {
-              final tier = _isCreatorMode ? _creatorTiers[_selectedTierIndex] : _studentTiers[_selectedTierIndex];
-              context.read<SubscriptionProvider>().purchaseProduct(tier['id']);
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1F1F1F),
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            elevation: 0,
-          ),
-          child: Text('Get Started Now', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  // Safely clamp index to the current list length
+                  final tiers = _isCreatorMode ? _creatorTiers : _studentTiers;
+                  final safeIndex = _selectedTierIndex.clamp(0, tiers.length - 1);
+                  final tier = tiers[safeIndex];
+                  final productId = tier['id'] as String;
+
+                  if (kIsWeb && user != null) {
+                    final webService = WebPaymentService();
+                    final product = WebPaymentService.webProducts.firstWhere(
+                      (p) => p.id == productId,
+                      orElse: () => WebPaymentService.webProducts.first,
+                    );
+                    webService.processWebPurchase(
+                      context: context,
+                      product: product,
+                      user: user,
+                    );
+                  } else if (user != null) {
+                    context.read<SubscriptionProvider>().purchaseProduct(productId);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1F1F1F),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 0,
+                ),
+                child: Text('Get Started Now',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16)),
+              ),
+            ),
+            if (!kIsWeb) ...[
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () {
+                  context.read<SubscriptionProvider>().restorePurchases();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Restoring purchases...')),
+                  );
+                },
+                child: Text('Restore Purchases',
+                    style: GoogleFonts.inter(fontSize: 13, color: Colors.grey[600])),
+              ),
+            ],
+          ],
         ),
       ),
     );

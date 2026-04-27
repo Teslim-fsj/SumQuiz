@@ -13,18 +13,20 @@ import 'package:sumquiz/services/time_sync_service.dart';
 /// Direct Play Store integration for subscription management
 class IAPService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  static const String _proWeeklyId = 'sumquiz_pro_weekly';
-  static const String _proMonthlyId = 'sumquiz_pro_monthly';
-  static const String _proYearlyId = 'sumquiz_pro_yearly';
+  static const String _proStarterId  = 'sumquiz_pro_starter';   // $7.99 – 50 sessions
+  static const String _proMonthlyId  = 'sumquiz_pro_monthly';   // $14.99 – 160 sessions
+  static const String _proEliteId    = 'sumquiz_pro_elite';     // $29.99 – 400 sessions
+  static const String _proCreatorId  = 'sumquiz_pro_creator';   // $49.99 – 1000 sessions
   /// 3-day free trial subscription — must be created in Play Console with a
   /// free trial of 3 days before this product ID appears in query results.
-  static const String _proTrialId = 'sumquiz_pro_trial';
+  static const String _proTrialId    = 'sumquiz_pro_trial';
 
   late StreamSubscription<List<PurchaseDetails>> _subscription;
   final Set<String> _productIds = {
-    _proWeeklyId,
+    _proStarterId,
     _proMonthlyId,
-    _proYearlyId,
+    _proEliteId,
+    _proCreatorId,
     _proTrialId,
   };
 
@@ -147,27 +149,31 @@ class IAPService {
       String uid, PurchaseDetails purchaseDetails) async {
     try {
       final now = TimeSyncService.now;
-      final bool isTrial = purchaseDetails.productID == _proTrialId;
+      final productId = purchaseDetails.productID;
+      final bool isTrial = productId == _proTrialId;
 
-      DateTime? expiryDate;
-      if (isTrial) {
-        expiryDate = now.add(const Duration(days: 3));
-      } else if (purchaseDetails.productID == _proWeeklyId) {
-        expiryDate = now.add(const Duration(days: 7));
-      } else if (purchaseDetails.productID == _proMonthlyId) {
-        expiryDate = now.add(const Duration(days: 30));
-      } else if (purchaseDetails.productID == _proYearlyId) {
-        expiryDate = now.add(const Duration(days: 365));
-      }
+      // All plans are monthly (30 days) unless it's the trial
+      final DateTime expiryDate = isTrial
+          ? now.add(const Duration(days: 3))
+          : now.add(const Duration(days: 30));
+
+      // Credit amounts per plan
+      final int credits = switch (productId) {
+        _proStarterId  => 50,
+        _proMonthlyId  => 160,
+        _proEliteId    => 400,
+        _proCreatorId  => 1000,
+        _proTrialId    => 30,
+        _           => 0,
+      };
 
       final Map<String, dynamic> update = {
-        'subscriptionExpiry':
-            expiryDate != null ? Timestamp.fromDate(expiryDate) : null,
+        'subscriptionExpiry': Timestamp.fromDate(expiryDate),
         'isTrial': isTrial,
-        'currentProduct': purchaseDetails.productID,
+        'currentProduct': productId,
         'lastVerified': FieldValue.serverTimestamp(),
-        'purchaseToken':
-            purchaseDetails.verificationData.serverVerificationData,
+        'purchaseToken': purchaseDetails.verificationData.serverVerificationData,
+        'studySessionsRemaining': FieldValue.increment(credits),
       };
 
       // Mark card as linked & trial as used when the trial subscription fires
@@ -176,13 +182,18 @@ class IAPService {
         update['hasUsedTrial'] = true;
       }
 
+      // Mark creator role for creator plan
+      if (productId == _proCreatorId) {
+        update['isCreatorPro'] = true;
+      }
+
       await _firestore
           .collection('users')
           .doc(uid)
           .set(update, SetOptions(merge: true));
 
       developer.log(
-          'Updated subscription for $uid: product=${purchaseDetails.productID}, trial=$isTrial',
+          'Updated subscription for $uid: product=$productId, trial=$isTrial, credits=$credits',
           name: 'IAPService');
     } catch (e) {
       developer.log('Failed to update user subscription status',

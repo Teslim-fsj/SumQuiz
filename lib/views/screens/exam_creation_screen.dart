@@ -812,20 +812,42 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
           _processSelectedFiles(newFiles);
         }
       } else {
-        final XFile? image = await _imagePicker.pickImage(
-          source: source,
-          imageQuality: 80,
-          maxHeight: 1920,
-          maxWidth: 1920,
-        );
+        bool keepSnapping = true;
+        while (keepSnapping) {
+          final XFile? image = await _imagePicker.pickImage(
+            source: source,
+            imageQuality: 80,
+            maxHeight: 1920,
+            maxWidth: 1920,
+          );
 
-        if (image != null) {
-          final bytes = await image.readAsBytes();
-          _processSelectedFiles([{
-            'name': image.name,
-            'bytes': bytes,
-            'type': 'image',
-          }]);
+          if (image != null) {
+            final bytes = await image.readAsBytes();
+            _processSelectedFiles([{
+              'name': image.name,
+              'bytes': bytes,
+              'type': 'image',
+            }]);
+
+            if (mounted) {
+              final shouldContinue = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Add Another Page?'),
+                  content: const Text('Would you like to snap another photo to add to this exam?'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Done')),
+                    ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Snap Another')),
+                  ],
+                ),
+              );
+              keepSnapping = shouldContinue ?? false;
+            } else {
+              keepSnapping = false;
+            }
+          } else {
+            keepSnapping = false;
+          }
         }
       }
     } catch (e) {
