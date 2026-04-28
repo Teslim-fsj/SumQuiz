@@ -6,7 +6,6 @@ import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/services/firestore_service.dart';
 import 'package:sumquiz/services/local_database_service.dart';
 import 'package:sumquiz/utils/share_code_generator.dart';
-import 'package:sumquiz/views/widgets/share_deck_dialog.dart';
 import 'package:uuid/uuid.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -77,9 +76,10 @@ class LibraryShareHelper {
 
       if (context.mounted) {
         final origin = kIsWeb ? Uri.base.origin : 'https://sumquiz.xyz';
-        final shareLink = (publishedDeck.slug != null && publishedDeck.slug!.isNotEmpty)
-            ? '$origin/s/${publishedDeck.slug}'
-            : '$origin/deck?code=$shareCode';
+        final shareLink =
+            (publishedDeck.slug != null && publishedDeck.slug!.isNotEmpty)
+                ? '$origin/s/${publishedDeck.slug}'
+                : '$origin/deck?code=$shareCode';
 
         final String message = user.role == UserRole.student
             ? 'I just finished "${item.title}" on SumQuiz! Can you beat my score? Check it out here: $shareLink'

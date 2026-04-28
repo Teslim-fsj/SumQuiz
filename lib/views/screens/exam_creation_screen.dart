@@ -48,7 +48,8 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
   bool _isProcessing = false;
   String _processingMessage = '';
   final ImagePicker _imagePicker = ImagePicker();
-  List<Map<String, dynamic>> _selectedSourceFiles = []; // { 'name': String, 'bytes': Uint8List, 'type': String }
+  final List<Map<String, dynamic>> _selectedSourceFiles =
+      []; // { 'name': String, 'bytes': Uint8List, 'type': String }
   CancellationToken? _cancelToken;
 
   @override
@@ -181,16 +182,20 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
                   const SizedBox(height: 16),
                   if (user != null && !user.isPro) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       margin: const EdgeInsets.only(bottom: 24),
                       decoration: BoxDecoration(
                         color: theme.colorScheme.primaryContainer,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.2)),
+                        border: Border.all(
+                            color: theme.colorScheme.primary
+                                .withValues(alpha: 0.2)),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.auto_awesome, color: theme.colorScheme.primary, size: 20),
+                          Icon(Icons.auto_awesome,
+                              color: theme.colorScheme.primary, size: 20),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
@@ -206,7 +211,8 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
                                 Text(
                                   'Upgrade to Pro for unlimited generation.',
                                   style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onPrimaryContainer.withOpacity(0.8),
+                                    color: theme.colorScheme.onPrimaryContainer
+                                        .withOpacity(0.8),
                                   ),
                                 ),
                               ],
@@ -326,13 +332,15 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
                             _buildUploadOption('PDF', Icons.picture_as_pdf, () {
                               _selectSourceMaterial('PDF');
                             }),
-                            _buildUploadOption('Scan / Image', Icons.camera_alt, () {
+                            _buildUploadOption('Scan / Image', Icons.camera_alt,
+                                () {
                               _showImageSourceSelection();
                             }),
                             _buildUploadOption('Notes', Icons.note_alt, () {
                               _selectSourceMaterial('Notes');
                             }),
-                            _buildUploadOption('YouTube', Icons.play_circle_fill, () {
+                            _buildUploadOption(
+                                'YouTube', Icons.play_circle_fill, () {
                               if (!userMayImportFromYouTube(user)) {
                                 showDialog<void>(
                                   context: context,
@@ -634,20 +642,33 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
                     height: 56,
                     child: Consumer<UserModel?>(
                       builder: (context, user, child) {
-                        final bool isLimitReached = user != null && !user.isPro && user.examsGenerated >= 3;
-                        
+                        final bool isLimitReached = user != null &&
+                            !user.isPro &&
+                            user.examsGenerated >= 3;
+
                         return ElevatedButton.icon(
                           onPressed: (isLimitReached || _sourceMaterial.isEmpty)
-                              ? (isLimitReached ? () => context.push('/settings/subscription') : null)
+                              ? (isLimitReached
+                                  ? () => context.push('/settings/subscription')
+                                  : null)
                               : _generateDraftExam,
-                          icon: Icon(isLimitReached ? Icons.workspace_premium : Icons.auto_awesome),
+                          icon: Icon(isLimitReached
+                              ? Icons.workspace_premium
+                              : Icons.auto_awesome),
                           label: Text(
-                            isLimitReached ? 'Upgrade to Pro' : 'Generate Draft Exam',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                            isLimitReached
+                                ? 'Upgrade to Pro'
+                                : 'Generate Draft Exam',
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w600),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: isLimitReached ? theme.colorScheme.tertiary : theme.colorScheme.primary,
-                            foregroundColor: isLimitReached ? theme.colorScheme.onTertiary : theme.colorScheme.onPrimary,
+                            backgroundColor: isLimitReached
+                                ? theme.colorScheme.tertiary
+                                : theme.colorScheme.primary,
+                            foregroundColor: isLimitReached
+                                ? theme.colorScheme.onTertiary
+                                : theme.colorScheme.onPrimary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -823,21 +844,28 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
 
           if (image != null) {
             final bytes = await image.readAsBytes();
-            _processSelectedFiles([{
-              'name': image.name,
-              'bytes': bytes,
-              'type': 'image',
-            }]);
+            _processSelectedFiles([
+              {
+                'name': image.name,
+                'bytes': bytes,
+                'type': 'image',
+              }
+            ]);
 
             if (mounted) {
               final shouldContinue = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(
                   title: const Text('Add Another Page?'),
-                  content: const Text('Would you like to snap another photo to add to this exam?'),
+                  content: const Text(
+                      'Would you like to snap another photo to add to this exam?'),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Done')),
-                    ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Snap Another')),
+                    TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Done')),
+                    ElevatedButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Snap Another')),
                   ],
                 ),
               );
@@ -865,7 +893,8 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
 
     try {
       final user = Provider.of<UserModel?>(context, listen: false);
-      final enhancedAiService = Provider.of<EnhancedAIService>(context, listen: false);
+      final enhancedAiService =
+          Provider.of<EnhancedAIService>(context, listen: false);
       final extractionService = ContentExtractionService(enhancedAiService);
       _cancelToken = CancellationToken();
 
@@ -874,7 +903,8 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
 
       for (int i = 0; i < files.length; i++) {
         final file = files[i];
-        setState(() => _processingMessage = 'Extracting from ${file['name']} (${i + 1}/${files.length})...');
+        setState(() => _processingMessage =
+            'Extracting from ${file['name']} (${i + 1}/${files.length})...');
 
         final extractionResult = await extractionService.extractContent(
           type: file['type'] ?? 'image',
@@ -891,7 +921,8 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
         if (combinedText.isNotEmpty && !combinedText.endsWith('\n\n')) {
           combinedText += '\n\n';
         }
-        combinedText += '--- Source: ${file['name']} ---\n${extractionResult.text}';
+        combinedText +=
+            '--- Source: ${file['name']} ---\n${extractionResult.text}';
       }
 
       if (mounted) {
@@ -942,7 +973,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
         type: fileType,
         allowedExtensions: allowedExtensions,
         withData: true,
-        allowMultiple: true, 
+        allowMultiple: true,
       );
 
       if (!mounted) return;
@@ -966,9 +997,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
       if (mounted) {
         setState(() => _isProcessing = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: Colors.red),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -1109,8 +1138,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
       if (!mounted) return;
       showDialog<void>(
         context: context,
-        builder: (_) =>
-            const UpgradeDialog(featureName: 'YouTube import'),
+        builder: (_) => const UpgradeDialog(featureName: 'YouTube import'),
       );
       return;
     }
@@ -1183,7 +1211,9 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
         text: _sourceMaterial,
         title: _titleController.text,
         subject: _subjectController.text,
-        level: _selectedLevel == 'Custom' ? _customLevelController.text : _selectedLevel,
+        level: _selectedLevel == 'Custom'
+            ? _customLevelController.text
+            : _selectedLevel,
         questionCount: _numberOfQuestions,
         questionTypes: questionTypes,
         difficultyMix: _difficultyValue,
@@ -1213,7 +1243,9 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
             builder: (context) => QuestionEditorScreen(
               examTitle: _titleController.text,
               subject: _subjectController.text,
-              classLevel: _selectedLevel == 'Custom' ? _customLevelController.text : _selectedLevel,
+              classLevel: _selectedLevel == 'Custom'
+                  ? _customLevelController.text
+                  : _selectedLevel,
               numberOfQuestions: _numberOfQuestions,
               duration: int.tryParse(_duration) ?? 60,
               questionTypes: questionTypes,
@@ -1367,58 +1399,58 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
                 ],
               ),
             )
-            : ListView(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                children: [
-                  // Top bar with exam info
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    color: theme.cardColor,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.examTitle,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+          : ListView(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              children: [
+                // Top bar with exam info
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  color: theme.cardColor,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.examTitle,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
                               ),
-                              Text(
-                                'Total Questions: ${_questions.length}',
-                                style: theme.textTheme.bodySmall,
-                              ),
-                              Text(
-                                'Estimated Duration: ${widget.duration} mins',
-                                style: theme.textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
+                            ),
+                            Text(
+                              'Total Questions: ${_questions.length}',
+                              style: theme.textTheme.bodySmall,
+                            ),
+                            Text(
+                              'Estimated Duration: ${widget.duration} mins',
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ],
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.add),
-                          onPressed: _addQuestion,
-                          tooltip: 'Add Question',
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Questions list
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      children: List.generate(
-                        _questions.length,
-                        (index) => _buildQuestionCard(index),
                       ),
+                      IconButton(
+                        icon: const Icon(Icons.add),
+                        onPressed: _addQuestion,
+                        tooltip: 'Add Question',
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Questions list
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: List.generate(
+                      _questions.length,
+                      (index) => _buildQuestionCard(index),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -1495,69 +1527,69 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
               },
               child: Column(
                 children: List.generate(
-              question.options.length,
-              (optionIndex) => Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: Row(
-                  children: [
-                    Radio<String>(
-                      value: question.options[optionIndex],
-                      groupValue: question.correctAnswer,
-                      onChanged: (value) {
-                        setState(() {
-                          _questions[index] = LocalQuizQuestion(
-                            question: question.question,
-                            options: question.options,
-                            correctAnswer: value!,
-                          );
-                        });
-                      },
-                    ),
-                    Expanded(
-                      child: TextFormField(
-                        initialValue: question.options[optionIndex],
-                        decoration: InputDecoration(
-                          labelText:
-                              'Option ${String.fromCharCode(65 + optionIndex)}',
-                          border: const OutlineInputBorder(),
-                          suffixIcon: question.correctAnswer ==
-                                  question.options[optionIndex]
-                              ? const Icon(Icons.check_circle,
-                                  color: Colors.green)
-                              : null,
+                  question.options.length,
+                  (optionIndex) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Row(
+                      children: [
+                        Radio<String>(
+                          value: question.options[optionIndex],
+                          groupValue: question.correctAnswer,
+                          onChanged: (value) {
+                            setState(() {
+                              _questions[index] = LocalQuizQuestion(
+                                question: question.question,
+                                options: question.options,
+                                correctAnswer: value!,
+                              );
+                            });
+                          },
                         ),
-                        onChanged: (value) {
-                          final newOptions =
-                              List<String>.from(question.options);
-                          newOptions[optionIndex] = value;
+                        Expanded(
+                          child: TextFormField(
+                            initialValue: question.options[optionIndex],
+                            decoration: InputDecoration(
+                              labelText:
+                                  'Option ${String.fromCharCode(65 + optionIndex)}',
+                              border: const OutlineInputBorder(),
+                              suffixIcon: question.correctAnswer ==
+                                      question.options[optionIndex]
+                                  ? const Icon(Icons.check_circle,
+                                      color: Colors.green)
+                                  : null,
+                            ),
+                            onChanged: (value) {
+                              final newOptions =
+                                  List<String>.from(question.options);
+                              newOptions[optionIndex] = value;
 
-                          // Update correct answer if it was this option
-                          String newCorrectAnswer = question.correctAnswer;
-                          if (question.correctAnswer ==
-                              question.options[optionIndex]) {
-                            newCorrectAnswer = value;
-                          }
+                              // Update correct answer if it was this option
+                              String newCorrectAnswer = question.correctAnswer;
+                              if (question.correctAnswer ==
+                                  question.options[optionIndex]) {
+                                newCorrectAnswer = value;
+                              }
 
-                          setState(() {
-                            _questions[index] = LocalQuizQuestion(
-                              question: question.question,
-                              options: newOptions,
-                              correctAnswer: newCorrectAnswer,
-                              explanation: question.explanation,
-                              questionType: question.questionType,
-                            );
-                          });
-                        },
-                      ),
+                              setState(() {
+                                _questions[index] = LocalQuizQuestion(
+                                  question: question.question,
+                                  options: newOptions,
+                                  correctAnswer: newCorrectAnswer,
+                                  explanation: question.explanation,
+                                  questionType: question.questionType,
+                                );
+                              });
+                            },
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
+            const SizedBox(height: 8),
+            TextFormField(
               initialValue: question.explanation,
               maxLines: null,
               decoration: const InputDecoration(
@@ -1595,7 +1627,8 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
     });
 
     try {
-      final enhancedAIService = Provider.of<EnhancedAIService>(context, listen: false);
+      final enhancedAIService =
+          Provider.of<EnhancedAIService>(context, listen: false);
       _cancelToken = CancellationToken();
 
       final oldQuestion = _questions[index];
@@ -1958,8 +1991,8 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
                     icon: const Icon(Icons.download),
                     label: const Text(
                       'Download PDF',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w600),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: theme.colorScheme.primary,
@@ -2085,7 +2118,6 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
         shareCode: shareCode,
         creatorName: user?.displayName ?? 'Educator',
         marksA: _marksA,
-
         marksB: _marksB,
         marksC: _marksC,
         includeAnswerSheet: _includeAnswerSheet,

@@ -11,7 +11,6 @@ import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
 import 'package:sumquiz/services/firestore_service.dart';
 import 'package:sumquiz/models/public_deck.dart';
 import 'package:sumquiz/utils/share_code_generator.dart';
-import 'package:sumquiz/views/widgets/share_deck_dialog.dart';
 import 'package:uuid/uuid.dart';
 import 'package:sumquiz/services/spaced_repetition_service.dart';
 import 'package:sumquiz/services/local_database_service.dart';
@@ -135,7 +134,10 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
         id: publicDeckId,
         creatorId: user.uid,
         creatorName: user.displayName,
-        title: _summary?.title ?? _quiz?.title ?? _flashcardSet?.title ?? 'Study Pack',
+        title: _summary?.title ??
+            _quiz?.title ??
+            _flashcardSet?.title ??
+            'Study Pack',
         description: "Shared Study Pack",
         shareCode: shareCode,
         summaryData: {
@@ -146,7 +148,8 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
           'questions': _quiz!.questions.map((q) => q.toMap()).toList(),
         },
         flashcardData: {
-          'flashcards': _flashcardSet!.flashcards.map((f) => f.toMap()).toList(),
+          'flashcards':
+              _flashcardSet!.flashcards.map((f) => f.toMap()).toList(),
         },
         publishedAt: DateTime.now(),
       );
@@ -156,9 +159,10 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
       if (!mounted) return;
 
       final origin = Uri.base.origin;
-      final shareLink = (publishedDeck.slug != null && publishedDeck.slug!.isNotEmpty)
-          ? '$origin/s/${publishedDeck.slug}'
-          : '$origin/deck?code=$shareCode';
+      final shareLink =
+          (publishedDeck.slug != null && publishedDeck.slug!.isNotEmpty)
+              ? '$origin/s/${publishedDeck.slug}'
+              : '$origin/deck?code=$shareCode';
 
       final String message = user.role == UserRole.student
           ? 'I just finished "${publicDeck.title}" on SumQuiz! Can you beat my score? Check it out here: $shareLink'
@@ -204,12 +208,13 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
   @override
   Widget build(BuildContext context) {
     return _isLoading
-        ? const Center(child: CircularProgressIndicator(color: WebColors.purplePrimary))
+        ? const Center(
+            child: CircularProgressIndicator(color: WebColors.purplePrimary))
         : _errorMessage != null
             ? Center(child: _buildErrorState())
             : Column(
                 children: [
-                      _buildInlineHeader(),
+                  _buildInlineHeader(),
                   Expanded(
                     child: _buildContentArea(),
                   ),
@@ -218,13 +223,15 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
   }
 
   Widget _buildInlineHeader() {
-    final title = _summary?.title ?? _quiz?.title ?? _flashcardSet?.title ?? 'Study Pack';
+    final title =
+        _summary?.title ?? _quiz?.title ?? _flashcardSet?.title ?? 'Study Pack';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: WebColors.border.withOpacity(0.5))),
+        border: Border(
+            bottom: BorderSide(color: WebColors.border.withOpacity(0.5))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,8 +241,10 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
             children: [
               // Back button
               IconButton(
-                onPressed: () => context.canPop() ? context.pop() : context.go('/library'),
-                icon: const Icon(Icons.arrow_back_rounded, color: WebColors.textPrimary),
+                onPressed: () =>
+                    context.canPop() ? context.pop() : context.go('/library'),
+                icon: const Icon(Icons.arrow_back_rounded,
+                    color: WebColors.textPrimary),
                 tooltip: 'Back',
               ),
               const SizedBox(width: 12),
@@ -253,14 +262,16 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
               ),
               // AI Badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: WebColors.backgroundAlt,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.auto_awesome_rounded, size: 14, color: WebColors.purplePrimary),
+                    const Icon(Icons.auto_awesome_rounded,
+                        size: 14, color: WebColors.purplePrimary),
                     const SizedBox(width: 8),
                     Text(
                       'AI GENERATED',
@@ -288,7 +299,9 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
                       color: WebColors.purplePrimary,
                       size: 24,
                     ),
-                    tooltip: isStudent ? 'Challenge Study Buddy' : 'Publish to World',
+                    tooltip: isStudent
+                        ? 'Challenge Study Buddy'
+                        : 'Publish to World',
                   ),
                 );
               }),
@@ -296,12 +309,15 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
               ElevatedButton.icon(
                 onPressed: _saveToLibrary,
                 icon: const Icon(Icons.bookmark_add_rounded, size: 18),
-                label: Text('Save to Library', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
+                label: Text('Save to Library',
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: WebColors.purplePrimary,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
               ),
@@ -333,22 +349,32 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? WebColors.purplePrimary.withOpacity(0.1) : Colors.transparent,
+          color: isSelected
+              ? WebColors.purplePrimary.withOpacity(0.1)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? WebColors.purplePrimary.withOpacity(0.3) : Colors.transparent,
+            color: isSelected
+                ? WebColors.purplePrimary.withOpacity(0.3)
+                : Colors.transparent,
           ),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: isSelected ? WebColors.purplePrimary : WebColors.textSecondary),
+            Icon(icon,
+                size: 18,
+                color: isSelected
+                    ? WebColors.purplePrimary
+                    : WebColors.textSecondary),
             const SizedBox(width: 8),
             Text(
               label,
               style: GoogleFonts.outfit(
                 fontSize: 14,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                color: isSelected ? WebColors.purplePrimary : WebColors.textSecondary,
+                color: isSelected
+                    ? WebColors.purplePrimary
+                    : WebColors.textSecondary,
               ),
             ),
           ],
@@ -438,7 +464,8 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
             runSpacing: 6,
             children: (_summary?.tags ?? ['Scanning content...'])
                 .map((tag) => Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(8),
@@ -497,7 +524,8 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
         if (isCorrect) _correctAnswers++;
         final auth = context.read<AuthService>();
         if (auth.currentUser != null) {
-          ProgressService().logAccuracy(auth.currentUser!.uid, isCorrect ? 1.0 : 0.0);
+          ProgressService()
+              .logAccuracy(auth.currentUser!.uid, isCorrect ? 1.0 : 0.0);
         }
       },
       onShowSummary: () => setState(() => _selectedTab = 0),
@@ -525,8 +553,10 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
         if (knewIt) _knewCardsCount++;
         final auth = context.read<AuthService>();
         if (auth.currentUser != null) {
-          final srs = SpacedRepetitionService(context.read<LocalDatabaseService>().getSpacedRepetitionBox());
-          srs.updateFlashcardProgress(auth.currentUser!.uid, _flashcardSet!.id, flashcards[index].id, knewIt);
+          final srs = SpacedRepetitionService(
+              context.read<LocalDatabaseService>().getSpacedRepetitionBox());
+          srs.updateFlashcardProgress(auth.currentUser!.uid, _flashcardSet!.id,
+              flashcards[index].id, knewIt);
         }
       },
       onFinish: () {
@@ -545,7 +575,8 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
 
   void _finalizeCurrentSession() {
     if (_sessionStartTime == null) return;
-    final durationSeconds = DateTime.now().difference(_sessionStartTime!).inSeconds;
+    final durationSeconds =
+        DateTime.now().difference(_sessionStartTime!).inSeconds;
     if (durationSeconds < 5) return;
     final auth = context.read<AuthService>();
     final user = auth.currentUser;
@@ -589,7 +620,8 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
         children: [
           const Icon(Icons.inbox, size: 64, color: Colors.grey),
           const SizedBox(height: 16),
-          const Text('No content available', style: TextStyle(color: Colors.grey, fontSize: 18)),
+          const Text('No content available',
+              style: TextStyle(color: Colors.grey, fontSize: 18)),
         ],
       ),
     );

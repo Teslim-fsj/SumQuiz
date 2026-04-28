@@ -13,12 +13,10 @@ import 'package:sumquiz/services/content_extraction_service.dart';
 import 'package:sumquiz/services/enhanced_ai_service.dart';
 import 'package:sumquiz/services/local_database_service.dart';
 import 'package:sumquiz/services/usage_service.dart';
-import 'package:sumquiz/services/extraction_result_cache.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
 import 'package:sumquiz/views/widgets/extraction_progress_dialog.dart';
 import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
 import 'package:sumquiz/utils/youtube_pro_gate.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sumquiz/theme/web_theme.dart'; // Reuse premium colors
 
@@ -85,7 +83,8 @@ class _CreateContentScreenState extends State<CreateContentScreen>
   final _topicController = TextEditingController();
   String? _pdfName;
   Uint8List? _pdfBytes;
-  List<Map<String, dynamic>> _selectedImages = []; // Each map: { 'name': String, 'bytes': Uint8List }
+  List<Map<String, dynamic>> _selectedImages =
+      []; // Each map: { 'name': String, 'bytes': Uint8List }
   String? _mimeType;
   String _errorMessage = '';
 
@@ -135,8 +134,6 @@ class _CreateContentScreenState extends State<CreateContentScreen>
       _errorMessage = '';
     });
   }
-
-
 
   Future<bool> _checkProAccess(String feature,
       {String actionType = 'text'}) async {
@@ -276,7 +273,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
     if (_isLoading || _isProcessing) return;
 
     if (!await _checkProAccess('Image Scan', actionType: 'upload')) return;
-    
+
     // Clear non-image inputs if this is the first image
     if (_selectedImages.isEmpty) {
       _textController.clear();
@@ -330,7 +327,8 @@ class _CreateContentScreenState extends State<CreateContentScreen>
             if (fileSizeMb > 10) {
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('Image file is too large. Maximum size is 10MB.')));
+                    content: Text(
+                        'Image file is too large. Maximum size is 10MB.')));
               }
               continue;
             }
@@ -338,8 +336,8 @@ class _CreateContentScreenState extends State<CreateContentScreen>
             final bytes = await image.readAsBytes();
             if (bytes.isEmpty) {
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('Failed to read image data')));
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Failed to read image data')));
               }
               continue;
             }
@@ -357,10 +355,15 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                 context: context,
                 builder: (context) => AlertDialog(
                   title: const Text('Add Another Page?'),
-                  content: const Text('Would you like to snap another photo to add to this document?'),
+                  content: const Text(
+                      'Would you like to snap another photo to add to this document?'),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Done')),
-                    ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Snap Another')),
+                    TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Done')),
+                    ElevatedButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Snap Another')),
                   ],
                 ),
               );
@@ -402,20 +405,23 @@ class _CreateContentScreenState extends State<CreateContentScreen>
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF1E293B),
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(32)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
       builder: (context) => Container(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Study Session Preview', 
-              style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white)),
+            Text('Study Session Preview',
+                style: GoogleFonts.outfit(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white)),
             const SizedBox(height: 16),
             _buildPreviewRow(Icons.quiz_rounded, '12-15 Intelligent Questions'),
             const SizedBox(height: 12),
-            _buildPreviewRow(Icons.psychology_rounded, 'Difficulty-Balanced Adaptive Quiz'),
+            _buildPreviewRow(
+                Icons.psychology_rounded, 'Difficulty-Balanced Adaptive Quiz'),
             const SizedBox(height: 12),
             _buildPreviewRow(Icons.timer_rounded, '~2 min Neural Processing'),
             const SizedBox(height: 32),
@@ -430,9 +436,12 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                   backgroundColor: const Color(0xFF6366F1),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 20),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
                 ),
-                child: Text('Start Study Session', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16)),
+                child: Text('Start Study Session',
+                    style: GoogleFonts.inter(
+                        fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ),
           ],
@@ -446,7 +455,9 @@ class _CreateContentScreenState extends State<CreateContentScreen>
       children: [
         Icon(icon, color: const Color(0xFF6366F1), size: 20),
         const SizedBox(width: 12),
-        Text(text, style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.8), fontSize: 14)),
+        Text(text,
+            style: GoogleFonts.inter(
+                color: Colors.white.withValues(alpha: 0.8), fontSize: 14)),
       ],
     );
   }
@@ -498,7 +509,8 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           break;
         case 'pdf':
         case 'slides':
-          if (!await _checkProAccess('Document Analysis', actionType: 'upload')) {
+          if (!await _checkProAccess('Document Analysis',
+              actionType: 'upload')) {
             return;
           }
           if (_pdfBytes == null) {
@@ -647,11 +659,13 @@ class _CreateContentScreenState extends State<CreateContentScreen>
           await Future.delayed(const Duration(milliseconds: 100));
           if (mounted) {
             try {
-              final aiService = Provider.of<EnhancedAIService>(context, listen: false);
-              final localDb = Provider.of<LocalDatabaseService>(context, listen: false);
+              final aiService =
+                  Provider.of<EnhancedAIService>(context, listen: false);
+              final localDb =
+                  Provider.of<LocalDatabaseService>(context, listen: false);
 
               progressNotifier.value = 'Neural processing started...';
-              
+
               if (mounted) {
                 showDialog(
                   context: context,
@@ -662,14 +676,17 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                       if (didPop) return;
                       cancelToken.cancel();
                     },
-                    child: ExtractionProgressDialog(messageNotifier: progressNotifier),
+                    child: ExtractionProgressDialog(
+                        messageNotifier: progressNotifier),
                   ),
                 );
               }
 
               final folderId = await aiService.generateAndStoreOutputs(
                 text: extractionResult.text,
-                title: extractionResult.suggestedTitle.isEmpty ? 'Untitled Study Pack' : extractionResult.suggestedTitle,
+                title: extractionResult.suggestedTitle.isEmpty
+                    ? 'Untitled Study Pack'
+                    : extractionResult.suggestedTitle,
                 requestedOutputs: ['summary', 'quiz', 'flashcards'],
                 userId: user.uid,
                 localDb: localDb,
@@ -689,7 +706,8 @@ class _CreateContentScreenState extends State<CreateContentScreen>
               debugPrint('Generation error: $e');
               if (mounted) {
                 if (Navigator.of(context).canPop()) Navigator.of(context).pop();
-                setState(() => _errorMessage = 'Generation failed: ${_getUserFriendlyError(e)}');
+                setState(() => _errorMessage =
+                    'Generation failed: ${_getUserFriendlyError(e)}');
               }
             }
           }
@@ -1024,24 +1042,28 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                           final idx = entry.key;
                           return Container(
                             margin: const EdgeInsets.only(right: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.image_rounded, color: Color(0xFFEC4899), size: 16),
+                                const Icon(Icons.image_rounded,
+                                    color: Color(0xFFEC4899), size: 16),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Image ${idx + 1}',
-                                  style: GoogleFonts.outfit(color: Colors.white, fontSize: 13),
+                                  style: GoogleFonts.outfit(
+                                      color: Colors.white, fontSize: 13),
                                 ),
                                 IconButton(
                                   onPressed: () => setState(() {
                                     _selectedImages.removeAt(idx);
                                   }),
-                                  icon: const Icon(Icons.close_rounded, color: Colors.white54, size: 16),
+                                  icon: const Icon(Icons.close_rounded,
+                                      color: Colors.white54, size: 16),
                                   constraints: const BoxConstraints(),
                                   padding: const EdgeInsets.only(left: 8),
                                 ),
@@ -1307,7 +1329,8 @@ class _CreateContentScreenState extends State<CreateContentScreen>
   Widget _buildLaboratoryOption() {
     return GestureDetector(
       onTap: () async {
-        if (!await _checkProAccess('Tutoring Lab', actionType: 'upload')) return;
+        if (!await _checkProAccess('Tutoring Lab', actionType: 'upload'))
+          return;
         if (mounted) context.push('/exam-creation');
       },
       child: Container(
@@ -1570,16 +1593,21 @@ class _CreateContentScreenState extends State<CreateContentScreen>
 
   String _getUserFriendlyError(dynamic error) {
     final errorStr = error.toString().toLowerCase();
-    
-    if (errorStr.contains('neural pathway to clear') || errorStr.contains('over-saturated')) {
+
+    if (errorStr.contains('neural pathway to clear') ||
+        errorStr.contains('over-saturated')) {
       return '🚦 Neural circuits are critical. We are pausing to let the systems recover. Please wait 2-3 minutes.';
     }
-    
-    if (errorStr.contains('rate limit') || errorStr.contains('quota exceeded')) {
+
+    if (errorStr.contains('rate limit') ||
+        errorStr.contains('quota exceeded')) {
       return '🏎️ Speed limit reached. Shifting to fallback intelligence. Please retry in 30 seconds.';
     }
-    
-    if (errorStr.contains('api') || errorStr.contains('quota') || errorStr.contains('full') || errorStr.contains('overloaded')) {
+
+    if (errorStr.contains('api') ||
+        errorStr.contains('quota') ||
+        errorStr.contains('full') ||
+        errorStr.contains('overloaded')) {
       return '🔑 Intelligence access is currently full or restricted. Please try again in 30 seconds.';
     }
     if (errorStr.contains('too long')) {

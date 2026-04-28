@@ -217,13 +217,14 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
       if (!mounted) return;
 
       final origin = kIsWeb ? Uri.base.origin : 'https://sumquiz.xyz';
-      final shareLink = (publishedDeck.slug != null && publishedDeck.slug!.isNotEmpty)
-          ? '$origin/s/${publishedDeck.slug}'
-          : '$origin/deck?code=$shareCode';
+      final shareLink =
+          (publishedDeck.slug != null && publishedDeck.slug!.isNotEmpty)
+              ? '$origin/s/${publishedDeck.slug}'
+              : '$origin/deck?code=$shareCode';
 
       final String message = user.role == UserRole.student
-          ? '🔥 I challenge you! I just finished "${_currentTitle}" on SumQuiz. Can you beat my knowledge score? Try it here: $shareLink #SumQuiz #StudyHard'
-          : 'Check out this study pack I created on SumQuiz: "${_currentTitle}". It will save you hours of reading! Access it here: $shareLink';
+          ? '🔥 I challenge you! I just finished "$_currentTitle" on SumQuiz. Can you beat my knowledge score? Try it here: $shareLink #SumQuiz #StudyHard'
+          : 'Check out this study pack I created on SumQuiz: "$_currentTitle". It will save you hours of reading! Access it here: $shareLink';
 
       await Share.share(message, subject: 'SumQuiz: $_currentTitle');
     } catch (e) {
@@ -375,7 +376,7 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
                 ? Center(
                     child: CircularProgressIndicator(
                         color: theme.colorScheme.primary))
-                    : _errorMessage != null
+                : _errorMessage != null
                     ? Center(
                         child: Text(_errorMessage!,
                             style: theme.textTheme.bodyLarge
@@ -567,7 +568,8 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
                     ? const SizedBox(
                         height: 20,
                         width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white),
                       )
                     : const Icon(Icons.share_rounded, size: 24),
                 label: Text(
