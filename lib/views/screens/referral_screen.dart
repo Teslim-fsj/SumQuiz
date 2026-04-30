@@ -133,7 +133,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                             ).animate().fadeIn(delay: 200.ms),
                             const SizedBox(height: 8),
                             Text(
-                              'Share your unique code. When friends sign up, they get 7 free Pro days. You earn 7 days for every 2 friends who join!',
+                              'Share your unique code. When friends sign up, they get 7 free Pro days. You earn 7 days for every 3 friends who join!',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                   color: theme.colorScheme.onSurface
                                       .withOpacity(0.7)),
@@ -554,7 +554,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
               _buildStep(
                   Icons.looks_3_rounded,
                   'You Get Rewarded',
-                  'After 2 referred friends sign up and generate their first quiz, you earn a reward: 7 extra days of Pro subscription!',
+                  'After 3 referred friends sign up and generate their first quiz, you earn a reward: 7 extra days of Pro subscription!',
                   theme),
             ],
           ),

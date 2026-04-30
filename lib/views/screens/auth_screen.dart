@@ -203,15 +203,15 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surface,
+                    color: Colors.black,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 30, offset: const Offset(0, 10)),
+                      BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 30, offset: const Offset(0, 10)),
                     ]
                   ),
-                  child: Image.asset('assets/images/sumquiz_logo.png', width: 64, height: 64),
+                  child: Image.asset('assets/images/sumquiz_logo.png', width: 64, height: 64, fit: BoxFit.contain),
                 ).animate().slideY(begin: 0.2).fadeIn(duration: 600.ms),
                 const SizedBox(height: 40),
                 Text(
@@ -254,7 +254,16 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (isMobile) ...[
-              Center(child: Image.asset('assets/images/sumquiz_logo.png', width: 48, height: 48)),
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Image.asset('assets/images/sumquiz_logo.png', width: 44, height: 44, fit: BoxFit.contain),
+                ),
+              ),
               const SizedBox(height: 32),
             ],
             AnimatedSwitcher(

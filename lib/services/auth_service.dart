@@ -1,7 +1,7 @@
 import 'dart:developer' as developer;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:google_sign_in/google_sign_in.dart' as auth;
 import 'package:sumquiz/config/google_oauth_config.dart';
 import 'package:provider/provider.dart';
@@ -17,6 +17,9 @@ import 'package:flutter/material.dart';
 class AuthService {
   final FirebaseAuth _auth;
   final auth.GoogleSignIn _googleSignIn = auth.GoogleSignIn.instance;
+
+  /// Guard so [_googleSignIn.initialize] is only ever called once (v7 requirement).
+  static bool _googleSignInInitialized = false;
   final FirestoreService _firestoreService = FirestoreService();
   final ReferralService _referralService = ReferralService();
 
@@ -112,24 +115,33 @@ class AuthService {
             await _auth.signInWithPopup(googleProvider);
         user = result.user;
       } else {
-        // V7 requires explicit initialization before use
-        await _googleSignIn.initialize(
-          serverClientId: kGoogleWebServerClientId,
-        );
-        
-        await _googleSignIn.signOut(); // Ensure fresh picker
+        // v7: initialize() must be called exactly once before any other method.
+        if (!_googleSignInInitialized) {
+          await _googleSignIn.initialize(
+            clientId: defaultTargetPlatform == TargetPlatform.iOS
+                ? kGoogleIosClientId
+                : null,
+            serverClientId: kGoogleWebServerClientId,
+          );
+          _googleSignInInitialized = true;
+        }
 
-        // 1. Authenticate (Identity)
-        final auth.GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
+        await _googleSignIn.signOut(); // Ensure fresh account picker
+
+        // Step 1: Authenticate (identity only)
+        final auth.GoogleSignInAccount googleUser =
+            await _googleSignIn.authenticate();
         developer.log('Google user selected: ${googleUser.email}');
 
-        // 2. Extract Identity Token
-        final auth.GoogleSignInAuthentication googleAuth = googleUser.authentication;
+        // Step 2: Get ID token
+        final auth.GoogleSignInAuthentication googleAuth =
+            googleUser.authentication;
         final String? idToken = googleAuth.idToken;
-        
-        // 3. Authorize (Access Token)
-        final auth.GoogleSignInClientAuthorization authz = 
-            await googleUser.authorizationClient.authorizeScopes(['email', 'profile']);
+
+        // Step 3: Authorize scopes to get access token
+        final auth.GoogleSignInClientAuthorization authz =
+            await googleUser.authorizationClient
+                .authorizeScopes(['email', 'profile']);
         final String accessToken = authz.accessToken;
 
         if (idToken == null || idToken.isEmpty) {
@@ -144,7 +156,7 @@ class AuthService {
           idToken: idToken,
           accessToken: accessToken,
         );
-        
+
         final UserCredential result = await _auth.signInWithCredential(credential);
         user = result.user;
       }

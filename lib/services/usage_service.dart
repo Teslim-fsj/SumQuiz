@@ -2,6 +2,7 @@ import 'dart:developer' as developer;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/services/time_sync_service.dart';
+import 'package:sumquiz/services/referral_service.dart';
 
 class UsageConfig {
   // Credits costs (Internal economics)
@@ -83,23 +84,35 @@ class UsageService {
     try {
       int cost = _calculateInternalCost(actionType, isHeavy: isHeavy);
 
+      UserModel? userBeforeTx;
       await _db.runTransaction((transaction) async {
         final userRef = _db.collection('users').doc(uid);
         final userDoc = await transaction.get(userRef);
         if (!userDoc.exists) return;
 
-        final user = UserModel.fromFirestore(userDoc);
-        final newCredits = user.credits - cost;
+        userBeforeTx = UserModel.fromFirestore(userDoc);
+        final newCredits = userBeforeTx!.credits - cost;
         
         transaction.update(userRef, {
           'credits': newCredits < 0 ? 0 : newCredits,
-          'totalDecksGenerated': user.totalDecksGenerated + 1,
+          'totalDecksGenerated': userBeforeTx!.totalDecksGenerated + 1,
           'lastDeckGenerationDate': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         });
       });
       
       developer.log('Recorded session: $actionType (Cost: $cost)', name: 'UsageService');
+
+      // Check if this is the user's FIRST generation and they were referred
+      if (userBeforeTx != null && userBeforeTx!.totalDecksGenerated == 0 && userBeforeTx!.referredBy != null && userBeforeTx!.referredBy!.isNotEmpty) {
+        try {
+          developer.log('First deck generation detected. Triggering referral reward for ${userBeforeTx!.referredBy}', name: 'UsageService');
+          final ReferralService referralService = ReferralService();
+          await referralService.grantReferrerReward(userBeforeTx!.referredBy!);
+        } catch (e) {
+          developer.log('Failed to grant referral reward', name: 'UsageService', error: e);
+        }
+      }
     } catch (e) {
       developer.log('Error recording session', name: 'UsageService', error: e);
     }

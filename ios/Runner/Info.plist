@@ -58,6 +58,14 @@
 				<key>CFBundleURLName</key>
 				<string>xyz.sumquiz</string>
 			</dict>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>com.googleusercontent.apps.1063163612294-72pkatrrl1lb6bmikpk1de87b3dgjcce</string>
+				</array>
+			</dict>
 		</array>
 		<!-- Deep Link: Universal Links -->
 		<key>FlutterDeepLinkingEnabled</key>

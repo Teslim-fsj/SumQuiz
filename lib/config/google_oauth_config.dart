@@ -8,3 +8,5 @@
 const String kGoogleWebServerClientId =
     '1063163612294-8abrnbldcd6jnijs9gino78uqq3ov52t.apps.googleusercontent.com';
 
+const String kGoogleIosClientId =
+    '1063163612294-72pkatrrl1lb6bmikpk1de87b3dgjcce.apps.googleusercontent.com';
