@@ -120,7 +120,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               }
             },
           ),
-      bottomNavigationBar: kIsWeb ? null : _buildMobileBottomNav(),
     );
   }
 
@@ -140,53 +139,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           color: const Color(0xFF1F1F1F),
           fontSize: 20,
         ),
-      ),
-      actions: kIsWeb ? [
-        _buildWebNav(),
-        const SizedBox(width: 40),
-      ] : null,
-    );
-  }
-
-  Widget _buildWebNav() {
-    return Row(
-      children: [
-        _navItem('Home'),
-        _navItem('Library'),
-        _navItem('Plans', isActive: true),
-        _navItem('Profile'),
-        const SizedBox(width: 20),
-        const CircleAvatar(
-          radius: 16,
-          backgroundColor: Color(0xFFF1F5F9),
-          child: Icon(Icons.person_outline, size: 20, color: Color(0xFF64748B)),
-        ),
-      ],
-    );
-  }
-
-  Widget _navItem(String title, {bool isActive = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            title,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-              color: isActive ? WebColors.purplePrimary : const Color(0xFF64748B),
-            ),
-          ),
-          if (isActive)
-            Container(
-              margin: const EdgeInsets.only(top: 4),
-              height: 2,
-              width: 20,
-              color: WebColors.purplePrimary,
-            ),
-        ],
       ),
     );
   }

@@ -144,72 +144,7 @@ class PreferencesScreen extends StatelessWidget {
                         ),
                       ],
                     ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
-                    const SizedBox(height: 32),
-                    _buildSectionHeader('Debug', theme)
-                        .animate()
-                        .fadeIn(delay: 400.ms)
-                        .slideX(),
-                    const SizedBox(height: 16),
-                    _buildGlassSection(
-                      theme: theme,
-                      children: [
-                        ListTile(
-                          title: Text('Request Permissions',
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: theme.colorScheme.onSurface)),
-                          subtitle: Text(
-                              'Request notification permissions from system',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurface
-                                      .withOpacity(0.6))),
-                          trailing: Icon(Icons.security,
-                              color: theme.colorScheme.primary),
-                          onTap: () async {
-                            final notificationService =
-                                context.read<NotificationService>();
-                            await notificationService.requestPermissions();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    'Permission request sent! Check your system settings.'),
-                                backgroundColor: theme.colorScheme.primary,
-                                duration: Duration(seconds: 3),
-                              ),
-                            );
-                          },
-                        ),
-                        _buildDivider(theme),
-                        FutureBuilder<bool>(
-                          future: context
-                              .read<NotificationService>()
-                              .areNotificationsEnabled(),
-                          builder: (context, snapshot) {
-                            final isEnabled = snapshot.data ?? true;
-                            return ListTile(
-                              title: Text('Notification Status',
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                      color: theme.colorScheme.onSurface)),
-                              subtitle: Text(
-                                  isEnabled
-                                      ? 'Notifications are currently enabled'
-                                      : 'Notifications are currently disabled',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: isEnabled
-                                          ? Colors.green
-                                          : Colors.red)),
-                              trailing: Icon(
-                                  isEnabled ? Icons.check_circle : Icons.cancel,
-                                  color: isEnabled ? Colors.green : Colors.red),
-                            );
-                          },
-                        ),
-                      ],
-                    ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1),
-                  ],
+                    ],
                 ),
               ),
             ),

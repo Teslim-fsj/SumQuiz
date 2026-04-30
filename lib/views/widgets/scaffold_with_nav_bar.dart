@@ -19,7 +19,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
 
   int _branchToIndex(int branch, bool isTeacher) {
     if (isTeacher) {
-      final List<int> teacherMobileBranches = [0, 1, 4, 5];
+      final List<int> teacherMobileBranches = [0, 1, 4, 5, 6];
       final idx = teacherMobileBranches.indexOf(branch);
       return idx;
     }
@@ -34,7 +34,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
   void _onTap(int index, bool isTeacher) {
     int targetBranch;
     if (isTeacher) {
-      final List<int> teacherMobileBranches = [0, 1, 4, 5];
+      final List<int> teacherMobileBranches = [0, 1, 4, 5, 6];
       targetBranch = teacherMobileBranches[index];
     } else {
       // Student mapping: index 0 -> branch 0, 1 -> 1, 2 -> 3, 3 -> 6
@@ -119,6 +119,13 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                         label: 'Insights',
                         isActive: currentIdx == 3,
                         onTap: () => _onTap(3, isTeacher),
+                      ),
+                      _buildMobileNavItem(
+                        icon: Icons.person_outline,
+                        activeIcon: Icons.person,
+                        label: 'Profile',
+                        isActive: currentIdx == 4,
+                        onTap: () => _onTap(4, isTeacher),
                       ),
                     ],
                   ),

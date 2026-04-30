@@ -24,7 +24,7 @@ class ProStatusWidget extends StatelessWidget {
           ? theme.colorScheme.primaryContainer
           : theme.colorScheme.tertiaryContainer,
       child: InkWell(
-        onTap: isPro ? null : () => context.go('/subscription'),
+        onTap: isPro ? null : () => context.go('/settings/subscription'),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),

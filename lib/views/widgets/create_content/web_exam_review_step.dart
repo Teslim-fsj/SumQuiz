@@ -73,7 +73,7 @@ class WebExamReviewStep extends StatelessWidget {
                   const SizedBox(width: 12),
                   _buildActionButton('Save to Library', Icons.save_alt_rounded, const Color(0xFFE2E8F0), const Color(0xFF1E293B), onSaveLibrary),
                   const SizedBox(width: 12),
-                  _buildActionButton('PDF Export', Icons.picture_as_pdf_rounded, const Color(0xFFE2E8F0), const Color(0xFF1E293B), onPdfExport),
+                  _buildActionButton('Share Exam PDF', Icons.share_rounded, const Color(0xFFE2E8F0), const Color(0xFF1E293B), onPdfExport),
                   const SizedBox(width: 12),
                   _buildActionButton('Publish to Class', Icons.send_rounded, const Color(0xFF4F46E5), Colors.white, onPublish),
                 ],

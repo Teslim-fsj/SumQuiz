@@ -22,18 +22,8 @@ import 'package:sumquiz/services/firestore_service.dart';
 import 'package:uuid/uuid.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:sumquiz/views/widgets/share_deck_dialog.dart';
-import 'package:sumquiz/utils/share_code_generator.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-
-class ResultsViewScreen extends StatefulWidget {
-  final String folderId;
-
-  const ResultsViewScreen({super.key, required this.folderId});
-
-  @override
-  State<ResultsViewScreen> createState() => _ResultsViewScreenState();
+ss ResultsViewScreen extends void StatefulWidget {
+  Strite<ResultsViewScreen> createState() => _ResultsViewScreenState();
 }
 
 class _ResultsViewScreenState extends State<ResultsViewScreen> {
@@ -239,44 +229,6 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
     }
   }
 
-  Future<void> _saveToLibrary() async {
-    try {
-      final db = context.read<LocalDatabaseService>();
-      final folder = await db.getFolder(widget.folderId);
-
-      if (folder != null) {
-        // Mark the folder as saved
-        folder.isSaved = true;
-        await db.saveFolder(folder);
-
-        if (mounted) {
-          setState(() => _isSaved = true);
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Content saved to your library!'),
-              backgroundColor: Theme.of(context).colorScheme.secondary,
-              action: SnackBarAction(
-                label: 'View Library',
-                textColor: Colors.white,
-                onPressed: () => context.go('/library'),
-              ),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error saving: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -301,40 +253,18 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
         actions: [
           Consumer<UserModel?>(builder: (context, user, _) {
             if (user != null) {
-              return IconButton(
-                icon: Icon(Icons.download_rounded,
-                    color: theme.colorScheme.primary),
-                tooltip: 'Export PDF',
-                onPressed: () => _exportContent(context, user, exportAll: true),
-              );
-            }
-            return const SizedBox.shrink();
-          }),
-          Consumer<UserModel?>(builder: (context, user, _) {
-            if (user != null) {
-              final isStudent = user.role == UserRole.student;
-              return IconButton(
-                icon: Icon(
-                  isStudent ? Icons.share_rounded : Icons.public,
-                  color: theme.colorScheme.primary,
-                ),
-                tooltip: isStudent ? 'Challenge Study Buddy' : 'Publish Deck',
+              return TextButton.icon(
                 onPressed: _publishDeck,
+                icon: const Icon(Icons.share_rounded, size: 20),
+                label: const Text('SHARE',
+                    style: TextStyle(fontWeight: FontWeight.w800)),
+                style: TextButton.styleFrom(
+                  foregroundColor: theme.colorScheme.primary,
+                ),
               );
             }
             return const SizedBox.shrink();
           }),
-          // Show different icon based on save status
-          IconButton(
-            icon: Icon(
-              _isSaved
-                  ? Icons.library_add_check
-                  : Icons.library_add_check_outlined,
-              color: _isSaved ? Colors.green : theme.colorScheme.primary,
-            ),
-            tooltip: _isSaved ? 'Saved to Library' : 'Save to Library',
-            onPressed: _isSaved ? null : _saveToLibrary,
-          ),
         ],
       ),
       body: Stack(
@@ -391,7 +321,6 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
                               child: _buildSelectedTabView(theme)
                                   .animate()
                                   .fadeIn(delay: 200.ms)),
-                          _buildSharingCTA(theme, isDark),
                         ],
                       ),
           ),
@@ -540,68 +469,5 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
         }
       },
     );
-  }
-
-  Widget _buildSharingCTA(ThemeData theme, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.cardColor.withOpacity(0.9),
-        border: Border(
-          top: BorderSide(
-            color: theme.dividerColor.withOpacity(0.1),
-            width: 1,
-          ),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: double.infinity,
-              height: 54,
-              child: ElevatedButton.icon(
-                onPressed: _isPublishing ? null : _publishDeck,
-                icon: _isPublishing
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Icon(Icons.share_rounded, size: 24),
-                label: Text(
-                  _isPublishing ? 'PUBLISHING...' : 'CHALLENGE A STUDY BUDDY',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: theme.colorScheme.onPrimary,
-                  elevation: 8,
-                  shadowColor: theme.colorScheme.primary.withOpacity(0.4),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Share this study pack and track who beats your score!',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
-        ),
-      ),
-    ).animate().slideY(begin: 1.0, curve: Curves.easeOutQuad, duration: 600.ms);
   }
 }

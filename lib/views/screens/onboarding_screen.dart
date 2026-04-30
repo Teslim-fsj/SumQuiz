@@ -90,14 +90,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             right: 24,
             child: Row(
               children: [
-                Icon(Icons.auto_awesome, color: cs.primary, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'SumQuiz',
-                  style: GoogleFonts.outfit(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: cs.primary,
+                Image.asset(
+                  'assets/images/sumquiz_logo.png',
+                  height: 32,
+                  errorBuilder: (_, __, ___) => Row(
+                    children: [
+                      Icon(Icons.auto_awesome, color: cs.primary, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        'SumQuiz',
+                        style: GoogleFonts.outfit(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: cs.primary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const Spacer(),
@@ -108,7 +116,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     style: GoogleFonts.outfit(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: cs.onSurface.withOpacity(0.6),
+                      color: cs.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ),
@@ -629,7 +637,10 @@ class _PageStartWithAnything extends StatelessWidget {
                     isAccent: true),
               ],
             ),
-          ).animate(delay: 350.ms).fadeIn().scale(begin: const Offset(0.95, 0.95)),
+          )
+              .animate(delay: 350.ms)
+              .fadeIn()
+              .scale(begin: const Offset(0.95, 0.95)),
 
           const SizedBox(height: 24),
 
@@ -737,8 +748,8 @@ class _PageUnfairAdvantage extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: cs.primary.withOpacity(0.12),
                   ),
-                  child: Icon(Icons.school_rounded,
-                      color: cs.primary, size: 40),
+                  child:
+                      Icon(Icons.school_rounded, color: cs.primary, size: 40),
                 ),
                 const SizedBox(height: 20),
 
@@ -1073,9 +1084,7 @@ class _QuizOption extends StatelessWidget {
             style: GoogleFonts.outfit(
               fontSize: 13,
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-              color: selected
-                  ? cs.primary
-                  : cs.onSurface.withOpacity(0.6),
+              color: selected ? cs.primary : cs.onSurface.withOpacity(0.6),
             ),
           ),
         ),
@@ -1105,9 +1114,7 @@ class _InputTypeIcon extends StatelessWidget {
       child: Icon(
         icon,
         size: 18,
-        color: isAccent
-            ? cs.error
-            : cs.onSurface.withOpacity(0.4),
+        color: isAccent ? cs.error : cs.onSurface.withOpacity(0.4),
       ),
     );
   }
@@ -1146,9 +1153,7 @@ class _RoleCard extends StatelessWidget {
               : cs.surfaceContainerHighest.withOpacity(0.5),
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: selected
-                ? cs.primary
-                : cs.outline.withOpacity(0.15),
+            color: selected ? cs.primary : cs.outline.withOpacity(0.15),
             width: selected ? 2 : 1,
           ),
           boxShadow: selected
@@ -1166,9 +1171,7 @@ class _RoleCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: selected
-                    ? cs.primary
-                    : cs.onSurface.withOpacity(0.08),
+                color: selected ? cs.primary : cs.onSurface.withOpacity(0.08),
                 shape: BoxShape.circle,
               ),
               child: Icon(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../models/user_model.dart';
 
 /// A widget that conditionally displays content based on the user's Pro status
@@ -95,7 +96,7 @@ class ProGate extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               // Navigate to subscription screen
-              Navigator.of(context).pushNamed('/subscription');
+              context.push('/settings/subscription');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,

@@ -25,6 +25,7 @@ import '../widgets/upgrade_dialog.dart';
 import 'package:sumquiz/views/widgets/flashcards_view.dart';
 import '../../services/export_service.dart';
 import '../../models/local_flashcard.dart';
+import '../../services/notification_integration.dart';
 
 enum FlashcardState { creation, loading, review, finished, error }
 
@@ -61,7 +62,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
   String _errorMessage = '';
 
   List<Flashcard> _flashcards = [];
-  int _correctCount = 0;
+  final int _correctCount = 0;
   bool get _isCreationMode => widget.flashcardSet == null;
 
   @override
@@ -178,6 +179,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
           await usageService.canPerformAction(userModel.uid, 'flashcards');
       if (!canGenerate) {
         if (mounted) {
+          await NotificationIntegration.onUsageLimitHit(context);
           showDialog(
             context: context,
             builder: (context) =>
@@ -225,6 +227,9 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
 
       if (content.isNotEmpty) {
         if (mounted) {
+          await NotificationIntegration.onContentGenerated(
+              context, userModel.uid, _titleController.text);
+          if (!mounted) return;
           // Navigate to the results screen
           context.go('/library/results-view/$folderId');
         }

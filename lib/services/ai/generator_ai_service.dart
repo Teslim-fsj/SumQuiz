@@ -109,10 +109,11 @@ TARGET DIFFICULTY: $difficulty
 
 QUIZ RULES:
 1. Variety: Use the requested question types correctly.
-2. Quality: Questions must require understanding/application, not just simple name/date recall.
-3. For Multiple Choice / True-False: Options must be plausible distractors related to the topic.
-4. For Short Answer: Ensure the correctAnswer is concise (1-5 words).
-5. Explanations must be thorough, explaining WHY the answer is correct and briefly why others are incorrect if applicable.
+2. EXACT COUNT: You MUST generate EXACTLY $questionCount questions. No more, no less.
+3. Quality: Questions must require understanding/application, not just simple name/date recall.
+4. For Multiple Choice / True-False: Options must be plausible distractors related to the topic.
+5. For Short Answer: Ensure the correctAnswer is concise (1-5 words).
+6. Explanations must be thorough, explaining WHY the answer is correct and briefly why others are incorrect if applicable.
 
 OUTPUT EXACTLY IN THIS JSON FORMAT:
 {
@@ -193,6 +194,7 @@ TARGET DIFFICULTY: $difficulty
 
 FLASHCARD PRINCIPLES:
 - **Atomic Principle**: One question = one idea. Keep answers concise.
+- **EXACT COUNT**: You MUST generate EXACTLY $cardCount flashcards.
 - **Clarity**: Use clear, unambiguous language.
 - **Focus**: Target high-yield facts, crucial definitions, and pivotal concepts.
 - **Variety**: Use a mix of "What is...", "How does...", and "Identify the..." style questions.
@@ -280,12 +282,13 @@ Text: $text''';
     required String topic,
     String depth = 'intermediate',
     StudyArchetype archetype = StudyArchetype.architect,
+    int quizCount = 10,
     int cardCount = 15,
     List<String>? questionTypes,
     CancellationToken? cancelToken,
   }) async {
     developer.log(
-        'Generating from topic: $topic (depth: $depth, cards: $cardCount)',
+        'Generating from topic: $topic (depth: $depth, quiz: $quizCount, cards: $cardCount)',
         name: 'GeneratorAIService');
     final depthInstruction = switch (depth) {
       'beginner' =>
@@ -300,6 +303,11 @@ Text: $text''';
     TOPIC: $topic
     LEVEL: $depthInstruction
     STUDY ARCHETYPE: ${archetype == StudyArchetype.sprinter ? "The Sprinter (High-intensity, condensed, rapid review style)" : "The Architect (Structural mastery, core concepts, deep mental models)"}
+    
+    REQUIREMENTS:
+    - QUIZ: Generate EXACTLY $quizCount questions.
+    - FLASHCARDS: Generate EXACTLY $cardCount cards.
+    - TYPES: ${questionTypes?.join(', ') ?? 'Multiple Choice'}
 
     GENERATE IN THIS EXACT JSON FORMAT:
     {
@@ -373,16 +381,15 @@ Text: $text''';
     required String subject,
     required String level,
     required int questionCount,
+    required int easyCount,
+    required int mediumCount,
+    required int hardCount,
     required List<String> questionTypes,
-    required double difficultyMix,
     bool evenTopicCoverage = true,
     bool focusWeakAreas = false,
     String? userId,
     CancellationToken? cancelToken,
   }) async {
-    final difficultyDesc =
-        difficultyMix < 0.4 ? 'Easy' : (difficultyMix > 0.6 ? 'Hard' : 'Mixed');
-
     // Model-level config already has responseMimeType, temperature, and maxOutputTokens
 
     final prompt =
@@ -390,8 +397,8 @@ Text: $text''';
     
     PARAMETERS:
     - Total Questions: $questionCount
+    - DIFFICULTY DISTRIBUTION: $easyCount Easy, $mediumCount Medium, $hardCount Hard.
     - Allowed Types: ${questionTypes.join(', ')}
-    - Target Difficulty Mix: $difficultyDesc
     - Even Topic Coverage: $evenTopicCoverage
     - Focus Weak Areas: $focusWeakAreas
 

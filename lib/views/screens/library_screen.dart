@@ -675,8 +675,14 @@ class _LibraryViewState extends State<_LibraryView>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.school_outlined,
-                size: 100, color: theme.colorScheme.primary.withAlpha(51)),
+            Image.asset(
+              'assets/images/sumquiz_logo.png',
+              width: 100,
+              height: 100,
+              opacity: const AlwaysStoppedAnimation(0.2),
+              errorBuilder: (_, __, ___) => Icon(Icons.school_outlined,
+                  size: 100, color: theme.colorScheme.primary.withAlpha(51)),
+            ),
             const SizedBox(height: 24),
             Text(title,
                 style: theme.textTheme.headlineSmall?.copyWith(

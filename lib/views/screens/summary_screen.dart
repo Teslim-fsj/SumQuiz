@@ -19,6 +19,7 @@ import '../widgets/upgrade_dialog.dart';
 import '../../models/public_deck.dart';
 import '../../services/firestore_service.dart';
 import '../../services/export_service.dart';
+import '../../services/notification_integration.dart';
 
 enum ScreenState { initial, loading, error, success }
 
@@ -153,6 +154,7 @@ class SummaryScreenState extends State<SummaryScreen> {
     if (!userModel.isPro &&
         !(await usageService.canPerformAction(userModel.uid, 'summaries'))) {
       if (mounted) {
+        await NotificationIntegration.onUsageLimitHit(context);
         showDialog(
             context: context,
             builder: (context) =>
@@ -187,6 +189,8 @@ class SummaryScreenState extends State<SummaryScreen> {
           await usageService.recordAction(userModel.uid, 'summaries');
         }
         if (!mounted) return;
+        await NotificationIntegration.onContentGenerated(
+            context, userModel.uid, _summaryTitle);
         // Navigate to the results screen
         context.go('/library/results-view/$folderId');
       } else {

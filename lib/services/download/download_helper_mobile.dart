@@ -7,6 +7,10 @@ Future<void> downloadPdf(List<int> bytes, String fileName) async {
   final file = File('${directory.path}/$fileName');
   await file.writeAsBytes(bytes);
 
-  await Share.shareXFiles([XFile(file.path)],
-      text: 'Here is my study guide created with SumQuiz!');
+  // Using shareXFiles for better platform compatibility
+  await Share.shareXFiles(
+    [XFile(file.path, mimeType: 'application/pdf', name: fileName)],
+    subject: 'SumQuiz: $fileName',
+    text: 'Check out this study material generated with SumQuiz!',
+  );
 }

@@ -7,7 +7,6 @@ class SummaryView extends StatelessWidget {
   final String content;
   final List<String> tags;
   final VoidCallback? onCopy;
-  final VoidCallback? onSave;
   final VoidCallback? onGenerateQuiz;
   final bool showActions;
 
@@ -17,7 +16,6 @@ class SummaryView extends StatelessWidget {
     required this.content,
     required this.tags,
     this.onCopy,
-    this.onSave,
     this.onGenerateQuiz,
     this.showActions = true,
   });
@@ -84,22 +82,6 @@ class SummaryView extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (onSave != null) ...[
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: onSave,
-                      icon: const Icon(Icons.bookmark_add_rounded, size: 18),
-                      label: const Text('Save'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        side: BorderSide(color: theme.dividerColor),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                  ),
-                ],
                 if (onGenerateQuiz != null) ...[
                   const SizedBox(width: 12),
                   Expanded(

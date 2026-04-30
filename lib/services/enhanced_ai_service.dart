@@ -176,8 +176,10 @@ class EnhancedAIService {
     required String subject,
     required String level,
     required int questionCount,
+    required int easyCount,
+    required int mediumCount,
+    required int hardCount,
     required List<String> questionTypes,
-    required double difficultyMix,
     bool evenTopicCoverage = true,
     bool focusWeakAreas = false,
     required String userId,
@@ -206,8 +208,10 @@ class EnhancedAIService {
       subject: subject,
       level: level,
       questionCount: questionCount,
+      easyCount: easyCount,
+      mediumCount: mediumCount,
+      hardCount: hardCount,
       questionTypes: questionTypes,
-      difficultyMix: difficultyMix,
       evenTopicCoverage: evenTopicCoverage,
       focusWeakAreas: focusWeakAreas,
       userId: userId,
@@ -504,6 +508,7 @@ class EnhancedAIService {
     required LocalDatabaseService localDb,
     String depth = 'intermediate',
     StudyArchetype archetype = StudyArchetype.architect,
+    int quizCount = 10,
     int cardCount = 15,
     List<String>? questionTypes,
     void Function(String)? onProgress,
@@ -517,13 +522,14 @@ class EnhancedAIService {
     try {
       cancelToken?.throwIfCancelled();
       final data = await _generatorService.generateFromTopic(
-        topic: topic,
-        depth: depth,
-        archetype: archetype,
-        cardCount: cardCount,
-        questionTypes: questionTypes,
-        cancelToken: cancelToken,
-      );
+      topic: topic,
+      depth: depth,
+      archetype: archetype,
+      quizCount: quizCount,
+      cardCount: cardCount,
+      questionTypes: questionTypes,
+      cancelToken: cancelToken,
+    );
 
       final title = data['title']?.toString() ?? 'Study Deck';
       onProgress?.call('Creating study deck...');

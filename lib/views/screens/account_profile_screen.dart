@@ -222,6 +222,13 @@ class AccountProfileScreen extends StatelessWidget {
               );
             },
           ),
+          _buildListTile(
+            context,
+            icon: Icons.stars_outlined,
+            title: 'Subscription',
+            theme: theme,
+            onTap: () => context.push('/settings/subscription'),
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Divider(
@@ -232,7 +239,7 @@ class AccountProfileScreen extends StatelessWidget {
             icon: Icons.volunteer_activism,
             title: 'Refer & Earn',
             theme: theme,
-            onTap: () => context.push('/referral'),
+            onTap: () => context.push('/settings/referral'),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),

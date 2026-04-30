@@ -190,6 +190,7 @@ class _QuizScreenState extends State<QuizScreen> {
           await usageService.canPerformAction(userModel.uid, 'quizzes');
       if (!canGenerate) {
         if (mounted) {
+          await NotificationIntegration.onUsageLimitHit(context);
           showDialog(
             context: context,
             builder: (context) => const UpgradeDialog(featureName: 'quizzes'),
@@ -227,6 +228,8 @@ class _QuizScreenState extends State<QuizScreen> {
 
       if (content.isNotEmpty) {
         if (!mounted) return;
+        await NotificationIntegration.onContentGenerated(
+            context, userModel.uid, _titleController.text);
         // Navigate to the results screen
         context.go('/library/results-view/$folderId');
       } else {

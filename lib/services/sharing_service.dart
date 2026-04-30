@@ -12,7 +12,7 @@ class SharingService {
   Future<void> shareSummary(LocalSummary summary) async {
     try {
       final pdfPath = await _pdfExportService.exportSummary(summary);
-      await Share.shareXFiles([XFile(pdfPath)],
+      await Share.shareXFiles([XFile(pdfPath, mimeType: 'application/pdf')],
           text: 'Here is the summary you requested!');
     } catch (e, s) {
       developer.log(
@@ -27,7 +27,7 @@ class SharingService {
   Future<void> shareQuiz(LocalQuiz quiz) async {
     try {
       final pdfPath = await _pdfExportService.exportQuiz(quiz);
-      await Share.shareXFiles([XFile(pdfPath)],
+      await Share.shareXFiles([XFile(pdfPath, mimeType: 'application/pdf')],
           text: 'Here is the quiz you requested!');
     } catch (e, s) {
       developer.log(
@@ -42,7 +42,7 @@ class SharingService {
   Future<void> shareFlashcardSet(LocalFlashcardSet flashcardSet) async {
     try {
       final pdfPath = await _pdfExportService.exportFlashcardSet(flashcardSet);
-      await Share.shareXFiles([XFile(pdfPath)],
+      await Share.shareXFiles([XFile(pdfPath, mimeType: 'application/pdf')],
           text: 'Here are the flashcards you requested!');
     } catch (e, s) {
       developer.log(

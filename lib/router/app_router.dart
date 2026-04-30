@@ -208,16 +208,19 @@ GoRouter createRouter(AuthService authService) {
             routes: <RouteBase>[
               GoRoute(
                 path: '/',
-                builder: (context, state) => const RoleAwareView(
-                  studentView: ResponsiveView(
-                    mobile: ReviewScreen(),
-                    desktop: ReviewScreenWeb(),
-                  ),
-                  creatorView: ResponsiveView(
-                    mobile: TeacherDashboardWeb(module: 'dashboard'),
-                    desktop: TeacherDashboardWeb(module: 'dashboard'),
-                  ),
-                ),
+                builder: (context, state) {
+                  final autoStart = state.uri.queryParameters['startMission'] == 'true';
+                  return RoleAwareView(
+                    studentView: ResponsiveView(
+                      mobile: ReviewScreen(autoStartMission: autoStart),
+                      desktop: ReviewScreenWeb(autoStartMission: autoStart),
+                    ),
+                    creatorView: const ResponsiveView(
+                      mobile: TeacherDashboardWeb(module: 'dashboard'),
+                      desktop: TeacherDashboardWeb(module: 'dashboard'),
+                    ),
+                  );
+                },
               ),
             ],
           ),

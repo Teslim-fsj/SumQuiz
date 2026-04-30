@@ -166,8 +166,15 @@ class _ContentManagerState extends State<ContentManager> {
         name: '$title.pdf',
       );
       try {
-        await Printing.sharePdf(bytes: bytes, filename: '$title.pdf');
-      } catch (_) {}
+        final xFile = XFile.fromData(
+          bytes,
+          name: '$title.pdf',
+          mimeType: 'application/pdf',
+        );
+        await Share.shareXFiles([xFile], text: 'Exam PDF: $title');
+      } catch (e) {
+        debugPrint('Share error: $e');
+      }
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(content: Text('PDF export failed: $e')),
@@ -602,8 +609,8 @@ class _ContentManagerState extends State<ContentManager> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _statBubble(Icons.article, 'Summary'),
-                _statBubble(Icons.quiz, '12 Quizzes'),
-                _statBubble(Icons.style, '45 Cards'),
+                _statBubble(Icons.quiz, '${(deck.quizData['questions'] as List?)?.length ?? 0} Questions'),
+                _statBubble(Icons.style, '${(deck.flashcardData['flashcards'] as List?)?.length ?? 0} Cards'),
               ],
             )
           ],

@@ -85,17 +85,16 @@ class _SplashScreenState extends State<SplashScreen> {
               // Pulsing Logo
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withOpacity(0.1),
                       blurRadius: 30,
                       spreadRadius: 5,
                     ),
                   ],
                 ),
-                padding: const EdgeInsets.all(32.0),
+                padding: const EdgeInsets.all(16.0),
                 child: Image.asset(
                   'assets/images/sumquiz_logo.png',
                   width: 100,

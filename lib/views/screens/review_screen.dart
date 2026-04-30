@@ -27,7 +27,8 @@ import '../../services/spaced_repetition_service.dart';
 import 'package:rxdart/rxdart.dart';
 
 class ReviewScreen extends StatefulWidget {
-  const ReviewScreen({super.key});
+  final bool autoStartMission;
+  const ReviewScreen({super.key, this.autoStartMission = false});
 
   @override
   State<ReviewScreen> createState() => _ReviewScreenState();
@@ -47,6 +48,14 @@ class _ReviewScreenState extends State<ReviewScreen> {
     _loadDashboardData();
   }
 
+  @override
+  void didUpdateWidget(ReviewScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.autoStartMission && !oldWidget.autoStartMission) {
+      _startMission();
+    }
+  }
+
   Future<void> _loadDashboardData() async {
     if (!mounted) return;
 
@@ -54,9 +63,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
     final localDb = Provider.of<LocalDatabaseService>(context, listen: false);
     await localDb.init();
 
-    // Trigger a background sync to refresh content from Firestore
+    // Trigger and await background sync to refresh content from Firestore
     if (mounted) {
-      Provider.of<SyncProvider>(context, listen: false).syncData();
+      await Provider.of<SyncProvider>(context, listen: false).syncData();
     }
 
     // Load both mission and SRS stats concurrently
@@ -64,6 +73,13 @@ class _ReviewScreenState extends State<ReviewScreen> {
       _loadMission(),
       _loadSrsStats(),
     ]);
+    
+    // Auto-start mission if requested via deep link
+    if (widget.autoStartMission) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _startMission();
+      });
+    }
   }
 
   Future<void> _loadSrsStats() async {
@@ -130,18 +146,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
         Provider.of<AuthService>(context, listen: false).currentUser?.uid;
     if (userId == null) return [];
 
-    final localDb = Provider.of<LocalDatabaseService>(context, listen: false);
-    final sets = await localDb.getAllFlashcardSets(userId);
-
-    final allCards = sets.expand((s) => s.flashcards).map((localCard) {
-      return Flashcard(
-        id: localCard.id,
-        question: localCard.question,
-        answer: localCard.answer,
-      );
-    }).toList();
-
-    return allCards.where((c) => cardIds.contains(c.id)).toList();
+    final missionService = Provider.of<MissionService>(context, listen: false);
+    return await missionService.fetchMissionCards(userId, cardIds);
   }
 
   Future<void> _startMission() async {
@@ -165,17 +171,22 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
       if (cards.isEmpty) {
         if (mounted) {
+          setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Could not find mission cards. They might be deleted.\nPlease create new study content.',
-                style: Theme.of(context).textTheme.bodyMedium,
+                'Mission flashcards could not be found locally. Please try syncing again.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white),
               ),
               backgroundColor: Colors.orange,
               duration: const Duration(seconds: 4),
+              action: SnackBarAction(
+                label: 'SYNC',
+                textColor: Colors.white,
+                onPressed: () => _loadDashboardData(),
+              ),
             ),
           );
-          setState(() => _isLoading = false);
         }
         return;
       }

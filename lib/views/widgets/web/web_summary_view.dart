@@ -1,7 +1,6 @@
 // Screen goal: User should scan key points in under 15 seconds, not read long paragraphs. Content must be chunked and partially collapsible.
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:sumquiz/theme/web_theme.dart';
@@ -41,7 +40,7 @@ class WebSummaryView extends StatelessWidget {
               runSpacing: 8,
               children: tags.map((tag) => _buildTag(tag, context)).toList(),
             ).animate().fadeIn().slideX(begin: -0.1),
-          
+
           const SizedBox(height: 12),
 
           // Title
@@ -57,9 +56,6 @@ class WebSummaryView extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // Share Link Component
-          _buildShareLink(context),
-          
           const SizedBox(height: 24),
 
           // Summary Content
@@ -104,57 +100,6 @@ class WebSummaryView extends StatelessWidget {
     );
   }
 
-  Widget _buildShareLink(BuildContext context) {
-    final displayUrl = shareUrl ?? 'sunquiz.ai/shared/ph-syn-2024-energetics';
-    return Container(
-      width: 450,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: WebColors.backgroundAlt.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: WebColors.border),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              displayUrl,
-              style: GoogleFonts.outfit(
-                fontSize: 14,
-                color: WebColors.textSecondary,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 12),
-          ElevatedButton.icon(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: displayUrl));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Link copied to clipboard')),
-              );
-            },
-            icon: const Icon(Icons.copy_all_rounded, size: 16),
-            label: Text(
-              'Copy Link',
-              style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w700),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: WebColors.primary,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-                side: const BorderSide(color: WebColors.border),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildMarkdownContent(BuildContext context) {
     final theme = Theme.of(context);
     return MarkdownBody(
@@ -166,9 +111,12 @@ class WebSummaryView extends StatelessWidget {
           height: 1.5,
           color: WebColors.textPrimary.withOpacity(0.9),
         ),
-        strong: const TextStyle(fontWeight: FontWeight.w800, color: WebColors.primary),
-        h1: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w800, height: 1.6),
-        h2: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w700, height: 1.5),
+        strong: const TextStyle(
+            fontWeight: FontWeight.w800, color: WebColors.primary),
+        h1: GoogleFonts.outfit(
+            fontSize: 24, fontWeight: FontWeight.w800, height: 1.6),
+        h2: GoogleFonts.outfit(
+            fontSize: 20, fontWeight: FontWeight.w700, height: 1.5),
         listBullet: TextStyle(color: WebColors.primary, fontSize: 16),
       ),
     );
@@ -189,7 +137,8 @@ class WebSummaryView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.lightbulb_outline_rounded, color: Colors.white, size: 24),
+          const Icon(Icons.lightbulb_outline_rounded,
+              color: Colors.white, size: 24),
           const SizedBox(height: 16),
           Text(
             'Key Terms Extracted',
@@ -222,7 +171,8 @@ class WebSummaryView extends StatelessWidget {
             ),
             child: Text(
               'REVIEW LIST',
-              style: GoogleFonts.outfit(fontWeight: FontWeight.w800, letterSpacing: 1),
+              style: GoogleFonts.outfit(
+                  fontWeight: FontWeight.w800, letterSpacing: 1),
             ),
           ),
         ],
@@ -236,7 +186,8 @@ class WebSummaryView extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         image: const DecorationImage(
-          image: NetworkImage('https://images.unsplash.com/photo-1550989460-0adf9ea622e2?q=80&w=1000'),
+          image: NetworkImage(
+              'https://images.unsplash.com/photo-1550989460-0adf9ea622e2?q=80&w=1000'),
           fit: BoxFit.cover,
         ),
         boxShadow: WebColors.cardShadow,

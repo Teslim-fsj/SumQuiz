@@ -20,6 +20,7 @@ import 'package:sumquiz/utils/share_code_generator.dart';
 import 'package:sumquiz/services/youtube_service.dart';
 import 'package:sumquiz/utils/youtube_pro_gate.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:sumquiz/services/download/download_helper.dart';
 
 class ExamCreationScreen extends StatefulWidget {
   const ExamCreationScreen({super.key});
@@ -1215,8 +1216,12 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
             ? _customLevelController.text
             : _selectedLevel,
         questionCount: _numberOfQuestions,
+        easyCount: ((1.0 - _difficultyValue) * _numberOfQuestions * 0.7).round(),
+        mediumCount: (_numberOfQuestions - 
+            ((1.0 - _difficultyValue) * _numberOfQuestions * 0.7).round() - 
+            (_difficultyValue * _numberOfQuestions * 0.7).round()),
+        hardCount: (_difficultyValue * _numberOfQuestions * 0.7).round(),
         questionTypes: questionTypes,
-        difficultyMix: _difficultyValue,
         userId: user.uid,
         onProgress: (message) {
           if (mounted) {
@@ -1988,9 +1993,9 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
                   height: 56,
                   child: ElevatedButton.icon(
                     onPressed: _downloadPdf,
-                    icon: const Icon(Icons.download),
+                    icon: const Icon(Icons.share_rounded),
                     label: const Text(
-                      'Download PDF',
+                      'Share / Print Exam',
                       style:
                           TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     ),
@@ -2130,19 +2135,23 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
         config: config,
       );
       final bytes = await studentPaper.save();
+      final fileName = '${widget.examTitle.replaceAll(' ', '_')}_Exam_Paper.pdf';
 
-      await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => bytes,
-        name: '${widget.examTitle.replaceAll(' ', '_')}_Exam_Paper.pdf',
-      );
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
 
+      // 1. Download/Share using our cross-platform helper (fixes Google Drive & Social Sharing)
+      await downloadPdf(bytes, fileName);
+
+      // 2. Also offer direct print layout (optional but helpful for teachers)
       try {
-        await Printing.sharePdf(
-          bytes: bytes,
-          filename: '${widget.examTitle.replaceAll(' ', '_')}_Exam_Paper.pdf',
+        await Printing.layoutPdf(
+          onLayout: (PdfPageFormat format) async => bytes,
+          name: fileName,
         );
       } catch (e) {
-        debugPrint('Web download fallback error: $e');
+        debugPrint('Print layout error: $e');
       }
 
       if (mounted) setState(() => _isProcessing = false);

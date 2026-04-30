@@ -7,9 +7,7 @@ import 'package:sumquiz/models/flashcard.dart';
 import 'package:sumquiz/models/local_flashcard_set.dart';
 import 'package:sumquiz/models/local_quiz.dart';
 import 'package:sumquiz/models/user_model.dart';
-import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
-import 'package:sumquiz/services/firestore_service.dart';
-import 'package:sumquiz/models/public_deck.dart';
+port 'package:sumquiz/models/public_deck.dart';
 import 'package:sumquiz/utils/share_code_generator.dart';
 import 'package:uuid/uuid.dart';
 import 'package:sumquiz/services/spaced_repetition_service.dart';
@@ -177,34 +175,6 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
     }
   }
 
-  void _saveToLibrary() {
-    final user = context.read<UserModel?>();
-    if (user != null && !user.isPro) {
-      showDialog(
-        context: context,
-        builder: (context) => const UpgradeDialog(featureName: 'Sharing Decks'),
-      );
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 12),
-            Text('Content saved to your library!'),
-          ],
-        ),
-        backgroundColor: WebColors.purplePrimary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        width: 400,
-      ),
-    );
-    context.go('/library');
-  }
-
   @override
   Widget build(BuildContext context) {
     return _isLoading
@@ -289,38 +259,25 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
               // Share button
               Consumer<UserModel?>(builder: (context, user, _) {
                 if (user == null) return const SizedBox.shrink();
-                final isStudent = user.role == UserRole.student;
                 return Padding(
                   padding: const EdgeInsets.only(right: 12),
-                  child: IconButton(
+                  child: ElevatedButton.icon(
                     onPressed: _publishDeck,
-                    icon: Icon(
-                      isStudent ? Icons.share_rounded : Icons.public,
-                      color: WebColors.purplePrimary,
-                      size: 24,
+                    icon: const Icon(Icons.share_rounded, size: 18),
+                    label: Text('SHARE',
+                        style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: WebColors.purplePrimary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
                     ),
-                    tooltip: isStudent
-                        ? 'Challenge Study Buddy'
-                        : 'Publish to World',
                   ),
                 );
               }),
-              // Save button
-              ElevatedButton.icon(
-                onPressed: _saveToLibrary,
-                icon: const Icon(Icons.bookmark_add_rounded, size: 18),
-                label: Text('Save to Library',
-                    style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: WebColors.purplePrimary,
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 12),

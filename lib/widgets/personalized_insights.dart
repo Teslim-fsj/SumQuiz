@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/services/pdf_export_service.dart';
 
@@ -156,11 +157,18 @@ class PersonalizedInsights extends StatelessWidget {
     try {
       final insightText = insights.map((i) => '- ${i['text']}').join('\n');
       final content = 'Personalized Learning Insights\n\n$insightText';
-      await PdfExportService()
+      final path = await PdfExportService()
           .exportTextAsPdf(content, 'My_Insights.pdf', user.uid);
+      
+      // Share the exported file
+      await Share.shareXFiles(
+        [XFile(path, mimeType: 'application/pdf', name: 'My_Insights.pdf')],
+        text: 'My personalized learning insights from SumQuiz!',
+      );
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Insights exported as PDF.')),
+          const SnackBar(content: Text('Insights exported and ready to share.')),
         );
       }
     } catch (e) {

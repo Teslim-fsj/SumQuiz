@@ -77,4 +77,30 @@ class DailyMission extends HiveObject {
       title: map['title'] ?? 'Daily Mission',
     );
   }
+
+  DailyMission copyWith({
+    String? id,
+    DateTime? date,
+    List<String>? flashcardIds,
+    String? miniQuizTopic,
+    bool? isCompleted,
+    int? estimatedTimeMinutes,
+    int? momentumReward,
+    int? difficultyLevel,
+    double? completionScore,
+    String? title,
+  }) {
+    return DailyMission(
+      id: id ?? this.id,
+      date: date ?? this.date,
+      flashcardIds: flashcardIds ?? this.flashcardIds,
+      miniQuizTopic: miniQuizTopic ?? this.miniQuizTopic,
+      isCompleted: isCompleted ?? this.isCompleted,
+      estimatedTimeMinutes: estimatedTimeMinutes ?? this.estimatedTimeMinutes,
+      momentumReward: momentumReward ?? this.momentumReward,
+      difficultyLevel: difficultyLevel ?? this.difficultyLevel,
+      completionScore: completionScore ?? this.completionScore,
+      title: title ?? this.title,
+    );
+  }
 }

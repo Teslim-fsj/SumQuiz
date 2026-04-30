@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/daily_mission.dart';
+import '../models/flashcard.dart';
 import '../models/user_model.dart';
 import 'firestore_service.dart';
 import 'local_database_service.dart';
@@ -132,7 +133,7 @@ class MissionService {
       debugPrint('Error saving mission to Firestore: $e');
     }
 
-    // 5. Schedule Priming Notification
+    // 5. Schedule Notifications
     if (_notificationService != null && user != null) {
       try {
         await _notificationService.schedulePrimingNotification(
@@ -141,8 +142,14 @@ class MissionService {
           cardCount: mission.flashcardIds.length,
           estimatedMinutes: mission.estimatedTimeMinutes,
         );
+
+        // Also schedule streak saver for 8 PM
+        await _notificationService.scheduleStreakSaverNotification(
+          currentStreak: user.missionCompletionStreak,
+          remainingCards: mission.flashcardIds.length,
+        );
       } catch (e) {
-        debugPrint('Error scheduling priming notification: $e');
+        debugPrint('Error scheduling mission notifications: $e');
       }
     }
 
@@ -173,6 +180,15 @@ class MissionService {
       });
     } catch (e) {
       debugPrint('Error syncing mission completion to Firestore: $e');
+    }
+
+    // Update Local Database Status
+    try {
+      final updatedMission =
+          mission.copyWith(isCompleted: true, completionScore: score);
+      await _localDb.saveDailyMission(updatedMission);
+    } catch (e) {
+      debugPrint('Error saving mission completion locally: $e');
     }
 
     // Cancel pending notifications relating to this mission phase
@@ -307,5 +323,68 @@ class MissionService {
     } catch (e) {
       return false;
     }
+  }
+  /// Fetches flashcards for a mission, with Firestore fallback if not found locally
+  Future<List<Flashcard>> fetchMissionCards(
+      String userId, List<String> cardIds) async {
+    if (cardIds.isEmpty) return [];
+
+    // 1. Try Local Database first (fastest)
+    final localCards = await _localDb.getFlashcardsByIds(userId, cardIds);
+
+    if (localCards.length == cardIds.length) {
+      return localCards
+          .map((lc) => Flashcard(
+                id: lc.id,
+                question: lc.question,
+                answer: lc.answer,
+              ))
+          .toList();
+    }
+
+    // 2. If some cards are missing, we need to find which ones and try Firestore fallback
+    final foundIds = localCards.map((c) => c.id).toSet();
+    final missingIds = cardIds.where((id) => !foundIds.contains(id)).toList();
+
+    debugPrint(
+        '🔍 Found ${localCards.length}/${cardIds.length} cards locally. Fetching ${missingIds.length} from Firestore...');
+
+    final results = <Flashcard>[
+      ...localCards.map((lc) => Flashcard(
+            id: lc.id,
+            question: lc.question,
+            answer: lc.answer,
+          ))
+    ];
+
+    // Fallback: Fetch from individual flashcard_sets in Firestore
+    try {
+      final setsSnapshot = await _firestoreService.db
+          .collection('users')
+          .doc(userId)
+          .collection('flashcard_sets')
+          .get();
+
+      for (final doc in setsSnapshot.docs) {
+        if (missingIds.isEmpty) break;
+
+        final data = doc.data();
+        final cardsList = data['flashcards'] as List<dynamic>?;
+        if (cardsList == null) continue;
+
+        for (final cardData in cardsList) {
+          final cardMap = cardData as Map<String, dynamic>;
+          final id = cardMap['id'] as String?;
+          if (id != null && missingIds.contains(id)) {
+            results.add(Flashcard.fromMap(cardMap));
+            missingIds.remove(id);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching missing mission cards from Firestore: $e');
+    }
+
+    return results;
   }
 }

@@ -215,6 +215,7 @@ class SyncService {
           title: localFlashcardSet.title,
           flashcards: localFlashcardSet.flashcards
               .map((f) => Flashcard(
+                    id: f.id,
                     question: f.question,
                     answer: f.answer,
                   ))
@@ -252,6 +253,7 @@ class SyncService {
           title: flashcardSet.title,
           flashcards: flashcardSet.flashcards
               .map((f) => LocalFlashcard(
+                    id: f.id,
                     question: f.question,
                     answer: f.answer,
                   ))
@@ -268,6 +270,7 @@ class SyncService {
           localFlashcardSet.title = firestoreFlashcardSet.title;
           localFlashcardSet.flashcards = firestoreFlashcardSet.flashcards
               .map((f) => LocalFlashcard(
+                    id: f.id,
                     question: f.question,
                     answer: f.answer,
                   ))

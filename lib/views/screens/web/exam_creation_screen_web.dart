@@ -9,6 +9,7 @@ import 'package:printing/printing.dart';
 import 'package:sumquiz/services/exam_pdf_generator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'package:sumquiz/models/local_quiz_question.dart';
 import 'package:sumquiz/models/user_model.dart';
@@ -253,13 +254,15 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
         subject: _subjectController.text,
         level: _selectedLevel,
         questionCount: _numberOfQuestions,
+        easyCount: (_numberOfQuestions * _easyRatio).round(),
+        mediumCount: (_numberOfQuestions * (1.0 - _easyRatio - _hardRatio)).round(),
+        hardCount: (_numberOfQuestions * _hardRatio).round(),
         questionTypes: [
           if (_includeMultipleChoice) 'Multiple Choice',
           if (_includeShortAnswer) 'Short Answer',
           if (_includeTrueFalse) 'True/False',
           if (_includeTheory) 'Theory',
         ],
-        difficultyMix: (1.0 - _easyRatio + _hardRatio) / 2,
         evenTopicCoverage: _evenTopicCoverage,
         focusWeakAreas: _focusWeakAreas,
         userId: user?.uid ?? 'anonymous',
@@ -339,14 +342,16 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
         name: '${_titleController.text}.pdf',
       );
 
-      // Web specific download fallback if printing is blocked
+      // Web specific share/download fallback
       try {
-        await Printing.sharePdf(
-          bytes: bytes,
-          filename: '${_titleController.text}.pdf',
+        final xFile = XFile.fromData(
+          bytes,
+          name: '${_titleController.text}.pdf',
+          mimeType: 'application/pdf',
         );
+        await Share.shareXFiles([xFile], text: 'Exam PDF: ${_titleController.text}');
       } catch (e) {
-        debugPrint('Web download fallback error: $e');
+        debugPrint('Web share error: $e');
       }
 
       setState(() => _isGeneratingQuestions = false);

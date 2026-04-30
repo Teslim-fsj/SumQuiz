@@ -31,7 +31,8 @@ import '../../widgets/web/interactive_preview_card.dart';
 import '../../widgets/web/role_selection_dialog.dart';
 
 class ReviewScreenWeb extends StatefulWidget {
-  const ReviewScreenWeb({super.key});
+  final bool autoStartMission;
+  const ReviewScreenWeb({super.key, this.autoStartMission = false});
 
   @override
   State<ReviewScreenWeb> createState() => _ReviewScreenWebState();
@@ -65,6 +66,11 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkNewUser();
+      
+      // Auto-start mission if requested via deep link
+      if (widget.autoStartMission) {
+        _fetchAndStartMission();
+      }
     });
   }
 
@@ -230,25 +236,23 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
 
       if (userId == null) throw Exception("User ID null");
 
-      final sets = await localDb.getAllFlashcardSets(userId);
-      final allCards = sets.expand((s) => s.flashcards).map((localCard) {
-        return Flashcard(
-          id: localCard.id,
-          question: localCard.question,
-          answer: localCard.answer,
-        );
-      }).toList();
-
-      final cards = allCards
-          .where((c) => _dailyMission!.flashcardIds.contains(c.id))
-          .toList();
+      final missionService = Provider.of<MissionService>(context, listen: false);
+      final cards = await missionService.fetchMissionCards(userId, _dailyMission!.flashcardIds);
 
       if (cards.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               content: Text(
                   'Could not find mission cards. Using random cards instead.')));
-          _studyCards = allCards.take(5).toList();
+          
+          final allSets = await localDb.getAllFlashcardSets(userId);
+          final allFlashcards = allSets.expand((s) => s.flashcards).map((c) => Flashcard(
+            id: c.id,
+            question: c.question,
+            answer: c.answer,
+          )).toList();
+          
+          _studyCards = allFlashcards.take(5).toList();
         }
       } else {
         _studyCards = cards;

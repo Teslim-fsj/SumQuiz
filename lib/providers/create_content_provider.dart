@@ -184,6 +184,7 @@ class CreateContentProvider with ChangeNotifier {
               userId: userId,
               localDb: _localDb,
               depth: _selectedDifficulty,
+              quizCount: _quizCount,
               cardCount: _flashcardCount,
               questionTypes: _selectedQuestionTypes,
               onProgress: (msg) {

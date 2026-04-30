@@ -150,9 +150,25 @@ class _QuizViewState extends State<QuizView> {
     }
   }
 
+  void _handlePreviousQuestion() {
+    if (_currentQuestionIndex > 0) {
+      setState(() {
+        _currentQuestionIndex--;
+        _selectedAnswerIndex = null;
+        _answerWasSelected = false;
+        _aiFeedback = null;
+        _essayController.clear();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final size = MediaQuery.of(context).size;
+    final isWeb = size.width > 800;
+    final isMobile = size.width < 600;
+
     if (widget.questions.isEmpty) {
       return Center(
           child: Text("No questions available.",
@@ -168,52 +184,70 @@ class _QuizViewState extends State<QuizView> {
         _buildTopBar(progress, theme),
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 20),
-                  _buildQuestionCard(theme),
-                  const SizedBox(height: 32),
-
-                  // Render differently based on question type
-                  if (_isEssay) ...[
-                    _buildEssayInput(theme),
-                    if (_aiFeedback != null) ...[
+            padding: EdgeInsets.symmetric(horizontal: isWeb ? 40.0 : 16.0),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1000),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 10),
+                      _buildQuestionCard(theme, isMobile),
                       const SizedBox(height: 20),
-                      _buildAiFeedbackCard(theme),
-                    ],
-                    if (_currentQuestion.correctAnswer.isNotEmpty &&
-                        _aiFeedback != null) ...[
-                      const SizedBox(height: 16),
-                      _buildReferenceAnswerCard(theme),
-                    ],
-                  ] else ...[
-                    ...List.generate(_currentQuestion.options.length, (index) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        child: _buildOptionTile(
-                            index, _currentQuestion, theme),
-                      );
-                    }).animate(interval: 100.ms).slideX(begin: 0.2).fade(),
-                  ],
 
-                  // Explanation for MCQ after answer revealed
-                  if (!_isEssay &&
-                      _answerWasSelected &&
-                      _currentQuestion.explanation != null) ...[
-                    const SizedBox(height: 16),
-                    _buildExplanationCard(theme),
-                  ],
+                      // Render differently based on question type
+                      if (_isEssay) ...[
+                        _buildEssayInput(theme),
+                        if (_aiFeedback != null) ...[
+                          const SizedBox(height: 20),
+                          _buildAiFeedbackCard(theme, isMobile),
+                        ],
+                        if (_currentQuestion.correctAnswer.isNotEmpty &&
+                            _aiFeedback != null) ...[
+                          const SizedBox(height: 16),
+                          _buildReferenceAnswerCard(theme, isMobile),
+                        ],
+                      ] else ...[
+                        if (isWeb)
+                          GridView.count(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            crossAxisCount: 2,
+                            childAspectRatio: 4.0,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 12,
+                            children: List.generate(_currentQuestion.options.length, (index) {
+                              return _buildOptionTile(index, _currentQuestion, theme, false);
+                            }),
+                          ).animate().slideX(begin: 0.1).fade()
+                        else
+                          ...List.generate(_currentQuestion.options.length, (index) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: _buildOptionTile(
+                                  index, _currentQuestion, theme, true),
+                            );
+                          }).animate().slideX(begin: 0.1).fade(),
+                      ],
 
-                  const SizedBox(height: 24),
-                ],
+                      // Explanation for MCQ after answer revealed
+                      if (!_isEssay &&
+                          _answerWasSelected &&
+                          _currentQuestion.explanation != null) ...[
+                        const SizedBox(height: 16),
+                        _buildExplanationCard(theme, isMobile),
+                      ],
+
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
         ),
-        _buildBottomBar(theme),
+        _buildBottomBar(theme, isMobile),
       ],
     );
   }
@@ -274,10 +308,10 @@ class _QuizViewState extends State<QuizView> {
     );
   }
 
-  Widget _buildQuestionCard(ThemeData theme) {
+  Widget _buildQuestionCard(ThemeData theme, bool isMobile) {
     return _buildGlassContainer(
       theme: theme,
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 12 : 24),
       child: Column(
         children: [
           Row(
@@ -285,14 +319,15 @@ class _QuizViewState extends State<QuizView> {
             children: [
               Text(
                 'Question ${_currentQuestionIndex + 1}',
-                style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
-                    fontWeight: FontWeight.w600),
+                style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5),
               ),
               if (_currentQuestion.questionType != null)
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: _isEssay
                         ? theme.colorScheme.secondary.withOpacity(0.12)
@@ -306,27 +341,28 @@ class _QuizViewState extends State<QuizView> {
                           ? theme.colorScheme.secondary
                           : theme.colorScheme.primary,
                       fontWeight: FontWeight.w700,
+                      fontSize: 9,
                     ),
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: isMobile ? 8 : 16),
           Text(
             _currentQuestion.question,
-            style: theme.textTheme.headlineSmall?.copyWith(
+            style: (isMobile ? theme.textTheme.titleMedium : theme.textTheme.headlineSmall)?.copyWith(
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.onSurface,
-              height: 1.4,
+              height: 1.25,
             ),
             textAlign: TextAlign.center,
           )
               .animate(key: ValueKey(_currentQuestionIndex))
               .fadeIn()
-              .scale(),
+              .scale(begin: const Offset(0.95, 0.95)),
         ],
       ),
-    ).animate().slideY(begin: -0.2).fade();
+    ).animate().slideY(begin: -0.1).fade();
   }
 
   Widget _buildEssayInput(ThemeData theme) {
@@ -409,7 +445,7 @@ class _QuizViewState extends State<QuizView> {
     ).animate().fadeIn();
   }
 
-  Widget _buildAiFeedbackCard(ThemeData theme) {
+  Widget _buildAiFeedbackCard(ThemeData theme, bool isMobile) {
     final score = _aiFeedback!['score'] as int? ?? 0;
     final feedback = _aiFeedback!['feedback']?.toString() ?? '';
     final isCorrect = _aiFeedback!['isCorrect'] as bool? ?? false;
@@ -420,7 +456,7 @@ class _QuizViewState extends State<QuizView> {
 
     return AnimatedContainer(
       duration: 400.ms,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isMobile ? 12 : 20),
       decoration: BoxDecoration(
         color: accentColor.withOpacity(0.08),
         borderRadius: BorderRadius.circular(16),
@@ -431,11 +467,11 @@ class _QuizViewState extends State<QuizView> {
         children: [
           Row(
             children: [
-              Icon(icon, color: accentColor, size: 22),
+              Icon(icon, color: accentColor, size: isMobile ? 16 : 22),
               const SizedBox(width: 10),
               Text(
                 'AI Score: $score%',
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: (isMobile ? theme.textTheme.labelLarge : theme.textTheme.titleMedium)?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: accentColor,
                 ),
@@ -443,37 +479,39 @@ class _QuizViewState extends State<QuizView> {
               const Spacer(),
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: accentColor.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   isCorrect ? 'Correct' : 'Needs Work',
-                  style: theme.textTheme.labelMedium?.copyWith(
+                  style: theme.textTheme.labelSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: accentColor,
+                    fontSize: 9,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: isMobile ? 8 : 14),
           Text(
             feedback,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurface.withOpacity(0.85),
-              height: 1.6,
+              height: 1.4,
+              fontSize: isMobile ? 12 : 14,
             ),
           ),
         ],
       ),
-    ).animate().fadeIn().slideY(begin: 0.15);
+    ).animate().fadeIn().slideY(begin: 0.1);
   }
 
-  Widget _buildReferenceAnswerCard(ThemeData theme) {
+  Widget _buildReferenceAnswerCard(ThemeData theme, bool isMobile) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isMobile ? 10 : 16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
         borderRadius: BorderRadius.circular(12),
@@ -484,55 +522,59 @@ class _QuizViewState extends State<QuizView> {
         children: [
           Text(
             '📚 Reference Answer',
-            style: theme.textTheme.labelLarge?.copyWith(
+            style: theme.textTheme.labelSmall?.copyWith(
               fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onSurface.withOpacity(0.7),
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              fontSize: isMobile ? 10 : 11,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             _currentQuestion.correctAnswer,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.85),
-              height: 1.6,
+              color: theme.colorScheme.onSurface.withOpacity(0.8),
+              height: 1.4,
+              fontSize: isMobile ? 12 : 14,
             ),
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 100.ms);
+    ).animate().fadeIn(delay: 50.ms);
   }
 
-  Widget _buildExplanationCard(ThemeData theme) {
+  Widget _buildExplanationCard(ThemeData theme, bool isMobile) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isMobile ? 10 : 16),
       decoration: BoxDecoration(
         color: Colors.blue.withOpacity(0.06),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.withOpacity(0.25)),
+        border: Border.all(color: Colors.blue.withOpacity(0.2)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.lightbulb_outline_rounded,
-              color: Colors.blue.shade600, size: 20),
-          const SizedBox(width: 12),
+              color: Colors.blue.shade600, size: isMobile ? 16 : 20),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Explanation',
-                  style: theme.textTheme.labelLarge?.copyWith(
+                  style: theme.textTheme.labelSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: Colors.blue.shade700,
+                    fontSize: isMobile ? 10 : 11,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
                   _currentQuestion.explanation!,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurface.withOpacity(0.8),
-                    height: 1.5,
+                    height: 1.4,
+                    fontSize: isMobile ? 12 : 13,
                   ),
                 ),
               ],
@@ -543,46 +585,90 @@ class _QuizViewState extends State<QuizView> {
     ).animate().fadeIn().slideY(begin: 0.1);
   }
 
-  Widget _buildBottomBar(ThemeData theme) {
+  Widget _buildBottomBar(ThemeData theme, bool isMobile) {
     final bool canProceed = _answerWasSelected;
+
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: 12),
       decoration: BoxDecoration(
         color: theme.cardColor,
         border: Border(top: BorderSide(color: theme.dividerColor)),
       ),
-      child: SizedBox(
-        width: double.infinity,
-        height: 56,
-        child: ElevatedButton(
-          onPressed: canProceed ? _handleNextQuestion : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: WebColors.primary,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+      child: Row(
+        children: [
+          // Back Button
+          if (_currentQuestionIndex > 0)
+            Padding(
+              padding: const EdgeInsets.only(right: 12.0),
+              child: SizedBox(
+                height: 48,
+                child: OutlinedButton(
+                  onPressed: _handlePreviousQuestion,
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: WebColors.primary.withOpacity(0.3)),
+                    padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 20),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.arrow_back_rounded, color: WebColors.primary, size: 20),
+                      if (!isMobile) ...[
+                        const SizedBox(width: 8),
+                        const Text('Back', style: TextStyle(color: WebColors.primary)),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
             ),
-            disabledBackgroundColor: WebColors.border,
-            disabledForegroundColor: WebColors.textTertiary,
-          ),
-          child: Text(
-            _currentQuestionIndex < widget.questions.length - 1
-                ? 'Next Question'
-                : 'Finish Quiz',
-            style: GoogleFonts.outfit(
-              fontWeight: FontWeight.w700,
-              fontSize: 17,
-              color: canProceed ? Colors.white : WebColors.textTertiary,
+          
+          // Main Action Button (Next/Finish)
+          Expanded(
+            child: SizedBox(
+              height: 48,
+              child: ElevatedButton(
+                onPressed: canProceed ? _handleNextQuestion : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: WebColors.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  disabledBackgroundColor: WebColors.border,
+                  disabledForegroundColor: WebColors.textTertiary,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _currentQuestionIndex < widget.questions.length - 1
+                          ? (isMobile ? 'Next' : 'Next Question')
+                          : 'Finish Quiz',
+                      style: GoogleFonts.outfit(
+                        fontWeight: FontWeight.w700,
+                        fontSize: isMobile ? 15 : 16,
+                        color: canProceed ? Colors.white : WebColors.textTertiary,
+                      ),
+                    ),
+                    if (_currentQuestionIndex < widget.questions.length - 1) ...[
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward_rounded, size: 20),
+                    ],
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildOptionTile(
-      int index, LocalQuizQuestion question, ThemeData theme) {
+      int index, LocalQuizQuestion question, ThemeData theme, bool isMobile) {
     bool isSelected = _selectedAnswerIndex == index;
     bool isCorrect = question.options[index] == question.correctAnswer;
 
@@ -611,10 +697,10 @@ class _QuizViewState extends State<QuizView> {
       onTap: () => _onAnswerSelected(index),
       child: AnimatedContainer(
         duration: 300.ms,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        padding: EdgeInsets.symmetric(horizontal: 14, vertical: isMobile ? 10 : 16),
         decoration: BoxDecoration(
             color: backgroundColor,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: _answerWasSelected && (isCorrect || isSelected)
                   ? borderColor
@@ -623,25 +709,26 @@ class _QuizViewState extends State<QuizView> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withOpacity(0.04),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               )
             ]),
         child: Row(
           children: [
-            Icon(icon, color: iconColor, size: 24)
+            Icon(icon, color: iconColor, size: isMobile ? 18 : 22)
                 .animate(
                     target:
                         _answerWasSelected && (isCorrect || isSelected) ? 1 : 0)
                 .scale(duration: 200.ms, curve: Curves.easeOutBack),
-            const SizedBox(width: 16),
+            SizedBox(width: isMobile ? 10 : 14),
             Expanded(
               child: Text(
                 question.options[index],
-                style: theme.textTheme.bodyLarge?.copyWith(
+                style: (isMobile ? theme.textTheme.bodySmall : theme.textTheme.bodyMedium)?.copyWith(
                   color: theme.colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
+                  fontSize: isMobile ? 13 : 14,
                 ),
               ),
             ),

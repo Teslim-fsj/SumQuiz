@@ -19,6 +19,7 @@ import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
 import 'package:sumquiz/utils/youtube_pro_gate.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sumquiz/theme/web_theme.dart'; // Reuse premium colors
+import 'package:sumquiz/services/notification_integration.dart';
 
 class InputValidator {
   static bool isValidUrl(String url) {
@@ -149,6 +150,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
 
     if (!canProceed) {
       if (mounted) {
+        await NotificationIntegration.onUsageLimitHit(context);
         setState(() {
           _errorMessage =
               "You've reached today's study limit. Upgrade to continue learning.";
@@ -697,6 +699,9 @@ class _CreateContentScreenState extends State<CreateContentScreen>
               );
 
               if (!cancelToken.isCancelled && mounted) {
+                await NotificationIntegration.onContentGenerated(
+                    context, user.uid, extractionResult.suggestedTitle);
+                if (!mounted) return;
                 if (Navigator.of(context).canPop()) {
                   Navigator.of(context).pop();
                 }
@@ -783,6 +788,8 @@ class _CreateContentScreenState extends State<CreateContentScreen>
       );
 
       if (!cancelToken.isCancelled && mounted) {
+        await NotificationIntegration.onContentGenerated(
+            context, user.uid, topic);
         _resetInputs();
         SchedulerBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
@@ -1329,8 +1336,9 @@ class _CreateContentScreenState extends State<CreateContentScreen>
   Widget _buildLaboratoryOption() {
     return GestureDetector(
       onTap: () async {
-        if (!await _checkProAccess('Tutoring Lab', actionType: 'upload'))
+        if (!await _checkProAccess('Tutoring Lab', actionType: 'upload')) {
           return;
+        }
         if (mounted) context.push('/exam-creation');
       },
       child: Container(
