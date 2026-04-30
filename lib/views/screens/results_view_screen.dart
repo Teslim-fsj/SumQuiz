@@ -21,17 +21,25 @@ import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/services/firestore_service.dart';
 import 'package:uuid/uuid.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:sumquiz/utils/share_code_generator.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-ss ResultsViewScreen extends void StatefulWidget {
-  Strite<ResultsViewScreen> createState() => _ResultsViewScreenState();
+
+class ResultsViewScreen extends StatefulWidget {
+  final String folderId;
+
+  const ResultsViewScreen({
+    super.key,
+    required this.folderId,
+  });
+
+  @override
+  State<ResultsViewScreen> createState() => _ResultsViewScreenState();
 }
 
 class _ResultsViewScreenState extends State<ResultsViewScreen> {
   int _selectedTab = 0;
   bool _isLoading = true;
   String? _errorMessage;
-  bool _isSaved = false; // Track save status
-  bool _isPublishing = false;
 
   LocalSummary? _summary;
   LocalQuiz? _quiz;
@@ -56,11 +64,8 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
     try {
       final db = context.read<LocalDatabaseService>();
 
-      // Load folder to check if it's already saved
+      // Load folder
       final folder = await db.getFolder(widget.folderId);
-      if (folder != null) {
-        _isSaved = folder.isSaved;
-      }
 
       final contents = await db.getFolderContents(widget.folderId);
 
@@ -84,67 +89,6 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
     }
   }
 
-  void _exportContent(BuildContext context, UserModel user,
-      {bool exportAll = false,
-      bool summary = false,
-      bool quiz = false,
-      bool flashcards = false}) {
-    if (!user.isPro) {
-      showDialog(
-        context: context,
-        builder: (context) => const UpgradeDialog(featureName: 'PDF Export'),
-      );
-      return;
-    }
-
-    if (_summary == null && _quiz == null && _flashcardSet == null) return;
-
-    // Construct temp local models
-    LocalSummary? localSummary;
-    if ((exportAll || summary) && _summary != null) {
-      localSummary = LocalSummary(
-          id: 'temp',
-          title: _summary!.title,
-          content: _summary!.content,
-          tags: [],
-          timestamp: DateTime.now(),
-          userId: user.uid,
-          isSynced: false);
-    }
-
-    LocalQuiz? localQuiz;
-    if ((exportAll || quiz) && _quiz != null) {
-      localQuiz = LocalQuiz(
-          id: 'temp',
-          title: _summary!.title,
-          questions: _quiz!.questions
-              .map((q) => LocalQuizQuestion(
-                  question: q.question,
-                  options: q.options,
-                  correctAnswer: q.correctAnswer))
-              .toList(),
-          timestamp: DateTime.now(),
-          userId: user.uid,
-          isSynced: false);
-    }
-
-    LocalFlashcardSet? localFlash;
-    if ((exportAll || flashcards) && _flashcardSet != null) {
-      localFlash = LocalFlashcardSet(
-          id: 'temp',
-          title: _summary!.title,
-          flashcards: _flashcardSet!.flashcards
-              .map(
-                  (f) => LocalFlashcard(question: f.question, answer: f.answer))
-              .toList(),
-          timestamp: DateTime.now(),
-          userId: user.uid,
-          isSynced: false);
-    }
-
-    ExportService().exportPdf(context,
-        summary: localSummary, quiz: localQuiz, flashcardSet: localFlash);
-  }
 
   void _updateAvailableTabs() {
     _availableTabs.clear();
@@ -172,8 +116,6 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
           const SnackBar(content: Text('Wait for content to finish loading.')));
       return;
     }
-
-    setState(() => _isPublishing = true);
 
     // Removed Pro check to allow viral growth
 
@@ -216,15 +158,16 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
           ? '🔥 I challenge you! I just finished "$_currentTitle" on SumQuiz. Can you beat my knowledge score? Try it here: $shareLink #SumQuiz #StudyHard'
           : 'Check out this study pack I created on SumQuiz: "$_currentTitle". It will save you hours of reading! Access it here: $shareLink';
 
-      await Share.share(message, subject: 'SumQuiz: $_currentTitle');
+      await SharePlus.instance.share(
+        ShareParams(
+          text: message,
+          subject: 'SumQuiz: $_currentTitle',
+        ),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Error publishing: $e')));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isPublishing = false);
       }
     }
   }
@@ -334,11 +277,11 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       height: 48,
       decoration: BoxDecoration(
-        color: theme.cardColor.withOpacity(0.8),
+        color: theme.cardColor.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),

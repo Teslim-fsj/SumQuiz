@@ -62,7 +62,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
   String _errorMessage = '';
 
   List<Flashcard> _flashcards = [];
-  final int _correctCount = 0;
+  int _correctCount = 0;
   bool get _isCreationMode => widget.flashcardSet == null;
 
   @override
@@ -92,6 +92,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
 
         if (localSet == null) {
           // Fallback to Firestore if on Web
+          if (!mounted) return;
           final user = Provider.of<UserModel?>(context, listen: false);
           if (user != null) {
             final firestore = FirestoreService();
@@ -180,6 +181,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
       if (!canGenerate) {
         if (mounted) {
           await NotificationIntegration.onUsageLimitHit(context);
+          if (!mounted) return;
           showDialog(
             context: context,
             builder: (context) =>
@@ -559,9 +561,9 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
                     hintText: 'e.g., Biology Chapter 5',
                     hintStyle: TextStyle(
                         color:
-                            theme.colorScheme.onSurface.withOpacity(0.5)),
+                            theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                     filled: true,
-                    fillColor: theme.cardColor.withOpacity(0.5),
+                    fillColor: theme.cardColor.withValues(alpha: 0.5),
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none),
@@ -582,9 +584,9 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
                     hintText: 'Paste your notes, an article, or any text here.',
                     hintStyle: TextStyle(
                         color:
-                            theme.colorScheme.onSurface.withOpacity(0.5)),
+                            theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                     filled: true,
-                    fillColor: theme.cardColor.withOpacity(0.5),
+                    fillColor: theme.cardColor.withValues(alpha: 0.5),
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none),
@@ -661,7 +663,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
                   'You got $_correctCount out of ${_flashcards.length} correct.',
                   style: theme.textTheme.titleMedium?.copyWith(
                       color:
-                          theme.colorScheme.onSurface.withOpacity(0.8))),
+                          theme.colorScheme.onSurface.withValues(alpha: 0.8))),
               const SizedBox(height: 40),
               if (_isCreationMode) ...[
                 SizedBox(
@@ -713,7 +715,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
                     child: Text('Finish',
                         style: theme.textTheme.labelLarge?.copyWith(
                             color: theme.colorScheme.onSurface
-                                .withOpacity(0.7)))),
+                                .withValues(alpha: 0.7)))),
               ),
             ],
           ),
@@ -733,13 +735,13 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
         child: Container(
           padding: padding ?? const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: theme.cardColor.withOpacity(0.8),
+            color: theme.cardColor.withValues(alpha: 0.8),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-                color: theme.dividerColor.withOpacity(0.2), width: 1.5),
+                color: theme.dividerColor.withValues(alpha: 0.2), width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),

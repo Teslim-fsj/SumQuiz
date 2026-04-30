@@ -7,7 +7,8 @@ import 'package:sumquiz/models/flashcard.dart';
 import 'package:sumquiz/models/local_flashcard_set.dart';
 import 'package:sumquiz/models/local_quiz.dart';
 import 'package:sumquiz/models/user_model.dart';
-port 'package:sumquiz/models/public_deck.dart';
+import 'package:sumquiz/models/public_deck.dart';
+import 'package:sumquiz/services/firestore_service.dart';
 import 'package:sumquiz/utils/share_code_generator.dart';
 import 'package:uuid/uuid.dart';
 import 'package:sumquiz/services/spaced_repetition_service.dart';
@@ -166,7 +167,12 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
           ? 'I just finished "${publicDeck.title}" on SumQuiz! Can you beat my score? Check it out here: $shareLink'
           : 'Check out this study pack I created on SumQuiz: "${publicDeck.title}". Access it here: $shareLink';
 
-      await Share.share(message, subject: 'SumQuiz: ${publicDeck.title}');
+      await SharePlus.instance.share(
+        ShareParams(
+          text: message,
+          subject: 'SumQuiz: ${publicDeck.title}',
+        ),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -201,7 +207,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
-            bottom: BorderSide(color: WebColors.border.withOpacity(0.5))),
+            bottom: BorderSide(color: WebColors.border.withValues(alpha: 0.5))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,12 +313,12 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? WebColors.purplePrimary.withOpacity(0.1)
+              ? WebColors.purplePrimary.withValues(alpha: 0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected
-                ? WebColors.purplePrimary.withOpacity(0.3)
+                ? WebColors.purplePrimary.withValues(alpha: 0.3)
                 : Colors.transparent,
           ),
         ),
@@ -383,7 +389,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4C3BCF).withOpacity(0.3),
+            color: const Color(0xFF4C3BCF).withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -411,7 +417,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
             'Key terms extracted for "${_summary?.title ?? "your content"}":',
             style: GoogleFonts.outfit(
               fontSize: 13,
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
               height: 1.5,
             ),
           ),
@@ -424,7 +430,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
+                        color: Colors.white.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
