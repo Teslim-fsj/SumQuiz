@@ -129,23 +129,23 @@ class AuthService {
         await _googleSignIn.signOut(); // Ensure fresh account picker
 
         // Step 1: Authenticate (identity only)
+        developer.log('Authenticating with Google...', name: 'AuthService');
         final auth.GoogleSignInAccount googleUser =
             await _googleSignIn.authenticate();
-        developer.log('Google user selected: ${googleUser.email}');
+        developer.log('Google user selected: ${googleUser.email}', name: 'AuthService');
 
-        // Step 2: Get ID token
+        // Step 2: Get Authentication tokens (ID + Access)
+        developer.log('Fetching Google authentication tokens...', name: 'AuthService');
         final auth.GoogleSignInAuthentication googleAuth =
-            googleUser.authentication;
+            await googleUser.authentication;
         final String? idToken = googleAuth.idToken;
+        final String? accessToken = googleAuth.accessToken;
 
-        // Step 3: Authorize scopes to get access token
-        final auth.GoogleSignInClientAuthorization authz =
-            await googleUser.authorizationClient
-                .authorizeScopes(['email', 'profile']);
-        final String accessToken = authz.accessToken;
+        developer.log('ID Token present: ${idToken != null}', name: 'AuthService');
+        developer.log('Access Token present: ${accessToken != null}', name: 'AuthService');
 
         if (idToken == null || idToken.isEmpty) {
-          developer.log('Error: Google did not return an ID token');
+          developer.log('Error: Google did not return an ID token', name: 'AuthService');
           throw FirebaseAuthException(
             code: 'no-id-token',
             message: 'Google did not return an ID token.',
@@ -162,22 +162,26 @@ class AuthService {
       }
 
       if (user != null) {
-        developer.log('Firebase user signed in: ${user.uid}');
+        developer.log('Firebase user signed in: ${user.uid}', name: 'AuthService');
 
         // Save authentication state for offline access
         await _saveAuthState(user);
 
+        // Trigger sync in background - DO NOT AWAIT here as it can hang the UI during login
         if (context.mounted) {
-          await Provider.of<SyncProvider>(context, listen: false).syncData();
+          developer.log('Triggering background data sync...', name: 'AuthService');
+          Provider.of<SyncProvider>(context, listen: false).syncData().catchError((e) {
+            developer.log('Background sync failed', name: 'AuthService', error: e);
+          });
         }
 
         // Check if user document exists in Firestore
+        developer.log('Checking for existing user document in Firestore...', name: 'AuthService');
         final userDoc = await _firestoreService.db.collection('users').doc(user.uid).get();
         final bool isNewToFirestore = !userDoc.exists;
 
         if (isNewToFirestore) {
-          developer.log('New Firestore user signed in with Google: ${user.uid}');
-          developer.log('New user signed in with Google: ${user.uid}');
+          developer.log('New Firestore user detected. Creating profile...', name: 'AuthService');
           final prefs = await SharedPreferences.getInstance();
           final intendedRoleName = prefs.getString('intended_role');
           UserRole role = UserRole.student;
@@ -196,14 +200,16 @@ class AuthService {
             role: role,
           );
           await _firestoreService.saveUserData(newUser);
-          developer.log('User profile created for ${user.uid}');
+          developer.log('User profile created successfully', name: 'AuthService');
 
           if (referralCode != null && referralCode.isNotEmpty) {
             try {
+              developer.log('Applying referral code: $referralCode', name: 'AuthService');
               await _referralService.applyReferralCode(referralCode, user.uid);
             } catch (e, s) {
               developer.log(
                   'Error applying referral code during Google Sign-In',
+                  name: 'AuthService',
                   error: e,
                   stackTrace: s);
               // Don't fail the entire sign-in process if referral code fails
@@ -214,9 +220,11 @@ class AuthService {
           // 🔔 Schedule notifications for new user
           if (context.mounted) {
             try {
+              developer.log('Scheduling new user notifications...', name: 'AuthService');
               await NotificationIntegration.onUserRegistered(context, user.uid);
             } catch (e) {
               developer.log('Failed to schedule notifications for new user',
+                  name: 'AuthService',
                   error: e);
             }
           }
@@ -224,8 +232,9 @@ class AuthService {
           // 🎭 Flag for role-selection onboarding dialog
           await prefs.setBool('is_new_user', true);
         } else {
-          developer.log('Existing Firestore user signed in with Google: ${user.uid}');
+          developer.log('Existing user document found. Skipping profile creation.', name: 'AuthService');
         }
+        developer.log('Google Sign-In flow complete.', name: 'AuthService');
       }
     } on FirebaseAuthException catch (e, s) {
       developer.log('Firebase Auth error during Google Sign-In',

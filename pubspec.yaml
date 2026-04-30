@@ -103,14 +103,14 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/sumquiz_logo.png"
+  image_path: "assets/images/sumquiz_logo_square.png"
   adaptive_icon_background: "#000000"
-  adaptive_icon_foreground: "assets/images/sumquiz_logo.png"
+  adaptive_icon_foreground: "assets/images/sumquiz_logo_square.png"
   min_sdk_android: 21
 
 flutter_native_splash:
   color: "#000000"
-  image: "assets/images/sumquiz_logo.png"
+  image: "assets/images/sumquiz_logo_square.png"
   android_12:
-    image: "assets/images/sumquiz_logo.png"
+    image: "assets/images/sumquiz_logo_square.png"
     color: "#000000"
