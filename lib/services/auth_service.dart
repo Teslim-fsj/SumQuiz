@@ -130,19 +130,22 @@ class AuthService {
 
         // Step 1: Authenticate (identity only)
         developer.log('Authenticating with Google...', name: 'AuthService');
-        final auth.GoogleSignInAccount googleUser =
+        final auth.GoogleSignInAccount? googleUser =
             await _googleSignIn.authenticate();
+            
+        if (googleUser == null) {
+          developer.log('Google Sign-In cancelled by user', name: 'AuthService');
+          return;
+        }
+        
         developer.log('Google user selected: ${googleUser.email}', name: 'AuthService');
 
-        // Step 2: Get Authentication tokens (ID + Access)
+        // Step 2: Get Authentication tokens (ID)
         developer.log('Fetching Google authentication tokens...', name: 'AuthService');
-        final auth.GoogleSignInAuthentication googleAuth =
-            await googleUser.authentication;
+        final auth.GoogleSignInAuthentication googleAuth = googleUser.authentication;
         final String? idToken = googleAuth.idToken;
-        final String? accessToken = googleAuth.accessToken;
 
         developer.log('ID Token present: ${idToken != null}', name: 'AuthService');
-        developer.log('Access Token present: ${accessToken != null}', name: 'AuthService');
 
         if (idToken == null || idToken.isEmpty) {
           developer.log('Error: Google did not return an ID token', name: 'AuthService');
@@ -154,7 +157,7 @@ class AuthService {
 
         final OAuthCredential credential = GoogleAuthProvider.credential(
           idToken: idToken,
-          accessToken: accessToken,
+          accessToken: null, // accessToken is moved to authorizationClient in v7
         );
 
         final UserCredential result = await _auth.signInWithCredential(credential);
