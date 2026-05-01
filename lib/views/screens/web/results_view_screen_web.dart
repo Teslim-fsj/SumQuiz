@@ -150,6 +150,7 @@ class _ResultsViewScreenWebState extends State<ResultsViewScreenWeb> {
           'flashcards':
               _flashcardSet!.flashcards.map((f) => f.toMap()).toList(),
         },
+        noteData: {},
         publishedAt: DateTime.now(),
       );
 

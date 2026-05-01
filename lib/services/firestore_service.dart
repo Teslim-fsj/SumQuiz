@@ -14,6 +14,7 @@ import 'package:sumquiz/models/local_quiz.dart';
 import 'package:sumquiz/models/local_quiz_question.dart';
 import 'package:sumquiz/models/local_flashcard.dart';
 import 'package:sumquiz/models/local_flashcard_set.dart';
+import 'package:sumquiz/models/local_note.dart';
 import 'package:sumquiz/models/public_deck.dart';
 import 'package:sumquiz/services/local_database_service.dart';
 
@@ -357,6 +358,16 @@ class FirestoreService {
     await _localDb.deleteFlashcardSet(flashcardSetId);
   }
 
+  Future<void> deleteNote(String userId, String noteId) async {
+    await _db
+        .collection('users')
+        .doc(userId)
+        .collection('notes')
+        .doc(noteId)
+        .delete();
+    await _localDb.deleteNote(noteId);
+  }
+
   Future<dynamic> getSpecificItem(String userId, LibraryItem item) async {
     DocumentSnapshot doc;
     switch (item.type) {
@@ -384,6 +395,14 @@ class FirestoreService {
             .doc(item.id)
             .get();
         return FlashcardSet.fromFirestore(doc);
+      case LibraryItemType.note:
+        doc = await _db
+            .collection('users')
+            .doc(userId)
+            .collection('notes')
+            .doc(item.id)
+            .get();
+        return LocalNote.fromFirestore(doc.id, doc.data() as Map<String, dynamic>);
       case LibraryItemType.exam:
         doc = await _db
             .collection('users')
@@ -408,6 +427,9 @@ class FirestoreService {
         break;
       case LibraryItemType.exam:
         await deleteQuiz(userId, item.id);
+        break;
+      case LibraryItemType.note:
+        await deleteNote(userId, item.id);
         break;
     }
   }
@@ -445,6 +467,7 @@ class FirestoreService {
         summaryData: deck.summaryData,
         quizData: deck.quizData,
         flashcardData: deck.flashcardData,
+        noteData: deck.noteData,
         isExam: deck.isExam,
         publishedAt: DateTime.now(),
         slug: deck.slug ?? _generateSlug(deck.title),

@@ -41,6 +41,8 @@ import 'package:sumquiz/theme/web_theme.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:sumquiz/services/deep_link_service.dart';
+import 'package:sumquiz/services/recording_service.dart';
+import 'package:sumquiz/providers/note_provider.dart';
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
@@ -345,6 +347,22 @@ class _MyAppState extends State<MyApp> {
                 aiService: ai,
                 localDb: localDb,
                 youtubeService: youtube,
+              ),
+        ),
+        Provider<RecordingService>(create: (_) => RecordingService()),
+        ChangeNotifierProxyProvider3<LocalDatabaseService, EnhancedAIService,
+            RecordingService, NoteProvider>(
+          create: (context) => NoteProvider(
+            localDb: context.read<LocalDatabaseService>(),
+            aiService: context.read<EnhancedAIService>(),
+            recordingService: context.read<RecordingService>(),
+          ),
+          update: (context, localDb, ai, recording, previous) =>
+              previous ??
+              NoteProvider(
+                localDb: localDb,
+                aiService: ai,
+                recordingService: recording,
               ),
         ),
       ],

@@ -68,7 +68,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
           return Scaffold(
             backgroundColor: theme.scaffoldBackgroundColor,
             body: widget.navigationShell,
-            floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+            floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
             floatingActionButton: FloatingActionButton(
               onPressed: () {
                 if (isTeacher) {
@@ -79,14 +79,11 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
               },
               backgroundColor: WebColors.purplePrimary,
               elevation: 4,
-              shape: const CircleBorder(),
-              child: const Icon(Icons.add, color: Colors.white, size: 32),
+              child: const Icon(Icons.add, color: Colors.white, size: 28),
             ),
             bottomNavigationBar: isTeacher
               ? BottomAppBar(
                   padding: EdgeInsets.zero,
-                  notchMargin: 8,
-                  shape: const CircularNotchedRectangle(),
                   color: theme.cardColor.withValues(alpha: 0.9),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -105,7 +102,6 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                         isActive: currentIdx == 1,
                         onTap: () => _onTap(1, isTeacher),
                       ),
-                      const SizedBox(width: 48), // Space for FAB
                       _buildMobileNavItem(
                         icon: Icons.people_outline,
                         activeIcon: Icons.people,
@@ -132,8 +128,6 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                 )
               : BottomAppBar(
                   padding: EdgeInsets.zero,
-                  notchMargin: 8,
-                  shape: const CircularNotchedRectangle(),
                   color: theme.cardColor.withValues(alpha: 0.9),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -152,7 +146,6 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                         isActive: currentIdx == 1,
                         onTap: () => _onTap(1, isTeacher),
                       ),
-                      const SizedBox(width: 48), // Space for FAB
                       _buildMobileNavItem(
                         icon: Icons.insights_outlined,
                         activeIcon: Icons.insights,
@@ -333,6 +326,15 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                 isDark: isDark,
                               ),
                               _buildSidebarTab(
+                                icon: Icons.edit_note_outlined,
+                                activeIcon: Icons.edit_note_rounded,
+                                label: 'Notes',
+                                isActive: widget.navigationShell.currentIndex == 8,
+                                onTap: () => _goToBranch(8),
+                                isExpanded: _isExpanded,
+                                isDark: isDark,
+                              ),
+                              _buildSidebarTab(
                                 icon: Icons.people_outline_rounded,
                                 activeIcon: Icons.people_rounded,
                                 label: 'Student Roster',
@@ -375,6 +377,15 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                 label: 'My Library',
                                 isActive: widget.navigationShell.currentIndex == 1,
                                 onTap: () => _goToBranch(1),
+                                isExpanded: _isExpanded,
+                                isDark: isDark,
+                              ),
+                              _buildSidebarTab(
+                                icon: Icons.edit_note_outlined,
+                                activeIcon: Icons.edit_note_rounded,
+                                label: 'Notes',
+                                isActive: widget.navigationShell.currentIndex == 8,
+                                onTap: () => _goToBranch(8),
                                 isExpanded: _isExpanded,
                                 isDark: isDark,
                               ),

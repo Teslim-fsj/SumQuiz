@@ -123,96 +123,165 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
 
   // --- PHASE 1: SOURCE SELECTION ---
   Widget _buildSourceSelection(BuildContext context, CreateContentProvider provider, UserModel? user) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'What would you\nlike to study?',
-            style: GoogleFonts.outfit(
-              fontSize: 32,
-              fontWeight: FontWeight.w900,
-              color: Theme.of(context).colorScheme.onSurface,
-              height: 1.1,
-            ),
-          ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1, end: 0),
-          const SizedBox(height: 12),
-          Text(
-            'Choose a source and our AI will generate your personalized study materials.',
-            style: GoogleFonts.outfit(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ).animate().fadeIn(delay: 200.ms),
-          const SizedBox(height: 40),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: 0.85,
-            children: [
-              SourceChoiceCard(
-                title: 'Text/Topic',
-                description: 'Paste notes or type a subject',
-                icon: Icons.text_fields_rounded,
-                onTap: () => _showTextInputDialog(context, provider),
-                color: Colors.blue,
-              ),
-              SourceChoiceCard(
-                title: 'PDF/Docs',
-                description: 'Upload your documents',
-                icon: Icons.picture_as_pdf_rounded,
-                onTap: () => _pickFile(context, provider, user, ['pdf', 'doc', 'docx', 'txt'], 'pdf'),
-                color: Colors.redAccent,
-              ),
-              SourceChoiceCard(
-                title: 'Web Link',
-                description: 'Import from any URL',
-                icon: Icons.link_rounded,
-                onTap: () => _showUrlInputDialog(context, provider),
-                color: Colors.teal,
-              ),
-              SourceChoiceCard(
-                title: 'YouTube',
-                description: userMayImportFromYouTube(user)
-                    ? 'Analyze video content'
-                    : 'Pro — analyze video content',
-                icon: Icons.play_circle_fill_rounded,
-                onTap: () {
-                  if (!userMayImportFromYouTube(user)) {
-                    showDialog<void>(
-                      context: context,
-                      builder: (_) =>
-                          const UpgradeDialog(featureName: 'YouTube import'),
-                    );
-                    return;
-                  }
-                  _showUrlInputDialog(context, provider, isYoutube: true);
-                },
-                color: Colors.orange,
-              ),
-              SourceChoiceCard(
-                title: 'Images',
-                description: 'Scan notes and photos',
-                icon: Icons.camera_alt_rounded,
-                onTap: () => _pickFile(context, provider, user, ['jpg', 'jpeg', 'png', 'webp'], 'image'),
-                color: Colors.deepPurple,
-              ),
-              SourceChoiceCard(
-                title: 'Audio',
-                description: 'Transcribe recordings',
-                icon: Icons.mic_rounded,
-                onTap: () => _pickFile(context, provider, user, ['mp3', 'wav', 'm4a', 'aac'], 'audio'),
-                color: Colors.green,
-              ),
-            ],
-          ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0),
-        ],
+    final theme = Theme.of(context);
+    
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            theme.colorScheme.primary.withOpacity(0.03),
+            theme.scaffoldBackgroundColor,
+          ],
+        ),
       ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Create & Study',
+              style: GoogleFonts.outfit(
+                fontSize: 36,
+                fontWeight: FontWeight.w900,
+                color: theme.colorScheme.onSurface,
+                letterSpacing: -1.0,
+                height: 1.0,
+              ),
+            ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.1, end: 0),
+            const SizedBox(height: 12),
+            Text(
+              'Select a tool to start your learning journey',
+              style: GoogleFonts.outfit(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ).animate().fadeIn(delay: 200.ms),
+            
+            const SizedBox(height: 48),
+            
+            // --- SECTION: CAPTURE ---
+            _buildSectionHeader('Smart Capture', Icons.bolt_rounded),
+            const SizedBox(height: 16),
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              childAspectRatio: 0.9,
+              children: [
+                SourceChoiceCard(
+                  title: 'New Note',
+                  description: 'Blank workspace',
+                  icon: Icons.edit_note_rounded,
+                  onTap: () => context.pushNamed('note-editor', pathParameters: {'noteId': 'new'}),
+                  color: Colors.deepPurple,
+                  isNew: true,
+                ),
+                SourceChoiceCard(
+                  title: 'Live Lecture',
+                  description: 'Record & Transcribe',
+                  icon: Icons.record_voice_over_rounded,
+                  onTap: () => context.pushNamed('note-editor', pathParameters: {'noteId': 'new_recording'}),
+                  color: Colors.pink,
+                  isPro: true,
+                ),
+              ],
+            ).animate().fadeIn(delay: 400.ms),
+            
+            const SizedBox(height: 40),
+            
+            // --- SECTION: AI EXTRACT ---
+            _buildSectionHeader('AI Extraction', Icons.auto_awesome_rounded),
+            const SizedBox(height: 16),
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              childAspectRatio: 0.9,
+              children: [
+                SourceChoiceCard(
+                  title: 'Topic/Text',
+                  description: 'Paste or type anything',
+                  icon: Icons.text_fields_rounded,
+                  onTap: () => _showTextInputDialog(context, provider),
+                  color: Colors.blue,
+                ),
+                SourceChoiceCard(
+                  title: 'PDF/Docs',
+                  description: 'Upload local files',
+                  icon: Icons.picture_as_pdf_rounded,
+                  onTap: () => _pickFile(context, provider, user, ['pdf', 'doc', 'docx', 'txt'], 'pdf'),
+                  color: Colors.redAccent,
+                ),
+                SourceChoiceCard(
+                  title: 'Web Link',
+                  description: 'Import from URL',
+                  icon: Icons.link_rounded,
+                  onTap: () => _showUrlInputDialog(context, provider),
+                  color: Colors.teal,
+                ),
+                SourceChoiceCard(
+                  title: 'YouTube',
+                  description: 'Video analysis',
+                  icon: Icons.play_circle_fill_rounded,
+                  onTap: () {
+                    if (!userMayImportFromYouTube(user)) {
+                      showDialog<void>(context: context, builder: (_) => const UpgradeDialog(featureName: 'YouTube import'));
+                      return;
+                    }
+                    _showUrlInputDialog(context, provider, isYoutube: true);
+                  },
+                  color: Colors.orange,
+                  isPro: true,
+                ),
+                SourceChoiceCard(
+                  title: 'Images',
+                  description: 'Scan notes & OCR',
+                  icon: Icons.camera_alt_rounded,
+                  onTap: () => _pickFile(context, provider, user, ['jpg', 'jpeg', 'png', 'webp'], 'image'),
+                  color: Colors.indigo,
+                  isPro: true,
+                ),
+                SourceChoiceCard(
+                  title: 'Audio File',
+                  description: 'Import recording',
+                  icon: Icons.audio_file_rounded,
+                  onTap: () => _pickFile(context, provider, user, ['mp3', 'wav', 'm4a', 'aac'], 'audio'),
+                  color: Colors.green,
+                  isPro: true,
+                ),
+              ],
+            ).animate().fadeIn(delay: 600.ms),
+            
+            const SizedBox(height: 80), // Padding for bottom bar
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: Colors.grey[500]),
+        const SizedBox(width: 8),
+        Text(
+          title.toUpperCase(),
+          style: GoogleFonts.outfit(
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+            color: Colors.grey[500],
+            letterSpacing: 1.5,
+          ),
+        ),
+      ],
     );
   }
 

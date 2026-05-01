@@ -41,6 +41,8 @@ import 'package:sumquiz/views/screens/exam_creation_screen.dart';
 import 'package:sumquiz/views/screens/web/review_screen_web.dart';
 import 'package:sumquiz/views/screens/web/exam_creation_screen_web.dart';
 import 'package:sumquiz/views/screens/public_deck_screen.dart';
+import 'package:sumquiz/views/screens/notes_screen.dart';
+import 'package:sumquiz/views/screens/note_editor_screen.dart';
 
 // Role-Aware view helper
 class RoleAwareView extends StatelessWidget {
@@ -379,6 +381,23 @@ GoRouter createRouter(AuthService authService) {
                   GoRoute(path: 'subscription', builder: (context, state) => const SubscriptionScreen()),
                   GoRoute(path: 'account-profile', builder: (context, state) => const AccountProfileScreen()),
                   GoRoute(path: 'referral', builder: (context, state) => const ReferralScreen()),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: '/notes',
+                builder: (context, state) => const NotesScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    builder: (context, state) {
+                      final id = state.pathParameters['id']!;
+                      return NoteEditorScreen(noteId: id);
+                    },
+                  ),
                 ],
               ),
             ],

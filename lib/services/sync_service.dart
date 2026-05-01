@@ -14,6 +14,8 @@ import '../models/local_quiz_question.dart';
 import '../models/local_flashcard.dart';
 import '../models/folder.dart';
 import '../models/content_folder.dart';
+import '../models/note_model.dart';
+import '../models/local_note.dart';
 import 'dart:developer' as developer;
 
 class SyncService {
@@ -45,6 +47,7 @@ class SyncService {
       await _syncFlashcardSets(user.uid);
       await _syncFolders(user.uid);
       await _syncContentRelations(user.uid);
+      await _syncNotes(user.uid);
     } catch (e, s) {
       developer.log('Error during sync',
           name: 'SyncService', error: e, stackTrace: s);
@@ -365,6 +368,71 @@ class SyncService {
             .set(relation.toFirestore());
       } catch (e) {
         developer.log('Error syncing relation', name: 'SyncService', error: e);
+      }
+    }
+  }
+
+  Future<void> _syncNotes(String userId) async {
+    final localNotes = await _localDb.getAllNotes(userId);
+    final unsyncedNotes = localNotes.where((n) => !n.isSynced).toList();
+
+    for (final localNote in unsyncedNotes) {
+      try {
+        final note = Note(
+          id: localNote.id,
+          userId: userId,
+          title: localNote.title,
+          content: localNote.content,
+          tags: localNote.tags,
+          createdAt: Timestamp.fromDate(localNote.createdAt),
+          updatedAt: Timestamp.fromDate(localNote.updatedAt),
+        );
+
+        await _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('notes')
+            .doc(localNote.id)
+            .set(note.toFirestore());
+
+        await _localDb.updateNoteSyncStatus(localNote.id, true);
+      } catch (e, s) {
+        developer.log('Error syncing note ${localNote.id}',
+            name: 'SyncService', error: e, stackTrace: s);
+      }
+    }
+
+    final firestoreNotes = await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('notes')
+        .get();
+
+    for (final doc in firestoreNotes.docs) {
+      final localNote = await _localDb.getNote(doc.id);
+      if (localNote == null) {
+        final note = Note.fromFirestore(doc);
+        final newLocalNote = LocalNote(
+          id: note.id,
+          userId: userId,
+          title: note.title,
+          content: note.content,
+          tags: note.tags,
+          createdAt: note.createdAt.toDate(),
+          updatedAt: note.updatedAt.toDate(),
+          isSynced: true,
+        );
+        await _localDb.saveNote(newLocalNote);
+      } else {
+        final firestoreNote = Note.fromFirestore(doc);
+        if (firestoreNote.updatedAt.toDate().isAfter(localNote.updatedAt)) {
+          localNote.title = firestoreNote.title;
+          localNote.content = firestoreNote.content;
+          localNote.tags = firestoreNote.tags;
+          localNote.updatedAt = firestoreNote.updatedAt.toDate();
+          localNote.isSynced = true;
+          await _localDb.saveNote(localNote);
+        }
       }
     }
   }

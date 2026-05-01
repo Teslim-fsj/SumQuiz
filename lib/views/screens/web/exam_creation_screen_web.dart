@@ -61,7 +61,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   bool _isProcessingSource = false;
   bool _isGeneratingQuestions = false;
   String _processingMessage = '';
-  bool _showPreview = false;
+
   CancellationToken? _cancelToken;
 
   List<LocalQuizQuestion> _generatedQuestions = [];
@@ -271,7 +271,6 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
       setState(() {
         _generatedQuestions = quiz.questions;
         _isGeneratingQuestions = false;
-        _showPreview = true;
       });
     } catch (e) {
       setState(() => _isGeneratingQuestions = false);
@@ -303,6 +302,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           'title': _titleController.text,
           'questions': _generatedQuestions.map((q) => q.toMap()).toList(),
         },
+        noteData: {},
         isExam: true,
         publishedAt: DateTime.now(),
       );
@@ -349,6 +349,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           name: '${_titleController.text}.pdf',
           mimeType: 'application/pdf',
         );
+        // ignore: deprecated_member_use
         await Share.shareXFiles([xFile], text: 'Exam PDF: ${_titleController.text}');
       } catch (e) {
         debugPrint('Web share error: $e');
@@ -561,7 +562,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+
     final user = Provider.of<UserModel?>(context);
 
     // Only block if they are at the limit AND not Pro AND NOT a teacher
@@ -696,7 +697,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey.withOpacity(0.1))),
+        border: Border(bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.1))),
       ),
       child: Row(
         children: [
@@ -762,13 +763,13 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           padding: const EdgeInsets.all(40),
           decoration: BoxDecoration(
             color: theme.colorScheme.surfaceContainerHighest
-                .withOpacity(0.05),
+                .withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-                color: theme.colorScheme.outline.withOpacity(0.1)),
+                color: theme.colorScheme.outline.withValues(alpha: 0.1)),
             boxShadow: [
               BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 20,
                   offset: const Offset(0, 4))
             ],

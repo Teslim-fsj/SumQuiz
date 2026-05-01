@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
+  audioplayers_windows
   clipboard
   cloud_firestore
   connectivity_plus
@@ -13,6 +14,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_inappwebview_windows
   flutter_timezone
   printing
+  record_windows
   share_plus
   url_launcher_windows
 )

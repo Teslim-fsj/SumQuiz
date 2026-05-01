@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'dart:async';
+import 'dart:io';
 
 import '../models/local_summary.dart';
 import '../models/local_quiz.dart';
@@ -11,6 +12,8 @@ import '../models/folder.dart';
 import '../models/content_folder.dart';
 import '../models/spaced_repetition.dart';
 import '../models/daily_mission.dart';
+import '../models/local_note.dart';
+import '../models/local_recording.dart';
 
 class LocalDatabaseService {
   // Box names
@@ -22,6 +25,8 @@ class LocalDatabaseService {
   static const String _spacedRepetitionBoxName = 'spaced_repetition';
   static const String _dailyMissionsBoxName = 'daily_missions';
   static const String _settingsBoxName = 'settings';
+  static const String _notesBoxName = 'notes';
+  static const String _recordingsBoxName = 'recordings';
 
   // Hive Boxes - late initialized
   late Box<LocalSummary> _summariesBox;
@@ -31,6 +36,8 @@ class LocalDatabaseService {
   late Box<ContentFolder> _contentFoldersBox;
   late Box<SpacedRepetitionItem> _spacedRepetitionBox;
   late Box<DailyMission> _dailyMissionsBox;
+  late Box<LocalNote> _notesBox;
+  late Box<LocalRecording> _recordingsBox;
   late Box _settingsBox;
 
   // Singleton pattern
@@ -73,6 +80,12 @@ class LocalDatabaseService {
       if (!Hive.isAdapterRegistered(21)) {
         Hive.registerAdapter(DailyMissionAdapter());
       }
+      if (!Hive.isAdapterRegistered(22)) {
+        Hive.registerAdapter(LocalNoteAdapter());
+      }
+      if (!Hive.isAdapterRegistered(23)) {
+        Hive.registerAdapter(LocalRecordingAdapter());
+      }
 
       // Open boxes
       _summariesBox = await Hive.openBox<LocalSummary>(_summariesBoxName);
@@ -86,6 +99,8 @@ class LocalDatabaseService {
           await Hive.openBox<SpacedRepetitionItem>(_spacedRepetitionBoxName);
       _dailyMissionsBox =
           await Hive.openBox<DailyMission>(_dailyMissionsBoxName);
+      _notesBox = await Hive.openBox<LocalNote>(_notesBoxName);
+      _recordingsBox = await Hive.openBox<LocalRecording>(_recordingsBoxName);
       _settingsBox = await Hive.openBox(_settingsBoxName);
 
       _isInitialized = true;
@@ -128,6 +143,26 @@ class LocalDatabaseService {
       yield _flashcardSetsBox.values
           .where((fs) => fs.userId == userId)
           .toList();
+    }
+  }
+
+  Stream<List<LocalNote>> watchAllNotes(String userId) async* {
+    await init();
+    yield _notesBox.values.where((n) => n.userId == userId).toList()
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    await for (final _ in _notesBox.watch()) {
+      yield _notesBox.values.where((n) => n.userId == userId).toList()
+        ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    }
+  }
+
+  Stream<List<LocalRecording>> watchRecordingsForNote(String noteId) async* {
+    await init();
+    yield _recordingsBox.values.where((r) => r.noteId == noteId).toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    await for (final _ in _recordingsBox.watch()) {
+      yield _recordingsBox.values.where((r) => r.noteId == noteId).toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     }
   }
 
@@ -179,6 +214,16 @@ class LocalDatabaseService {
     await _foldersBox.put(folder.id, folder);
   }
 
+  Future<void> saveNote(LocalNote note) async {
+    await init();
+    await _notesBox.put(note.id, note);
+  }
+
+  Future<void> saveRecording(LocalRecording recording) async {
+    await init();
+    await _recordingsBox.put(recording.id, recording);
+  }
+
   Future<void> updateSummarySyncStatus(String id, bool isSynced) async {
     await init();
     final summary = _summariesBox.get(id);
@@ -203,6 +248,15 @@ class LocalDatabaseService {
     if (flashcardSet != null) {
       flashcardSet.isSynced = isSynced;
       await _flashcardSetsBox.put(id, flashcardSet);
+    }
+  }
+
+  Future<void> updateNoteSyncStatus(String id, bool isSynced) async {
+    await init();
+    final note = _notesBox.get(id);
+    if (note != null) {
+      note.isSynced = isSynced;
+      await _notesBox.put(id, note);
     }
   }
 
@@ -240,6 +294,11 @@ class LocalDatabaseService {
         .toList();
   }
 
+  Future<List<LocalNote>> getAllNotes(String userId) async {
+    await init();
+    return _notesBox.values.where((n) => n.userId == userId).toList();
+  }
+
   Future<List<LocalFlashcard>> getFlashcardsByIds(
       String userId, List<String> cardIds) async {
     await init();
@@ -258,6 +317,16 @@ class LocalDatabaseService {
     return _foldersBox.values
         .where((folder) => folder.userId == userId)
         .toList();
+  }
+
+  Future<LocalNote?> getNote(String id) async {
+    await init();
+    return _notesBox.get(id);
+  }
+
+  Future<LocalRecording?> getRecording(String id) async {
+    await init();
+    return _recordingsBox.get(id);
   }
 
   // --- DELETERS ---
@@ -297,6 +366,27 @@ class LocalDatabaseService {
       await _contentFoldersBox.delete(relation.key);
     }
     await _foldersBox.delete(id);
+  }
+
+  Future<void> deleteNote(String id) async {
+    await init();
+    final recordings = _recordingsBox.values.where((r) => r.noteId == id).toList();
+    for (final r in recordings) {
+      await deleteRecording(r.id);
+    }
+    await _notesBox.delete(id);
+  }
+
+  Future<void> deleteRecording(String id) async {
+    await init();
+    final rec = _recordingsBox.get(id);
+    if (rec != null) {
+      final file = File(rec.filePath);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    }
+    await _recordingsBox.delete(id);
   }
 
   // --- RELATIONSHIP MANAGEMENT ---

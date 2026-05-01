@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 
@@ -349,6 +349,41 @@ class EnhancedAIService {
       return Result.error(EnhancedAIServiceException(
           'Critical error analyzing content: $e',
           originalError: e));
+    }
+  }
+
+  Future<String> transcribeRecording({
+    required String filePath,
+    required String userId,
+    CancellationToken? cancelToken,
+  }) async {
+    developer.log('transcribeRecording called for: $filePath',
+        name: 'EnhancedAIService');
+    try {
+      await _checkUsageLimits(userId);
+      final file = File(filePath);
+      if (!await file.exists()) {
+        throw EnhancedAIServiceException('Recording file not found.');
+      }
+      final bytes = await file.readAsBytes();
+      
+      final result = await analyzeContentFromBytes(
+        bytes: bytes,
+        mimeType: 'audio/mp4', // Default for record package m4a
+        userId: userId,
+        customPrompt: 'Accurately transcribe and extract all educational content from this audio recording. Provide a clean, readable transcript.',
+        cancelToken: cancelToken,
+      );
+
+      return result.when(
+        ok: (r) => r.text,
+        error: (e) => throw e,
+      );
+    } catch (e, stack) {
+      developer.log('Transcription failed',
+          name: 'EnhancedAIService', error: e, stackTrace: stack);
+      if (e is EnhancedAIServiceException) rethrow;
+      throw EnhancedAIServiceException('Failed to transcribe recording: $e');
     }
   }
 

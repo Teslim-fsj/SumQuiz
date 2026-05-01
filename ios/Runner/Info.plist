@@ -70,5 +70,7 @@
 		<!-- Deep Link: Universal Links -->
 		<key>FlutterDeepLinkingEnabled</key>
 		<true/>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>SumQuiz needs access to the microphone to record your live lectures and provide transcriptions.</string>
 	</dict>
 </plist>

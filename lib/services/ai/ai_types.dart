@@ -5,6 +5,17 @@ sealed class Result<T> {
   const Result();
   factory Result.ok(T value) = Ok._;
   factory Result.error(Exception error) = ResultError<T>._;
+
+  R when<R>({
+    required R Function(T value) ok,
+    required R Function(Exception error) error,
+  }) {
+    if (this is Ok<T>) {
+      return ok((this as Ok<T>).value);
+    } else {
+      return error((this as ResultError<T>).error);
+    }
+  }
 }
 
 final class Ok<T> extends Result<T> {

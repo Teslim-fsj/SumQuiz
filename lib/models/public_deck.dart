@@ -10,6 +10,7 @@ class PublicDeck {
   final Map<String, dynamic> summaryData;
   final Map<String, dynamic> quizData;
   final Map<String, dynamic> flashcardData;
+  final Map<String, dynamic> noteData;
   final int startedCount;
   final int completedCount;
   final DateTime publishedAt;
@@ -21,6 +22,7 @@ class PublicDeck {
     if (isExam) return 'exam';
     if (quizData.isNotEmpty) return 'quiz';
     if (flashcardData.isNotEmpty) return 'flashcards';
+    if (noteData.isNotEmpty) return 'note';
     return 'summary';
   }
 
@@ -34,6 +36,7 @@ class PublicDeck {
     required this.summaryData,
     required this.quizData,
     required this.flashcardData,
+    required this.noteData,
     this.startedCount = 0,
     this.completedCount = 0,
     required this.publishedAt,
@@ -54,6 +57,7 @@ class PublicDeck {
       summaryData: data['summary'] ?? {},
       quizData: data['quiz'] ?? {},
       flashcardData: data['flashcards'] ?? {},
+      noteData: data['note'] ?? {},
       startedCount: data['startedCount'] ?? 0,
       completedCount: data['completedCount'] ?? 0,
       publishedAt:
@@ -74,6 +78,7 @@ class PublicDeck {
       'summary': summaryData,
       'quiz': quizData,
       'flashcards': flashcardData,
+      'note': noteData,
       'startedCount': startedCount,
       'completedCount': completedCount,
       'publishedAt': Timestamp.fromDate(publishedAt),

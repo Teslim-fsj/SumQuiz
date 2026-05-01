@@ -12,6 +12,7 @@ import '../../models/local_summary.dart';
 import '../../models/local_quiz.dart';
 import '../../models/local_flashcard_set.dart';
 import '../../models/local_flashcard.dart';
+import '../../models/local_note.dart';
 import '../../models/quiz_question.dart';
 import '../../models/flashcard.dart';
 import '../../models/flashcard_set.dart';
@@ -26,6 +27,7 @@ import '../screens/flashcards_screen.dart';
 import '../screens/edit_summary_screen.dart';
 import '../screens/edit_quiz_screen.dart';
 import '../screens/edit_flashcards_screen.dart';
+import '../screens/note_editor_screen.dart';
 import '../widgets/enter_code_dialog.dart';
 import '../../utils/library_share_helper.dart';
 
@@ -129,14 +131,17 @@ class _LibraryViewState extends State<_LibraryView>
   @override
   void initState() {
     super.initState();
-    _mainTabController = TabController(length: 6, vsync: this);
-    _folderTabController = TabController(length: 5, vsync: this);
+    // Main tabs: All, Study Pack, Notes, Exams
+    _mainTabController = TabController(length: 4, vsync: this);
+    // Folder tabs: Study Pack, Notes, Exams
+    _folderTabController = TabController(length: 3, vsync: this);
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text.toLowerCase();
       });
     });
   }
+
 
   @override
   void dispose() {
@@ -167,15 +172,10 @@ class _LibraryViewState extends State<_LibraryView>
                     key: const ValueKey('main_tab_view'),
                     controller: _mainTabController,
                     children: [
-                      _buildFolderList(viewModel, theme),
-                      _buildContentList(viewModel.allItems$, theme, viewModel),
-                      _buildContentList(
-                          viewModel.allSummaries$, theme, viewModel),
-                      _buildContentList(
-                          viewModel.allQuizzes$, theme, viewModel),
-                      _buildContentList(viewModel.allExams$, theme, viewModel),
-                      _buildContentList(
-                          viewModel.allFlashcards$, theme, viewModel),
+                      _buildContentList(viewModel.allItems$, theme, viewModel), // All
+                      _buildFolderList(viewModel, theme), // Study Pack (Folders)
+                      _buildContentList(viewModel.allNotes$, theme, viewModel), // Notes
+                      _buildContentList(viewModel.allExams$, theme, viewModel), // Exams
                     ],
                   );
                 } else {
@@ -183,27 +183,9 @@ class _LibraryViewState extends State<_LibraryView>
                     key: const ValueKey('folder_tab_view'),
                     controller: _folderTabController,
                     children: [
-                      _buildContentList(
-                          viewModel.getFolderItemsStream(selectedFolder.id),
-                          theme,
-                          viewModel),
-                      _buildContentList(
-                          viewModel.getFolderSummariesStream(selectedFolder.id),
-                          theme,
-                          viewModel),
-                      _buildContentList(
-                          viewModel.getFolderQuizzesStream(selectedFolder.id),
-                          theme,
-                          viewModel),
-                      _buildContentList(
-                          viewModel.getFolderExamsStream(selectedFolder.id),
-                          theme,
-                          viewModel),
-                      _buildContentList(
-                          viewModel
-                              .getFolderFlashcardsStream(selectedFolder.id),
-                          theme,
-                          viewModel),
+                      _buildContentList(viewModel.getFolderStudyPackStream(selectedFolder.id), theme, viewModel), // Study Pack
+                      _buildContentList(viewModel.getFolderNotesStream(selectedFolder.id), theme, viewModel), // Notes
+                      _buildContentList(viewModel.getFolderExamsStream(selectedFolder.id), theme, viewModel), // Exams
                     ],
                   );
                 }
@@ -313,24 +295,19 @@ class _LibraryViewState extends State<_LibraryView>
       BuildContext context, ThemeData theme, LibraryViewModel viewModel) {
     final selectedFolder = viewModel.selectedFolder;
     return TabBar(
-      controller:
-          selectedFolder == null ? _mainTabController : _folderTabController,
+      controller: selectedFolder == null ? _mainTabController : _folderTabController,
       isScrollable: true,
       tabs: selectedFolder == null
           ? const [
-              Tab(text: 'Folders'),
               Tab(text: 'All'),
-              Tab(text: 'Summaries'),
-              Tab(text: 'Quizzes'),
+              Tab(text: 'Study Pack'),
+              Tab(text: 'Notes'),
               Tab(text: 'Exams'),
-              Tab(text: 'Flashcards')
             ]
           : const [
-              Tab(text: 'All'),
-              Tab(text: 'Summaries'),
-              Tab(text: 'Quizzes'),
+              Tab(text: 'Study Pack'),
+              Tab(text: 'Notes'),
               Tab(text: 'Exams'),
-              Tab(text: 'Flashcards')
             ],
       indicator: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
@@ -385,16 +362,16 @@ class _LibraryViewState extends State<_LibraryView>
           itemBuilder: (context, index) {
             final folder = filteredFolders[index];
             return _buildGlassListTile(
-              title: folder.name,
-              subtitle: 'Created: ${folder.createdAt.toString().split(' ')[0]}',
-              icon: Icons.folder,
-              iconColor: Colors.amber,
-              theme: theme,
-              onTap: () => viewModel.selectFolder(folder),
-            )
-                .animate()
-                .fadeIn(delay: (50 * index).ms)
-                .slideY(begin: 0.1, duration: 300.ms);
+      title: folder.name,
+      subtitle: 'Created: ${folder.createdAt.toString().split(' ')[0]}',
+      icon: Icons.book,
+      iconColor: Colors.deepPurple,
+      theme: theme,
+      onTap: () => viewModel.selectFolder(folder),
+    )
+        .animate()
+        .fadeIn(delay: (50 * index).ms)
+        .slideY(begin: 0.1, duration: 300.ms);
           },
         );
       },
@@ -489,6 +466,10 @@ class _LibraryViewState extends State<_LibraryView>
       case LibraryItemType.exam:
         icon = Icons.assignment_outlined;
         iconColor = const Color(0xFF6B5CE7); // PurplePrimary
+        break;
+      case LibraryItemType.note:
+        icon = Icons.edit_note_rounded;
+        iconColor = Colors.deepPurple;
         break;
     }
 
@@ -618,7 +599,7 @@ class _LibraryViewState extends State<_LibraryView>
                   ),
                   child: Icon(icon, color: iconColor, size: 20),
                 ),
-                const SizedBox(width: 12),
+                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -656,8 +637,8 @@ class _LibraryViewState extends State<_LibraryView>
     String title, message;
     switch (type) {
       case 'folders':
-        title = 'No folders yet';
-        message = 'Create your first folder to organize your study materials!';
+        title = 'No Study Packs yet';
+        message = 'Create your first study pack to organize your materials!';
         break;
       case 'folder content':
         title = 'This folder is empty';
@@ -799,6 +780,9 @@ class _LibraryViewState extends State<_LibraryView>
             }
           }
           break;
+        case LibraryItemType.note:
+          contentData = await viewModel.localDb.getNote(item.id);
+          break;
       }
 
       if (!mounted) return;
@@ -840,6 +824,9 @@ class _LibraryViewState extends State<_LibraryView>
         case LibraryItemType.exam:
           screen = QuizScreen(quiz: contentData);
           break;
+        case LibraryItemType.note:
+          screen = NoteEditorScreen(noteId: item.id);
+          break;
       }
 
       if (context.mounted) {
@@ -876,6 +863,9 @@ class _LibraryViewState extends State<_LibraryView>
         case LibraryItemType.exam:
           contentData = await viewModel.localDb.getQuiz(item.id);
           break;
+        case LibraryItemType.note:
+          contentData = await viewModel.localDb.getNote(item.id);
+          break;
       }
 
       if (!mounted) return;
@@ -886,6 +876,14 @@ class _LibraryViewState extends State<_LibraryView>
             const SnackBar(
                 content: Text('Error: Could not load content for editing.')),
           );
+        }
+        return;
+      }
+
+      if (item.type == LibraryItemType.note) {
+        if (context.mounted) {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (_) => NoteEditorScreen(noteId: item.id)));
         }
         return;
       }
@@ -955,6 +953,18 @@ class _LibraryViewState extends State<_LibraryView>
             timestamp: fs.Timestamp.fromDate(quiz.timestamp),
           );
           break;
+        case LibraryItemType.note:
+          // Should be handled before, but added for exhaustiveness
+          final note = contentData as LocalNote;
+          editableContent = EditableContent(
+            id: note.id,
+            type: 'note',
+            title: note.title,
+            content: note.content,
+            tags: note.tags,
+            timestamp: fs.Timestamp.fromDate(note.updatedAt),
+          );
+          break;
       }
 
       Widget editScreen;
@@ -970,6 +980,9 @@ class _LibraryViewState extends State<_LibraryView>
           break;
         case LibraryItemType.exam:
           editScreen = EditQuizScreen(content: editableContent);
+          break;
+        case LibraryItemType.note:
+          editScreen = NoteEditorScreen(noteId: editableContent.id);
           break;
       }
 

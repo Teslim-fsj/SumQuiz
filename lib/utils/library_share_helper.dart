@@ -23,6 +23,8 @@ class LibraryShareHelper {
       Map<String, dynamic> summaryData = {};
       Map<String, dynamic> quizData = {};
       Map<String, dynamic> flashcardData = {};
+      Map<String, dynamic> noteData = {};
+      bool isExam = false;
 
       switch (item.type) {
         case LibraryItemType.summary:
@@ -52,7 +54,22 @@ class LibraryShareHelper {
           }
           break;
         case LibraryItemType.exam:
-          // TODO: handle sharing exams if needed
+          final quiz = await db.getQuiz(item.id);
+          if (quiz != null) {
+            quizData = {
+              'questions': quiz.questions.map((q) => q.toMap()).toList(),
+            };
+            isExam = true;
+          }
+          break;
+        case LibraryItemType.note:
+          final note = await db.getNote(item.id);
+          if (note != null) {
+            noteData = {
+              'content': note.content,
+              'tags': note.tags,
+            };
+          }
           break;
       }
 
@@ -69,7 +86,9 @@ class LibraryShareHelper {
         summaryData: summaryData,
         quizData: quizData,
         flashcardData: flashcardData,
+        noteData: noteData,
         publishedAt: DateTime.now(),
+        isExam: isExam,
       );
 
       final publishedDeck = await FirestoreService().publishDeck(publicDeck);

@@ -33,7 +33,7 @@ service cloud.firestore {
       );
     }
 
-    // Content Collections (Summaries, Quizzes, Flashcard Sets)
+    // Content Collections (Summaries, Quizzes, Flashcard Sets, Notes)
     match /users/{userId}/{collection}/{contentId} {
       allow read, write: if isOwner(userId);
     }

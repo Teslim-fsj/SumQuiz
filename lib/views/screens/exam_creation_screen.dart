@@ -1539,16 +1539,6 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
                       children: [
                         Radio<String>(
                           value: question.options[optionIndex],
-                          groupValue: question.correctAnswer,
-                          onChanged: (value) {
-                            setState(() {
-                              _questions[index] = LocalQuizQuestion(
-                                question: question.question,
-                                options: question.options,
-                                correctAnswer: value!,
-                              );
-                            });
-                          },
                         ),
                         Expanded(
                           child: TextFormField(
@@ -2099,6 +2089,7 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
             'questions': widget.questions.map((q) => q.toMap()).toList(),
           },
           flashcardData: {},
+          noteData: {},
           publishedAt: DateTime.now(),
         );
 

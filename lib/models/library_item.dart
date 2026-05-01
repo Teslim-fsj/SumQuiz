@@ -6,8 +6,9 @@ import 'package:sumquiz/models/editable_content.dart';
 import 'package:sumquiz/models/local_summary.dart';
 import 'package:sumquiz/models/local_quiz.dart';
 import 'package:sumquiz/models/local_flashcard_set.dart';
+import 'package:sumquiz/models/local_note.dart';
 
-enum LibraryItemType { summary, quiz, flashcards, exam }
+enum LibraryItemType { summary, quiz, flashcards, exam, note }
 
 class LibraryItem {
   final String id;
@@ -104,6 +105,16 @@ class LibraryItem {
       creatorName: flashcardSet.creatorName,
       itemCount: flashcardSet.flashcards.length,
       userId: flashcardSet.userId,
+    );
+  }
+
+  factory LibraryItem.fromLocalNote(LocalNote note) {
+    return LibraryItem(
+      id: note.id,
+      title: note.title,
+      type: LibraryItemType.note,
+      timestamp: Timestamp.fromDate(note.updatedAt),
+      userId: note.userId,
     );
   }
 

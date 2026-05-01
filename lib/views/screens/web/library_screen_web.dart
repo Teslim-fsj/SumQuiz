@@ -371,6 +371,13 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
           typeName = 'EXAM';
           badge = item.score != null ? 'Score: ${(item.score! * 100).round()}%' : '${item.itemCount ?? 0} Questions';
           break;
+        case LibraryItemType.note:
+          icon = Icons.note_alt_outlined;
+          bgColor = WebColors.secondary.withOpacity(0.1);
+          textColor = WebColors.secondary;
+          typeName = 'NOTE';
+          badge = 'Smart Note';
+          break;
       }
 
       return _LibraryCardData(
@@ -416,6 +423,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
         return 'Study deck with ${item.itemCount ?? 0} flashcards for spaced repetition.';
       case LibraryItemType.exam:
         return 'Formal exam paper with ${item.itemCount ?? 0} questions.';
+      case LibraryItemType.note:
+        return 'Personal study notes and lecture transcriptions.';
     }
   }
 
@@ -583,6 +592,9 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
         case LibraryItemType.quiz:
         case LibraryItemType.exam: tab = 1; break;
         case LibraryItemType.flashcards: tab = 2; break;
+        case LibraryItemType.note:
+          context.push('/note/${item.id}');
+          return;
       }
 
       context.pushNamed(

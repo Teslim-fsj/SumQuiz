@@ -23,13 +23,18 @@ class LibraryViewModel with ChangeNotifier {
   Stream<bool> get isSyncingStream => _isSyncing.stream;
   bool get isSyncing => _isSyncing.value;
 
+  // Stream declarations
   late Stream<List<LibraryItem>> allItems$;
   late Stream<List<LibraryItem>> allSummaries$;
   late Stream<List<LibraryItem>> allQuizzes$;
   late Stream<List<LibraryItem>> allExams$;
   late Stream<List<LibraryItem>> allFlashcards$;
+  late Stream<List<LibraryItem>> allNotes$;
   late Stream<List<LibraryItem>> allRecentlyViewed$;
   late Stream<List<Folder>> allFolders$;
+  
+  // Composite streams
+  late Stream<List<LibraryItem>> studyPack$;
 
   LibraryViewModel({
     required this.localDb,
@@ -42,15 +47,13 @@ class LibraryViewModel with ChangeNotifier {
   }
 
   void _initializeStreams() {
-    // Folders stream with replay for multiple subscribers
+    // Folders stream
     allFolders$ = localDb.watchAllFolders(userId).shareReplay(maxSize: 1);
 
     // Create independent streams for each content type from the database
-    // shareReplay allows multiple StreamBuilders in TabBarView to subscribe
     final allSummariesFromDb$ = localDb
         .watchAllSummaries(userId)
-        .map(
-            (summaries) => summaries.map(LibraryItem.fromLocalSummary).toList())
+        .map((summaries) => summaries.map(LibraryItem.fromLocalSummary).toList())
         .shareReplay(maxSize: 1);
 
     final allQuizzesAndExamsFromDb$ = localDb
@@ -74,29 +77,38 @@ class LibraryViewModel with ChangeNotifier {
             flashcards.map(LibraryItem.fromLocalFlashcardSet).toList())
         .shareReplay(maxSize: 1);
 
-    // FIXED: Create filtered streams directly from database streams
-    // These are used for the main tabs (no folder selected)
-    // This prevents the endless loading issue caused by folder filtering interference
+    final allNotesFromDb$ = localDb
+        .watchAllNotes(userId)
+        .map((notes) => notes.map(LibraryItem.fromLocalNote).toList())
+        .shareReplay(maxSize: 1);
+
+    // Main tabs assignments
     allSummaries$ = allSummariesFromDb$;
     allQuizzes$ = allQuizzesFromDb$;
     allExams$ = allExamsFromDb$;
     allFlashcards$ = allFlashcardsFromDb$;
+    allNotes$ = allNotesFromDb$;
 
-    // Combine all items without folder filtering
-    // shareReplay ensures all tabs get the cached value immediately
-    final allItemsCombined$ = Rx.combineLatest3<List<LibraryItem>,
+    // Combine for "All" tab
+    allItems$ = Rx.combineLatest4<List<LibraryItem>, List<LibraryItem>,
             List<LibraryItem>, List<LibraryItem>, List<LibraryItem>>(
         allSummariesFromDb$,
         allQuizzesAndExamsFromDb$,
         allFlashcardsFromDb$,
+        allNotesFromDb$,
+        (summaries, quizzes, flashcards, notes) =>
+            [...summaries, ...quizzes, ...flashcards, ...notes]).shareReplay(maxSize: 1);
+
+    // Study Pack combines summaries, quizzes, flashcards
+    studyPack$ = Rx.combineLatest3<List<LibraryItem>, List<LibraryItem>,
+            List<LibraryItem>, List<LibraryItem>>(
+        allSummariesFromDb$,
+        allQuizzesFromDb$,
+        allFlashcardsFromDb$,
         (summaries, quizzes, flashcards) =>
             [...summaries, ...quizzes, ...flashcards]).shareReplay(maxSize: 1);
 
-    // Main allItems$ stream (used for "All" tab)
-    // Simplified to just be the combined stream without folder filtering
-    allItems$ = allItemsCombined$;
-
-    allRecentlyViewed$ = allItemsCombined$.map((items) {
+    allRecentlyViewed$ = allItems$.map((items) {
       final sorted = List<LibraryItem>.from(items);
       sorted.sort((a, b) => b.timestamp.compareTo(a.timestamp));
       return sorted.take(10).toList();
@@ -114,6 +126,29 @@ class LibraryViewModel with ChangeNotifier {
             .toList()),
         localDb.watchAllQuizzes(userId).map((quizzes) => quizzes
             .where((q) => contentIds.contains(q.id))
+            .map(LibraryItem.fromLocalQuiz)
+            .toList()),
+        localDb.watchAllFlashcardSets(userId).map((flashcards) => flashcards
+            .where((f) => contentIds.contains(f.id))
+            .map(LibraryItem.fromLocalFlashcardSet)
+            .toList()),
+        (summaries, quizzes, flashcards) =>
+            [...summaries, ...quizzes, ...flashcards],
+      );
+    });
+  }
+
+  // New method for consolidated folder content
+  Stream<List<LibraryItem>> getFolderStudyPackStream(String folderId) {
+    return localDb.watchContentIdsInFolder(folderId).switchMap((contentIds) {
+      return Rx.combineLatest3<List<LibraryItem>, List<LibraryItem>,
+          List<LibraryItem>, List<LibraryItem>>(
+        localDb.watchAllSummaries(userId).map((summaries) => summaries
+            .where((s) => contentIds.contains(s.id))
+            .map(LibraryItem.fromLocalSummary)
+            .toList()),
+        localDb.watchAllQuizzes(userId).map((quizzes) => quizzes
+            .where((q) => contentIds.contains(q.id) && !q.isExam)
             .map(LibraryItem.fromLocalQuiz)
             .toList()),
         localDb.watchAllFlashcardSets(userId).map((flashcards) => flashcards
@@ -170,6 +205,17 @@ class LibraryViewModel with ChangeNotifier {
     });
   }
 
+  Stream<List<LibraryItem>> getFolderNotesStream(String folderId) {
+    return localDb.watchContentIdsInFolder(folderId).switchMap((contentIds) {
+      return localDb.watchAllNotes(userId).map((notes) {
+        return notes
+            .where((note) => contentIds.contains(note.id))
+            .map(LibraryItem.fromLocalNote)
+            .toList();
+      });
+    });
+  }
+
   void selectFolder(Folder? folder) {
     _selectedFolderController.add(folder);
   }
@@ -201,6 +247,9 @@ class LibraryViewModel with ChangeNotifier {
           break;
         case LibraryItemType.flashcards:
           await localDb.deleteFlashcardSet(item.id);
+          break;
+        case LibraryItemType.note:
+          await localDb.deleteNote(item.id);
           break;
         case LibraryItemType.exam:
           // TODO: handle exam deletion if needed
