@@ -2,6 +2,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../widgets/sumi_mascot.dart';
+import '../../models/sumi_emotion.dart';
 
 class ExtractionProgressDialog extends StatelessWidget {
   final ValueNotifier<String> messageNotifier;
@@ -46,21 +48,11 @@ class ExtractionProgressDialog extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // 1. Animated Extraction Icon
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.document_scanner_rounded,
-                    color: theme.colorScheme.primary,
-                    size: 48,
-                  ),
-                ).animate(onPlay: (c) => c.repeat(reverse: true))
-                  .scale(begin: const Offset(0.9, 0.9), duration: 1.seconds)
-                  .shimmer(duration: 2.seconds),
+                // 1. Animated Extraction Mascot
+                const SumiMascot(
+                  state: SumiState.thinking,
+                  size: 140,
+                ),
                 
                 const SizedBox(height: 32),
                 

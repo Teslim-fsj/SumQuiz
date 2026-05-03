@@ -1,19 +1,17 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:uuid/uuid.dart';
-import 'package:flutter/foundation.dart';
 
 class RecordingService {
   final AudioRecorder _recorder = AudioRecorder();
   final AudioPlayer _player = AudioPlayer();
-  
+
   String? _currentPath;
   DateTime? _startTime;
-  
-  final StreamController<Duration> _durationController = StreamController<Duration>.broadcast();
+
+  final StreamController<Duration> _durationController =
+      StreamController<Duration>.broadcast();
   Stream<Duration> get durationStream => _durationController.stream;
   Timer? _timer;
 
@@ -28,7 +26,8 @@ class RecordingService {
   Future<void> startRecording(String userId) async {
     if (await _recorder.hasPermission()) {
       final directory = await getApplicationDocumentsDirectory();
-      final String fileName = 'recording_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      final String fileName =
+          'recording_${DateTime.now().millisecondsSinceEpoch}.m4a';
       _currentPath = '${directory.path}/$fileName';
 
       const config = RecordConfig();

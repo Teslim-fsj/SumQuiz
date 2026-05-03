@@ -43,6 +43,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:sumquiz/services/deep_link_service.dart';
 import 'package:sumquiz/services/recording_service.dart';
 import 'package:sumquiz/providers/note_provider.dart';
+import 'package:sumquiz/providers/sumi_provider.dart';
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
@@ -240,6 +241,7 @@ class _MyAppState extends State<MyApp> {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()..init()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
+        ChangeNotifierProvider(create: (_) => SumiProvider()),
         Provider<AuthService>.value(value: widget.authService),
         Provider<NotificationService>.value(value: widget.notificationService),
         Provider<FirestoreService>(create: (_) => FirestoreService()),

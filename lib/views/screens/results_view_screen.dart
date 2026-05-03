@@ -3,13 +3,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:sumquiz/services/local_database_service.dart';
 
-import 'package:sumquiz/services/export_service.dart';
 import 'package:sumquiz/models/local_summary.dart';
 import 'package:sumquiz/models/local_quiz.dart';
 import 'package:sumquiz/models/local_flashcard_set.dart';
 import 'package:sumquiz/models/local_quiz_question.dart';
-import 'package:sumquiz/models/local_flashcard.dart';
-import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
 import 'package:flutter/services.dart';
 import 'package:sumquiz/models/flashcard.dart';
 import 'package:sumquiz/views/widgets/summary_view.dart';
@@ -88,7 +85,6 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
       }
     }
   }
-
 
   void _updateAvailableTabs() {
     _availableTabs.clear();

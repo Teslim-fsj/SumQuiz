@@ -10,7 +10,9 @@ import '../widgets/recording_bar_widget.dart';
 
 class NoteEditorScreen extends StatefulWidget {
   final String noteId;
-  const NoteEditorScreen({super.key, required this.noteId});
+  final String? folderId;
+  // Force IDE re-analysis
+  const NoteEditorScreen({super.key, required this.noteId, this.folderId});
 
   @override
   State<NoteEditorScreen> createState() => _NoteEditorScreenState();
@@ -37,7 +39,20 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
 
   Future<void> _loadNote() async {
     final provider = context.read<NoteProvider>();
-    await provider.loadNote(widget.noteId);
+    final user = context.read<UserModel?>();
+    
+    if (widget.noteId == 'new') {
+      if (user != null) {
+        await provider.createNewNote(user.uid, folderId: widget.folderId);
+      }
+    } else if (widget.noteId == 'new_recording') {
+       if (user != null) {
+        await provider.startRecording(user.uid, folderId: widget.folderId);
+      }
+    } else {
+      await provider.loadNote(widget.noteId);
+    }
+    
     final note = provider.currentNote;
     
     if (note != null) {

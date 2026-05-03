@@ -1,0 +1,6 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 140 120 Q 170 110 165 85" fill="none" stroke="#1E3A8A" stroke-width="12" stroke-linecap="round"/>
+        <!-- Calculator -->
+        <rect x="155" y="65" width="25" height="35" rx="3" fill="#64748B"/>
+        <rect x="158" y="70" width="19" height="10" fill="#E2E8F0"/>
+    </svg>

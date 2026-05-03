@@ -8,6 +8,8 @@ import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/services/auth_service.dart';
 import 'package:sumquiz/services/referral_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../widgets/sumi_mascot.dart';
+import '../../models/sumi_emotion.dart';
 
 class ReferralScreen extends StatefulWidget {
   const ReferralScreen({super.key});
@@ -106,8 +108,10 @@ class _ReferralScreenState extends State<ReferralScreen> {
                       Center(
                         child: Column(
                           children: [
-                            Icon(Icons.volunteer_activism,
-                                    size: 80, color: theme.colorScheme.primary)
+                            const SumiMascot(
+                              state: SumiState.streakBoost,
+                              size: 100,
+                            )
                                 .animate()
                                 .scale()
                                 .fadeIn(),

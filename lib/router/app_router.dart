@@ -393,9 +393,12 @@ GoRouter createRouter(AuthService authService) {
                 routes: [
                   GoRoute(
                     path: ':id',
+                    name: 'note-editor',
                     builder: (context, state) {
                       final id = state.pathParameters['id']!;
-                      return NoteEditorScreen(noteId: id);
+                      final folderId = state.uri.queryParameters['folderId'];
+                      // Force IDE re-analysis
+                      return NoteEditorScreen(noteId: id, folderId: folderId);
                     },
                   ),
                 ],

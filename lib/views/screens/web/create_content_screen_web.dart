@@ -77,6 +77,8 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
         );
       case CreationPhase.processing:
         return CreationProgressIndicator(message: provider.progressMessage);
+      case CreationPhase.extractionReview:
+        return const SizedBox.shrink();
       case CreationPhase.success:
         return CreationSuccessView(
           title: provider.fileName ?? (provider.textContent.length > 30 ? '${provider.textContent.substring(0, 30)}...' : provider.textContent),
@@ -212,9 +214,9 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
       width: 600,
       padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
-        color: colorScheme.error.withOpacity(0.05),
+        color: colorScheme.error.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(40),
-        border: Border.all(color: colorScheme.error.withOpacity(0.1)),
+        border: Border.all(color: colorScheme.error.withValues(alpha: 0.1)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

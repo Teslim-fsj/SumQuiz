@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:cloud_firestore/cloud_firestore.dart' as fs;
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../models/user_model.dart';
 import '../../models/library_item.dart';
@@ -30,6 +32,8 @@ import '../screens/edit_flashcards_screen.dart';
 import '../screens/note_editor_screen.dart';
 import '../widgets/enter_code_dialog.dart';
 import '../../utils/library_share_helper.dart';
+import '../../widgets/sumi_mascot.dart';
+import '../../models/sumi_emotion.dart';
 
 class LibraryScreen extends StatelessWidget {
   const LibraryScreen({super.key});
@@ -158,7 +162,15 @@ class _LibraryViewState extends State<_LibraryView>
 
     return Scaffold(
       appBar: _buildAppBar(context, theme, viewModel),
-      floatingActionButton: null,
+      floatingActionButton: viewModel.selectedFolder != null
+          ? FloatingActionButton.extended(
+              onPressed: () => _showAddContentOptions(context, viewModel),
+              icon: const Icon(Icons.add),
+              label: const Text('Add Content'),
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+            )
+          : null,
       body: Column(
         children: [
           _buildSearchAndTabs(context, theme, viewModel),
@@ -656,14 +668,7 @@ class _LibraryViewState extends State<_LibraryView>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(
-              'assets/images/sumquiz_logo.png',
-              width: 100,
-              height: 100,
-              opacity: const AlwaysStoppedAnimation(0.2),
-              errorBuilder: (_, __, ___) => Icon(Icons.school_outlined,
-                  size: 100, color: theme.colorScheme.primary.withAlpha(51)),
-            ),
+            const SumiMascot(state: SumiState.confused, size: 120),
             const SizedBox(height: 24),
             Text(title,
                 style: theme.textTheme.headlineSmall?.copyWith(
@@ -689,8 +694,7 @@ class _LibraryViewState extends State<_LibraryView>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off_outlined,
-                size: 100, color: theme.colorScheme.primary.withAlpha(51)),
+            const SumiMascot(state: SumiState.confused, size: 120),
             const SizedBox(height: 24),
             Text('No Results Found',
                 style: theme.textTheme.headlineSmall?.copyWith(
@@ -996,5 +1000,125 @@ class _LibraryViewState extends State<_LibraryView>
         );
       }
     }
+  }
+
+  void _showAddContentOptions(BuildContext context, LibraryViewModel viewModel) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final selectedFolder = viewModel.selectedFolder;
+    if (selectedFolder == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Add to ${selectedFolder.name}',
+              style: GoogleFonts.outfit(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            _buildOptionTile(
+              context,
+              title: 'Create New Note',
+              subtitle: 'Type or record directly into this folder',
+              icon: Icons.edit_note_rounded,
+              color: Colors.deepPurple,
+              onTap: () {
+                Navigator.pop(context);
+                context.pushNamed(
+                  'note-editor',
+                  pathParameters: {'noteId': 'new'},
+                  queryParameters: {'folderId': selectedFolder.id},
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildOptionTile(
+              context,
+              title: 'Generate with AI',
+              subtitle: 'Extract from PDF, YouTube, or Link',
+              icon: Icons.auto_awesome_rounded,
+              color: colorScheme.primary,
+              onTap: () {
+                Navigator.pop(context);
+                // Navigate to CreateContentScreen with folder context
+                context.pushNamed('create-content', queryParameters: {'folderId': selectedFolder.id});
+              },
+            ),
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOptionTile(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: color),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.outfit(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.outfit(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+          ],
+        ),
+      ),
+    );
   }
 }

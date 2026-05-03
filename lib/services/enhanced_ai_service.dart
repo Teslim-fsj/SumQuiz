@@ -400,6 +400,7 @@ class EnhancedAIService {
     int cardCount = 15,
     List<String>? questionTypes,
     CancellationToken? cancelToken,
+    String? existingFolderId,
   }) async {
     developer.log(
         'EnhancedAIService.generateAndStoreOutputs called with title: $title, userId: $userId, outputs: $requestedOutputs',
@@ -412,15 +413,20 @@ class EnhancedAIService {
 
     onProgress('Creating folder...');
     cancelToken?.throwIfCancelled();
-    final folderId = const Uuid().v4();
-    final folder = Folder(
-      id: folderId,
-      name: title,
-      userId: userId,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-    await localDb.saveFolder(folder);
+    
+    final bool isNewFolder = existingFolderId == null;
+    final folderId = existingFolderId ?? const Uuid().v4();
+    
+    if (isNewFolder) {
+      final folder = Folder(
+        id: folderId,
+        name: title,
+        userId: userId,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+      await localDb.saveFolder(folder);
+    }
 
     final srsService =
         SpacedRepetitionService(localDb.getSpacedRepetitionBox());
@@ -502,7 +508,9 @@ class EnhancedAIService {
       if (completed == 0) {
         developer.log('All generation failed, cleaning up folder',
             name: 'EnhancedAIService');
-        await localDb.deleteFolder(folderId);
+        if (existingFolderId == null) {
+          await localDb.deleteFolder(folderId);
+        }
         throw EnhancedAIServiceException(
             'Failed to generate any content. Please try again.',
             code: 'ALL_GENERATION_FAILED');
@@ -532,7 +540,9 @@ class EnhancedAIService {
       developer.log('Critical error in generateAndStoreOutputs',
           name: 'EnhancedAIService', error: e, stackTrace: stack);
       onProgress('Error occurred: $e. Cleaning up...');
-      await localDb.deleteFolder(folderId).catchError((_) => null);
+      if (existingFolderId == null) {
+        await localDb.deleteFolder(folderId).catchError((_) => null);
+      }
       rethrow;
     }
   }
@@ -548,6 +558,7 @@ class EnhancedAIService {
     List<String>? questionTypes,
     void Function(String)? onProgress,
     CancellationToken? cancelToken,
+    String? existingFolderId,
   }) async {
     await _checkUsageLimits(userId);
     onProgress?.call('Generating comprehensive study materials...');
@@ -570,15 +581,19 @@ class EnhancedAIService {
       onProgress?.call('Creating study deck...');
       cancelToken?.throwIfCancelled();
 
-      final folder = Folder(
-        id: const Uuid().v4(),
-        name: title,
-        userId: userId,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-      folderId = folder.id;
-      await localDb.saveFolder(folder);
+      final bool isNewFolder = existingFolderId == null;
+      folderId = existingFolderId ?? const Uuid().v4();
+
+      if (isNewFolder) {
+        final folder = Folder(
+          id: folderId!,
+          name: title,
+          userId: userId,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        await localDb.saveFolder(folder);
+      }
 
       // Save Summary
       onProgress?.call('Saving summary...');
@@ -701,7 +716,7 @@ class EnhancedAIService {
       developer.log('Topic generation error: $e',
           name: 'EnhancedAIService', error: e, stackTrace: stack);
 
-      if (folderId != null) {
+      if (folderId != null && existingFolderId == null) {
         onProgress?.call('Cleaning up...');
         await localDb.deleteFolder(folderId).catchError((_) => null);
       }

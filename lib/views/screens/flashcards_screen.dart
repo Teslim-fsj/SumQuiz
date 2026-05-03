@@ -26,6 +26,9 @@ import 'package:sumquiz/views/widgets/flashcards_view.dart';
 import '../../services/export_service.dart';
 import '../../models/local_flashcard.dart';
 import '../../services/notification_integration.dart';
+import '../../providers/sumi_provider.dart';
+import '../../models/sumi_emotion.dart';
+import '../../widgets/sumi_mascot.dart';
 
 enum FlashcardState { creation, loading, review, finished, error }
 
@@ -624,20 +627,44 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
   }
 
   Widget _buildReviewInterface() {
-    return FlashcardsView(
-      title: _titleController.text,
-      flashcards: _flashcards,
-      creatorName: widget.flashcardSet is LocalFlashcardSet
-          ? (widget.flashcardSet as LocalFlashcardSet).creatorName
-          : widget.creatorName,
-      onReview: (index, knewIt, {int? quality}) {
-        final flashcardId = _flashcards[index].id;
-        _srsService.updateReview(flashcardId, knewIt, quality: quality);
-        if (knewIt) _correctCount++;
-      },
-      onFinish: () {
-        setState(() => _state = FlashcardState.finished);
-      },
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 16.0),
+          child: Consumer<SumiProvider>(
+            builder: (context, sumi, child) {
+              return SumiMascot(
+                state: sumi.currentState,
+                size: 100,
+              );
+            },
+          ),
+        ),
+        Expanded(
+          child: FlashcardsView(
+            title: _titleController.text,
+            flashcards: _flashcards,
+            creatorName: widget.flashcardSet is LocalFlashcardSet
+                ? (widget.flashcardSet as LocalFlashcardSet).creatorName
+                : widget.creatorName,
+            onReview: (index, knewIt, {int? quality}) {
+              final sumi = context.read<SumiProvider>();
+              final flashcardId = _flashcards[index].id;
+              _srsService.updateReview(flashcardId, knewIt, quality: quality);
+              
+              if (knewIt) {
+                _correctCount++;
+                sumi.emitEvent(SumiEvent.answerCorrect);
+              } else {
+                sumi.emitEvent(SumiEvent.answerWrong);
+              }
+            },
+            onFinish: () {
+              setState(() => _state = FlashcardState.finished);
+            },
+          ),
+        ),
+      ],
     );
   }
 

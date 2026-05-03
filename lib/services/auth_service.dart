@@ -1,7 +1,8 @@
 import 'dart:developer' as developer;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:google_sign_in/google_sign_in.dart' as auth;
 import 'package:sumquiz/config/google_oauth_config.dart';
 import 'package:provider/provider.dart';
@@ -130,25 +131,25 @@ class AuthService {
 
         // Step 1: Authenticate (identity only)
         developer.log('Authenticating with Google...', name: 'AuthService');
-        final auth.GoogleSignInAccount? googleUser =
+        final auth.GoogleSignInAccount googleUser =
             await _googleSignIn.authenticate();
-            
-        if (googleUser == null) {
-          developer.log('Google Sign-In cancelled by user', name: 'AuthService');
-          return;
-        }
-        
-        developer.log('Google user selected: ${googleUser.email}', name: 'AuthService');
+
+        developer.log('Google user selected: ${googleUser.email}',
+            name: 'AuthService');
 
         // Step 2: Get Authentication tokens (ID)
-        developer.log('Fetching Google authentication tokens...', name: 'AuthService');
-        final auth.GoogleSignInAuthentication googleAuth = googleUser.authentication;
+        developer.log('Fetching Google authentication tokens...',
+            name: 'AuthService');
+        final auth.GoogleSignInAuthentication googleAuth =
+            googleUser.authentication;
         final String? idToken = googleAuth.idToken;
 
-        developer.log('ID Token present: ${idToken != null}', name: 'AuthService');
+        developer.log('ID Token present: ${idToken != null}',
+            name: 'AuthService');
 
         if (idToken == null || idToken.isEmpty) {
-          developer.log('Error: Google did not return an ID token', name: 'AuthService');
+          developer.log('Error: Google did not return an ID token',
+              name: 'AuthService');
           throw FirebaseAuthException(
             code: 'no-id-token',
             message: 'Google did not return an ID token.',
@@ -157,34 +158,44 @@ class AuthService {
 
         final OAuthCredential credential = GoogleAuthProvider.credential(
           idToken: idToken,
-          accessToken: null, // accessToken is moved to authorizationClient in v7
+          accessToken:
+              null, // accessToken is moved to authorizationClient in v7
         );
 
-        final UserCredential result = await _auth.signInWithCredential(credential);
+        final UserCredential result =
+            await _auth.signInWithCredential(credential);
         user = result.user;
       }
 
       if (user != null) {
-        developer.log('Firebase user signed in: ${user.uid}', name: 'AuthService');
+        developer.log('Firebase user signed in: ${user.uid}',
+            name: 'AuthService');
 
         // Save authentication state for offline access
         await _saveAuthState(user);
 
         // Trigger sync in background - DO NOT AWAIT here as it can hang the UI during login
         if (context.mounted) {
-          developer.log('Triggering background data sync...', name: 'AuthService');
-          Provider.of<SyncProvider>(context, listen: false).syncData().catchError((e) {
-            developer.log('Background sync failed', name: 'AuthService', error: e);
+          developer.log('Triggering background data sync...',
+              name: 'AuthService');
+          Provider.of<SyncProvider>(context, listen: false)
+              .syncData()
+              .catchError((e) {
+            developer.log('Background sync failed',
+                name: 'AuthService', error: e);
           });
         }
 
         // Check if user document exists in Firestore
-        developer.log('Checking for existing user document in Firestore...', name: 'AuthService');
-        final userDoc = await _firestoreService.db.collection('users').doc(user.uid).get();
+        developer.log('Checking for existing user document in Firestore...',
+            name: 'AuthService');
+        final userDoc =
+            await _firestoreService.db.collection('users').doc(user.uid).get();
         final bool isNewToFirestore = !userDoc.exists;
 
         if (isNewToFirestore) {
-          developer.log('New Firestore user detected. Creating profile...', name: 'AuthService');
+          developer.log('New Firestore user detected. Creating profile...',
+              name: 'AuthService');
           final prefs = await SharedPreferences.getInstance();
           final intendedRoleName = prefs.getString('intended_role');
           UserRole role = UserRole.student;
@@ -203,11 +214,13 @@ class AuthService {
             role: role,
           );
           await _firestoreService.saveUserData(newUser);
-          developer.log('User profile created successfully', name: 'AuthService');
+          developer.log('User profile created successfully',
+              name: 'AuthService');
 
           if (referralCode != null && referralCode.isNotEmpty) {
             try {
-              developer.log('Applying referral code: $referralCode', name: 'AuthService');
+              developer.log('Applying referral code: $referralCode',
+                  name: 'AuthService');
               await _referralService.applyReferralCode(referralCode, user.uid);
             } catch (e, s) {
               developer.log(
@@ -223,19 +236,21 @@ class AuthService {
           // 🔔 Schedule notifications for new user
           if (context.mounted) {
             try {
-              developer.log('Scheduling new user notifications...', name: 'AuthService');
+              developer.log('Scheduling new user notifications...',
+                  name: 'AuthService');
               await NotificationIntegration.onUserRegistered(context, user.uid);
             } catch (e) {
               developer.log('Failed to schedule notifications for new user',
-                  name: 'AuthService',
-                  error: e);
+                  name: 'AuthService', error: e);
             }
           }
 
           // 🎭 Flag for role-selection onboarding dialog
           await prefs.setBool('is_new_user', true);
         } else {
-          developer.log('Existing user document found. Skipping profile creation.', name: 'AuthService');
+          developer.log(
+              'Existing user document found. Skipping profile creation.',
+              name: 'AuthService');
         }
         developer.log('Google Sign-In flow complete.', name: 'AuthService');
       }
@@ -249,7 +264,8 @@ class AuthService {
     } catch (e, s) {
       developer.log('An unexpected error occurred during Google Sign-In',
           error: e, stackTrace: s);
-      if (e is FirebaseAuthException || e is auth.GoogleSignInException) rethrow;
+      if (e is FirebaseAuthException || e is auth.GoogleSignInException)
+        rethrow;
       throw Exception('Google sign-in could not complete. Please try again.');
     }
   }

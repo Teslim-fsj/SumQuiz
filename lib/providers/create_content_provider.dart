@@ -10,8 +10,10 @@ import 'package:sumquiz/services/usage_service.dart';
 import 'package:sumquiz/services/youtube_service.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
 import 'package:sumquiz/utils/youtube_pro_gate.dart';
+import 'package:uuid/uuid.dart';
+import 'package:sumquiz/models/local_note.dart';
 
-enum CreationPhase { source, config, processing, success, error }
+enum CreationPhase { source, extractionReview, config, processing, success, error }
 
 enum StudyArchetype { sprinter, architect }
 
@@ -72,8 +74,22 @@ class CreateContentProvider with ChangeNotifier {
   String _generatedFolderId = '';
   String get generatedFolderId => _generatedFolderId;
 
+  ExtractionResult? _extractionResult;
+  ExtractionResult? get extractionResult => _extractionResult;
+
+  bool _saveAsNote = true;
+  bool get saveAsNote => _saveAsNote;
+
   bool _isCancelled = false;
   CancellationToken? _cancelToken;
+
+  String? _preSelectedFolderId;
+  String? get preSelectedFolderId => _preSelectedFolderId;
+
+  void setPreSelectedFolderId(String? folderId) {
+    _preSelectedFolderId = folderId;
+    notifyListeners();
+  }
 
   // --- ACTIONS ---
 
@@ -89,6 +105,40 @@ class CreateContentProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  void setExtractionResult(ExtractionResult result) {
+    _extractionResult = result;
+    _textContent = result.text;
+    _fileName = result.suggestedTitle;
+    _phase = CreationPhase.extractionReview;
+    notifyListeners();
+  }
+
+  void updateExtractedText(String text) {
+    _textContent = text;
+    if (_extractionResult != null) {
+      _extractionResult = ExtractionResult(
+        text: text,
+        suggestedTitle: _extractionResult!.suggestedTitle,
+      );
+    }
+    notifyListeners();
+  }
+
+  void updateTitle(String title) {
+    _fileName = title;
+    notifyListeners();
+  }
+
+  void toggleSaveAsNote(bool value) {
+    _saveAsNote = value;
+    notifyListeners();
+  }
+
+  void proceedToConfig() {
+    _phase = CreationPhase.config;
+    notifyListeners();
+  }
+
   void updateConfig({String? difficulty, int? quizCount, int? flashcardCount, List<String>? questionTypes, StudyArchetype? archetype}) {
     if (difficulty != null) _selectedDifficulty = difficulty;
     if (quizCount != null) _quizCount = quizCount;
@@ -96,6 +146,25 @@ class CreateContentProvider with ChangeNotifier {
     if (questionTypes != null) _selectedQuestionTypes = questionTypes;
     if (archetype != null) _selectedArchetype = archetype;
     notifyListeners();
+  }
+
+  Future<void> refineExtractedText() async {
+    if (_textContent.isEmpty) return;
+    
+    _progressMessage = 'AI is cleaning up your text...';
+    notifyListeners();
+    
+    try {
+      final refined = await _aiService.refineContent(_textContent);
+      if (refined.isNotEmpty) {
+        updateExtractedText(refined);
+      }
+    } catch (e) {
+      developer.log('Refinement error: $e');
+    } finally {
+      _progressMessage = '';
+      notifyListeners();
+    }
   }
 
   void toggleQuestionType(String type) {
@@ -123,6 +192,9 @@ class CreateContentProvider with ChangeNotifier {
     _isCancelled = false;
     _selectedQuestionTypes = ['Multiple Choice'];
     _selectedArchetype = StudyArchetype.architect;
+    _extractionResult = null;
+    _saveAsNote = true;
+    _preSelectedFolderId = null;
     notifyListeners();
   }
 
@@ -236,6 +308,16 @@ class CreateContentProvider with ChangeNotifier {
         throw Exception('Failed to extract content. Please try again.');
       }
 
+      // If we are in the source phase, we move to review first
+      if (_phase == CreationPhase.processing && _extractionResult == null) {
+        _extractionResult = extractionResult;
+        _textContent = extractionResult.text;
+        _phase = CreationPhase.extractionReview;
+        _progressMessage = '';
+        notifyListeners();
+        return;
+      }
+
       // 3. Record Action
       await _usageService.recordAction(userId, action);
 
@@ -257,12 +339,31 @@ class CreateContentProvider with ChangeNotifier {
         questionCount: _quizCount,
         cardCount: _flashcardCount,
         questionTypes: _selectedQuestionTypes,
+        existingFolderId: _preSelectedFolderId,
         onProgress: (msg) {
           _progressMessage = msg;
           notifyListeners();
         },
         cancelToken: cancelToken,
       );
+
+      // 5. Auto-save as Note if requested
+      if (_saveAsNote) {
+        _progressMessage = 'Saving as note...';
+        notifyListeners();
+        final note = LocalNote(
+          id: const Uuid().v4(),
+          userId: userId,
+          title: title,
+          content: extractionResult.text,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          folderId: _generatedFolderId.isNotEmpty ? _generatedFolderId : _preSelectedFolderId,
+          tags: [],
+          isSynced: false,
+        );
+        await _localDb.saveNote(note);
+      }
 
       _phase = CreationPhase.success;
       notifyListeners();
@@ -282,6 +383,12 @@ class CreateContentProvider with ChangeNotifier {
 
   void backToConfig() {
     _phase = CreationPhase.config;
+    _errorMessage = '';
+    notifyListeners();
+  }
+
+  void backToReview() {
+    _phase = CreationPhase.extractionReview;
     _errorMessage = '';
     notifyListeners();
   }

@@ -13,6 +13,8 @@ import 'package:sumquiz/widgets/daily_goal_tracker.dart';
 import 'package:sumquiz/widgets/goal_setting_dialog.dart';
 import 'package:sumquiz/services/user_service.dart';
 import 'package:sumquiz/views/screens/spaced_repetition_screen.dart';
+import '../../widgets/sumi_mascot.dart';
+import '../../models/sumi_emotion.dart';
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
@@ -184,6 +186,13 @@ class _ProgressScreenState extends State<ProgressScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        const Center(
+                          child: SumiMascot(
+                            state: SumiState.celebrating,
+                            size: 100,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
                         _buildMomentumAndStreak(user, theme),
                         const SizedBox(height: 24),
                         _buildGlassContainer(

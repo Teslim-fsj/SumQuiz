@@ -94,7 +94,7 @@ class NoteProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<LocalNote> createNewNote(String userId) async {
+  Future<LocalNote> createNewNote(String userId, {String? folderId}) async {
     final note = LocalNote(
       id: const Uuid().v4(),
       userId: userId,
@@ -102,6 +102,7 @@ class NoteProvider with ChangeNotifier {
       content: '',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      folderId: folderId,
     );
     await _localDb.saveNote(note);
     setCurrentNote(note);
@@ -131,9 +132,9 @@ class NoteProvider with ChangeNotifier {
 
   // --- RECORDING ACTIONS ---
 
-  Future<void> startRecording(String userId) async {
+  Future<void> startRecording(String userId, {String? folderId}) async {
     if (_currentNote == null) {
-      await createNewNote(userId);
+      await createNewNote(userId, folderId: folderId);
     }
     
     try {

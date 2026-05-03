@@ -25,6 +25,9 @@ import '../../models/teacher_models.dart';
 import '../../services/spaced_repetition_service.dart';
 import '../../models/local_flashcard.dart';
 import 'package:collection/collection.dart';
+import '../../providers/sumi_provider.dart';
+import '../../models/sumi_emotion.dart';
+import '../../widgets/sumi_mascot.dart';
 
 enum QuizState { creation, loading, inProgress, finished, error }
 
@@ -723,22 +726,39 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   Widget _buildQuizInterface() {
-    return QuizView(
-      title: _titleController.text,
-      questions: _questions,
-      aiService: _aiService,
-      showSaveButton: false,
-      onFinish: () {
-        setState(() {
-          _state = QuizState.finished;
-        });
-      },
-      onAnswer: (bool isCorrect, LocalQuizQuestion question) async {
-        if (isCorrect) {
-          setState(() {
-            _score++;
-          });
-        } else {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 16.0),
+          child: Consumer<SumiProvider>(
+            builder: (context, sumi, child) {
+              return SumiMascot(
+                state: sumi.currentState,
+                size: 100,
+              );
+            },
+          ),
+        ),
+        Expanded(
+          child: QuizView(
+            title: _titleController.text,
+            questions: _questions,
+            aiService: _aiService,
+            showSaveButton: false,
+            onFinish: () {
+              setState(() {
+                _state = QuizState.finished;
+              });
+            },
+            onAnswer: (bool isCorrect, LocalQuizQuestion question) async {
+              final sumi = context.read<SumiProvider>();
+              if (isCorrect) {
+                sumi.emitEvent(SumiEvent.answerCorrect);
+                setState(() {
+                  _score++;
+                });
+              } else {
+                sumi.emitEvent(SumiEvent.answerWrong);
           // Linking: Quiz Failure -> SRS Demotion
           final user = Provider.of<UserModel?>(context, listen: false);
           if (user != null && _relatedFlashcards.isNotEmpty) {
@@ -756,6 +776,9 @@ class _QuizScreenState extends State<QuizScreen> {
           }
         }
       },
+          ),
+        ),
+      ],
     );
   }
 

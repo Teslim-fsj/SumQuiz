@@ -12,6 +12,7 @@ import '../widgets/create_content/source_choice_card.dart';
 import '../widgets/create_content/config_selector.dart';
 import '../widgets/create_content/creation_progress_indicator.dart';
 import '../widgets/create_content/creation_success_view.dart';
+import '../widgets/create_content/extraction_review_view.dart';
 import '../widgets/upgrade_dialog.dart';
 
 class CreateContentScreen extends StatefulWidget {
@@ -23,6 +24,17 @@ class CreateContentScreen extends StatefulWidget {
 
 class _CreateContentScreenState extends State<CreateContentScreen> {
   final _textController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final folderId = GoRouterState.of(context).uri.queryParameters['folderId'];
+      if (folderId != null) {
+        Provider.of<CreateContentProvider>(context, listen: false).setPreSelectedFolderId(folderId);
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -103,6 +115,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
     switch (provider.phase) {
       case CreationPhase.source:
         return _buildSourceSelection(context, provider, user);
+      case CreationPhase.extractionReview:
+        return const ExtractionReviewView();
       case CreationPhase.config:
         return _buildConfiguration(context, provider);
       case CreationPhase.processing:

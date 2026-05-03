@@ -7,6 +7,8 @@ import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/providers/subscription_provider.dart';
 import 'package:sumquiz/theme/web_theme.dart';
 import 'package:sumquiz/services/web_payment_service.dart';
+import '../../widgets/sumi_mascot.dart';
+import '../../models/sumi_emotion.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -524,7 +526,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
-            const Icon(Icons.celebration, color: Colors.amber, size: 30),
+            const SumiMascot(state: SumiState.streakBoost, size: 40),
             const SizedBox(width: 10),
             Text('Thank You!', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
           ],
