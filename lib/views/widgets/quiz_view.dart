@@ -32,7 +32,7 @@ const _essayTypes = {
 bool _isEssayQuestion(LocalQuizQuestion q) {
   // If options are empty but we have a correct answer, it's likely a theory question
   if (q.options.isEmpty && q.correctAnswer.isNotEmpty) return true;
-  
+
   if (q.questionType == null) return false;
   return _essayTypes.contains(q.questionType!.toLowerCase().trim());
 }
@@ -217,12 +217,15 @@ class _QuizViewState extends State<QuizView> {
                             childAspectRatio: 4.0,
                             crossAxisSpacing: 16,
                             mainAxisSpacing: 12,
-                            children: List.generate(_currentQuestion.options.length, (index) {
-                              return _buildOptionTile(index, _currentQuestion, theme, false);
+                            children: List.generate(
+                                _currentQuestion.options.length, (index) {
+                              return _buildOptionTile(
+                                  index, _currentQuestion, theme, false);
                             }),
                           ).animate().slideX(begin: 0.1).fade()
                         else
-                          ...List.generate(_currentQuestion.options.length, (index) {
+                          ...List.generate(_currentQuestion.options.length,
+                              (index) {
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 8.0),
                               child: _buildOptionTile(
@@ -286,8 +289,7 @@ class _QuizViewState extends State<QuizView> {
               ),
               if (widget.showSaveButton && widget.onSaveProgress != null)
                 IconButton(
-                  icon: Icon(Icons.save_alt,
-                      color: theme.colorScheme.primary),
+                  icon: Icon(Icons.save_alt, color: theme.colorScheme.primary),
                   onPressed: widget.onSaveProgress,
                 ).animate().scale(),
             ],
@@ -311,58 +313,63 @@ class _QuizViewState extends State<QuizView> {
   Widget _buildQuestionCard(ThemeData theme, bool isMobile) {
     return _buildGlassContainer(
       theme: theme,
-      padding: EdgeInsets.all(isMobile ? 12 : 24),
+      padding: EdgeInsets.all(isMobile ? 24 : 40),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Question ${_currentQuestionIndex + 1}',
+                'QUESTION ${_currentQuestionIndex + 1} OF ${widget.questions.length}',
                 style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.5),
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5),
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2.0),
               ),
               if (_currentQuestion.questionType != null)
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
                     color: _isEssay
-                        ? theme.colorScheme.secondary.withOpacity(0.12)
-                        : theme.colorScheme.primary.withOpacity(0.10),
-                    borderRadius: BorderRadius.circular(20),
+                        ? theme.colorScheme.secondary.withValues(alpha: 0.15)
+                        : theme.colorScheme.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(100),
                   ),
                   child: Text(
-                    _currentQuestion.questionType!,
+                    _currentQuestion.questionType!.toUpperCase(),
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: _isEssay
                           ? theme.colorScheme.secondary
                           : theme.colorScheme.primary,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 9,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 10,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ),
             ],
           ),
-          SizedBox(height: isMobile ? 8 : 16),
+          SizedBox(height: isMobile ? 24 : 32),
           Text(
             _currentQuestion.question,
-            style: (isMobile ? theme.textTheme.titleMedium : theme.textTheme.headlineSmall)?.copyWith(
-              fontWeight: FontWeight.bold,
+            style: (isMobile
+                    ? theme.textTheme.headlineSmall
+                    : theme.textTheme.headlineLarge)
+                ?.copyWith(
+              fontWeight: FontWeight.w900,
               color: theme.colorScheme.onSurface,
-              height: 1.25,
+              height: 1.2,
+              letterSpacing: -0.5,
             ),
             textAlign: TextAlign.center,
           )
               .animate(key: ValueKey(_currentQuestionIndex))
-              .fadeIn()
-              .scale(begin: const Offset(0.95, 0.95)),
+              .fadeIn(duration: 400.ms)
+              .scale(begin: const Offset(0.98, 0.98), curve: Curves.easeOut),
         ],
       ),
-    ).animate().slideY(begin: -0.1).fade();
+    ).animate().slideY(begin: 0.05, end: 0, duration: 500.ms, curve: Curves.easeOut).fade();
   }
 
   Widget _buildEssayInput(ThemeData theme) {
@@ -375,7 +382,9 @@ class _QuizViewState extends State<QuizView> {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: _answerWasSelected
-                  ? (_aiFeedback?['isCorrect'] == true ? Colors.green : Colors.orange)
+                  ? (_aiFeedback?['isCorrect'] == true
+                      ? Colors.green
+                      : Colors.orange)
                   : theme.dividerColor,
               width: 1.5,
             ),
@@ -471,15 +480,17 @@ class _QuizViewState extends State<QuizView> {
               const SizedBox(width: 10),
               Text(
                 'AI Score: $score%',
-                style: (isMobile ? theme.textTheme.labelLarge : theme.textTheme.titleMedium)?.copyWith(
+                style: (isMobile
+                        ? theme.textTheme.labelLarge
+                        : theme.textTheme.titleMedium)
+                    ?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: accentColor,
                 ),
               ),
               const Spacer(),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: accentColor.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(20),
@@ -589,7 +600,8 @@ class _QuizViewState extends State<QuizView> {
     final bool canProceed = _answerWasSelected;
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: 12),
+      padding:
+          EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: 12),
       decoration: BoxDecoration(
         color: theme.cardColor,
         border: Border(top: BorderSide(color: theme.dividerColor)),
@@ -606,24 +618,27 @@ class _QuizViewState extends State<QuizView> {
                   onPressed: _handlePreviousQuestion,
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: WebColors.primary.withOpacity(0.3)),
-                    padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 20),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: isMobile ? 12 : 20),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.arrow_back_rounded, color: WebColors.primary, size: 20),
+                      const Icon(Icons.arrow_back_rounded,
+                          color: WebColors.primary, size: 20),
                       if (!isMobile) ...[
                         const SizedBox(width: 8),
-                        const Text('Back', style: TextStyle(color: WebColors.primary)),
+                        const Text('Back',
+                            style: TextStyle(color: WebColors.primary)),
                       ],
                     ],
                   ),
                 ),
               ),
             ),
-          
+
           // Main Action Button (Next/Finish)
           Expanded(
             child: SizedBox(
@@ -650,10 +665,12 @@ class _QuizViewState extends State<QuizView> {
                       style: GoogleFonts.outfit(
                         fontWeight: FontWeight.w700,
                         fontSize: isMobile ? 15 : 16,
-                        color: canProceed ? Colors.white : WebColors.textTertiary,
+                        color:
+                            canProceed ? Colors.white : WebColors.textTertiary,
                       ),
                     ),
-                    if (_currentQuestionIndex < widget.questions.length - 1) ...[
+                    if (_currentQuestionIndex <
+                        widget.questions.length - 1) ...[
                       const SizedBox(width: 8),
                       const Icon(Icons.arrow_forward_rounded, size: 20),
                     ],
@@ -673,23 +690,23 @@ class _QuizViewState extends State<QuizView> {
     bool isCorrect = question.options[index] == question.correctAnswer;
 
     Color borderColor = Colors.transparent;
-    Color backgroundColor = theme.cardColor.withOpacity(0.6);
+    Color backgroundColor = theme.cardColor.withValues(alpha: 0.6);
     IconData icon = Icons.circle_outlined;
     Color iconColor = theme.disabledColor;
 
     if (_answerWasSelected) {
       if (isCorrect) {
         borderColor = Colors.green;
-        backgroundColor = Colors.green.withOpacity(0.1);
+        backgroundColor = Colors.green.withValues(alpha: 0.15);
         icon = Icons.check_circle_rounded;
         iconColor = Colors.green;
       } else if (isSelected) {
         borderColor = Colors.red;
-        backgroundColor = Colors.red.withOpacity(0.1);
+        backgroundColor = Colors.red.withValues(alpha: 0.15);
         icon = Icons.cancel_rounded;
         iconColor = Colors.red;
       } else {
-        backgroundColor = theme.cardColor.withOpacity(0.4);
+        backgroundColor = theme.cardColor.withValues(alpha: 0.3);
       }
     }
 
@@ -697,38 +714,44 @@ class _QuizViewState extends State<QuizView> {
       onTap: () => _onAnswerSelected(index),
       child: AnimatedContainer(
         duration: 300.ms,
-        padding: EdgeInsets.symmetric(horizontal: 14, vertical: isMobile ? 10 : 16),
+        padding:
+            EdgeInsets.symmetric(horizontal: 20, vertical: isMobile ? 18 : 24),
         decoration: BoxDecoration(
             color: backgroundColor,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: _answerWasSelected && (isCorrect || isSelected)
                   ? borderColor
-                  : theme.dividerColor,
-              width: 1.5,
+                  : theme.dividerColor.withValues(alpha: 0.2),
+              width: 2.0,
             ),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              )
+              if (isSelected || (_answerWasSelected && isCorrect))
+                BoxShadow(
+                  color: (isCorrect ? Colors.green : Colors.red).withValues(alpha: 0.1),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
             ]),
         child: Row(
           children: [
-            Icon(icon, color: iconColor, size: isMobile ? 18 : 22)
+            Icon(icon, color: iconColor, size: isMobile ? 22 : 28)
                 .animate(
                     target:
                         _answerWasSelected && (isCorrect || isSelected) ? 1 : 0)
-                .scale(duration: 200.ms, curve: Curves.easeOutBack),
-            SizedBox(width: isMobile ? 10 : 14),
+                .scale(duration: 400.ms, curve: Curves.easeOutBack),
+            SizedBox(width: isMobile ? 16 : 20),
             Expanded(
               child: Text(
                 question.options[index],
-                style: (isMobile ? theme.textTheme.bodySmall : theme.textTheme.bodyMedium)?.copyWith(
+                style: (isMobile
+                        ? theme.textTheme.titleMedium
+                        : theme.textTheme.titleLarge)
+                    ?.copyWith(
                   color: theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.w500,
-                  fontSize: isMobile ? 13 : 14,
+                  fontWeight: FontWeight.w700,
+                  fontSize: isMobile ? 16 : 18,
+                  height: 1.2,
                 ),
               ),
             ),
@@ -743,16 +766,16 @@ class _QuizViewState extends State<QuizView> {
       EdgeInsetsGeometry? padding,
       required ThemeData theme}) {
     return Container(
-      padding: padding ?? const EdgeInsets.all(24),
+      padding: padding ?? const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.dividerColor),
+        color: theme.cardColor.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 30,
+            offset: const Offset(0, 10),
           ),
         ],
       ),

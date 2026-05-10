@@ -43,7 +43,8 @@ class WebStatsGrid extends StatelessWidget {
         const SizedBox(width: 24),
         _buildStatCard(
           title: 'TOTAL ITEMS CREATED',
-          value: totalItems.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},'),
+          value: totalItems.toString().replaceAllMapped(
+              RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},'),
           unit: '',
           icon: Icons.add_circle_outline_rounded,
           iconColor: const Color(0xFF6366F1),
@@ -54,7 +55,8 @@ class WebStatsGrid extends StatelessWidget {
         const SizedBox(width: 24),
         _buildStatCard(
           title: 'STUDY TIME',
-          value: '${studyTimeHours.floor()}h ${((studyTimeHours % 1) * 60).round()}m',
+          value:
+              '${studyTimeHours.floor()}h ${((studyTimeHours % 1) * 60).round()}m',
           unit: '',
           icon: Icons.access_time_rounded,
           iconColor: const Color(0xFF6366F1),
@@ -140,7 +142,8 @@ class WebStatsGrid extends StatelessWidget {
             const SizedBox(height: 8),
             if (badge != null)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: badgeColor,
                   borderRadius: BorderRadius.circular(12),

@@ -87,8 +87,7 @@ class _FlashcardsViewState extends State<FlashcardsView> {
                     child: Text(
                       'Created by ${widget.creatorName}',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color:
-                            theme.colorScheme.onPrimary.withOpacity(0.7),
+                        color: theme.colorScheme.onPrimary.withOpacity(0.7),
                         fontStyle: FontStyle.italic,
                       ),
                     ),
@@ -101,8 +100,8 @@ class _FlashcardsViewState extends State<FlashcardsView> {
                         borderRadius: BorderRadius.circular(4),
                         child: LinearProgressIndicator(
                           value: progress,
-                          backgroundColor: theme.colorScheme.onPrimary
-                              .withOpacity(0.2),
+                          backgroundColor:
+                              theme.colorScheme.onPrimary.withOpacity(0.2),
                           valueColor: AlwaysStoppedAnimation<Color>(
                               theme.colorScheme.secondary),
                           minHeight: 6,
@@ -113,8 +112,7 @@ class _FlashcardsViewState extends State<FlashcardsView> {
                     Text(
                       '${_currentIndex + 1}/${widget.flashcards.length}',
                       style: theme.textTheme.titleSmall?.copyWith(
-                          color: theme.colorScheme.onPrimary
-                              .withOpacity(0.8),
+                          color: theme.colorScheme.onPrimary.withOpacity(0.8),
                           fontWeight: FontWeight.w500),
                     ),
                   ],
@@ -204,28 +202,32 @@ class _FlashcardsViewState extends State<FlashcardsView> {
                     label: "Again",
                     icon: Icons.refresh_rounded,
                     color: Colors.redAccent,
-                    onPressed: () => _handleReview(cardIndex!, false, quality: 1),
+                    onPressed: () =>
+                        _handleReview(cardIndex!, false, quality: 1),
                     theme: theme,
                   ),
                   _buildGlassButton(
                     label: "Hard",
                     icon: Icons.sentiment_neutral_rounded,
                     color: Colors.orange,
-                    onPressed: () => _handleReview(cardIndex!, true, quality: 3),
+                    onPressed: () =>
+                        _handleReview(cardIndex!, true, quality: 3),
                     theme: theme,
                   ),
                   _buildGlassButton(
                     label: "Good",
                     icon: Icons.sentiment_satisfied_rounded,
                     color: Colors.blue,
-                    onPressed: () => _handleReview(cardIndex!, true, quality: 4),
+                    onPressed: () =>
+                        _handleReview(cardIndex!, true, quality: 4),
                     theme: theme,
                   ),
                   _buildGlassButton(
                     label: "Easy",
                     icon: Icons.check_circle_outline_rounded,
                     color: Colors.green,
-                    onPressed: () => _handleReview(cardIndex!, true, quality: 5),
+                    onPressed: () =>
+                        _handleReview(cardIndex!, true, quality: 5),
                     theme: theme,
                   ),
                 ],
@@ -239,8 +241,7 @@ class _FlashcardsViewState extends State<FlashcardsView> {
                 children: [
                   Icon(Icons.touch_app_outlined,
                       size: 20,
-                      color:
-                          theme.colorScheme.onSurface.withOpacity(0.4)),
+                      color: theme.colorScheme.onSurface.withOpacity(0.4)),
                   const SizedBox(width: 8),
                   Text(
                     "Tap to Flip",

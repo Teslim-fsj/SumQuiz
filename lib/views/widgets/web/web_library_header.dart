@@ -18,7 +18,7 @@ class WebLibraryHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Container(
       height: 80,
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -40,7 +40,8 @@ class WebLibraryHeader extends StatelessWidget {
                     color: const Color(0xFF64748B),
                     fontSize: 14,
                   ),
-                  prefixIcon: const Icon(Icons.search, color: Color(0xFF64748B), size: 20),
+                  prefixIcon: const Icon(Icons.search,
+                      color: Color(0xFF64748B), size: 20),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 11),
                 ),
@@ -56,18 +57,21 @@ class WebLibraryHeader extends StatelessWidget {
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(22)),
             ),
             child: Text(
               'Import',
-              style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 14),
+              style:
+                  GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 14),
             ),
           ),
           const SizedBox(width: 16),
           // Notifications
           IconButton(
             onPressed: onNotifications,
-            icon: const Icon(Icons.notifications_none_rounded, color: Color(0xFF475569)),
+            icon: const Icon(Icons.notifications_none_rounded,
+                color: Color(0xFF475569)),
             style: IconButton.styleFrom(
               backgroundColor: Colors.transparent,
             ),
@@ -83,11 +87,13 @@ class WebLibraryHeader extends StatelessWidget {
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: AssetImage('assets/images/web/profile_placeholder.png'), // Will fallback to icon if not found
+                  image: AssetImage(
+                      'assets/images/web/profile_placeholder.png'), // Will fallback to icon if not found
                   fit: BoxFit.cover,
                 ),
               ),
-              child: Icon(Icons.person_outline_rounded, color: theme.colorScheme.primary.withOpacity(0.5)),
+              child: Icon(Icons.person_outline_rounded,
+                  color: theme.colorScheme.primary.withOpacity(0.5)),
             ),
           ),
         ],

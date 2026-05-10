@@ -113,7 +113,7 @@ class _PublicDeckScreenState extends State<PublicDeckScreen> {
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please log in to import this deck.')));
-      
+
       // Save current location for post-login redirect
       final currentPath = GoRouterState.of(context).uri.toString();
       context.push('/auth?redirect=${Uri.encodeComponent(currentPath)}');
@@ -226,8 +226,7 @@ class _PublicDeckScreenState extends State<PublicDeckScreen> {
       }
 
       // 4. Update Metrics
-      await FirestoreService()
-          .incrementDeckMetric(_deck!.id, 'startedCount');
+      await FirestoreService().incrementDeckMetric(_deck!.id, 'startedCount');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -301,7 +300,10 @@ class _PublicDeckScreenState extends State<PublicDeckScreen> {
                       const SizedBox(height: 48),
                       _buildFooter(),
                     ],
-                  ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1, end: 0),
+                  )
+                      .animate()
+                      .fadeIn(duration: 600.ms)
+                      .slideY(begin: 0.1, end: 0),
                 ),
               ),
             ),
@@ -366,7 +368,10 @@ class _PublicDeckScreenState extends State<PublicDeckScreen> {
       children: [
         Text(
           'What\'s inside',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context)
+              .textTheme
+              .titleLarge
+              ?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         _buildContentCard(
@@ -433,7 +438,8 @@ class _PublicDeckScreenState extends State<PublicDeckScreen> {
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
                   : Icon(user == null ? Icons.login : Icons.add_to_photos),
               label: Text(_isImporting
                   ? 'Importing...'
@@ -442,7 +448,8 @@ class _PublicDeckScreenState extends State<PublicDeckScreen> {
                 padding: const EdgeInsets.all(20),
                 backgroundColor: Colors.blue[600],
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
                 elevation: 0,
               ),
             ),
@@ -470,7 +477,8 @@ class _PublicDeckScreenState extends State<PublicDeckScreen> {
             const Text('Powered by '),
             Text(
               'SumQuiz AI',
-              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue[700]),
+              style: TextStyle(
+                  fontWeight: FontWeight.bold, color: Colors.blue[700]),
             ),
           ],
         ),
@@ -478,7 +486,8 @@ class _PublicDeckScreenState extends State<PublicDeckScreen> {
     );
   }
 
-  Widget _buildContentCard(IconData icon, String title, String subtitle, bool exists) {
+  Widget _buildContentCard(
+      IconData icon, String title, String subtitle, bool exists) {
     if (!exists) return const SizedBox.shrink();
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -505,7 +514,8 @@ class _PublicDeckScreenState extends State<PublicDeckScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 const SizedBox(height: 4),
                 Text(

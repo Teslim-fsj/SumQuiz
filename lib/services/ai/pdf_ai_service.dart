@@ -49,7 +49,8 @@ class PdfAIService extends AIBaseService {
         pdfBytes,
         filename: filename,
         cancelToken: cancelToken,
-      ).timeout(const Duration(seconds: AIConfig.masterExtractionTimeoutSeconds));
+      ).timeout(
+          const Duration(seconds: AIConfig.masterExtractionTimeoutSeconds));
 
       if (result != null && result.text.trim().length >= 100) {
         developer.log('Tier 1 succeeded: ${result.text.length} chars extracted',
@@ -60,9 +61,9 @@ class PdfAIService extends AIBaseService {
       developer.log('Tier 1 returned sparse content, trying fallback',
           name: 'PdfAIService');
     } on CancelledException {
-      return Result.error(
-          EnhancedAIServiceException('Extraction cancelled by user.',
-              code: 'CANCELLED'));
+      return Result.error(EnhancedAIServiceException(
+          'Extraction cancelled by user.',
+          code: 'CANCELLED'));
     } on TimeoutException {
       developer.log('Tier 1 timed out, falling to text fallback',
           name: 'PdfAIService');
@@ -89,8 +90,8 @@ class PdfAIService extends AIBaseService {
         name: 'PdfAIService');
 
     if (!await ensureInitialized()) {
-      return Result.error(
-          EnhancedAIServiceException('AI service not ready.', code: 'NOT_READY'));
+      return Result.error(EnhancedAIServiceException('AI service not ready.',
+          code: 'NOT_READY'));
     }
 
     try {
@@ -110,7 +111,8 @@ class PdfAIService extends AIBaseService {
         ),
       );
 
-      final prompt = '''You are analyzing a ${mimeType.startsWith('video') ? 'video' : 'audio'} recording (lecture, lesson, or talk).
+      final prompt =
+          '''You are analyzing a ${mimeType.startsWith('video') ? 'video' : 'audio'} recording (lecture, lesson, or talk).
 
 TASK:
 1. ${mimeType.startsWith('video') ? 'Watch and listen to' : 'Listen to'} the media content deeply
@@ -148,12 +150,12 @@ OUTPUT (JSON):
         sourceUrl: 'media:$filename',
       ));
     } on CancelledException {
-      return Result.error(
-          EnhancedAIServiceException('Extraction cancelled.', code: 'CANCELLED'));
+      return Result.error(EnhancedAIServiceException('Extraction cancelled.',
+          code: 'CANCELLED'));
     } on TimeoutException {
-      return Result.error(
-          EnhancedAIServiceException('Media processing timed out. Try a shorter file.',
-              code: 'TIMEOUT'));
+      return Result.error(EnhancedAIServiceException(
+          'Media processing timed out. Try a shorter file.',
+          code: 'TIMEOUT'));
     } catch (e) {
       developer.log('Media extraction failed: $e',
           name: 'PdfAIService', error: e);
@@ -173,8 +175,7 @@ OUTPUT (JSON):
       responseMimeType: 'application/json',
       responseSchema: Schema.object(
         properties: {
-          'title': Schema.string(
-              description: 'Main topic or document title'),
+          'title': Schema.string(description: 'Main topic or document title'),
           'content': Schema.string(
               description:
                   'All educational content: headings, definitions, examples, tables, equations'),
@@ -230,8 +231,8 @@ OUTPUT (JSON):
         name: 'PdfAIService');
 
     if (!await ensureInitialized()) {
-      return Result.error(
-          EnhancedAIServiceException('AI service not ready.', code: 'NOT_READY'));
+      return Result.error(EnhancedAIServiceException('AI service not ready.',
+          code: 'NOT_READY'));
     }
 
     try {
@@ -243,13 +244,15 @@ OUTPUT (JSON):
           properties: {
             'title': Schema.string(description: 'Descriptive title'),
             'content': Schema.string(
-                description: 'Full extracted text, including descriptions of tables/diagrams if relevant'),
+                description:
+                    'Full extracted text, including descriptions of tables/diagrams if relevant'),
           },
           requiredProperties: ['title', 'content'],
         ),
       );
 
-      const prompt = '''You are analyzing an image (textbook page, slide, or handwritten notes).
+      const prompt =
+          '''You are analyzing an image (textbook page, slide, or handwritten notes).
 
 TASK:
 1. READ and EXTRACT all educational text from the image
@@ -267,7 +270,8 @@ OUTPUT (JSON):
         customModel: visionModel,
         generationConfig: config,
         cancelToken: cancelToken,
-      ).timeout(const Duration(seconds: AIConfig.masterExtractionTimeoutSeconds));
+      ).timeout(
+          const Duration(seconds: AIConfig.masterExtractionTimeoutSeconds));
 
       final data = safeJsonDecode(extractJson(response));
       final content = data['content']?.toString() ?? '';
@@ -285,11 +289,12 @@ OUTPUT (JSON):
         sourceUrl: 'image:$filename',
       ));
     } on CancelledException {
-      return Result.error(
-          EnhancedAIServiceException('Extraction cancelled.', code: 'CANCELLED'));
+      return Result.error(EnhancedAIServiceException('Extraction cancelled.',
+          code: 'CANCELLED'));
     } on TimeoutException {
-      return Result.error(
-          EnhancedAIServiceException('Image analysis timed out.', code: 'TIMEOUT'));
+      return Result.error(EnhancedAIServiceException(
+          'Image analysis timed out.',
+          code: 'TIMEOUT'));
     } catch (e) {
       developer.log('Image extraction failed: $e',
           name: 'PdfAIService', error: e);

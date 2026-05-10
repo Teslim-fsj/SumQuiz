@@ -89,9 +89,9 @@ class WebColors {
     return BoxDecoration(
       color: color.withOpacity(opacity),
       borderRadius: BorderRadius.circular(borderRadius),
-      border: showBorder 
-        ? Border.all(color: color.withOpacity(0.2), width: 1.5)
-        : null,
+      border: showBorder
+          ? Border.all(color: color.withOpacity(0.2), width: 1.5)
+          : null,
       boxShadow: [
         BoxShadow(
           color: Colors.black.withOpacity(0.05),

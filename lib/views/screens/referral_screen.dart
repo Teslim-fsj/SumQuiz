@@ -111,10 +111,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                             const SumiMascot(
                               state: SumiState.streakBoost,
                               size: 100,
-                            )
-                                .animate()
-                                .scale()
-                                .fadeIn(),
+                            ).animate().scale().fadeIn(),
                             const SizedBox(height: 16),
                             Text(
                               'Invite Friends, Get Rewards!',
@@ -216,8 +213,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
           decoration: BoxDecoration(
             color: theme.cardColor.withOpacity(0.8),
             borderRadius: BorderRadius.circular(24),
-            border:
-                Border.all(color: theme.dividerColor.withOpacity(0.5)),
+            border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
@@ -332,8 +328,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
           // Regenerate Code Button
           TextButton.icon(
             icon: Icon(Icons.refresh,
-                size: 18,
-                color: theme.colorScheme.primary.withOpacity(0.7)),
+                size: 18, color: theme.colorScheme.primary.withOpacity(0.7)),
             label: Text(
               'Regenerate Code',
               style: theme.textTheme.bodySmall?.copyWith(
@@ -587,8 +582,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                 const SizedBox(height: 4),
                 Text(description,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface
-                            .withOpacity(0.7))),
+                        color: theme.colorScheme.onSurface.withOpacity(0.7))),
               ],
             ),
           ),

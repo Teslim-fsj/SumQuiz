@@ -540,8 +540,8 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
       decoration: InputDecoration(
         border: InputBorder.none,
         hintText: 'Enter a title...',
-        hintStyle: theme.textTheme.titleLarge?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.5)),
+        hintStyle: theme.textTheme.titleLarge
+            ?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.5)),
       ),
       onSubmitted: (_) => setState(() => _isEditingTitle = false),
     );
@@ -612,8 +612,8 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
         decoration: InputDecoration.collapsed(
           hintText:
               'Your extracted or pasted text appears here. You can edit it before generating.',
-          hintStyle: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.4)),
+          hintStyle: theme.textTheme.bodyMedium
+              ?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.4)),
         ),
       ),
     );

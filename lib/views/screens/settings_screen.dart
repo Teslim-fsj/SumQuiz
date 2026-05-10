@@ -7,6 +7,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../models/user_model.dart';
 import '../../services/firestore_service.dart';
 import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
+
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -282,8 +283,8 @@ class SettingsScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: theme.cardColor.withValues(alpha: isDark ? 0.5 : 0.7),
                   borderRadius: BorderRadius.circular(20),
-                  border:
-                      Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
+                  border: Border.all(
+                      color: theme.dividerColor.withValues(alpha: 0.2)),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.05),
@@ -365,7 +366,8 @@ class SettingsScreen extends StatelessWidget {
                           fontWeight: FontWeight.bold)),
                   content: Text('Are you sure you want to sign out?',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.8))),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.8))),
                   actions: [
                     TextButton(
                         onPressed: () => Navigator.pop(context, false),
@@ -428,7 +430,9 @@ class SettingsScreen extends StatelessWidget {
                 )
               ],
               border: Border.all(
-                color: isDark ? Colors.white10 : Colors.grey.withValues(alpha: 0.1),
+                color: isDark
+                    ? Colors.white10
+                    : Colors.grey.withValues(alpha: 0.1),
               ),
             ),
             child: Row(
@@ -457,7 +461,8 @@ class SettingsScreen extends StatelessWidget {
                       Text(
                         subtitle,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.6),
                         ),
                       ),
                     ],

@@ -10,7 +10,7 @@ class WebExamReviewStep extends StatelessWidget {
   final VoidCallback onSaveLibrary;
   final VoidCallback onPdfExport;
   final VoidCallback onPublish;
-  
+
   // Stats
   final int easyCount;
   final int mediumCount;
@@ -69,64 +69,84 @@ class WebExamReviewStep extends StatelessWidget {
               ),
               Row(
                 children: [
-                  _buildActionButton('Back to Config', Icons.arrow_back, const Color(0xFFF1F5F9), const Color(0xFF64748B), onBack),
+                  _buildActionButton('Back to Config', Icons.arrow_back,
+                      const Color(0xFFF1F5F9), const Color(0xFF64748B), onBack),
                   const SizedBox(width: 12),
-                  _buildActionButton('Save to Library', Icons.save_alt_rounded, const Color(0xFFE2E8F0), const Color(0xFF1E293B), onSaveLibrary),
+                  _buildActionButton(
+                      'Save to Library',
+                      Icons.save_alt_rounded,
+                      const Color(0xFFE2E8F0),
+                      const Color(0xFF1E293B),
+                      onSaveLibrary),
                   const SizedBox(width: 12),
-                  _buildActionButton('Share Exam PDF', Icons.share_rounded, const Color(0xFFE2E8F0), const Color(0xFF1E293B), onPdfExport),
+                  _buildActionButton(
+                      'Share Exam PDF',
+                      Icons.share_rounded,
+                      const Color(0xFFE2E8F0),
+                      const Color(0xFF1E293B),
+                      onPdfExport),
                   const SizedBox(width: 12),
-                  _buildActionButton('Publish to Class', Icons.send_rounded, const Color(0xFF4F46E5), Colors.white, onPublish),
+                  _buildActionButton('Publish to Class', Icons.send_rounded,
+                      const Color(0xFF4F46E5), Colors.white, onPublish),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 16),
-          
           Expanded(
-            child: questions.isEmpty 
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+            child: questions.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.psychology_outlined,
+                            size: 64, color: Color(0xFFCBD5E1)),
+                        const SizedBox(height: 16),
+                        Text('No questions generated yet.',
+                            style: GoogleFonts.outfit(
+                                fontSize: 18, color: const Color(0xFF64748B))),
+                        const SizedBox(height: 8),
+                        Text(
+                            'Try adjusting your configuration and generating again.',
+                            style: GoogleFonts.outfit(
+                                fontSize: 14, color: const Color(0xFF94A3B8))),
+                      ],
+                    ),
+                  )
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.psychology_outlined, size: 64, color: Color(0xFFCBD5E1)),
-                      const SizedBox(height: 16),
-                      Text('No questions generated yet.', style: GoogleFonts.outfit(fontSize: 18, color: const Color(0xFF64748B))),
-                      const SizedBox(height: 8),
-                      Text('Try adjusting your configuration and generating again.', style: GoogleFonts.outfit(fontSize: 14, color: const Color(0xFF94A3B8))),
+                      // Questions List Column
+                      Expanded(
+                        flex: 6,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.only(bottom: 120),
+                          itemCount: questions.length,
+                          itemBuilder: (context, index) => _buildQuestionItem(
+                              context, questions[index], index),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      // Exam Summary Panel
+                      Expanded(
+                        flex: 3,
+                        child: _buildExamSummary(context),
+                      ),
                     ],
                   ),
-                )
-              : Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Questions List Column
-                    Expanded(
-                      flex: 6,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.only(bottom: 120),
-                        itemCount: questions.length,
-                        itemBuilder: (context, index) => _buildQuestionItem(context, questions[index], index),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    // Exam Summary Panel
-                    Expanded(
-                      flex: 3,
-                      child: _buildExamSummary(context),
-                    ),
-                  ],
-                ),
           )
         ],
       ),
     );
   }
 
-  Widget _buildActionButton(String label, IconData icon, Color bg, Color fn, VoidCallback onPressed) {
+  Widget _buildActionButton(
+      String label, IconData icon, Color bg, Color fn, VoidCallback onPressed) {
     return ElevatedButton.icon(
       onPressed: onPressed,
       icon: Icon(icon, size: 18),
-      label: Text(label, style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+      label:
+          Text(label, style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
       style: ElevatedButton.styleFrom(
         backgroundColor: bg,
         foregroundColor: fn,
@@ -137,19 +157,28 @@ class WebExamReviewStep extends StatelessWidget {
     );
   }
 
-  Widget _buildQuestionItem(BuildContext context, LocalQuizQuestion q, int index) {
+  Widget _buildQuestionItem(
+      BuildContext context, LocalQuizQuestion q, int index) {
     String diffBg = 'EEF2FF'; // Medium
     String diffFn = '4F46E5';
     String diffLabel = 'MEDIUM';
-    
+
     // Quick mock for difficulty tag colors, in real system would decode from question properties
     if (index % 4 == 0) {
-      diffBg = 'FFE4E6'; diffFn = 'BE123C'; diffLabel = 'HARD';
+      diffBg = 'FFE4E6';
+      diffFn = 'BE123C';
+      diffLabel = 'HARD';
     } else if (index % 3 == 0) {
-      diffBg = 'F1F5F9'; diffFn = '475569'; diffLabel = 'EASY';
+      diffBg = 'F1F5F9';
+      diffFn = '475569';
+      diffLabel = 'EASY';
     }
-    
-    String topicLabel = topicCounts.keys.isNotEmpty ? topicCounts.keys.elementAt(index % topicCounts.keys.length).toUpperCase() : 'GENERAL';
+
+    String topicLabel = topicCounts.keys.isNotEmpty
+        ? topicCounts.keys
+            .elementAt(index % topicCounts.keys.length)
+            .toUpperCase()
+        : 'GENERAL';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -158,7 +187,10 @@ class WebExamReviewStep extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 20, offset: const Offset(0, 4)),
+          BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 20,
+              offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -170,23 +202,39 @@ class WebExamReviewStep extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(color: Color(int.parse('0xFF$diffBg')), borderRadius: BorderRadius.circular(12)),
-                    child: Text(diffLabel, style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Color(int.parse('0xFF$diffFn')))),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                        color: Color(int.parse('0xFF$diffBg')),
+                        borderRadius: BorderRadius.circular(12)),
+                    child: Text(diffLabel,
+                        style: GoogleFonts.outfit(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Color(int.parse('0xFF$diffFn')))),
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(12)),
-                    child: Text(topicLabel, style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFF475569))),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(12)),
+                    child: Text(topicLabel,
+                        style: GoogleFonts.outfit(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF475569))),
                   ),
                 ],
               ),
               TextButton.icon(
                 onPressed: () => onRegenerate(index),
                 icon: const Icon(Icons.refresh_rounded, size: 16),
-                label: Text('Regenerate', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-                style: TextButton.styleFrom(foregroundColor: const Color(0xFF4F46E5)),
+                label: Text('Regenerate',
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+                style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF4F46E5)),
               ),
             ],
           ),
@@ -196,7 +244,11 @@ class WebExamReviewStep extends StatelessWidget {
             children: [
               Text(
                 (index + 1).toString().padLeft(2, '0'),
-                style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w900, color: const Color(0xFFE2E8F0), height: 1),
+                style: GoogleFonts.outfit(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w900,
+                    color: const Color(0xFFE2E8F0),
+                    height: 1),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -205,7 +257,10 @@ class WebExamReviewStep extends StatelessWidget {
                   children: [
                     TextFormField(
                       initialValue: q.question,
-                      style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)),
+                      style: GoogleFonts.outfit(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF1E293B)),
                       maxLines: null,
                       decoration: const InputDecoration(
                         border: InputBorder.none,
@@ -216,9 +271,11 @@ class WebExamReviewStep extends StatelessWidget {
                       },
                     ),
                     const SizedBox(height: 12),
-                    if (q.questionType == 'Multiple Choice' || q.questionType == 'True/False') 
+                    if (q.questionType == 'Multiple Choice' ||
+                        q.questionType == 'True/False')
                       _buildOptionsGrid(q, index)
-                    else if (q.questionType == 'Theory' || q.questionType == 'Essay')
+                    else if (q.questionType == 'Theory' ||
+                        q.questionType == 'Essay')
                       _buildTheoryLine()
                   ],
                 ),
@@ -241,8 +298,12 @@ class WebExamReviewStep extends StatelessWidget {
           width: 280,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: isCorrect ? const Color(0xFFF0FDF4) : const Color(0xFFF8FAFC),
-            border: Border.all(color: isCorrect ? const Color(0xFF22C55E) : const Color(0xFFE2E8F0)),
+            color:
+                isCorrect ? const Color(0xFFF0FDF4) : const Color(0xFFF8FAFC),
+            border: Border.all(
+                color: isCorrect
+                    ? const Color(0xFF22C55E)
+                    : const Color(0xFFE2E8F0)),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -258,20 +319,28 @@ class WebExamReviewStep extends StatelessWidget {
                 activeColor: const Color(0xFF22C55E),
               ),
               const SizedBox(width: 4),
-              Text('${String.fromCharCode(65 + i)})', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+              Text('${String.fromCharCode(65 + i)})',
+                  style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF1E293B))),
               const SizedBox(width: 8),
               Expanded(
                 child: TextFormField(
                   initialValue: q.options[i],
-                  decoration: const InputDecoration(border: InputBorder.none, isDense: true),
-                  style: GoogleFonts.outfit(color: const Color(0xFF475569), fontSize: 13),
+                  decoration: const InputDecoration(
+                      border: InputBorder.none, isDense: true),
+                  style: GoogleFonts.outfit(
+                      color: const Color(0xFF475569), fontSize: 13),
                   onChanged: (val) {
                     final newOptions = List<String>.from(q.options);
                     newOptions[i] = val;
                     // If it was the correct answer, update it as well
                     String newCorrect = q.correctAnswer;
                     if (isCorrect) newCorrect = val;
-                    onQuestionChanged(qIndex, q.copyWith(options: newOptions, correctAnswer: newCorrect));
+                    onQuestionChanged(
+                        qIndex,
+                        q.copyWith(
+                            options: newOptions, correctAnswer: newCorrect));
                   },
                 ),
               ),
@@ -290,17 +359,29 @@ class WebExamReviewStep extends StatelessWidget {
           return Row(
             children: [
               Expanded(
-                child: Container(height: 4, decoration: BoxDecoration(color: const Color(0xFF4F46E5), borderRadius: BorderRadius.circular(2))),
+                child: Container(
+                    height: 4,
+                    decoration: BoxDecoration(
+                        color: const Color(0xFF4F46E5),
+                        borderRadius: BorderRadius.circular(2))),
               ),
               Expanded(
                 flex: 2,
-                child: Container(height: 4, decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(2))),
+                child: Container(
+                    height: 4,
+                    decoration: BoxDecoration(
+                        color: const Color(0xFFE2E8F0),
+                        borderRadius: BorderRadius.circular(2))),
               ),
             ],
           );
         }),
         const SizedBox(height: 8),
-        Text('ACCURACY SCORE: 94%', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFF94A3B8))),
+        Text('ACCURACY SCORE: 94%',
+            style: GoogleFonts.outfit(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF94A3B8))),
       ],
     );
   }
@@ -311,7 +392,12 @@ class WebExamReviewStep extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 20, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 20,
+              offset: const Offset(0, 4))
+        ],
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -322,15 +408,27 @@ class WebExamReviewStep extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: const Color(0xFF4F46E5), borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.bar_chart_rounded, color: Colors.white, size: 20),
+                decoration: BoxDecoration(
+                    color: const Color(0xFF4F46E5),
+                    borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.bar_chart_rounded,
+                    color: Colors.white, size: 20),
               ),
               const SizedBox(width: 16),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Exam Summary', style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
-                  Text('REAL-TIME METRICS', style: GoogleFonts.outfit(fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1, color: const Color(0xFF94A3B8))),
+                  Text('Exam Summary',
+                      style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF1E293B))),
+                  Text('REAL-TIME METRICS',
+                      style: GoogleFonts.outfit(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                          color: const Color(0xFF94A3B8))),
                 ],
               ),
             ],
@@ -339,28 +437,57 @@ class WebExamReviewStep extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Total Questions', style: GoogleFonts.outfit(fontSize: 13, color: const Color(0xFF475569))),
-              Text('$total', style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w900, color: const Color(0xFF4F46E5))),
+              Text('Total Questions',
+                  style: GoogleFonts.outfit(
+                      fontSize: 13, color: const Color(0xFF475569))),
+              Text('$total',
+                  style: GoogleFonts.outfit(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF4F46E5))),
             ],
           ),
           const SizedBox(height: 16),
-          Text('DIFFICULTY BALANCE', style: GoogleFonts.outfit(fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: const Color(0xFF94A3B8))),
+          Text('DIFFICULTY BALANCE',
+              style: GoogleFonts.outfit(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                  color: const Color(0xFF94A3B8))),
           const SizedBox(height: 16),
           _buildBalanceBar(total),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('EASY ($easyCount)', style: GoogleFonts.outfit(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
-              Text('MED ($mediumCount)', style: GoogleFonts.outfit(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
-              Text('HARD ($hardCount)', style: GoogleFonts.outfit(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+              Text('EASY ($easyCount)',
+                  style: GoogleFonts.outfit(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF1E293B))),
+              Text('MED ($mediumCount)',
+                  style: GoogleFonts.outfit(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF1E293B))),
+              Text('HARD ($hardCount)',
+                  style: GoogleFonts.outfit(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF1E293B))),
             ],
           ),
           const SizedBox(height: 16),
-          Text('TOP TOPICS', style: GoogleFonts.outfit(fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: const Color(0xFF94A3B8))),
+          Text('TOP TOPICS',
+              style: GoogleFonts.outfit(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                  color: const Color(0xFF94A3B8))),
           const SizedBox(height: 16),
-          ...topicCounts.entries.take(3).map((e) => _buildTopicRow(e.key, e.value, total)),
-          
+          ...topicCounts.entries
+              .take(3)
+              .map((e) => _buildTopicRow(e.key, e.value, total)),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(20),
@@ -371,12 +498,16 @@ class WebExamReviewStep extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.auto_awesome, size: 16, color: Color(0xFF4F46E5)),
+                const Icon(Icons.auto_awesome,
+                    size: 16, color: Color(0xFF4F46E5)),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'AI suggests adding 2 more Medium difficulty questions to meet your target curriculum balance.',
-                    style: GoogleFonts.outfit(fontSize: 12, color: const Color(0xFF4F46E5), height: 1.5),
+                    style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        color: const Color(0xFF4F46E5),
+                        height: 1.5),
                   ),
                 ),
               ],
@@ -396,9 +527,15 @@ class WebExamReviewStep extends StatelessWidget {
         width: double.infinity,
         child: Row(
           children: [
-            Expanded(flex: easyCount, child: Container(color: const Color(0xFFCBD5E1))),
-            Expanded(flex: mediumCount, child: Container(color: const Color(0xFF818CF8))),
-            Expanded(flex: hardCount, child: Container(color: const Color(0xFF312E81))),
+            Expanded(
+                flex: easyCount,
+                child: Container(color: const Color(0xFFCBD5E1))),
+            Expanded(
+                flex: mediumCount,
+                child: Container(color: const Color(0xFF818CF8))),
+            Expanded(
+                flex: hardCount,
+                child: Container(color: const Color(0xFF312E81))),
           ],
         ),
       ),
@@ -411,7 +548,11 @@ class WebExamReviewStep extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          Expanded(flex: 3, child: Text(name, style: GoogleFonts.outfit(fontSize: 13, color: const Color(0xFF1E293B)))),
+          Expanded(
+              flex: 3,
+              child: Text(name,
+                  style: GoogleFonts.outfit(
+                      fontSize: 13, color: const Color(0xFF1E293B)))),
           Expanded(
             flex: 4,
             child: ClipRRect(
@@ -419,13 +560,18 @@ class WebExamReviewStep extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: count / total,
                 backgroundColor: const Color(0xFFF1F5F9),
-                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF4F46E5)),
+                valueColor:
+                    const AlwaysStoppedAnimation<Color>(Color(0xFF4F46E5)),
                 minHeight: 8,
               ),
             ),
           ),
           const SizedBox(width: 16),
-          Text('$count', style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+          Text('$count',
+              style: GoogleFonts.outfit(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF1E293B))),
         ],
       ),
     );

@@ -64,7 +64,8 @@ class WebXPCard extends StatelessWidget {
                       color: Colors.white.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.stars_rounded, color: Colors.white, size: 32),
+                    child: const Icon(Icons.stars_rounded,
+                        color: Colors.white, size: 32),
                   ),
                 ],
               ),
@@ -128,7 +129,8 @@ class WebXPCard extends StatelessWidget {
         opacity: 0.1,
         child: Transform.rotate(
           angle: -0.2,
-          child: const Icon(Icons.bubble_chart_rounded, size: 200, color: Colors.white),
+          child: const Icon(Icons.bubble_chart_rounded,
+              size: 200, color: Colors.white),
         ),
       ),
     );

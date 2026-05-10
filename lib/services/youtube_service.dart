@@ -10,7 +10,7 @@ class YoutubeService {
     // Short URL: https://youtu.be/VIDEO_ID
     // Shorts: https://www.youtube.com/shorts/VIDEO_ID
     // Mobile: https://m.youtube.com/watch?v=VIDEO_ID
-    
+
     final RegExp regExp = RegExp(
       r'^(?:https?:\/\/)?(?:www\.|m\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})(?:\S+)?$',
       caseSensitive: false,
@@ -46,16 +46,17 @@ class YoutubeService {
       );
 
       final captions = await yt.videos.closedCaptions.get(track);
-      
+
       final buffer = StringBuffer();
       for (var segment in captions.captions) {
         buffer.write('${segment.text} ');
       }
-      
+
       return buffer.toString().trim();
     } catch (e) {
       debugPrint('Error fetching YouTube transcript: $e');
-      throw Exception('Could not retrieve transcript. The video might be private or have captions disabled.');
+      throw Exception(
+          'Could not retrieve transcript. The video might be private or have captions disabled.');
     } finally {
       yt.close();
     }

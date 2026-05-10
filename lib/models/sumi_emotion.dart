@@ -9,6 +9,7 @@ enum SumiState {
   confused,
   streakBoost,
   tired,
+  analytical,
 }
 
 enum SumiEvent {
@@ -23,6 +24,7 @@ enum SumiEvent {
   idleTimeout,
   longSession,
   userPaused,
+  brainAlert,
 }
 
 class EmotionContext {
@@ -77,7 +79,8 @@ class SumiEmotionEngine {
       } else {
         nextState = SumiState.incorrect;
       }
-    } else if (event == SumiEvent.quizStarted || event == SumiEvent.studySessionStarted) {
+    } else if (event == SumiEvent.quizStarted ||
+        event == SumiEvent.studySessionStarted) {
       nextState = SumiState.focused;
     } else if (event == SumiEvent.flashcardReviewed) {
       nextState = SumiState.reviewing;
@@ -95,6 +98,8 @@ class SumiEmotionEngine {
       }
     } else if (event == SumiEvent.appOpened || event == SumiEvent.userPaused) {
       nextState = SumiState.idle;
+    } else if (event == SumiEvent.brainAlert) {
+      nextState = SumiState.analytical;
     }
 
     return _enhance(nextState, context);

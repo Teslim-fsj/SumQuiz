@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:sumquiz/widgets/sumi_mascot.dart';
+import 'package:sumquiz/models/sumi_emotion.dart';
 
 class CreationSuccessView extends StatelessWidget {
   final String title;
@@ -19,77 +21,122 @@ class CreationSuccessView extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: colorScheme.secondary.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.check_circle_rounded,
-                color: Color(0xFF4CAF50),
-                size: 80,
-              ),
-            ).animate().scale(duration: 600.ms, curve: Curves.bounceOut),
-            const SizedBox(height: 32),
-            Text(
-              'Study Pack Ready!',
-              style: GoogleFonts.outfit(
-                fontSize: 28,
-                fontWeight: FontWeight.w900,
-                color: colorScheme.onSurface,
-              ),
-            ).animate().fadeIn(delay: 200.ms),
-            const SizedBox(height: 12),
-            Text(
-              'Your materials for "$title" are ready to use.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ).animate().fadeIn(delay: 400.ms),
-            const SizedBox(height: 40),
-            ElevatedButton(
-              onPressed: onViewPack,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colorScheme.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 0,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Open Study Pack'),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.arrow_forward_rounded, size: 18),
-                ],
-              ),
-            ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2, end: 0),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: onReset,
-              child: Text(
-                'Create Another',
-                style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.primary,
-                ),
-              ),
-            ).animate().fadeIn(delay: 800.ms),
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            colorScheme.primary.withValues(alpha: 0.05),
+            theme.scaffoldBackgroundColor,
           ],
+        ),
+      ),
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Celebratory Mascot
+              const SumiMascot(
+                state: SumiState.celebrating,
+                size: 200,
+                dialogue: "We did it! Your study materials are ready.",
+              ).animate().scale(duration: 800.ms, curve: Curves.elasticOut),
+              const SizedBox(height: 48),
+              Text(
+                'Neural Pack Complete!',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.outfit(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w900,
+                  color: colorScheme.onSurface,
+                  letterSpacing: -0.5,
+                ),
+              ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
+              const SizedBox(height: 16),
+              Text(
+                'Sumi has structured your materials for:',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.outfit(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ).animate().fadeIn(delay: 400.ms),
+              const SizedBox(height: 8),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.outfit(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: colorScheme.primary,
+                  ),
+                ),
+              ).animate().fadeIn(delay: 500.ms).scale(begin: const Offset(0.8, 0.8)),
+              const SizedBox(height: 56),
+              // Primary Action
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: onViewPack,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    elevation: 8,
+                    shadowColor: colorScheme.primary.withValues(alpha: 0.4),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.rocket_launch_rounded),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Enter Study Mode',
+                        style: GoogleFonts.outfit(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.2, end: 0),
+              const SizedBox(height: 20),
+              // Secondary Action
+              TextButton(
+                onPressed: onReset,
+                style: TextButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                ),
+                child: Text(
+                  'Create Another Neural Pack',
+                  style: GoogleFonts.outfit(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ).animate().fadeIn(delay: 900.ms),
+            ],
+          ),
         ),
       ),
     );

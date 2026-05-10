@@ -24,51 +24,50 @@ class AnalyticsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isMobile = constraints.maxWidth < 800;
-        
-        return SingleChildScrollView(
-          padding: EdgeInsets.all(isMobile ? 12 : 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SharedTeacherWidgets.moduleHeader('AI Performance Analytics',
-                  'Synthesized failure patterns and targeted interventions', isMobile: isMobile),
+    return LayoutBuilder(builder: (context, constraints) {
+      final isMobile = constraints.maxWidth < 800;
+
+      return SingleChildScrollView(
+        padding: EdgeInsets.all(isMobile ? 12 : 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SharedTeacherWidgets.moduleHeader('AI Performance Analytics',
+                'Synthesized failure patterns and targeted interventions',
+                isMobile: isMobile),
+            const SizedBox(height: 24),
+            if (content.isEmpty)
+              SharedTeacherWidgets.emptyCard('No content to analyze',
+                  'Create and share content to generate analytics data.')
+            else ...[
+              if (selectedStudentId != null)
+                _buildStudentContextBanner(context, isMobile: isMobile),
+              const SizedBox(height: 16),
+              _buildClassOverview(isMobile: isMobile),
               const SizedBox(height: 24),
-              if (content.isEmpty)
-                SharedTeacherWidgets.emptyCard('No content to analyze',
-                    'Create and share content to generate analytics data.')
-              else ...[
-                if (selectedStudentId != null)
-                   _buildStudentContextBanner(context, isMobile: isMobile),
-                const SizedBox(height: 16),
-                _buildClassOverview(isMobile: isMobile),
-                const SizedBox(height: 24),
-                _buildTrendSection(isMobile: isMobile),
-                const SizedBox(height: 32),
-                _buildContentAnalyticsList(isMobile: isMobile),
-              ],
+              _buildTrendSection(isMobile: isMobile),
+              const SizedBox(height: 32),
+              _buildContentAnalyticsList(isMobile: isMobile),
             ],
-          ),
-        );
-      }
-    );
+          ],
+        ),
+      );
+    });
   }
 
-  Widget _buildStudentContextBanner(BuildContext context, {bool isMobile = false}) {
-    final student = students.firstWhere((s) => s.studentId == selectedStudentId, 
+  Widget _buildStudentContextBanner(BuildContext context,
+      {bool isMobile = false}) {
+    final student = students.firstWhere((s) => s.studentId == selectedStudentId,
         orElse: () => StudentLink(
-            studentId: '', 
-            studentName: 'Unknown', 
+            studentId: '',
+            studentName: 'Unknown',
             studentEmail: '',
             contentId: '',
             contentTitle: '',
-            averageScore: 0, 
+            averageScore: 0,
             joinedAt: DateTime.now(),
-            totalAttempts: 0
-        ));
-    
+            totalAttempts: 0));
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -78,15 +77,20 @@ class AnalyticsView extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.person_search_rounded, color: WebColors.purplePrimary, size: 20),
+          const Icon(Icons.person_search_rounded,
+              color: WebColors.purplePrimary, size: 20),
           const SizedBox(width: 12),
           Text(
             'Showing analytics for: ',
-            style: GoogleFonts.outfit(fontSize: 14, color: WebColors.textSecondary),
+            style: GoogleFonts.outfit(
+                fontSize: 14, color: WebColors.textSecondary),
           ),
           Text(
             student.studentName,
-            style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.bold, color: WebColors.purplePrimary),
+            style: GoogleFonts.outfit(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: WebColors.purplePrimary),
           ),
           const Spacer(),
           TextButton(
@@ -130,13 +134,13 @@ class AnalyticsView extends StatelessWidget {
   }
 
   Widget _buildClassOverview({bool isMobile = false}) {
-    final filteredStudents = selectedStudentId != null 
+    final filteredStudents = selectedStudentId != null
         ? students.where((s) => s.studentId == selectedStudentId).toList()
         : students;
 
     final sorted = List<StudentLink>.from(filteredStudents)
       ..sort((a, b) => b.averageScore.compareTo(a.averageScore));
-      
+
     final topStudents = sorted.take(3).toList();
     final weakStudents = sorted.where((s) => s.averageScore < 50).toList();
 
@@ -158,7 +162,9 @@ class AnalyticsView extends StatelessWidget {
       child: Column(
         children: weakStudents.isEmpty
             ? [SharedTeacherWidgets.emptyHint('No low scores tracked')]
-            : weakStudents.map((s) => _rankRow(0, s, showWarning: true)).toList(),
+            : weakStudents
+                .map((s) => _rankRow(0, s, showWarning: true))
+                .toList(),
       ),
     );
 
@@ -194,10 +200,15 @@ class AnalyticsView extends StatelessWidget {
                   style: GoogleFonts.outfit(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
-                      color: rank == 1 ? WebColors.accentOrange : WebColors.textTertiary)),
+                      color: rank == 1
+                          ? WebColors.accentOrange
+                          : WebColors.textTertiary)),
             )
           else
-            const SizedBox(width: 24, child: Icon(Icons.warning_amber_rounded, size: 14, color: WebColors.error)),
+            const SizedBox(
+                width: 24,
+                child: Icon(Icons.warning_amber_rounded,
+                    size: 14, color: WebColors.error)),
           const SizedBox(width: 8),
           CircleAvatar(
             radius: 14,
@@ -238,7 +249,8 @@ class AnalyticsView extends StatelessWidget {
     );
   }
 
-  Widget _contentAnalyticsRow(PublicDeck deck, ContentAnalytics? a, {bool isMobile = false}) {
+  Widget _contentAnalyticsRow(PublicDeck deck, ContentAnalytics? a,
+      {bool isMobile = false}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -249,64 +261,79 @@ class AnalyticsView extends StatelessWidget {
         boxShadow: WebColors.cardShadow,
       ),
       child: isMobile
-        ? Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(deck.title,
-                        style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.bold),
-                        overflow: TextOverflow.ellipsis),
-                  ),
-                  SharedTeacherWidgets.badge(
-                    deck.isExam ? 'Exam' : 'Pack',
-                    deck.isExam ? WebColors.purplePrimary : WebColors.secondary
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _analyticsMini('Attempts', '${a?.numberOfAttempts ?? 0}', WebColors.blueInfo),
-                  _analyticsMini('Avg Score', '${a?.averageScore.toStringAsFixed(0) ?? 0}%', WebColors.success),
-                  _analyticsMini('Rate', '${a?.completionRate.toStringAsFixed(0) ?? 0}%', WebColors.secondary),
-                ],
-              )
-            ],
-          )
-        : Row(
-            children: [
-              Expanded(
-                flex: 3,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(deck.title,
-                        style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w800),
-                        overflow: TextOverflow.ellipsis),
-                    SharedTeacherWidgets.badge(
-                      deck.isExam ? 'Exam' : 'Study Pack',
-                      deck.isExam ? WebColors.purplePrimary : WebColors.secondary
+                    Expanded(
+                      child: Text(deck.title,
+                          style: GoogleFonts.outfit(
+                              fontSize: 15, fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis),
                     ),
+                    SharedTeacherWidgets.badge(
+                        deck.isExam ? 'Exam' : 'Pack',
+                        deck.isExam
+                            ? WebColors.purplePrimary
+                            : WebColors.secondary),
                   ],
                 ),
-              ),
-              Expanded(
-                  child: _analyticsMini('Attempts',
-                      '${a?.numberOfAttempts ?? 0}', WebColors.blueInfo)),
-              Expanded(
-                  child: _analyticsMini('Avg Score',
-                      '${a?.averageScore.toStringAsFixed(0) ?? 0}%', WebColors.success)),
-              Expanded(
-                  child: _analyticsMini('Completion',
-                      '${a?.completionRate.toStringAsFixed(0) ?? 0}%', WebColors.secondary)),
-            ],
-          ),
+                const SizedBox(height: 16),
+                const Divider(),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _analyticsMini('Attempts', '${a?.numberOfAttempts ?? 0}',
+                        WebColors.blueInfo),
+                    _analyticsMini(
+                        'Avg Score',
+                        '${a?.averageScore.toStringAsFixed(0) ?? 0}%',
+                        WebColors.success),
+                    _analyticsMini(
+                        'Rate',
+                        '${a?.completionRate.toStringAsFixed(0) ?? 0}%',
+                        WebColors.secondary),
+                  ],
+                )
+              ],
+            )
+          : Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(deck.title,
+                          style: GoogleFonts.outfit(
+                              fontSize: 14, fontWeight: FontWeight.w800),
+                          overflow: TextOverflow.ellipsis),
+                      SharedTeacherWidgets.badge(
+                          deck.isExam ? 'Exam' : 'Study Pack',
+                          deck.isExam
+                              ? WebColors.purplePrimary
+                              : WebColors.secondary),
+                    ],
+                  ),
+                ),
+                Expanded(
+                    child: _analyticsMini('Attempts',
+                        '${a?.numberOfAttempts ?? 0}', WebColors.blueInfo)),
+                Expanded(
+                    child: _analyticsMini(
+                        'Avg Score',
+                        '${a?.averageScore.toStringAsFixed(0) ?? 0}%',
+                        WebColors.success)),
+                Expanded(
+                    child: _analyticsMini(
+                        'Completion',
+                        '${a?.completionRate.toStringAsFixed(0) ?? 0}%',
+                        WebColors.secondary)),
+              ],
+            ),
     );
   }
 
@@ -339,11 +366,13 @@ class _TrendChart extends StatelessWidget {
 
     final sortedKeys = data.keys.toList()..sort();
     final values = sortedKeys.map((k) => data[k]!.toDouble()).toList();
-    final maxValue = values.isEmpty ? 1.0 : values.reduce((curr, next) => curr > next ? curr : next);
+    final maxValue = values.isEmpty
+        ? 1.0
+        : values.reduce((curr, next) => curr > next ? curr : next);
 
     return CustomPaint(
       painter: _TrendPainter(
-        values: values, 
+        values: values,
         maxValue: maxValue == 0 ? 1 : maxValue,
         isDark: Theme.of(context).brightness == Brightness.dark,
       ),
@@ -356,7 +385,8 @@ class _TrendPainter extends CustomPainter {
   final double maxValue;
   final bool isDark;
 
-  _TrendPainter({required this.values, required this.maxValue, required this.isDark});
+  _TrendPainter(
+      {required this.values, required this.maxValue, required this.isDark});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -370,13 +400,12 @@ class _TrendPainter extends CustomPainter {
 
     final fillPaint = Paint()
       ..shader = LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
             WebColors.purplePrimary.withOpacity(0.2),
             WebColors.purplePrimary.withOpacity(0.0)
-          ])
-          .createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+          ]).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     final path = Path();
     final fillPath = Path();
@@ -408,11 +437,11 @@ class _TrendPainter extends CustomPainter {
 
     canvas.drawPath(fillPath, fillPaint);
     canvas.drawPath(path, paint);
-    
+
     final pointPaint = Paint()
       ..color = WebColors.purplePrimary
       ..style = PaintingStyle.fill;
-      
+
     final borderPaint = Paint()
       ..color = Colors.white
       ..strokeWidth = 2
@@ -420,7 +449,7 @@ class _TrendPainter extends CustomPainter {
 
     for (int i = 0; i < values.length; i++) {
       if (values.length > 20 && i % 3 != 0) continue;
-      
+
       final x = i * stepX;
       final y = size.height - (values[i] / maxValue * size.height);
       canvas.drawCircle(Offset(x, y), 4, pointPaint);

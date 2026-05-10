@@ -169,8 +169,10 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                       ? 'image/png'
                       : 'image/jpeg'),
               allowYouTubeImport: userMayImportFromYouTube(user),
-              onProgress: (msg) => setState(() => _processingMessage =
-                  '[${i + 1}/${files.length}] $msg'),
+              allowPdfImport: userMayImportFromPdf(user),
+              allowWebImport: userMayImportFromWeb(user),
+              onProgress: (msg) => setState(
+                  () => _processingMessage = '[${i + 1}/${files.length}] $msg'),
               cancelToken: _cancelToken,
             );
 
@@ -255,7 +257,8 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
         level: _selectedLevel,
         questionCount: _numberOfQuestions,
         easyCount: (_numberOfQuestions * _easyRatio).round(),
-        mediumCount: (_numberOfQuestions * (1.0 - _easyRatio - _hardRatio)).round(),
+        mediumCount:
+            (_numberOfQuestions * (1.0 - _easyRatio - _hardRatio)).round(),
         hardCount: (_numberOfQuestions * _hardRatio).round(),
         questionTypes: [
           if (_includeMultipleChoice) 'Multiple Choice',
@@ -329,7 +332,6 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
         includeMarkingScheme: true,
       );
 
-
       final studentPaper = pdfGenerator.generateStudentPaper(
         questions: _generatedQuestions,
         config: config,
@@ -350,7 +352,8 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           mimeType: 'application/pdf',
         );
         // ignore: deprecated_member_use
-        await Share.shareXFiles([xFile], text: 'Exam PDF: ${_titleController.text}');
+        await Share.shareXFiles([xFile],
+            text: 'Exam PDF: ${_titleController.text}');
       } catch (e) {
         debugPrint('Web share error: $e');
       }
@@ -413,9 +416,13 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
             children: [
               const Icon(Icons.check_circle, color: Colors.green, size: 64),
               const SizedBox(height: 24),
-              Text('Exam Published!', style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold)),
+              Text('Exam Published!',
+                  style: GoogleFonts.outfit(
+                      fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              const Text('Your professional exam has been generated and is now public. You can share this link with your students for direct access.', textAlign: TextAlign.center),
+              const Text(
+                  'Your professional exam has been generated and is now public. You can share this link with your students for direct access.',
+                  textAlign: TextAlign.center),
               const SizedBox(height: 32),
               Container(
                 padding: const EdgeInsets.all(16),
@@ -426,13 +433,18 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                 ),
                 child: Row(
                   children: [
-                    Expanded(child: Text(url, style: const TextStyle(fontSize: 13, color: Colors.blue), overflow: TextOverflow.ellipsis)),
+                    Expanded(
+                        child: Text(url,
+                            style: const TextStyle(
+                                fontSize: 13, color: Colors.blue),
+                            overflow: TextOverflow.ellipsis)),
                     const SizedBox(width: 8),
                     IconButton(
                       icon: const Icon(Icons.copy, size: 18),
                       onPressed: () {
                         Clipboard.setData(ClipboardData(text: url));
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Link copied!')));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Link copied!')));
                       },
                     ),
                   ],
@@ -443,7 +455,9 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text('Share Code: '),
-                  Text(code, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                  Text(code,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, color: Colors.green)),
                 ],
               ),
               const SizedBox(height: 32),
@@ -455,7 +469,8 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                     backgroundColor: const Color(0xFF4F46E5),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                   child: const Text('Go to Content Manager'),
                 ),
@@ -473,29 +488,35 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text('Add YouTube Source', style: GoogleFonts.outfit(fontWeight: FontWeight.w800)),
+        title: Text('Add YouTube Source',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.w800)),
         content: SizedBox(
           width: 500,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Enter a YouTube URL to extract its transcript and generate exam questions.'),
+              const Text(
+                  'Enter a YouTube URL to extract its transcript and generate exam questions.'),
               const SizedBox(height: 20),
               TextField(
                 controller: controller,
                 autofocus: true,
                 decoration: InputDecoration(
                   hintText: 'https://youtube.com/watch?v=...',
-                  prefixIcon: const Icon(Icons.play_circle_filled, color: Colors.redAccent),
+                  prefixIcon: const Icon(Icons.play_circle_filled,
+                      color: Colors.redAccent),
                   filled: true,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16)),
                 ),
               ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               final url = controller.text.trim();
@@ -508,7 +529,8 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
               backgroundColor: const Color(0xFF4F46E5),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
             ),
             child: const Text('Extract Source'),
           ),
@@ -523,8 +545,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
       if (!mounted) return;
       showDialog<void>(
         context: context,
-        builder: (_) =>
-            const UpgradeDialog(featureName: 'YouTube import'),
+        builder: (_) => const UpgradeDialog(featureName: 'YouTube import'),
       );
       return;
     }
@@ -535,16 +556,19 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
     });
 
     try {
-      final extractionService = Provider.of<ContentExtractionService>(context, listen: false);
+      final extractionService =
+          Provider.of<ContentExtractionService>(context, listen: false);
 
       final result = await extractionService.extractContent(
         type: 'youtube',
         input: url,
         userId: user?.uid,
         allowYouTubeImport: userMayImportFromYouTube(user),
+        allowPdfImport: userMayImportFromPdf(user),
+        allowWebImport: userMayImportFromWeb(user),
         onProgress: (msg) => setState(() => _processingMessage = msg),
       );
-      
+
       if (!mounted) return;
       setState(() {
         _sourceMaterial = result.text;
@@ -562,7 +586,6 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
 
   @override
   Widget build(BuildContext context) {
-
     final user = Provider.of<UserModel?>(context);
 
     // Only block if they are at the limit AND not Pro AND NOT a teacher
@@ -575,10 +598,12 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
 
     return Scaffold(
       body: Container(
-        color: const Color(0xFFF1F5F9), 
+        color: const Color(0xFFF1F5F9),
         child: Stack(
           children: [
-            (_isProcessingSource || _isGeneratingQuestions) ? _buildOverlayLoading() : const SizedBox.shrink(),
+            (_isProcessingSource || _isGeneratingQuestions)
+                ? _buildOverlayLoading()
+                : const SizedBox.shrink(),
             Column(
               children: [
                 _buildModernStepIndicator(),
@@ -594,7 +619,8 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                         schoolNameController: _schoolNameController,
                         durationController: _durationController,
                         selectedLevel: _selectedLevel,
-                        onLevelChanged: (v) => setState(() => _selectedLevel = v ?? _selectedLevel),
+                        onLevelChanged: (v) => setState(
+                            () => _selectedLevel = v ?? _selectedLevel),
                         onPickSourcePdf: () => _pickSource('PDF'),
                         onPickSourceNotes: () => _pickSource('Notes'),
                         onPickSourceYoutube: () {
@@ -611,22 +637,29 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                         },
                         onNext: _nextStep,
                         hasSource: _sourceMaterial.isNotEmpty,
-                        uploadStatusMessage: _processedFileNames.isNotEmpty ? 'Processed: ${_processedFileNames.join(", ")}' : 'Material Ready',
+                        uploadStatusMessage: _processedFileNames.isNotEmpty
+                            ? 'Processed: ${_processedFileNames.join(", ")}'
+                            : 'Material Ready',
                       ),
                       // STEP 2: CONFIGURATION
                       WebExamConfigStep(
                         numberOfQuestions: _numberOfQuestions,
-                        onQuestionsChanged: (v) => setState(() => _numberOfQuestions = v.round()),
+                        onQuestionsChanged: (v) =>
+                            setState(() => _numberOfQuestions = v.round()),
                         easyCount: (_numberOfQuestions * _easyRatio).round(),
-                        mediumCount: (_numberOfQuestions * (1.0 - _easyRatio - _hardRatio)).round(),
+                        mediumCount: (_numberOfQuestions *
+                                (1.0 - _easyRatio - _hardRatio))
+                            .round(),
                         hardCount: (_numberOfQuestions * _hardRatio).round(),
                         onEasyChanged: (v) => setState(() {
                           _easyRatio = v;
-                          if (_easyRatio + _hardRatio > 1.0) _hardRatio = 1.0 - _easyRatio;
+                          if (_easyRatio + _hardRatio > 1.0)
+                            _hardRatio = 1.0 - _easyRatio;
                         }),
                         onHardChanged: (v) => setState(() {
                           _hardRatio = v;
-                          if (_easyRatio + _hardRatio > 1.0) _easyRatio = 1.0 - _hardRatio;
+                          if (_easyRatio + _hardRatio > 1.0)
+                            _easyRatio = 1.0 - _hardRatio;
                         }),
                         includeMultipleChoice: _includeMultipleChoice,
                         includeTrueFalse: _includeTrueFalse,
@@ -668,17 +701,27 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                         },
                         onBack: _prevStep,
                         onSaveLibrary: () {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved to Library.')));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Saved to Library.')));
                           context.go('/library');
                         },
                         onPdfExport: _exportExam,
                         onPublish: () {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Publishing to Class...')));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Publishing to Class...')));
                         },
                         easyCount: (_numberOfQuestions * _easyRatio).round(),
-                        mediumCount: (_numberOfQuestions * (1.0 - _easyRatio - _hardRatio)).round(),
+                        mediumCount: (_numberOfQuestions *
+                                (1.0 - _easyRatio - _hardRatio))
+                            .round(),
                         hardCount: (_numberOfQuestions * _hardRatio).round(),
-                        topicCounts: const {'Metabolism': 8, 'Cell Structures': 12, 'Genetics': 5},
+                        topicCounts: const {
+                          'Metabolism': 8,
+                          'Cell Structures': 12,
+                          'Genetics': 5
+                        },
                       ),
                     ],
                   ),
@@ -697,7 +740,8 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.1))),
+        border: Border(
+            bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.1))),
       ),
       child: Row(
         children: [
@@ -706,7 +750,11 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
             onPressed: () => context.go('/library'),
           ),
           const SizedBox(width: 16),
-          Text('Formal Exam Architect', style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w900, color: const Color(0xFF4F46E5))),
+          Text('Formal Exam Architect',
+              style: GoogleFonts.outfit(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  color: const Color(0xFF4F46E5))),
           const Spacer(),
           _stepBubble(0, 'Setup', Icons.settings),
           _stepLine(),
@@ -714,11 +762,12 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           _stepLine(),
           _stepBubble(2, 'Review', Icons.remove_red_eye),
           const Spacer(),
-          if (_currentStep < 2) 
+          if (_currentStep < 2)
             TextButton(
-              onPressed: _nextStep, 
-              child: Text(_currentStep == 0 ? 'Review Source' : 'Generate Paper', style: const TextStyle(fontWeight: FontWeight.bold))
-            ),
+                onPressed: _nextStep,
+                child: Text(
+                    _currentStep == 0 ? 'Review Source' : 'Generate Paper',
+                    style: const TextStyle(fontWeight: FontWeight.bold))),
         ],
       ),
     );
@@ -727,7 +776,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
   Widget _stepBubble(int index, String label, IconData icon) {
     bool isCompleted = _currentStep > index;
     bool isActive = _currentStep == index;
-    
+
     return Row(
       children: [
         Container(
@@ -735,12 +784,20 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           height: 28,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: isCompleted ? Colors.green : (isActive ? const Color(0xFF4F46E5) : Colors.grey[200]),
+            color: isCompleted
+                ? Colors.green
+                : (isActive ? const Color(0xFF4F46E5) : Colors.grey[200]),
           ),
-          child: Icon(isCompleted ? Icons.check : icon, size: 14, color: isCompleted || isActive ? Colors.white : Colors.grey[500]),
+          child: Icon(isCompleted ? Icons.check : icon,
+              size: 14,
+              color: isCompleted || isActive ? Colors.white : Colors.grey[500]),
         ),
         const SizedBox(width: 8),
-        Text(label, style: GoogleFonts.outfit(fontSize: 12, fontWeight: isActive ? FontWeight.bold : FontWeight.normal, color: isActive ? Colors.black : Colors.grey[500])),
+        Text(label,
+            style: GoogleFonts.outfit(
+                fontSize: 12,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                color: isActive ? Colors.black : Colors.grey[500])),
       ],
     );
   }

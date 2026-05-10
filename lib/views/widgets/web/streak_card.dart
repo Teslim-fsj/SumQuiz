@@ -72,8 +72,7 @@ class StreakCard extends StatelessWidget {
           ),
           alignment: Alignment.center,
           child: isCompleted
-              ? const Icon(Icons.check_rounded,
-                  color: Colors.white, size: 18)
+              ? const Icon(Icons.check_rounded, color: Colors.white, size: 18)
               : isFuture
                   ? const Icon(Icons.lock_rounded,
                       color: WebColors.textTertiary, size: 14)
@@ -88,8 +87,7 @@ class StreakCard extends StatelessWidget {
           style: GoogleFonts.outfit(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color:
-                isCompleted ? WebColors.textPrimary : WebColors.textTertiary,
+            color: isCompleted ? WebColors.textPrimary : WebColors.textTertiary,
           ),
         ),
       ],

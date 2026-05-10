@@ -19,8 +19,8 @@ class NotificationManager {
     if (!(await _notificationService.areNotificationsEnabled())) return;
     await _notificationService.scheduleNotification(
       100, // Unique ID
-      'Time to Learn! 📚',
-      'learning_engagement',
+      '🌤 Brain Path Optimized',
+      'brain_state_greeting',
       {'name': user.displayName.split(' ').first},
       payloadRoute: '/library',
       days: 1, // Tomorrow at 10 AM
@@ -32,9 +32,9 @@ class NotificationManager {
     if (!(await _notificationService.areNotificationsEnabled())) return;
     await _notificationService.scheduleNotification(
       101,
-      'We Miss You! 👋',
-      'learning_engagement',
-      {'name': user.displayName.split(' ').first},
+      '🧠 Neural Dusting Needed',
+      'streak_and_motivation',
+      {'count': user.missionCompletionStreak.toString()},
       payloadRoute: '/create-content',
       days: 3,
     );
@@ -45,8 +45,8 @@ class NotificationManager {
     if (!(await _notificationService.areNotificationsEnabled())) return;
     await _notificationService.scheduleNotification(
       102,
-      'Review Time! 🎯',
-      'learning_engagement',
+      '🎯 Mastery Milestone Awaits',
+      'brain_state_greeting',
       {'name': user.displayName.split(' ').first},
       payloadRoute: '/library',
       days: 1,
@@ -62,8 +62,8 @@ class NotificationManager {
     if (!(await _notificationService.areNotificationsEnabled())) return;
     await _notificationService.scheduleNotification(
       200,
-      'Great Job! 🎉',
-      'content_based_nudges',
+      '🤔 Socratic Insight',
+      'socratic_coaching',
       {'topic': topic},
       payloadRoute: '/library',
       days: 1,
@@ -76,8 +76,8 @@ class NotificationManager {
     if (!(await _notificationService.areNotificationsEnabled())) return;
     await _notificationService.scheduleNotification(
       201,
-      'New Content Ready! 📖',
-      'content_based_nudges',
+      '📖 Knowledge Bridge Found',
+      'socratic_coaching',
       {'topic': topic, 'related_topic': relatedTopic},
       payloadRoute: '/library',
       days: 2,
@@ -132,8 +132,8 @@ class NotificationManager {
     if (!(await _notificationService.areNotificationsEnabled())) return;
     await _notificationService.scheduleNotification(
       302,
-      'Limited Time Offer! 🎁',
-      'pro_conversion_triggers',
+      '🎁 Sumi Pro Access',
+      'pro_tutor_access',
       {},
       payloadRoute: '/settings/subscription',
       days: 7,
@@ -205,8 +205,8 @@ class NotificationManager {
     if (!(await _notificationService.areNotificationsEnabled())) return;
     await _notificationService.scheduleNotification(
       502,
-      'Welcome to SumQuiz! 👋',
-      'system_and_updates',
+      '👋 Hello, Student!',
+      'system_updates',
       {'name': user.displayName.split(' ').first},
       payloadRoute: '/create-content',
       days: 0, // Immediate
@@ -220,6 +220,7 @@ class NotificationManager {
   /// Schedule daily mission priming notification
   Future<void> scheduleDailyMissionPriming({
     required String userId,
+    required String userName,
     required String preferredStudyTime,
     required int cardCount,
     required int estimatedMinutes,
@@ -227,6 +228,7 @@ class NotificationManager {
     if (!(await _notificationService.areNotificationsEnabled())) return;
     await _notificationService.schedulePrimingNotification(
       userId: userId,
+      userName: userName,
       preferredStudyTime: preferredStudyTime,
       cardCount: cardCount,
       estimatedMinutes: estimatedMinutes,

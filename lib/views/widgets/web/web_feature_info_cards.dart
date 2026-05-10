@@ -11,7 +11,8 @@ class WebFeatureInfoCards extends StatelessWidget {
         _buildInfoCard(
           icon: Icons.lightbulb_outline_rounded,
           title: 'Did you know?',
-          subtitle: 'You can import PDF, EPUB, or web links directly to generate instant summaries and flashcards.',
+          subtitle:
+              'You can import PDF, EPUB, or web links directly to generate instant summaries and flashcards.',
           iconColor: const Color(0xFF6366F1),
           bgColor: const Color(0xFFEEF2FF),
         ),
@@ -19,7 +20,8 @@ class WebFeatureInfoCards extends StatelessWidget {
         _buildInfoCard(
           icon: Icons.bolt_rounded,
           title: 'Fast Generation',
-          subtitle: 'Our latest model processes 100+ pages of technical content in under 45 seconds.',
+          subtitle:
+              'Our latest model processes 100+ pages of technical content in under 45 seconds.',
           iconColor: const Color(0xFFF59E0B),
           bgColor: const Color(0xFFFFF7ED),
         ),
@@ -27,7 +29,8 @@ class WebFeatureInfoCards extends StatelessWidget {
         _buildInfoCard(
           icon: Icons.sync_rounded,
           title: 'Always Synced',
-          subtitle: 'Your library stays updated across all devices, including mobile and desktop applications.',
+          subtitle:
+              'Your library stays updated across all devices, including mobile and desktop applications.',
           iconColor: const Color(0xFF10B981),
           bgColor: const Color(0xFFECFDF5),
         ),
@@ -58,7 +61,10 @@ class WebFeatureInfoCards extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10)],
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black.withOpacity(0.03), blurRadius: 10)
+                ],
               ),
               child: Icon(icon, color: iconColor, size: 24),
             ),

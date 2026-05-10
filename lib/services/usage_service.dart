@@ -5,28 +5,30 @@ import 'package:sumquiz/services/time_sync_service.dart';
 import 'package:sumquiz/services/referral_service.dart';
 
 class UsageConfig {
-  // Credits costs (Internal economics)
-  static const int baseSummaryCost = 2; 
-  static const int baseQuizCost = 5;    
-  static const int baseExamCost = 15;   
+  // Compute Unit (CU) Weights (Internal Economics)
+  static const double cuNano = 0.5;      // Mascot state, tiny nudges
+  static const double cuMicro = 1.5;     // Summaries, Title generation
+  static const double cuStandard = 6.0;  // Quizzes (10q), Flashcards (20c)
+  static const double cuMacro = 20.0;    // Exams, Long PDFs, YouTube
+  static const double cuExtreme = 60.0;  // Live Lecture recordings
 
-  // Multipliers
-  static const double youtubeMultiplier = 1.5;
-  static const double pdfImageMultiplier = 1.3;
-  static const double examMultiplier = 1.7;
+  // Adaptive Multipliers
+  static const double multiYoutube = 1.5;
+  static const double multiPdfImage = 1.3;
+  static const double multiHeavy = 1.8;
 
-  // Invisible Daily Soft Caps (Session throttling)
-  static const int freeDailyUnitCap = 15;
-  static const int starterProDailyUnitCap = 40;
-  static const int standardProDailyUnitCap = 120;
-  static const int powerProDailyUnitCap = 300;
-  static const int creatorDailyUnitCap = 800;
+  // Tier-Based Daily Neural Capacity (CU)
+  static const double capFree = 25.0;
+  static const double capStarterPro = 60.0;
+  static const double capStandardPro = 180.0;
+  static const double capPowerPro = 450.0;
+  static const double capCreator = 1200.0;
 }
 
 class UsageService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  /// Check if user can proceed with a study session (Invisibly checks credits)
+  /// Check if user can proceed with a study session (Invisibly checks CU)
   Future<bool> canStartStudySession(String uid, String actionType) async {
     try {
       final userDoc = await _db.collection('users').doc(uid).get();
@@ -34,22 +36,24 @@ class UsageService {
       final user = UserModel.fromFirestore(userDoc);
 
       // 1. Invisible Cost Calculation
-      int approximateCost = _calculateInternalCost(actionType);
-      
-      // 2. Bypass for Pro/Creators during testing
-      if (user.isPro || user.role == UserRole.creator) {
+      double approximateCost = _calculateInternalCost(actionType);
+
+      // 2. High Tier Bypass (Creators/Power Pros have large buffers)
+      if (user.tier == 'creator' || user.tier == 'power_pro') {
         return true;
       }
 
-      // 3. Burst Control (Abuse protection for free users)
+      // 3. Burst Control (Abuse protection)
       if (await _isBursting(uid, user)) {
-        developer.log('Burst control triggered for user: $uid', name: 'UsageService');
+        developer.log('Burst control triggered for user: $uid',
+            name: 'UsageService');
         return false;
       }
 
-      // 4. Credit Check for free users
-      if (user.credits < approximateCost) {
-        developer.log('Credit block (Hidden as Daily Limit) for user: $uid', name: 'UsageService');
+      // 4. Capacity Check (Neural Energy)
+      if (user.computeUnits < approximateCost) {
+        developer.log('Capacity depleted (Invisibly blocked) for user: $uid',
+            name: 'UsageService');
         return false;
       }
 
@@ -62,27 +66,28 @@ class UsageService {
 
   /// Internal adaptive throttling check (Burst protection)
   Future<bool> _isBursting(String uid, UserModel user) async {
-    // Logic to check if user had too many generations in last 5 mins
     final now = TimeSyncService.now;
     final lastAction = user.lastDeckGenerationDate;
-    
+
     if (lastAction == null) return false;
 
     final diff = now.difference(lastAction);
-    
-    // Free users can't spam within 60 seconds
-    if (!user.isPro && diff.inSeconds < 60) return true;
-    
-    // Pros can spam up to 5 bursts, then get throttled (simplified check)
-    if (user.isPro && diff.inSeconds < 5) return true;
+
+    // Free users: 2 mins between heavy actions
+    if (user.tier == 'free' && diff.inSeconds < 120) return true;
+
+    // Pros: 15 seconds between actions (prevents bot-like behavior)
+    if (user.isPro && diff.inSeconds < 15) return true;
 
     return false;
   }
 
-  /// Record a Study Session (Deduct credits invisibly)
-  Future<void> recordStudySession(String uid, String actionType, {bool isHeavy = false}) async {
+  /// Record a Study Session (Deduct CU invisibly)
+  Future<void> recordStudySession(String uid, String actionType,
+      {bool isHeavy = false, bool isYoutube = false, bool isMultimodal = false}) async {
     try {
-      int cost = _calculateInternalCost(actionType, isHeavy: isHeavy);
+      double cost = _calculateInternalCost(actionType, 
+          isHeavy: isHeavy, isYoutube: isYoutube, isMultimodal: isMultimodal);
 
       UserModel? userBeforeTx;
       await _db.runTransaction((transaction) async {
@@ -91,43 +96,53 @@ class UsageService {
         if (!userDoc.exists) return;
 
         userBeforeTx = UserModel.fromFirestore(userDoc);
-        final newCredits = userBeforeTx!.credits - cost;
-        
+        final newCompute = userBeforeTx!.computeUnits - cost;
+
         transaction.update(userRef, {
-          'credits': newCredits < 0 ? 0 : newCredits,
+          'computeUnits': newCompute < 0 ? 0.0 : newCompute,
           'totalDecksGenerated': userBeforeTx!.totalDecksGenerated + 1,
           'lastDeckGenerationDate': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         });
       });
-      
-      developer.log('Recorded session: $actionType (Cost: $cost)', name: 'UsageService');
 
-      // Check if this is the user's FIRST generation and they were referred
-      if (userBeforeTx != null && userBeforeTx!.totalDecksGenerated == 0 && userBeforeTx!.referredBy != null && userBeforeTx!.referredBy!.isNotEmpty) {
+      developer.log('Recorded compute burn: $actionType (CU: $cost)',
+          name: 'UsageService');
+
+      // Referral Reward Logic
+      if (userBeforeTx != null &&
+          userBeforeTx!.totalDecksGenerated == 0 &&
+          userBeforeTx!.referredBy != null &&
+          userBeforeTx!.referredBy!.isNotEmpty) {
         try {
-          developer.log('First deck generation detected. Triggering referral reward for ${userBeforeTx!.referredBy}', name: 'UsageService');
           final ReferralService referralService = ReferralService();
           await referralService.grantReferrerReward(userBeforeTx!.referredBy!);
         } catch (e) {
-          developer.log('Failed to grant referral reward', name: 'UsageService', error: e);
+          developer.log('Referral reward failed', name: 'UsageService', error: e);
         }
       }
     } catch (e) {
-      developer.log('Error recording session', name: 'UsageService', error: e);
+      developer.log('Error recording compute', name: 'UsageService', error: e);
     }
   }
 
-  int _calculateInternalCost(String actionType, {bool isHeavy = false}) {
-    double base = UsageConfig.baseQuizCost.toDouble();
-    if (actionType == 'summary') base = UsageConfig.baseSummaryCost.toDouble();
-    if (actionType == 'exam') base = UsageConfig.baseExamCost.toDouble();
+  double _calculateInternalCost(String actionType, 
+      {bool isHeavy = false, bool isYoutube = false, bool isMultimodal = false}) {
+    double base = UsageConfig.cuStandard;
+    
+    if (actionType == 'summary' || actionType == 'note') base = UsageConfig.cuMicro;
+    if (actionType == 'exam') base = UsageConfig.cuMacro;
+    if (actionType == 'lecture') base = UsageConfig.cuExtreme;
+    if (actionType == 'mascot') base = UsageConfig.cuNano;
 
-    if (isHeavy) base *= 1.5;
-    return base.ceil();
+    if (isYoutube) base *= UsageConfig.multiYoutube;
+    if (isMultimodal) base *= UsageConfig.multiPdfImage;
+    if (isHeavy) base *= UsageConfig.multiHeavy;
+    
+    return base;
   }
 
-  // --- COMPATIBILITY SHIMS (Legacy) ---
+  // --- Legacy Compatibility ---
   Future<bool> canPerformAction(String uid, String action) => canStartStudySession(uid, action);
   Future<void> recordAction(String uid, String action) => recordStudySession(uid, action);
   Future<bool> canGenerateDeck(String uid) => canStartStudySession(uid, 'quiz');

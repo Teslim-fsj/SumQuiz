@@ -43,9 +43,11 @@ class UpgradeDialog extends StatelessWidget {
             },
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
             ),
-            child: const Text('Unlock Full Access', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text('Unlock Full Access',
+                style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ),
         const SizedBox(height: 8),
@@ -53,7 +55,8 @@ class UpgradeDialog extends StatelessWidget {
           width: double.infinity,
           child: TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Maybe Later', style: TextStyle(color: Colors.grey[600])),
+            child:
+                Text('Maybe Later', style: TextStyle(color: Colors.grey[600])),
           ),
         ),
       ],

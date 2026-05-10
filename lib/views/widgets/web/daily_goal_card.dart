@@ -15,8 +15,9 @@ class DailyGoalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress =
-        goalMinutes > 0 ? (timeSpentMinutes / goalMinutes).clamp(0.0, 1.0) : 0.0;
+    final progress = goalMinutes > 0
+        ? (timeSpentMinutes / goalMinutes).clamp(0.0, 1.0)
+        : 0.0;
 
     return Container(
       padding: const EdgeInsets.all(16),

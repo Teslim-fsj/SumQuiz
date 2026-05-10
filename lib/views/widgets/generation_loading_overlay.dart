@@ -22,7 +22,7 @@ class GenerationLoadingOverlay extends StatelessWidget {
 
     return Positioned.fill(
       child: Container(
-        color: isDark 
+        color: isDark
             ? Colors.black.withOpacity(0.7)
             : theme.scaffoldBackgroundColor.withOpacity(0.8),
         child: BackdropFilter(
@@ -32,7 +32,8 @@ class GenerationLoadingOverlay extends StatelessWidget {
               margin: const EdgeInsets.symmetric(horizontal: 40),
               padding: const EdgeInsets.all(40),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surface.withOpacity(isDark ? 0.2 : 0.8),
+                color:
+                    theme.colorScheme.surface.withOpacity(isDark ? 0.2 : 0.8),
                 borderRadius: BorderRadius.circular(32),
                 border: Border.all(
                   color: theme.colorScheme.outline.withOpacity(0.2),
@@ -61,23 +62,28 @@ class GenerationLoadingOverlay extends StatelessWidget {
                           shape: BoxShape.circle,
                           color: theme.colorScheme.primary.withOpacity(0.1),
                         ),
-                      ).animate(onPlay: (c) => c.repeat()).shimmer(duration: 2.seconds),
+                      )
+                          .animate(onPlay: (c) => c.repeat())
+                          .shimmer(duration: 2.seconds),
                       SizedBox(
                         width: 60,
                         height: 60,
                         child: CircularProgressIndicator(
                           strokeWidth: 4,
-                          valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
-                          backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              theme.colorScheme.primary),
+                          backgroundColor:
+                              theme.colorScheme.primary.withOpacity(0.1),
                         ),
                       ),
-                      Icon(Icons.auto_awesome, color: theme.colorScheme.primary, size: 24)
+                      Icon(Icons.auto_awesome,
+                              color: theme.colorScheme.primary, size: 24)
                           .animate(onPlay: (c) => c.repeat(reverse: true))
                           .scaleXY(begin: 0.8, end: 1.2, duration: 1.seconds),
                     ],
                   ),
                   const SizedBox(height: 32),
-                  
+
                   Text(
                     message,
                     style: GoogleFonts.outfit(
@@ -91,13 +97,14 @@ class GenerationLoadingOverlay extends StatelessWidget {
                         duration: 3.seconds,
                         color: theme.colorScheme.primary.withOpacity(0.2),
                       ),
-                      
+
                   const SizedBox(height: 12),
-                  
+
                   Text(
                     subMessage,
                     style: GoogleFonts.outfit(
-                      color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
+                      color:
+                          theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -115,7 +122,8 @@ class GenerationLoadingOverlay extends StatelessWidget {
                       ),
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.redAccent,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
                         backgroundColor: Colors.redAccent.withOpacity(0.1),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(100),

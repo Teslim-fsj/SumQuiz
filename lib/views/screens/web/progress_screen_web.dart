@@ -143,12 +143,14 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
       color: const Color(0xFFF8FAFC),
       child: _isLoading
           ? Center(
-              child: CircularProgressIndicator(color: theme.colorScheme.primary))
+              child:
+                  CircularProgressIndicator(color: theme.colorScheme.primary))
           : Column(
               children: [
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                     child: Center(
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 1200),
@@ -156,7 +158,8 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             WebProgressHeader(
-                              userName: user?.displayName.split(' ').first ?? 'Scholar',
+                              userName: user?.displayName.split(' ').first ??
+                                  'Scholar',
                               weeklyGoalPercentage: 15, // Sample value
                               onDownloadReport: () {},
                             ),
@@ -172,7 +175,8 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Expanded(flex: 3, child: _buildWeeklyActivity()),
+                                Expanded(
+                                    flex: 3, child: _buildWeeklyActivity()),
                                 const SizedBox(width: 16),
                                 Expanded(
                                   flex: 2,
@@ -180,8 +184,10 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                                     children: [
                                       WebXPCard(
                                         tierName: _milestoneTitle,
-                                        currentXP: (_milestoneProgress * 10).toInt(), // 10 XP per item
-                                        nextLevelXP: (_milestoneGoal * 10).toInt(),
+                                        currentXP: (_milestoneProgress * 10)
+                                            .toInt(), // 10 XP per item
+                                        nextLevelXP:
+                                            (_milestoneGoal * 10).toInt(),
                                       ),
                                       const SizedBox(height: 16),
                                       _buildAchievementsGrid(),
@@ -192,7 +198,8 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                             ),
                             const SizedBox(height: 16),
                             WebConsistencyMap(
-                              engagementData: List.generate(168, (i) => i % 5), // Sample data
+                              engagementData: List.generate(
+                                  168, (i) => i % 5), // Sample data
                             ),
                             const SizedBox(height: 16),
                             _buildAICoachTip(),
@@ -255,7 +262,8 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE2E8F0),
                   borderRadius: BorderRadius.circular(16),
@@ -270,7 +278,8 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                         color: const Color(0xFF475569),
                       ),
                     ),
-                    const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF475569), size: 18),
+                    const Icon(Icons.keyboard_arrow_down_rounded,
+                        color: Color(0xFF475569), size: 18),
                   ],
                 ),
               ),
@@ -282,7 +291,8 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
-                maxY: (_weeklyActivity.reduce((a, b) => a > b ? a : b) + 2).toDouble(),
+                maxY: (_weeklyActivity.reduce((a, b) => a > b ? a : b) + 2)
+                    .toDouble(),
                 barTouchData: BarTouchData(enabled: true),
                 titlesData: FlTitlesData(
                   show: true,
@@ -290,9 +300,18 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                     sideTitles: SideTitles(
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
-                        const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+                        const days = [
+                          'MON',
+                          'TUE',
+                          'WED',
+                          'THU',
+                          'FRI',
+                          'SAT',
+                          'SUN'
+                        ];
                         final now = DateTime.now();
-                        final date = now.subtract(Duration(days: 6 - value.toInt()));
+                        final date =
+                            now.subtract(Duration(days: 6 - value.toInt()));
                         return Padding(
                           padding: const EdgeInsets.only(top: 16.0),
                           child: Text(
@@ -307,9 +326,12 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                       },
                     ),
                   ),
-                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
                 ),
                 gridData: const FlGridData(show: false),
                 borderData: FlBorderData(show: false),
@@ -319,7 +341,9 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
                     barRods: [
                       BarChartRodData(
                         toY: _weeklyActivity[i].toDouble(),
-                        color: i == 6 ? const Color(0xFF6366F1) : const Color(0xFFE2E8F0),
+                        color: i == 6
+                            ? const Color(0xFF6366F1)
+                            : const Color(0xFFE2E8F0),
                         width: 48,
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -377,10 +401,14 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildAchievementBadge(Icons.auto_awesome_rounded, const Color(0xFFC7D2FE), true),
-              _buildAchievementBadge(Icons.speed_rounded, const Color(0xFFC7D2FE), true),
-              _buildAchievementBadge(Icons.school_rounded, const Color(0xFFC7D2FE), true),
-              _buildAchievementBadge(Icons.lock_rounded, const Color(0xFFF1F5F9), false),
+              _buildAchievementBadge(
+                  Icons.auto_awesome_rounded, const Color(0xFFC7D2FE), true),
+              _buildAchievementBadge(
+                  Icons.speed_rounded, const Color(0xFFC7D2FE), true),
+              _buildAchievementBadge(
+                  Icons.school_rounded, const Color(0xFFC7D2FE), true),
+              _buildAchievementBadge(
+                  Icons.lock_rounded, const Color(0xFFF1F5F9), false),
             ],
           ),
         ],
@@ -396,7 +424,9 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
         color: color,
         shape: BoxShape.circle,
       ),
-      child: Icon(icon, color: unlocked ? const Color(0xFF4F46E5) : const Color(0xFF94A3B8), size: 24),
+      child: Icon(icon,
+          color: unlocked ? const Color(0xFF4F46E5) : const Color(0xFF94A3B8),
+          size: 24),
     );
   }
 
@@ -412,8 +442,10 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-            child: const Icon(Icons.lightbulb_rounded, color: Color(0xFF6366F1), size: 24),
+            decoration:
+                BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+            child: const Icon(Icons.lightbulb_rounded,
+                color: Color(0xFF6366F1), size: 24),
           ),
           const SizedBox(width: 24),
           Expanded(

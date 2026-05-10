@@ -18,6 +18,7 @@ import 'package:collection/collection.dart';
 import '../widgets/upgrade_dialog.dart';
 import '../../models/public_deck.dart';
 import '../../services/firestore_service.dart';
+import '../../services/mastery_service.dart';
 import '../../services/export_service.dart';
 import '../../services/notification_integration.dart';
 
@@ -50,10 +51,11 @@ class SummaryScreenState extends State<SummaryScreen> {
   @override
   void initState() {
     super.initState();
-    _aiService = EnhancedAIService(
-        iapService: Provider.of<IAPService>(context, listen: false));
     _localDbService = LocalDatabaseService();
     _localDbService.init();
+    _aiService = EnhancedAIService(
+        iapService: Provider.of<IAPService>(context, listen: false),
+        localDb: _localDbService);
     _loadSummary();
   }
 
@@ -63,6 +65,20 @@ class SummaryScreenState extends State<SummaryScreen> {
       _summaryTitle = widget.summary!.title;
       _summaryTags = widget.summary!.tags;
       _state = ScreenState.success;
+
+      // Send Signal
+      final user = Provider.of<UserModel?>(context, listen: false);
+      if (user != null && widget.summary!.topicIds.isNotEmpty) {
+        final mastery = Provider.of<MasteryService>(context, listen: false);
+        for (final topicId in widget.summary!.topicIds) {
+          mastery.processSignal(LearningSignal(
+            topicId: topicId,
+            type: SignalType.summaryRead,
+            timestamp: DateTime.now(),
+            metadata: {'context': 'summary_view', 'userId': user.uid},
+          ));
+        }
+      }
     } else if (widget.id != null) {
       setState(() {
         _state = ScreenState.loading;
@@ -101,6 +117,20 @@ class SummaryScreenState extends State<SummaryScreen> {
             _summaryTags = s.tags;
             _state = ScreenState.success;
           });
+
+          // Send Signal
+          final user = Provider.of<UserModel?>(context, listen: false);
+          if (user != null && s.topicIds.isNotEmpty) {
+            final mastery = Provider.of<MasteryService>(context, listen: false);
+            for (final topicId in s.topicIds) {
+              mastery.processSignal(LearningSignal(
+                topicId: topicId,
+                type: SignalType.summaryRead,
+                timestamp: DateTime.now(),
+                metadata: {'context': 'summary_view', 'userId': user.uid},
+              ));
+            }
+          }
         } else if (mounted) {
           setState(() {
             _state = ScreenState.error;
@@ -155,10 +185,12 @@ class SummaryScreenState extends State<SummaryScreen> {
         !(await usageService.canPerformAction(userModel.uid, 'summaries'))) {
       if (mounted) {
         await NotificationIntegration.onUsageLimitHit(context);
-        showDialog(
-            context: context,
-            builder: (context) =>
-                const UpgradeDialog(featureName: 'summaries'));
+        if (mounted) {
+          showDialog(
+              context: context,
+              builder: (context) =>
+                  const UpgradeDialog(featureName: 'summaries'));
+        }
       }
       return;
     }
@@ -191,6 +223,7 @@ class SummaryScreenState extends State<SummaryScreen> {
         if (!mounted) return;
         await NotificationIntegration.onContentGenerated(
             context, userModel.uid, _summaryTitle);
+        if (!mounted) return;
         // Navigate to the results screen
         context.go('/library/results-view/$folderId');
       } else {
@@ -441,8 +474,7 @@ class SummaryScreenState extends State<SummaryScreen> {
       appBar: AppBar(
         title: Text(widget.summary == null ? 'Generate Summary' : 'Summary',
             style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF0D9488))),
+                fontWeight: FontWeight.w600, color: const Color(0xFF0D9488))),
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         leading: BackButton(color: theme.colorScheme.onSurface),
@@ -532,7 +564,8 @@ class SummaryScreenState extends State<SummaryScreen> {
                 decoration: InputDecoration(
                   hintText: 'Paste your text here...',
                   hintStyle: TextStyle(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.3)),
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.3)),
                   filled: true,
                   fillColor: theme.cardColor,
                   border: OutlineInputBorder(
@@ -561,7 +594,8 @@ class SummaryScreenState extends State<SummaryScreen> {
                         Icons.upload_file_rounded,
                         color: _pdfFileName != null
                             ? const Color(0xFF0D9488)
-                            : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                            : theme.colorScheme.onSurface
+                                .withValues(alpha: 0.6),
                       ),
                       label: Text(
                         _pdfFileName ?? 'Upload PDF',
@@ -699,7 +733,8 @@ class SummaryScreenState extends State<SummaryScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -840,7 +875,8 @@ class SummaryScreenState extends State<SummaryScreen> {
 
                 // Share/Publish Button
                 Consumer<UserModel?>(builder: (context, user, _) {
-                  final isCreator = user != null && user.role == UserRole.creator;
+                  final isCreator =
+                      user != null && user.role == UserRole.creator;
                   return SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(

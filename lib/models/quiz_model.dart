@@ -8,6 +8,8 @@ class Quiz {
   final String title;
   final List<QuizQuestion> questions;
   final Timestamp timestamp;
+  final String? sourceId;
+  final String? sourceName;
 
   final bool isExam;
 
@@ -18,6 +20,8 @@ class Quiz {
     required this.questions,
     Timestamp? timestamp,
     this.isExam = false,
+    this.sourceId,
+    this.sourceName,
   })  : id = id ?? const Uuid().v4(),
         timestamp = timestamp ?? Timestamp.now();
 
@@ -36,6 +40,8 @@ class Quiz {
       questions: questions ?? this.questions,
       timestamp: timestamp ?? this.timestamp,
       isExam: isExam ?? this.isExam,
+      sourceId: sourceId ?? sourceId,
+      sourceName: sourceName ?? sourceName,
     );
   }
 
@@ -50,6 +56,8 @@ class Quiz {
           .toList(),
       timestamp: data['timestamp'] ?? Timestamp.now(),
       isExam: data['isExam'] ?? false,
+      sourceId: data['sourceId'],
+      sourceName: data['sourceName'],
     );
   }
 
@@ -61,6 +69,8 @@ class Quiz {
           .map((q) => QuizQuestion.fromMap(q))
           .toList(),
       isExam: map['isExam'] ?? false,
+      sourceId: map['sourceId'],
+      sourceName: map['sourceName'],
     );
   }
 
@@ -71,6 +81,8 @@ class Quiz {
       'questions': questions.map((q) => q.toFirestore()).toList(),
       'timestamp': timestamp,
       'isExam': isExam,
+      'sourceId': sourceId,
+      'sourceName': sourceName,
     };
   }
 }

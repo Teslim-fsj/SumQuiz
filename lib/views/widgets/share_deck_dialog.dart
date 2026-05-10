@@ -17,7 +17,7 @@ class ShareDeckDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     // Determine the share link: use slug if available, otherwise use shareCode
     String shareLink;
     if (slug != null && slug!.isNotEmpty) {

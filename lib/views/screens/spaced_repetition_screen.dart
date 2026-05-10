@@ -231,8 +231,7 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
           decoration: BoxDecoration(
             color: theme.cardColor.withOpacity(0.8),
             borderRadius: BorderRadius.circular(24),
-            border:
-                Border.all(color: theme.dividerColor.withOpacity(0.2)),
+            border: Border.all(color: theme.dividerColor.withOpacity(0.2)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.1),
@@ -389,8 +388,7 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
                 Center(
                     child: Text('Tap to reveal answer',
                         style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface
-                                .withOpacity(0.5),
+                            color: theme.colorScheme.onSurface.withOpacity(0.5),
                             fontStyle: FontStyle.italic)))
             ],
           ),

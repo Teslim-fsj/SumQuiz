@@ -8,7 +8,7 @@ import 'package:uuid/uuid.dart';
 import 'ai_base_service.dart';
 import 'package:sumquiz/providers/create_content_provider.dart';
 import 'dart:convert';
-
+import 'dart:typed_data';
 import 'dart:developer' as developer;
 
 class GeneratorAIService extends AIBaseService {
@@ -46,7 +46,8 @@ OUTPUT EXACTLY IN THIS JSON FORMAT:
 {
   "title": "Topic-focused title",
   "content": "# Overview\\n\\nMarkdown formatted content...",
-  "tags": ["keyword1", "keyword2", "keyword3"]
+  "tags": ["keyword1", "keyword2", "keyword3"],
+  "topics": ["Biology > Cell Division", "Cell Biology"]
 }
 
 Text: $text''';
@@ -81,6 +82,7 @@ Text: $text''';
         content: data['content']?.toString() ?? '',
         timestamp: DateTime.now(),
         tags: tags,
+        topicNames: List<String>.from(data['topics'] ?? []),
       );
     } catch (e, stack) {
       developer.log('Summary generation failed',
@@ -118,6 +120,7 @@ QUIZ RULES:
 OUTPUT EXACTLY IN THIS JSON FORMAT:
 {
   "title": "Quiz Title",
+  "topics": ["Physics > Kinematics", "Motion"],
   "questions": [
     {
       "question": "Sample text?",
@@ -170,6 +173,7 @@ Text: $text''';
         title: data['title']?.toString() ?? 'Quick Quiz',
         questions: questions,
         timestamp: DateTime.now(),
+        topicNames: List<String>.from(data['topics'] ?? []),
       );
     } catch (e, stack) {
       developer.log('Quiz generation failed',
@@ -202,6 +206,7 @@ FLASHCARD PRINCIPLES:
 OUTPUT EXACTLY IN THIS JSON FORMAT:
 {
   "title": "Deck Title",
+  "topics": ["Math > Trigonometry", "Geometry"],
   "flashcards": [
     {
       "question": "Front of card",
@@ -239,6 +244,7 @@ Text: $text''';
         title: data['title']?.toString() ?? 'Flashcards',
         flashcards: flashcards,
         timestamp: DateTime.now(),
+        topicNames: List<String>.from(data['topics'] ?? []),
       );
     } catch (e, stack) {
       developer.log('Flashcard generation failed',
@@ -572,5 +578,72 @@ Text: $text''';
         'isCorrect': false,
       };
     }
+  }
+
+  Future<Map<String, dynamic>> generateDiagramLabeledQuiz({
+    required Uint8List imageBytes,
+    required String userId,
+    CancellationToken? cancelToken,
+  }) async {
+    developer.log('Generating Label the Image quiz from diagram',
+        name: 'GeneratorAIService');
+
+    final prompt =
+        '''You are an educational AI. Analyze the provided image (diagram/whiteboard). 
+    1. Identify all key parts, labels, or processes shown.
+    2. Extract any handwritten or printed text accurately.
+    3. Create a "Label the Image" quiz. Identify 5-8 specific areas or labels and describe them.
+    4. Also provide a summary of what the diagram represents.
+
+    OUTPUT EXACTLY IN THIS JSON FORMAT:
+    {
+      "title": "Diagram Title",
+      "summary": "Educational explanation of the diagram...",
+      "questions": [
+        {
+          "label": "Part Name",
+          "description": "What this part does or represents",
+          "clue": "A hint for the student"
+        }
+      ]
+    }''';
+
+    final response = await generateWithData(
+      prompt,
+      imageBytes,
+      'image/png',
+      cancelToken: cancelToken,
+    );
+
+    final jsonStr = extractJson(response);
+    return safeJsonDecode(jsonStr);
+  }
+
+  Stream<String> getTutorResponseStream({
+    required String prompt,
+    String? context,
+    String? userName,
+    CancellationToken? cancelToken,
+  }) {
+    final systemPrompt = '''You are Sumi, a brilliant and empathetic AI tutor for SumQuiz.
+    Your goal is to help ${userName ?? 'the student'} master their subjects through active recall and Socratic questioning.
+    
+    CURRENT CONTEXT: ${context ?? 'General study session.'}
+    
+    GUIDELINES:
+    - Ground your answers in the provided context if available.
+    - Be concise and exam-focused.
+    - Use Markdown for structure.
+    - Use emojis sparingly to maintain a friendly personality.
+    - If you don't know something based on the context, say so and suggest related study topics.
+    ''';
+
+    final fullPrompt = '$systemPrompt\n\nStudent: $prompt\nSumi:';
+
+    return generateStream(
+      fullPrompt,
+      customModel: educatorModel,
+      cancelToken: cancelToken,
+    );
   }
 }

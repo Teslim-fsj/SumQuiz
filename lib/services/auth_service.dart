@@ -264,8 +264,9 @@ class AuthService {
     } catch (e, s) {
       developer.log('An unexpected error occurred during Google Sign-In',
           error: e, stackTrace: s);
-      if (e is FirebaseAuthException || e is auth.GoogleSignInException)
+      if (e is FirebaseAuthException || e is auth.GoogleSignInException) {
         rethrow;
+      }
       throw Exception('Google sign-in could not complete. Please try again.');
     }
   }

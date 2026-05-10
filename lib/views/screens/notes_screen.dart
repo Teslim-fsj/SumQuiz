@@ -124,7 +124,8 @@ class _NotesScreenState extends State<NotesScreen> {
     ).animate().fadeIn().slideY(begin: -0.2);
   }
 
-  Widget _buildNoteCard(LocalNote note, ThemeData theme, NoteProvider provider) {
+  Widget _buildNoteCard(
+      LocalNote note, ThemeData theme, NoteProvider provider) {
     return Dismissible(
       key: Key(note.id),
       direction: DismissDirection.endToStart,
@@ -154,7 +155,8 @@ class _NotesScreenState extends State<NotesScreen> {
               contentPadding: const EdgeInsets.all(16),
               title: Text(
                 note.title.isEmpty ? 'Untitled Note' : note.title,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,28 +166,36 @@ class _NotesScreenState extends State<NotesScreen> {
                     note.content.isEmpty ? 'No content' : note.content,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7)),
+                    style: TextStyle(
+                        color: theme.textTheme.bodyMedium?.color
+                            ?.withOpacity(0.7)),
                   ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Icon(Icons.access_time, size: 14, color: theme.colorScheme.primary.withOpacity(0.6)),
+                      Icon(Icons.access_time,
+                          size: 14,
+                          color: theme.colorScheme.primary.withOpacity(0.6)),
                       const SizedBox(width: 4),
                       Text(
                         DateFormat('MMM d, h:mm a').format(note.updatedAt),
-                        style: TextStyle(fontSize: 12, color: theme.colorScheme.primary.withOpacity(0.6)),
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.primary.withOpacity(0.6)),
                       ),
                       const Spacer(),
                       if (note.tags.isNotEmpty)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
                             color: theme.colorScheme.primary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
                             '#${note.tags.first}',
-                            style: TextStyle(fontSize: 10, color: theme.colorScheme.primary),
+                            style: TextStyle(
+                                fontSize: 10, color: theme.colorScheme.primary),
                           ),
                         ),
                     ],
@@ -207,11 +217,14 @@ class _NotesScreenState extends State<NotesScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.note_alt_outlined, size: 80, color: theme.colorScheme.primary.withOpacity(0.2)),
+          Icon(Icons.note_alt_outlined,
+              size: 80, color: theme.colorScheme.primary.withOpacity(0.2)),
           const SizedBox(height: 16),
           Text(
             'No notes found',
-            style: TextStyle(fontSize: 18, color: theme.colorScheme.primary.withOpacity(0.5)),
+            style: TextStyle(
+                fontSize: 18,
+                color: theme.colorScheme.primary.withOpacity(0.5)),
           ),
           const SizedBox(height: 8),
           Text(

@@ -44,6 +44,10 @@ import 'package:sumquiz/services/deep_link_service.dart';
 import 'package:sumquiz/services/recording_service.dart';
 import 'package:sumquiz/providers/note_provider.dart';
 import 'package:sumquiz/providers/sumi_provider.dart';
+import 'package:sumquiz/services/mastery_service.dart';
+import 'package:sumquiz/services/mastery/recommendation_service.dart';
+import 'package:sumquiz/services/mastery/sumi_tutor_service.dart';
+import 'package:sumquiz/view_models/mastery_view_model.dart';
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
@@ -85,7 +89,8 @@ void main() async {
   usePathUrlStrategy(); // Remove # from web URLs (sumquiz.xyz/route instead of sumquiz.xyz/#/route)
   WidgetsFlutterBinding.ensureInitialized();
   if (!kIsWeb) {
-    await Workmanager().initialize(callbackDispatcher, isInDebugMode: kDebugMode);
+    await Workmanager()
+        .initialize(callbackDispatcher);
   }
 
   await Firebase.initializeApp(
@@ -113,7 +118,8 @@ void main() async {
 
   if (!kIsWeb) {
     await FirebaseAppCheck.instance.activate(
-      androidProvider: AndroidProvider.debug, // Change to playIntegrity in production
+      androidProvider:
+          AndroidProvider.debug, // Change to playIntegrity in production
       appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.appAttest,
     );
   }
@@ -206,7 +212,7 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     _router = createRouter(widget.authService);
-    
+
     // Initialize Deep Links
     DeepLinkService().initialize(rootNavigatorKey);
   }
@@ -241,7 +247,6 @@ class _MyAppState extends State<MyApp> {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()..init()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
-        ChangeNotifierProvider(create: (_) => SumiProvider()),
         Provider<AuthService>.value(value: widget.authService),
         Provider<NotificationService>.value(value: widget.notificationService),
         Provider<FirestoreService>(create: (_) => FirestoreService()),
@@ -249,6 +254,12 @@ class _MyAppState extends State<MyApp> {
         Provider<SpacedRepetitionService>(
             create: (context) => SpacedRepetitionService(
                 context.read<LocalDatabaseService>().getSpacedRepetitionBox())),
+        ChangeNotifierProvider<MasteryService>(
+          create: (context) => MasteryService(
+            context.read<LocalDatabaseService>().getTopicsBox(),
+            context.read<LocalDatabaseService>().getSpacedRepetitionBox(),
+          ),
+        ),
         ProxyProvider<AuthService, IAPService?>(
           update: (context, authService, previous) {
             final user = authService.currentUser;
@@ -271,15 +282,23 @@ class _MyAppState extends State<MyApp> {
           update: (context, iapService, previous) =>
               previous!..update(iapService),
         ),
-        ProxyProvider<IAPService, EnhancedAIService>(
-          update: (context, iapService, previous) {
-            final service = EnhancedAIService(iapService: iapService);
+        ProxyProvider2<IAPService, LocalDatabaseService, EnhancedAIService>(
+          update: (context, iapService, localDb, previous) {
+            final service = EnhancedAIService(iapService: iapService, localDb: localDb);
             // Initialize the service asynchronously
             service.initialize().catchError((e) {
               debugPrint('Error initializing EnhancedAIService: $e');
             });
             return service;
           },
+        ),
+        ChangeNotifierProxyProvider2<EnhancedAIService, LocalDatabaseService, SumiProvider>(
+          create: (context) => SumiProvider(
+            aiService: context.read<EnhancedAIService>().generatorService,
+            localDb: context.read<LocalDatabaseService>(),
+          ),
+          update: (context, ai, localDb, previous) =>
+              previous ?? SumiProvider(aiService: ai.generatorService, localDb: localDb),
         ),
         ProxyProvider<EnhancedAIService, ContentExtractionService>(
           update: (context, enhancedAIService, previous) =>
@@ -334,8 +353,12 @@ class _MyAppState extends State<MyApp> {
             return previous!;
           },
         ),
-        ChangeNotifierProxyProvider4<ContentExtractionService, EnhancedAIService,
-            LocalDatabaseService, YoutubeService, CreateContentProvider>(
+        ChangeNotifierProxyProvider4<
+            ContentExtractionService,
+            EnhancedAIService,
+            LocalDatabaseService,
+            YoutubeService,
+            CreateContentProvider>(
           create: (context) => CreateContentProvider(
             extractionService: context.read<ContentExtractionService>(),
             aiService: context.read<EnhancedAIService>(),
@@ -352,6 +375,15 @@ class _MyAppState extends State<MyApp> {
               ),
         ),
         Provider<RecordingService>(create: (_) => RecordingService()),
+        ProxyProvider<MasteryService, RecommendationService>(
+          update: (context, masteryService, previous) =>
+              RecommendationService(masteryService),
+        ),
+        ProxyProvider3<MasteryService, RecommendationService, NotificationService,
+            SumiTutorService>(
+          update: (context, mastery, recs, notifications, previous) =>
+              SumiTutorService(mastery, recs, notifications),
+        ),
         ChangeNotifierProxyProvider3<LocalDatabaseService, EnhancedAIService,
             RecordingService, NoteProvider>(
           create: (context) => NoteProvider(
@@ -366,6 +398,27 @@ class _MyAppState extends State<MyApp> {
                 aiService: ai,
                 recordingService: recording,
               ),
+        ),
+        ChangeNotifierProxyProvider2<AuthService, MasteryService,
+            MasteryViewModel?>(
+          create: (context) {
+            final auth = context.read<AuthService>();
+            if (auth.currentUser != null) {
+              return MasteryViewModel(
+                  context.read<MasteryService>(), auth.currentUser!.uid);
+            }
+            return null;
+          },
+          update: (context, auth, masteryService, previous) {
+            if (auth.currentUser != null) {
+              if (previous == null ||
+                  previous.userId != auth.currentUser!.uid) {
+                return MasteryViewModel(masteryService, auth.currentUser!.uid);
+              }
+              return previous;
+            }
+            return null;
+          },
         ),
       ],
       child: Consumer<ThemeProvider>(

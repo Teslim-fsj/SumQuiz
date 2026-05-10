@@ -12,14 +12,14 @@ class AIConfig {
   static const int transcriptTimeoutSeconds = 45;
   static const int webpageTimeoutSeconds = 30;
 
-  // Gemini Series (Verified 2026 Production)
-  static const String primaryModel = 'gemini-3.1-flash-lite-preview';
-  static const String secondaryModel = 'gemini-3-flash-preview';
-  static const String tertiaryModel = 'gemini-2.5-flash-lite';
-  static const String fallbackModel = 'gemini-flash-latest';
-  static const String proModel = 'gemini-3.1-pro-preview'; 
-  static const String visionModel = 'gemini-3.1-flash-lite-preview';
-  static const String youtubeModel = 'gemini-3.1-flash-lite-preview';
+  // Free-Tier Optimized (2026 Validation Build)
+  static const String primaryModel = 'gemini-3.1-flash-lite-preview';   // 500 RPD
+  static const String secondaryModel = 'gemini-2.5-flash-lite';          // 20 RPD, 10 RPM
+  static const String tertiaryModel = 'gemini-2.5-flash';                // 20 RPD, 5 RPM
+  static const String fallbackModel = 'gemini-2.5-flash';                // Same as tertiary
+  static const String proModel = 'gemini-3-flash-preview';               // 20 RPD (quality tasks)
+  static const String visionModel = 'gemini-3.1-flash-lite-preview';     // Same as primary
+  static const String youtubeModel = 'gemini-3.1-flash-lite-preview';    // Same as primary
 
   // Master extraction timeout — wraps the entire extraction operation
   static const int masterExtractionTimeoutSeconds = 300;
@@ -78,13 +78,24 @@ class AIConfig {
         responseMimeType: 'application/json',
       );
 
+  // --- Neural Capacity Orchestration (Invisible Economy) ---
+  static NeuralState currentNeuralState = NeuralState.highEnergy;
+
+  static bool get shouldDegradeModel => 
+      currentNeuralState == NeuralState.fatigued || currentNeuralState == NeuralState.exhausted;
+
+  static bool get shouldHardLimit => 
+      currentNeuralState == NeuralState.depleted || isCriticalAnomaly;
+
   // --- Global Anomaly Guardrails (Silent Survival System) ---
   static int anomalyScore = 0;
   static DateTime lastAnomalyAction = DateTime.now();
-  
-  static bool get isAnomalyDetected => anomalyScore > 100; // Threshold for suspicious burst
-  static bool get isCriticalAnomaly => anomalyScore > 250; // Threshold for severe throttling
-  
+
+  static bool get isAnomalyDetected =>
+      anomalyScore > 100; // Threshold for suspicious burst
+  static bool get isCriticalAnomaly =>
+      anomalyScore > 250; // Threshold for severe throttling
+
   static void recordAction(int intensity) {
     final now = DateTime.now();
     if (now.difference(lastAnomalyAction).inMinutes > 30) {
@@ -97,4 +108,11 @@ class AIConfig {
     anomalyScore += intensity;
     lastAnomalyAction = now;
   }
+}
+
+enum NeuralState {
+  highEnergy,   // 50-100% capacity: Use Primary/Pro models
+  fatigued,     // 10-49% capacity: Use Flash/Secondary models
+  exhausted,    // 1-9% capacity: Use Fallback/Lite models + Truncation
+  depleted      // 0% capacity: Hard stop / Sumi cool-down
 }

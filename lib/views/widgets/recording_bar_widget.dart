@@ -42,26 +42,51 @@ class RecordingBarWidget extends StatelessWidget {
       children: [
         if (isRecording) ...[
           _buildPulsingDot(theme),
-          const SizedBox(width: 8),
-          Text(
-            _formatDuration(provider.recordingDuration),
-            style: const TextStyle(
-                fontWeight: FontWeight.bold, fontFamily: 'monospace'),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _formatDuration(provider.recordingDuration),
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, fontFamily: 'monospace', color: Colors.red),
+              ),
+              const Text('Lecture in progress...', style: TextStyle(fontSize: 10, color: Colors.grey)),
+            ],
           ),
           const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.stop_circle_rounded,
-                color: Colors.red, size: 32),
+          IconButton.filled(
+            icon: const Icon(Icons.stop_rounded),
             onPressed: () => provider.stopRecording(),
+            style: IconButton.styleFrom(backgroundColor: Colors.red),
           ),
         ] else ...[
-          const Icon(Icons.mic_none_rounded),
-          const SizedBox(width: 8),
-          const Text('Tap to start recording lecture'),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.blue.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.mic_rounded, color: Colors.blue, size: 20),
+          ),
+          const SizedBox(width: 12),
+          const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Live Lecture Recording', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              Text('Tap to start capturing audio', style: TextStyle(fontSize: 11, color: Colors.grey)),
+            ],
+          ),
           const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.mic_rounded, color: Colors.blue, size: 32),
+          ElevatedButton.icon(
             onPressed: () => provider.startRecording(user?.uid ?? ''),
+            icon: const Icon(Icons.play_arrow_rounded),
+            label: const Text('Start'),
+            style: ElevatedButton.styleFrom(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            ),
           ),
         ],
       ],

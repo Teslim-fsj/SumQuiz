@@ -10,6 +10,8 @@ import 'package:sumquiz/models/user_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sumquiz/utils/auth_error_messages.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sumquiz/widgets/sumi_mascot.dart';
+import 'package:sumquiz/models/sumi_emotion.dart';
 
 enum AuthMode { login, signUp }
 
@@ -21,7 +23,8 @@ class AuthScreen extends StatefulWidget {
   State<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateMixin {
+class _AuthScreenState extends State<AuthScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -42,7 +45,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 
   void _switchAuthMode() {
     setState(() {
-      _authMode = _authMode == AuthMode.login ? AuthMode.signUp : AuthMode.login;
+      _authMode =
+          _authMode == AuthMode.login ? AuthMode.signUp : AuthMode.login;
     });
   }
 
@@ -69,7 +73,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       } else {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('intended_role', _signUpRole.name);
-        
+
         await authService.signUpWithEmailAndPassword(
           context,
           _emailController.text.trim(),
@@ -78,7 +82,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           _referralCodeController.text.trim(),
         );
         if (!mounted) return;
-        developer.log('Sign-Up successful, user document creation initiated with role: ${_signUpRole.name}');
+        developer.log(
+            'Sign-Up successful, user document creation initiated with role: ${_signUpRole.name}');
         if (widget.redirectPath != null && widget.redirectPath!.isNotEmpty) {
           context.go(widget.redirectPath!);
         } else {
@@ -107,13 +112,15 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('intended_role', _signUpRole.name);
 
-      await authService.signInWithGoogle(context, referralCode: _referralCodeController.text.trim());
-      
+      await authService.signInWithGoogle(context,
+          referralCode: _referralCodeController.text.trim());
+
       if (!mounted) return;
       if (prefs.getBool('is_new_user') ?? false) {
-        developer.log('Google Sign-In successful for new user, role: ${prefs.getString('intended_role')}');
+        developer.log(
+            'Google Sign-In successful for new user, role: ${prefs.getString('intended_role')}');
       }
-      
+
       if (widget.redirectPath != null && widget.redirectPath!.isNotEmpty) {
         context.go(widget.redirectPath!);
       } else {
@@ -124,7 +131,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     } catch (e) {
       // Catch GoogleSignInException dynamically or check its type string to avoid compile errors if missing
       final errorStr = e.toString();
-      if (errorStr.contains('GoogleSignInException') || errorStr.contains('PlatformException')) {
+      if (errorStr.contains('GoogleSignInException') ||
+          errorStr.contains('PlatformException')) {
         final msg = messageForGoogleSignInException(e);
         if (mounted && msg.isNotEmpty) _showError(theme, msg);
       } else {
@@ -139,7 +147,9 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     if (!mounted || message.isEmpty) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onError)),
+        content: Text(message,
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(color: theme.colorScheme.onError)),
         backgroundColor: theme.colorScheme.error,
         behavior: SnackBarBehavior.floating,
       ),
@@ -159,9 +169,10 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           if (!isMobile) Expanded(flex: 5, child: _buildBrandingPanel(theme)),
           Expanded(
             flex: 6,
-            child: isMobile 
-              ? SingleChildScrollView(child: _buildAuthPanel(theme, isMobile: true))
-              : _buildAuthPanel(theme, isMobile: false),
+            child: isMobile
+                ? SingleChildScrollView(
+                    child: _buildAuthPanel(theme, isMobile: true))
+                : _buildAuthPanel(theme, isMobile: false),
           ),
         ],
       ),
@@ -171,14 +182,21 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   Widget _buildBrandingPanel(ThemeData theme) {
     final isDark = theme.brightness == Brightness.dark;
     final bgGradient = isDark
-        ? LinearGradient(colors: [theme.colorScheme.primary.withOpacity(0.1), theme.colorScheme.surface], begin: Alignment.topLeft, end: Alignment.bottomRight)
-        : LinearGradient(colors: [theme.colorScheme.primary, theme.colorScheme.primaryContainer.withOpacity(0.8)], begin: Alignment.topLeft, end: Alignment.bottomRight);
+        ? LinearGradient(colors: [
+            theme.colorScheme.primary.withOpacity(0.1),
+            theme.colorScheme.surface
+          ], begin: Alignment.topLeft, end: Alignment.bottomRight)
+        : LinearGradient(colors: [
+            theme.colorScheme.primary,
+            theme.colorScheme.primaryContainer.withOpacity(0.8)
+          ], begin: Alignment.topLeft, end: Alignment.bottomRight);
 
     return Container(
       decoration: BoxDecoration(
         color: isDark ? theme.colorScheme.surface : theme.colorScheme.primary,
         gradient: bgGradient,
-        border: Border(right: BorderSide(color: theme.dividerColor.withOpacity(0.1))),
+        border: Border(
+            right: BorderSide(color: theme.dividerColor.withOpacity(0.1))),
       ),
       child: Stack(
         children: [
@@ -194,8 +212,11 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                 color: theme.colorScheme.surface.withOpacity(0.1),
               ),
             ),
-          ).animate().fadeIn(duration: 1.seconds).scale(begin: const Offset(0.8, 0.8)),
-          
+          )
+              .animate()
+              .fadeIn(duration: 1.seconds)
+              .scale(begin: const Offset(0.8, 0.8)),
+
           Padding(
             padding: const EdgeInsets.all(60.0),
             child: Column(
@@ -205,13 +226,16 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 30, offset: const Offset(0, 10)),
-                    ]
-                  ),
-                  child: Image.asset('assets/images/sumquiz_logo.png', width: 64, height: 64, fit: BoxFit.contain),
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 30,
+                            offset: const Offset(0, 10)),
+                      ]),
+                  child: Image.asset('assets/images/sumquiz_logo.png',
+                      width: 64, height: 64, fit: BoxFit.contain),
                 ).animate().slideY(begin: 0.2).fadeIn(duration: 600.ms),
                 const SizedBox(height: 40),
                 Text(
@@ -225,15 +249,30 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                   ),
                 ).animate().slideY(begin: 0.2, delay: 100.ms).fadeIn(),
                 const SizedBox(height: 24),
-                Text(
-                  'Join thousands of educators and students leveraging AI to automate and deepen their study practices.',
-                  style: GoogleFonts.outfit(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w400,
-                    height: 1.5,
-                    color: isDark ? theme.colorScheme.onSurface.withOpacity(0.7) : Colors.white70,
-                  ),
-                ).animate().slideY(begin: 0.2, delay: 200.ms).fadeIn(),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const SumiMascot(
+                      state: SumiState.idle,
+                      size: 100,
+                      dialogue: "Hi! I'm Sumi. Ready to master new skills?",
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: Text(
+                        'Join thousands of educators and students leveraging AI to automate and deepen their study practices.',
+                        style: GoogleFonts.outfit(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w400,
+                          height: 1.5,
+                          color: isDark
+                              ? theme.colorScheme.onSurface.withOpacity(0.7)
+                              : Colors.white70,
+                        ),
+                      ).animate().slideY(begin: 0.2, delay: 200.ms).fadeIn(),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -246,7 +285,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     return Container(
       color: theme.colorScheme.surface,
       alignment: Alignment.center,
-      padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 80, vertical: 40),
+      padding:
+          EdgeInsets.symmetric(horizontal: isMobile ? 24 : 80, vertical: 40),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 440),
         child: Column(
@@ -255,13 +295,24 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           children: [
             if (isMobile) ...[
               Center(
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Image.asset('assets/images/sumquiz_logo.png', width: 44, height: 44, fit: BoxFit.contain),
+                child: Column(
+                  children: [
+                    const SumiMascot(
+                      state: SumiState.idle,
+                      size: 80,
+                      dialogue: "Hi! I'm Sumi.",
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Image.asset('assets/images/sumquiz_logo.png',
+                          width: 44, height: 44, fit: BoxFit.contain),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 32),
@@ -271,11 +322,15 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
               transitionBuilder: (child, animation) => FadeTransition(
                 opacity: animation,
                 child: SlideTransition(
-                  position: Tween<Offset>(begin: const Offset(0.05, 0), end: Offset.zero).animate(animation),
+                  position: Tween<Offset>(
+                          begin: const Offset(0.05, 0), end: Offset.zero)
+                      .animate(animation),
                   child: child,
                 ),
               ),
-              child: _authMode == AuthMode.login ? _buildLoginForm(theme) : _buildSignUpForm(theme),
+              child: _authMode == AuthMode.login
+                  ? _buildLoginForm(theme)
+                  : _buildSignUpForm(theme),
             ),
           ],
         ),
@@ -290,16 +345,26 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         key: const ValueKey('loginForm'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Welcome back', style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface, letterSpacing: -0.5)),
+          Text('Welcome back',
+              style: GoogleFonts.outfit(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w800,
+                  color: theme.colorScheme.onSurface,
+                  letterSpacing: -0.5)),
           const SizedBox(height: 8),
-          Text('Please enter your details to sign in.', style: GoogleFonts.inter(fontSize: 15, color: theme.colorScheme.onSurface.withOpacity(0.6))),
+          Text('Please enter your details to sign in.',
+              style: GoogleFonts.inter(
+                  fontSize: 15,
+                  color: theme.colorScheme.onSurface.withOpacity(0.6))),
           const SizedBox(height: 40),
           _buildTextField(
             controller: _emailController,
             label: 'Email Address',
             icon: Icons.email_outlined,
             keyboardType: TextInputType.emailAddress,
-            validator: (val) => val == null || !val.contains('@') ? 'Enter a valid email' : null,
+            validator: (val) => val == null || !val.contains('@')
+                ? 'Enter a valid email'
+                : null,
             theme: theme,
           ),
           const SizedBox(height: 20),
@@ -308,7 +373,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
             label: 'Password',
             icon: Icons.lock_outline_rounded,
             obscureText: true,
-            validator: (val) => val == null || val.isEmpty ? 'Enter your password' : null,
+            validator: (val) =>
+                val == null || val.isEmpty ? 'Enter your password' : null,
             theme: theme,
           ),
           const SizedBox(height: 12),
@@ -316,8 +382,12 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: () {},
-              style: TextButton.styleFrom(visualDensity: VisualDensity.compact, foregroundColor: theme.colorScheme.primary),
-              child: Text('Forgot password?', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13)),
+              style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  foregroundColor: theme.colorScheme.primary),
+              child: Text('Forgot password?',
+                  style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w600, fontSize: 13)),
             ),
           ),
           const SizedBox(height: 24),
@@ -327,7 +397,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           const SizedBox(height: 24),
           _buildGoogleButton(theme),
           const SizedBox(height: 32),
-          _buildSwitchAuthModeButton('Don\'t have an account?', 'Sign up', _switchAuthMode, theme),
+          _buildSwitchAuthModeButton(
+              'Don\'t have an account?', 'Sign up', _switchAuthMode, theme),
         ],
       ),
     );
@@ -340,9 +411,17 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         key: const ValueKey('signUpForm'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Create an account', style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface, letterSpacing: -0.5)),
+          Text('Create an account',
+              style: GoogleFonts.outfit(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w800,
+                  color: theme.colorScheme.onSurface,
+                  letterSpacing: -0.5)),
           const SizedBox(height: 8),
-          Text('Start your journey with SumQuiz today.', style: GoogleFonts.inter(fontSize: 15, color: theme.colorScheme.onSurface.withOpacity(0.6))),
+          Text('Start your journey with SumQuiz today.',
+              style: GoogleFonts.inter(
+                  fontSize: 15,
+                  color: theme.colorScheme.onSurface.withOpacity(0.6))),
           const SizedBox(height: 32),
           _buildRoleSelector(theme),
           const SizedBox(height: 24),
@@ -350,7 +429,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
             controller: _fullNameController,
             label: 'Full Name',
             icon: Icons.person_outline,
-            validator: (val) => val == null || val.isEmpty ? 'Enter full name' : null,
+            validator: (val) =>
+                val == null || val.isEmpty ? 'Enter full name' : null,
             theme: theme,
           ),
           const SizedBox(height: 20),
@@ -359,7 +439,9 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
             label: 'Email Address',
             icon: Icons.email_outlined,
             keyboardType: TextInputType.emailAddress,
-            validator: (val) => val == null || !val.contains('@') ? 'Enter a valid email' : null,
+            validator: (val) => val == null || !val.contains('@')
+                ? 'Enter a valid email'
+                : null,
             theme: theme,
           ),
           const SizedBox(height: 20),
@@ -368,7 +450,9 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
             label: 'Password',
             icon: Icons.lock_outline_rounded,
             obscureText: true,
-            validator: (val) => val == null || val.length < 6 ? 'Min 6 characters required' : null,
+            validator: (val) => val == null || val.length < 6
+                ? 'Min 6 characters required'
+                : null,
             theme: theme,
           ),
           const SizedBox(height: 20),
@@ -385,7 +469,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           const SizedBox(height: 24),
           _buildGoogleButton(theme),
           const SizedBox(height: 32),
-          _buildSwitchAuthModeButton('Already have an account?', 'Log in', _switchAuthMode, theme),
+          _buildSwitchAuthModeButton(
+              'Already have an account?', 'Log in', _switchAuthMode, theme),
         ],
       ),
     );
@@ -404,25 +489,49 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface.withOpacity(0.8))),
+        Text(label,
+            style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface.withOpacity(0.8))),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
           obscureText: obscureText,
           keyboardType: keyboardType,
           validator: validator,
-          style: GoogleFonts.inter(fontSize: 15, color: theme.colorScheme.onSurface),
+          style: GoogleFonts.inter(
+              fontSize: 15, color: theme.colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: 'Enter your ${label.toLowerCase()}',
-            hintStyle: GoogleFonts.inter(fontSize: 14, color: theme.colorScheme.onSurface.withOpacity(0.4)),
-            prefixIcon: Icon(icon, size: 20, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+            hintStyle: GoogleFonts.inter(
+                fontSize: 14,
+                color: theme.colorScheme.onSurface.withOpacity(0.4)),
+            prefixIcon: Icon(icon,
+                size: 20, color: theme.colorScheme.onSurface.withOpacity(0.5)),
             filled: true,
-            fillColor: isDark ? theme.colorScheme.surfaceContainerHighest : Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: theme.dividerColor.withOpacity(0.1))),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? theme.dividerColor.withOpacity(0.05) : const Color(0xFFE5E7EB))),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: theme.colorScheme.primary, width: 2)),
-            errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: theme.colorScheme.error)),
+            fillColor: isDark
+                ? theme.colorScheme.surfaceContainerHighest
+                : Colors.white,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide:
+                    BorderSide(color: theme.dividerColor.withOpacity(0.1))),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                    color: isDark
+                        ? theme.dividerColor.withOpacity(0.05)
+                        : const Color(0xFFE5E7EB))),
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide:
+                    BorderSide(color: theme.colorScheme.primary, width: 2)),
+            errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: theme.colorScheme.error)),
           ),
         ),
       ],
@@ -432,7 +541,9 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   Widget _buildRoleSelector(ThemeData theme) {
     return Container(
       decoration: BoxDecoration(
-        color: theme.brightness == Brightness.dark ? theme.colorScheme.surfaceContainerHighest : const Color(0xFFF3F4F6),
+        color: theme.brightness == Brightness.dark
+            ? theme.colorScheme.surfaceContainerHighest
+            : const Color(0xFFF3F4F6),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
       ),
@@ -460,7 +571,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildAuthButton(String text, VoidCallback onPressed, ThemeData theme) {
+  Widget _buildAuthButton(
+      String text, VoidCallback onPressed, ThemeData theme) {
     return SizedBox(
       height: 54,
       child: ElevatedButton(
@@ -469,11 +581,18 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           backgroundColor: theme.colorScheme.primary,
           foregroundColor: theme.colorScheme.onPrimary,
           elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         child: _isLoading
-            ? SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2.5, color: theme.colorScheme.onPrimary))
-            : Text(text, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold)),
+            ? SizedBox(
+                height: 24,
+                width: 24,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2.5, color: theme.colorScheme.onPrimary))
+            : Text(text,
+                style: GoogleFonts.inter(
+                    fontSize: 16, fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -487,12 +606,19 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         icon: SvgPicture.asset('assets/icons/google_logo.svg', height: 20),
         label: Text(
           'Sign in with Google',
-          style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
+          style: GoogleFonts.inter(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface),
         ),
         style: OutlinedButton.styleFrom(
           backgroundColor: isDark ? Colors.transparent : Colors.white,
-          side: BorderSide(color: isDark ? theme.dividerColor.withOpacity(0.3) : const Color(0xFFE5E7EB)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          side: BorderSide(
+              color: isDark
+                  ? theme.dividerColor.withOpacity(0.3)
+                  : const Color(0xFFE5E7EB)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
     );
@@ -504,22 +630,34 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         Expanded(child: Divider(color: theme.dividerColor.withOpacity(0.2))),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text('OR', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface.withOpacity(0.4))),
+          child: Text('OR',
+              style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface.withOpacity(0.4))),
         ),
         Expanded(child: Divider(color: theme.dividerColor.withOpacity(0.2))),
       ],
     );
   }
 
-  Widget _buildSwitchAuthModeButton(String text, String highlight, VoidCallback onTap, ThemeData theme) {
+  Widget _buildSwitchAuthModeButton(
+      String text, String highlight, VoidCallback onTap, ThemeData theme) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(text, style: GoogleFonts.inter(fontSize: 14, color: theme.colorScheme.onSurface.withOpacity(0.7))),
+        Text(text,
+            style: GoogleFonts.inter(
+                fontSize: 14,
+                color: theme.colorScheme.onSurface.withOpacity(0.7))),
         const SizedBox(width: 4),
         InkWell(
           onTap: onTap,
-          child: Text(highlight, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+          child: Text(highlight,
+              style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary)),
         ),
       ],
     );
@@ -532,7 +670,11 @@ class _RolePill extends StatelessWidget {
   final VoidCallback onTap;
   final ThemeData theme;
 
-  const _RolePill({required this.label, required this.isSelected, required this.onTap, required this.theme});
+  const _RolePill(
+      {required this.label,
+      required this.isSelected,
+      required this.onTap,
+      required this.theme});
 
   @override
   Widget build(BuildContext context) {
@@ -545,7 +687,14 @@ class _RolePill extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected ? theme.colorScheme.surface : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
-          boxShadow: isSelected ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))] : [],
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2))
+                ]
+              : [],
         ),
         alignment: Alignment.center,
         child: Text(
@@ -553,7 +702,9 @@ class _RolePill extends StatelessWidget {
           style: GoogleFonts.inter(
             fontSize: 14,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: isSelected ? theme.colorScheme.onSurface : theme.colorScheme.onSurface.withOpacity(0.6),
+            color: isSelected
+                ? theme.colorScheme.onSurface
+                : theme.colorScheme.onSurface.withOpacity(0.6),
           ),
         ),
       ),

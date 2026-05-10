@@ -287,7 +287,9 @@ class ReferralService {
         if (!referrerDoc.exists) return;
 
         final data = referrerDoc.data() as Map<String, dynamic>;
-        final int currentSuccessful = data['successfulReferrals'] as int? ?? data['referralRewards'] as int? ?? 0;
+        final int currentSuccessful = data['successfulReferrals'] as int? ??
+            data['referralRewards'] as int? ??
+            0;
         final int currentPending = data['referrals'] as int? ?? 0;
 
         DateTime currentExpiry =
@@ -302,12 +304,13 @@ class ReferralService {
 
         if (currentSuccessful < maxSuccessful) {
           final newSuccessful = currentSuccessful + 1;
-          
+
           final Map<String, dynamic> updates = {
             'successfulReferrals': newSuccessful,
-            'referralRewards': newSuccessful, // Keep for backwards compatibility
+            'referralRewards':
+                newSuccessful, // Keep for backwards compatibility
           };
-          
+
           if (currentPending > 0) {
             updates['referrals'] = FieldValue.increment(-1); // Decrease pending
           }
@@ -316,13 +319,15 @@ class ReferralService {
           if (newSuccessful % 3 == 0) {
             final newExpiry = currentExpiry.add(const Duration(days: 7));
             updates['subscriptionExpiry'] = Timestamp.fromDate(newExpiry);
-            developer.log('Granted +7 days to referrer $referrerId for reaching $newSuccessful successful referrals',
+            developer.log(
+                'Granted +7 days to referrer $referrerId for reaching $newSuccessful successful referrals',
                 name: 'ReferralService');
           } else {
-            developer.log('Referrer $referrerId reached $newSuccessful successful referrals. Needs ${3 - (newSuccessful % 3)} more for reward.',
+            developer.log(
+                'Referrer $referrerId reached $newSuccessful successful referrals. Needs ${3 - (newSuccessful % 3)} more for reward.',
                 name: 'ReferralService');
           }
-          
+
           transaction.update(referrerDocRef, updates);
         } else {
           // Even if capped, decrease pending if > 0

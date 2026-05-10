@@ -15,6 +15,7 @@ import 'package:sumquiz/services/user_service.dart';
 import 'package:sumquiz/views/screens/spaced_repetition_screen.dart';
 import '../../widgets/sumi_mascot.dart';
 import '../../models/sumi_emotion.dart';
+import '../../view_models/mastery_view_model.dart';
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
@@ -229,6 +230,11 @@ class _ProgressScreenState extends State<ProgressScreen> {
                                 stats['dueForReviewCount'] as int? ?? 0, theme)
                             .animate()
                             .fadeIn(delay: 400.ms),
+                        const SizedBox(height: 24),
+                        _buildSectionTitle(context, 'Topic Mastery',
+                            Icons.auto_awesome_rounded, theme),
+                        const SizedBox(height: 16),
+                        _buildTopicMastery(theme),
                         const SizedBox(height: 40),
                       ],
                     ),
@@ -251,12 +257,12 @@ class _ProgressScreenState extends State<ProgressScreen> {
         child: Container(
           padding: padding ?? const EdgeInsets.all(0),
           decoration: BoxDecoration(
-            color: theme.cardColor.withOpacity(0.65),
+            color: theme.cardColor.withValues(alpha: 0.65),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.dividerColor.withOpacity(0.4)),
+            border: Border.all(color: theme.dividerColor.withValues(alpha: 0.4)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 15,
                 offset: const Offset(0, 4),
               ),
@@ -377,7 +383,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: color, size: 20),
@@ -394,7 +400,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
           Text(label,
               style: theme.textTheme.bodyMedium?.copyWith(
                   fontSize: 13,
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   fontWeight: FontWeight.w500)),
         ],
       ),
@@ -436,7 +442,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                  color: Colors.amber.withOpacity(0.2), shape: BoxShape.circle),
+                  color: Colors.amber.withValues(alpha: 0.2), shape: BoxShape.circle),
               child: const Icon(Icons.notifications_active_rounded,
                   color: Colors.amber, size: 24),
             ),
@@ -453,7 +459,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                   Text('Review now to retain better',
                       style: theme.textTheme.bodySmall?.copyWith(
                           fontSize: 13,
-                          color: theme.colorScheme.onSurface.withOpacity(0.6))),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
                 ],
               ),
             ),
@@ -464,4 +470,117 @@ class _ProgressScreenState extends State<ProgressScreen> {
       ),
     );
   }
+
+  Color _getMasteryColor(double score) {
+    if (score < 0.3) return Colors.redAccent;
+    if (score < 0.7) return Colors.orangeAccent;
+    return Colors.greenAccent;
+  }
+
+  Widget _buildTopicMastery(ThemeData theme) {
+    return Consumer<MasteryViewModel>(
+      builder: (context, masteryVm, child) {
+        if (masteryVm.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final topics = masteryVm.topics;
+        if (topics.isEmpty) {
+          return _buildGlassContainer(
+            theme,
+            padding: const EdgeInsets.all(24),
+            child: Center(
+              child: Column(
+                children: [
+                  Icon(Icons.auto_stories_rounded,
+                      color: theme.colorScheme.primary.withValues(alpha: 0.3), size: 48),
+                  const SizedBox(height: 16),
+                  Text('No topics tracked yet',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return Column(
+          children: topics.map((topic) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              child: _buildGlassContainer(
+                theme,
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            topic.name,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.onSurface),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          '${(topic.masteryScore * 100).toStringAsFixed(0)}%',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: topic.masteryScore,
+                        minHeight: 8,
+                        backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          _getMasteryColor(topic.masteryScore),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Stability: ${(topic.stabilityScore * 100).toStringAsFixed(0)}%',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                        ),
+                        if (topic.forgettingRisk > 0.5)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'High Risk',
+                              style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
 }
+

@@ -37,6 +37,9 @@ class LocalSummary extends HiveObject {
   @HiveField(10)
   String? description;
 
+  @HiveField(11)
+  late List<String> topicIds;
+
   LocalSummary({
     required this.id,
     required this.title,
@@ -49,7 +52,12 @@ class LocalSummary extends HiveObject {
     this.publicDeckId,
     this.creatorName,
     this.description,
+    this.topicIds = const [],
+    this.topicNames = const [],
   });
+
+  @HiveField(12)
+  late List<String> topicNames;
 
   factory LocalSummary.fromJson(Map<String, dynamic> json) => LocalSummary(
         id: ' ',

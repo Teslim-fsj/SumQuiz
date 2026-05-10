@@ -14,6 +14,10 @@ import '../models/spaced_repetition.dart';
 import '../models/daily_mission.dart';
 import '../models/local_note.dart';
 import '../models/local_recording.dart';
+import '../models/mastery/topic_node.dart';
+import '../models/local_drawing_stroke.dart';
+import '../models/sumi_message.dart';
+import '../models/mastery/mastery_history.dart';
 
 class LocalDatabaseService {
   // Box names
@@ -27,6 +31,9 @@ class LocalDatabaseService {
   static const String _settingsBoxName = 'settings';
   static const String _notesBoxName = 'notes';
   static const String _recordingsBoxName = 'recordings';
+  static const String _topicsBoxName = 'topics';
+  static const String _chatBoxName = 'sumi_chat';
+  static const String _historyBoxName = 'mastery_history';
 
   // Hive Boxes - late initialized
   late Box<LocalSummary> _summariesBox;
@@ -38,6 +45,9 @@ class LocalDatabaseService {
   late Box<DailyMission> _dailyMissionsBox;
   late Box<LocalNote> _notesBox;
   late Box<LocalRecording> _recordingsBox;
+  late Box<TopicNode> _topicsBox;
+  late Box<SumiMessage> _chatBox;
+  late Box<MasteryHistory> _historyBox;
   late Box _settingsBox;
 
   // Singleton pattern
@@ -86,6 +96,27 @@ class LocalDatabaseService {
       if (!Hive.isAdapterRegistered(23)) {
         Hive.registerAdapter(LocalRecordingAdapter());
       }
+      if (!Hive.isAdapterRegistered(30)) {
+        Hive.registerAdapter(TopicNodeAdapter());
+      }
+      if (!Hive.isAdapterRegistered(31)) {
+        Hive.registerAdapter(LocalDrawingStrokeAdapter());
+      }
+      if (!Hive.isAdapterRegistered(32)) {
+        Hive.registerAdapter(OffsetAdapter());
+      }
+      if (!Hive.isAdapterRegistered(33)) {
+        Hive.registerAdapter(MessageRoleAdapter());
+      }
+      if (!Hive.isAdapterRegistered(34)) {
+        Hive.registerAdapter(SumiMessageAdapter());
+      }
+      if (!Hive.isAdapterRegistered(35)) {
+        Hive.registerAdapter(MasteryHistoryAdapter());
+      }
+      if (!Hive.isAdapterRegistered(36)) {
+        Hive.registerAdapter(DurationAdapter());
+      }
 
       // Open boxes
       _summariesBox = await Hive.openBox<LocalSummary>(_summariesBoxName);
@@ -101,6 +132,9 @@ class LocalDatabaseService {
           await Hive.openBox<DailyMission>(_dailyMissionsBoxName);
       _notesBox = await Hive.openBox<LocalNote>(_notesBoxName);
       _recordingsBox = await Hive.openBox<LocalRecording>(_recordingsBoxName);
+      _topicsBox = await Hive.openBox<TopicNode>(_topicsBoxName);
+      _chatBox = await Hive.openBox<SumiMessage>(_chatBoxName);
+      _historyBox = await Hive.openBox<MasteryHistory>(_historyBoxName);
       _settingsBox = await Hive.openBox(_settingsBoxName);
 
       _isInitialized = true;
@@ -111,6 +145,16 @@ class LocalDatabaseService {
   }
 
   // --- WATCH METHODS ---
+
+  Stream<List<MasteryHistory>> watchMasteryHistory(String userId) async* {
+    await init();
+    yield _historyBox.values.where((h) => h.userId == userId).toList()
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    await for (final _ in _historyBox.watch()) {
+      yield _historyBox.values.where((h) => h.userId == userId).toList()
+        ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    }
+  }
 
   Stream<List<Folder>> watchAllFolders(String userId) async* {
     await init();
@@ -143,6 +187,16 @@ class LocalDatabaseService {
       yield _flashcardSetsBox.values
           .where((fs) => fs.userId == userId)
           .toList();
+    }
+  }
+
+  Stream<List<SumiMessage>> watchChatHistory() async* {
+    await init();
+    yield _chatBox.values.toList()
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    await for (final _ in _chatBox.watch()) {
+      yield _chatBox.values.toList()
+        ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
     }
   }
 
@@ -224,6 +278,21 @@ class LocalDatabaseService {
     await _recordingsBox.put(recording.id, recording);
   }
 
+  Future<void> saveChatMessage(SumiMessage message) async {
+    await init();
+    await _chatBox.add(message);
+  }
+
+  Future<void> clearChatHistory() async {
+    await init();
+    await _chatBox.clear();
+  }
+
+  Future<void> saveMasteryHistory(MasteryHistory history) async {
+    await init();
+    await _historyBox.add(history);
+  }
+
   Future<void> updateSummarySyncStatus(String id, bool isSynced) async {
     await init();
     final summary = _summariesBox.get(id);
@@ -256,6 +325,15 @@ class LocalDatabaseService {
     final note = _notesBox.get(id);
     if (note != null) {
       note.isSynced = isSynced;
+      await _notesBox.put(id, note);
+    }
+  }
+
+  Future<void> updateNoteLinks(String id, List<String> backLinks) async {
+    await init();
+    final note = _notesBox.get(id);
+    if (note != null) {
+      note.backLinks = backLinks;
       await _notesBox.put(id, note);
     }
   }
@@ -324,6 +402,18 @@ class LocalDatabaseService {
     return _notesBox.get(id);
   }
 
+  Future<LocalNote?> getNoteByTitle(String userId, String title) async {
+    await init();
+    try {
+      return _notesBox.values.firstWhere(
+        (n) =>
+            n.userId == userId && n.title.toLowerCase() == title.toLowerCase(),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<LocalRecording?> getRecording(String id) async {
     await init();
     return _recordingsBox.get(id);
@@ -370,7 +460,8 @@ class LocalDatabaseService {
 
   Future<void> deleteNote(String id) async {
     await init();
-    final recordings = _recordingsBox.values.where((r) => r.noteId == id).toList();
+    final recordings =
+        _recordingsBox.values.where((r) => r.noteId == id).toList();
     for (final r in recordings) {
       await deleteRecording(r.id);
     }
@@ -414,7 +505,9 @@ class LocalDatabaseService {
 
   Future<List<ContentFolder>> getFolderContentsForUser(String userId) async {
     await init();
-    return _contentFoldersBox.values.where((cf) => cf.userId == userId).toList();
+    return _contentFoldersBox.values
+        .where((cf) => cf.userId == userId)
+        .toList();
   }
 
   Future<String?> getParentFolderId(String contentId) async {
@@ -429,6 +522,10 @@ class LocalDatabaseService {
 
   Box<SpacedRepetitionItem> getSpacedRepetitionBox() {
     return _spacedRepetitionBox;
+  }
+
+  Box<TopicNode> getTopicsBox() {
+    return _topicsBox;
   }
 
   Future<DailyMission?> getDailyMission(String id) async {

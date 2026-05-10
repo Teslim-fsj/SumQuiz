@@ -66,7 +66,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkNewUser();
-      
+
       // Auto-start mission if requested via deep link
       if (widget.autoStartMission) {
         _fetchAndStartMission();
@@ -127,8 +127,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
       final mission = await missionService.generateDailyMission(userId);
 
       await localDb.init();
-      _srsService =
-          SpacedRepetitionService(localDb.getSpacedRepetitionBox());
+      _srsService = SpacedRepetitionService(localDb.getSpacedRepetitionBox());
       final stats = await _srsService.getStatistics(userId);
       final nextDate = _srsService.getNextReviewDate(userId);
 
@@ -165,7 +164,9 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
       if (!mounted) return;
 
       final dueIds = await _srsService.getDueItems(userId);
-      _dueFlashcardSets = allSets.where((s) => s.flashcards.any((f) => dueIds.contains(f.id))).toList();
+      _dueFlashcardSets = allSets
+          .where((s) => s.flashcards.any((f) => dueIds.contains(f.id)))
+          .toList();
 
       // If none are due but we have sets, show some anyway to avoid empty state
       if (_dueFlashcardSets.isEmpty && allSets.isNotEmpty) {
@@ -236,22 +237,27 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
 
       if (userId == null) throw Exception("User ID null");
 
-      final missionService = Provider.of<MissionService>(context, listen: false);
-      final cards = await missionService.fetchMissionCards(userId, _dailyMission!.flashcardIds);
+      final missionService =
+          Provider.of<MissionService>(context, listen: false);
+      final cards = await missionService.fetchMissionCards(
+          userId, _dailyMission!.flashcardIds);
 
       if (cards.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               content: Text(
                   'Could not find mission cards. Using random cards instead.')));
-          
+
           final allSets = await localDb.getAllFlashcardSets(userId);
-          final allFlashcards = allSets.expand((s) => s.flashcards).map((c) => Flashcard(
-            id: c.id,
-            question: c.question,
-            answer: c.answer,
-          )).toList();
-          
+          final allFlashcards = allSets
+              .expand((s) => s.flashcards)
+              .map((c) => Flashcard(
+                    id: c.id,
+                    question: c.question,
+                    answer: c.answer,
+                  ))
+              .toList();
+
           _studyCards = allFlashcards.take(5).toList();
         }
       } else {
@@ -592,8 +598,8 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                                           SnackBar(
                                             content: Text(
                                                 'Question copied to clipboard!'),
-                                            backgroundColor: theme.colorScheme
-                                                .tertiaryContainer,
+                                            backgroundColor: theme
+                                                .colorScheme.tertiaryContainer,
                                           ),
                                         );
                                       },
@@ -626,8 +632,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                                     const SizedBox(height: 12),
                                     StreakCard(
                                         streakDays:
-                                            user?.missionCompletionStreak ??
-                                                0),
+                                            user?.missionCompletionStreak ?? 0),
                                   ],
                                 ),
                               ),
@@ -667,11 +672,13 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
             const SizedBox(width: 16),
             if (streak > 0)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: WebColors.purpleUltraLight,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: WebColors.purplePrimary.withOpacity(0.3)),
+                  border: Border.all(
+                      color: WebColors.purplePrimary.withOpacity(0.3)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -701,7 +708,8 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
             ),
             children: [
               const TextSpan(
-                  text: 'Ready to master your knowledge today? You\'re performing at '),
+                  text:
+                      'Ready to master your knowledge today? You\'re performing at '),
               TextSpan(
                 text: '$accuracyPct%',
                 style: GoogleFonts.outfit(
@@ -804,8 +812,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                         color: Colors.white.withOpacity(0.8),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                            color: theme.colorScheme.outline
-                                .withOpacity(0.1)),
+                            color: theme.colorScheme.outline.withOpacity(0.1)),
                         boxShadow: [
                           BoxShadow(
                               color: Colors.black.withOpacity(0.05),
@@ -1037,7 +1044,8 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 28),
+            child:
+                const Icon(Icons.bolt_rounded, color: Colors.white, size: 28),
           ),
           const SizedBox(width: 20),
           Expanded(
@@ -1093,7 +1101,6 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
       ),
     ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.05);
   }
-
 
   String _formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, "0");

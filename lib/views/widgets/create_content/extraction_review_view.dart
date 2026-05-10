@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../../../providers/create_content_provider.dart';
 
 class ExtractionReviewView extends StatefulWidget {
@@ -20,8 +19,9 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
     super.initState();
     final provider = Provider.of<CreateContentProvider>(context, listen: false);
     _textController = TextEditingController(text: provider.textContent);
-    _titleController = TextEditingController(text: provider.fileName ?? 'Untitled Creation');
-    
+    _titleController =
+        TextEditingController(text: provider.fileName ?? 'Untitled Creation');
+
     _textController.addListener(() {
       provider.updateExtractedText(_textController.text);
     });
@@ -53,7 +53,8 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
                   color: colorScheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.auto_stories_rounded, color: colorScheme.primary),
+                child: Icon(Icons.auto_stories_rounded,
+                    color: colorScheme.primary),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -79,15 +80,14 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
                 ),
               ),
               IconButton.filledTonal(
-                onPressed: provider.progressMessage.isNotEmpty 
-                    ? null 
+                onPressed: provider.progressMessage.isNotEmpty
+                    ? null
                     : () => provider.refineExtractedText(),
-                icon: provider.progressMessage.contains('cleaning') 
+                icon: provider.progressMessage.contains('cleaning')
                     ? const SizedBox(
-                        width: 20, 
-                        height: 20, 
-                        child: CircularProgressIndicator(strokeWidth: 2)
-                      )
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2))
                     : const Icon(Icons.auto_awesome_rounded, size: 20),
                 tooltip: 'Clean up with AI',
               ),
@@ -113,7 +113,8 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
               hintText: 'Enter title...',
               filled: true,
               fillColor: theme.cardColor,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: colorScheme.outlineVariant),
@@ -159,7 +160,7 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
             ),
           ),
           const SizedBox(height: 24),
-          
+
           // --- OPTIONS ---
           Container(
             padding: const EdgeInsets.all(16),
@@ -170,7 +171,8 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
             ),
             child: Row(
               children: [
-                Icon(Icons.description_rounded, color: colorScheme.primary, size: 20),
+                Icon(Icons.description_rounded,
+                    color: colorScheme.primary, size: 20),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -202,7 +204,7 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 32),
           ElevatedButton(
             onPressed: () {
@@ -213,7 +215,8 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
               backgroundColor: colorScheme.primary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 18),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
               elevation: 4,
               shadowColor: colorScheme.primary.withOpacity(0.3),
             ),

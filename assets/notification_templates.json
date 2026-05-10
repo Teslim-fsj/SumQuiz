@@ -1,38 +1,37 @@
-
 {
-  "learning_engagement": [
-    "👋 Hey {name}! It's a great day to learn something new. Let's start a new quiz!",
-    "Ready for a challenge, {name}? Your next quiz is waiting for you.",
-    "Don't let your knowledge get rusty! Come back and review your flashcards.",
-    "Consistency is key, {name}! Spend 5 minutes on a quiz to keep your streak going.",
-    "Psst... a new summary is ready for you. Come and check it out!"
+  "alps_retention_alert": [
+    "🧠 Sumi Alert: Your mastery of '{topic}' is starting to fade. Spend 2 minutes with me to lock it back in!",
+    "⚠️ Neural Decay Detected: '{topic}' is hitting the critical forgetting zone. Shall we do a quick refresh?",
+    "Psst... I've analyzed your brain state. '{topic}' needs a stability boost today!",
+    "Don't let '{topic}' slip away! Your ALPS score is dropping—let's fix that now."
   ],
-  "content_based_nudges": [
-    "You aced the last quiz! Ready for a new topic?",
-    "We noticed you're interested in {topic}. We've prepared a new quiz just for you!",
-    "Expand your knowledge! Check out this new summary about {related_topic}.",
-    "Challenge yourself with a harder quiz on {topic}. Think you can handle it?",
-    "Your study routine is impressive! Here's a new set of flashcards to master."
+  "brain_state_greeting": [
+    "🌤 Good morning! I've optimized your study path for today. Ready to see your Brain State?",
+    "👋 Hey {name}! Sumi has identified 3 key topics for your growth today. Let's dive in!",
+    "Your neural pathways are primed for learning. What shall we master today?",
+    "I'm feeling analytical today! Let's take a look at your knowledge graph together."
   ],
-  "pro_conversion_triggers": [
-    "Unlock your full potential! Go Pro to get unlimited quizzes and summaries.",
-    "Want to generate quizzes from PDFs and images? Upgrade to SumQuiz Pro!",
-    "Take your learning to the next level. See what you're missing in our Pro version.",
-    "Don't let limits hold you back. Go Pro for an ad-free experience and unlimited access.",
-    "You're doing great! Imagine how much more you could learn with SumQuiz Pro."
+  "socratic_coaching": [
+    "🤔 Still thinking about that last quiz? I have a new Socratic hint for you regarding '{topic}'.",
+    "You were so close on '{topic}' yesterday! Want to try a different angle with me?",
+    "I've found a new connection between '{topic}' and '{related_topic}'. Want to see it?",
+    "Your progress on '{topic}' is impressive. Let's push for the 100% mastery milestone!"
   ],
-  "referral_program": [
-    "Love SumQuiz? Share it with a friend and you'll both get a month of Pro for free!",
-    "Learning is better with friends! Invite a friend to SumQuiz today.",
-    "Get rewarded for sharing! Refer a friend and unlock exclusive Pro features.",
-    "Know someone who would love SumQuiz? Send them an invite!",
-    "Share the knowledge! Invite your friends to join you on SumQuiz."
+  "streak_and_motivation": [
+    "🔥 Your streak is at {count} days! Don't let your cognitive momentum stop now.",
+    "Consistency is the secret to mastery. 5 minutes with Sumi keeps the rust away!",
+    "You're in the top 10% of learners today! Let's finish that daily mission together.",
+    "I'm locked in and ready to study if you are. Let's keep that streak alive!"
   ],
-  "system_and_updates": [
-    "New feature alert! You can now generate quizzes from images. Try it out!",
-    "We've updated our AI model to give you even better summaries. Enjoy!",
-    "Heads up! We'll be undergoing scheduled maintenance this weekend. The app may be temporarily unavailable.",
-    "Thanks for being a loyal user! We've just squashed some bugs to improve your experience.",
-    "Welcome to SumQuiz! We're excited to have you on board. Let's start learning!"
+  "pro_tutor_access": [
+    "🚀 Want me to tutor you via voice? Upgrade to SumQuiz Pro for Live Sandbox access!",
+    "Unlock my 'Analytical Super Mode'! Go Pro for unlimited source-grounded tutoring.",
+    "Imagine having me in every note... Upgrade to Pro for full Body Doubling features!",
+    "Take the limits off your learning. Sumi is even smarter in the Pro version."
+  ],
+  "system_updates": [
+    "✨ I've evolved! I can now tutor you directly from your uploaded PDFs. Try the new Sandbox!",
+    "I've updated my Socratic engine to give you even better hints. Let's test it out!",
+    "New Feature: I can now detect your burnout and suggest breaks. Your health matters to me!"
   ]
 }

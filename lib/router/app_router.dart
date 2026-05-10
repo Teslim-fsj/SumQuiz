@@ -43,6 +43,7 @@ import 'package:sumquiz/views/screens/web/exam_creation_screen_web.dart';
 import 'package:sumquiz/views/screens/public_deck_screen.dart';
 import 'package:sumquiz/views/screens/notes_screen.dart';
 import 'package:sumquiz/views/screens/note_editor_screen.dart';
+import 'package:sumquiz/views/screens/post_study_results_screen.dart';
 
 // Role-Aware view helper
 class RoleAwareView extends StatelessWidget {
@@ -111,17 +112,23 @@ GoRouter createRouter(AuthService authService) {
     redirect: (context, state) {
       // Navigation State Helpers
       final isAuthRoute = state.matchedLocation == '/auth';
-      final isLanding = state.matchedLocation == '/landing' || state.matchedLocation == '/Educators';
+      final isLanding = state.matchedLocation == '/landing' ||
+          state.matchedLocation == '/Educators';
       final isSplash = state.matchedLocation == '/splash';
       final isOnboarding = state.matchedLocation == '/onboarding';
-      final isPublicDeck = state.matchedLocation.startsWith('/s/') || state.matchedLocation == '/deck';
+      final isPublicDeck = state.matchedLocation.startsWith('/s/') ||
+          state.matchedLocation == '/deck';
 
       final userModel = Provider.of<UserModel?>(context);
       final firebaseUser = authService.currentUser;
 
       // 1. Handle Unauthenticated Users
       if (firebaseUser == null) {
-        if (isAuthRoute || isLanding || isSplash || isOnboarding || isPublicDeck) {
+        if (isAuthRoute ||
+            isLanding ||
+            isSplash ||
+            isOnboarding ||
+            isPublicDeck) {
           return null; // Stay on public pages
         }
         return kIsWeb ? '/landing' : '/onboarding';
@@ -137,7 +144,7 @@ GoRouter createRouter(AuthService authService) {
 
       // 3. Handle Email Verification for Creators
       if (!userModel.isEmailVerified && userModel.role == UserRole.creator) {
-        return null; 
+        return null;
       }
 
       // 4. Handle Authenticated Users on Public Routes
@@ -211,7 +218,8 @@ GoRouter createRouter(AuthService authService) {
               GoRoute(
                 path: '/',
                 builder: (context, state) {
-                  final autoStart = state.uri.queryParameters['startMission'] == 'true';
+                  final autoStart =
+                      state.uri.queryParameters['startMission'] == 'true';
                   return RoleAwareView(
                     studentView: ResponsiveView(
                       mobile: ReviewScreen(autoStartMission: autoStart),
@@ -247,7 +255,9 @@ GoRouter createRouter(AuthService authService) {
                     name: 'library-summary',
                     parentNavigatorKey: rootNavigatorKey,
                     builder: (context, state) {
-                      final summary = state.extra is LocalSummary ? state.extra as LocalSummary : null;
+                      final summary = state.extra is LocalSummary
+                          ? state.extra as LocalSummary
+                          : null;
                       final id = state.pathParameters['id'];
                       return SummaryScreen(summary: summary, id: id);
                     },
@@ -257,7 +267,9 @@ GoRouter createRouter(AuthService authService) {
                     name: 'library-quiz',
                     parentNavigatorKey: rootNavigatorKey,
                     builder: (context, state) {
-                      final quiz = state.extra is LocalQuiz ? state.extra as LocalQuiz : null;
+                      final quiz = state.extra is LocalQuiz
+                          ? state.extra as LocalQuiz
+                          : null;
                       final id = state.pathParameters['id'];
                       return QuizScreen(quiz: quiz, id: id);
                     },
@@ -267,7 +279,9 @@ GoRouter createRouter(AuthService authService) {
                     name: 'library-flashcards',
                     parentNavigatorKey: rootNavigatorKey,
                     builder: (context, state) {
-                      final set = state.extra is FlashcardSet ? state.extra as FlashcardSet : null;
+                      final set = state.extra is FlashcardSet
+                          ? state.extra as FlashcardSet
+                          : null;
                       final id = state.pathParameters['id'];
                       return FlashcardsScreen(flashcardSet: set, id: id);
                     },
@@ -282,7 +296,8 @@ GoRouter createRouter(AuthService authService) {
                       final initialTab = int.tryParse(tabParam ?? '') ?? 0;
                       return ResponsiveView(
                         mobile: ResultsViewScreen(folderId: folderId!),
-                        desktop: ResultsViewScreenWeb(folderId: folderId, initialTab: initialTab),
+                        desktop: ResultsViewScreenWeb(
+                            folderId: folderId, initialTab: initialTab),
                       );
                     },
                   ),
@@ -375,12 +390,25 @@ GoRouter createRouter(AuthService authService) {
                 path: '/settings',
                 builder: (context, state) => const SettingsScreen(),
                 routes: [
-                  GoRoute(path: 'preferences', builder: (context, state) => const PreferencesScreen()),
-                  GoRoute(path: 'data-storage', builder: (context, state) => const DataStorageScreen()),
-                  GoRoute(path: 'privacy-about', builder: (context, state) => const PrivacyAboutScreen()),
-                  GoRoute(path: 'subscription', builder: (context, state) => const SubscriptionScreen()),
-                  GoRoute(path: 'account-profile', builder: (context, state) => const AccountProfileScreen()),
-                  GoRoute(path: 'referral', builder: (context, state) => const ReferralScreen()),
+                  GoRoute(
+                      path: 'preferences',
+                      builder: (context, state) => const PreferencesScreen()),
+                  GoRoute(
+                      path: 'data-storage',
+                      builder: (context, state) => const DataStorageScreen()),
+                  GoRoute(
+                      path: 'privacy-about',
+                      builder: (context, state) => const PrivacyAboutScreen()),
+                  GoRoute(
+                      path: 'subscription',
+                      builder: (context, state) => const SubscriptionScreen()),
+                  GoRoute(
+                      path: 'account-profile',
+                      builder: (context, state) =>
+                          const AccountProfileScreen()),
+                  GoRoute(
+                      path: 'referral',
+                      builder: (context, state) => const ReferralScreen()),
                 ],
               ),
             ],
@@ -410,8 +438,12 @@ GoRouter createRouter(AuthService authService) {
       GoRoute(
         path: '/deck',
         builder: (context, state) {
-          final id = state.uri.queryParameters['id'] ?? state.uri.queryParameters['code'];
-          if (id == null) return const Scaffold(body: Center(child: Text('Invalid Deck Link')));
+          final id = state.uri.queryParameters['id'] ??
+              state.uri.queryParameters['code'];
+          if (id == null) {
+            return const Scaffold(
+                body: Center(child: Text('Invalid Deck Link')));
+          }
           return PublicDeckScreen(deckId: id);
         },
       ),
@@ -420,11 +452,17 @@ GoRouter createRouter(AuthService authService) {
         builder: (context, state) => const TeacherDashboardScreen(),
       ),
       GoRoute(
-        path: '/exam-creation',
-        builder: (context, state) => const ResponsiveView(
-          mobile: ExamCreationScreen(),
-          desktop: ExamCreationScreenWeb(),
-        ),
+        path: '/post-study-results',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return PostStudyResultsScreen(
+            score: extra['score'] as int,
+            totalQuestions: extra['totalQuestions'] as int,
+            timeSpentSeconds: extra['timeSpentSeconds'] as int,
+            title: extra['title'] as String,
+            type: extra['type'] as String,
+          );
+        },
       ),
     ],
   );

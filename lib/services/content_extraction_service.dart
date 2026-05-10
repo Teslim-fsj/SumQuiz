@@ -61,7 +61,7 @@ class ContentExtractionService {
           throw Exception(
               'Text input too large. Maximum 50,000 characters allowed.');
         }
-        case 'youtube':
+      case 'youtube':
       case 'link':
         if (input == null || input.toString().isEmpty) {
           throw Exception('URL cannot be empty');
@@ -101,7 +101,8 @@ class ContentExtractionService {
               throw Exception('One of the image files is empty');
             }
             if (bytes.length > 10 * 1024 * 1024) {
-              throw Exception('One of the image files is too large. Maximum 10MB allowed per image.');
+              throw Exception(
+                  'One of the image files is too large. Maximum 10MB allowed per image.');
             }
           }
         } else if (input is Uint8List) {
@@ -144,8 +145,11 @@ class ContentExtractionService {
     String? userId,
     String? mimeType,
     bool refineWithAI = false,
+
     /// Must be true when [type] is `youtube`, or when `link` resolves to YouTube.
     bool allowYouTubeImport = false,
+    bool allowPdfImport = false,
+    bool allowWebImport = false,
     void Function(String)? onProgress,
     CancellationToken? cancelToken,
   }) async {
@@ -166,6 +170,8 @@ class ContentExtractionService {
           mimeType: mimeType,
           refineWithAI: refineWithAI,
           allowYouTubeImport: allowYouTubeImport,
+          allowPdfImport: allowPdfImport,
+          allowWebImport: allowWebImport,
           onProgress: onProgress,
           cancelToken: cancelToken,
         )).timeout(
@@ -188,6 +194,8 @@ class ContentExtractionService {
     String? mimeType,
     bool refineWithAI = false,
     bool allowYouTubeImport = false,
+    bool allowPdfImport = false,
+    bool allowWebImport = false,
     void Function(String)? onProgress,
     CancellationToken? cancelToken,
   }) async {
@@ -207,6 +215,23 @@ class ContentExtractionService {
               _detectUrlType(input) == UrlContentType.youtube)) {
         if (!allowYouTubeImport) {
           throw Exception(kYoutubeProRequiredMessage);
+        }
+      }
+
+      if (type == 'pdf' ||
+          (type == 'link' &&
+              input is String &&
+              _detectUrlType(input) == UrlContentType.document)) {
+        if (!allowPdfImport) {
+          throw Exception(kPdfProRequiredMessage);
+        }
+      }
+
+      if (type == 'link' &&
+          input is String &&
+          _detectUrlType(input) == UrlContentType.webpage) {
+        if (!allowWebImport) {
+          throw Exception(kWebProRequiredMessage);
         }
       }
 
@@ -442,9 +467,8 @@ class ContentExtractionService {
           developer.log('Processing image(s) with mimeType: $mimeType',
               name: 'ContentExtractionService');
 
-          final List<Uint8List> imageList = input is List<Uint8List> 
-              ? input 
-              : [input as Uint8List];
+          final List<Uint8List> imageList =
+              input is List<Uint8List> ? input : [input as Uint8List];
 
           if (imageList.isEmpty) {
             throw Exception('No image data provided.');
@@ -455,21 +479,24 @@ class ContentExtractionService {
 
           // ── Tier 1: Native Gemini Vision Analysis (Gemini 2.5+) ──
           if (!localOnlyTest && userId != null) {
-            onProgress?.call('Analyzing ${imageList.length} image(s) with Gemini AI...');
-            developer.log('Trying native Gemini vision (Tier 1) for ${imageList.length} images',
+            onProgress?.call(
+                'Analyzing ${imageList.length} image(s) with Gemini AI...');
+            developer.log(
+                'Trying native Gemini vision (Tier 1) for ${imageList.length} images',
                 name: 'ContentExtractionService');
-            
+
             try {
-              // For multiple images, we send them all to Gemini if supported, 
+              // For multiple images, we send them all to Gemini if supported,
               // or process them individually and combine.
-              // For now, let's process individually for maximum reliability 
+              // For now, let's process individually for maximum reliability
               // unless we add a dedicated multi-image method in PdfAIService.
-              
+
               for (int i = 0; i < imageList.length; i++) {
                 if (cancelToken?.isCancelled ?? false) break;
-                
+
                 if (imageList.length > 1) {
-                  onProgress?.call('Analyzing image ${i + 1} of ${imageList.length}...');
+                  onProgress?.call(
+                      'Analyzing image ${i + 1} of ${imageList.length}...');
                 }
 
                 final visionResult = await _pdfAiService.extractImage(
@@ -481,7 +508,9 @@ class ContentExtractionService {
 
                 if (visionResult is Ok<ExtractionResult>) {
                   extractedTexts.add(visionResult.value.text);
-                  if (i == 0) finalTitle = visionResult.value.suggestedTitle ?? finalTitle;
+                  if (i == 0)
+                    finalTitle =
+                        visionResult.value.suggestedTitle ?? finalTitle;
                 }
               }
 
@@ -501,16 +530,18 @@ class ContentExtractionService {
           if (extractedTexts.isEmpty) {
             for (int i = 0; i < imageList.length; i++) {
               if (cancelToken?.isCancelled ?? false) break;
-              
+
               if (!kIsWeb) {
-                onProgress?.call('Scanning image ${i + 1} with on-device OCR...');
+                onProgress
+                    ?.call('Scanning image ${i + 1} with on-device OCR...');
                 try {
                   final text = await _extractFromImageBytes(imageList[i]);
                   if (text.isNotEmpty && !text.contains('[No text found')) {
                     extractedTexts.add(text);
                   }
                 } catch (e) {
-                  developer.log('OCR failed for image $i: $e', name: 'ContentExtractionService');
+                  developer.log('OCR failed for image $i: $e',
+                      name: 'ContentExtractionService');
                 }
               }
             }
@@ -518,7 +549,8 @@ class ContentExtractionService {
 
           if (extractedTexts.isEmpty) {
             if (kIsWeb) {
-              throw Exception('Image processing requires native device capabilities or AI access. Please try again.');
+              throw Exception(
+                  'Image processing requires native device capabilities or AI access. Please try again.');
             } else {
               throw Exception('No readable text found in the image(s).');
             }
@@ -549,7 +581,8 @@ class ContentExtractionService {
 
           // ── Native Gemini Media Understanding (Gemini 2.5+) ──
           onProgress?.call('Transcribing media with Gemini AI...');
-          developer.log('Processing media with native Gemini, mimeType: $mimeType',
+          developer.log(
+              'Processing media with native Gemini, mimeType: $mimeType',
               name: 'ContentExtractionService');
           final mediaMime =
               mimeType ?? (type == 'audio' ? 'audio/mpeg' : 'video/mp4');
@@ -562,11 +595,11 @@ class ContentExtractionService {
             );
             if (mediaResult is Ok<ExtractionResult>) {
               return mediaResult.value;
-            } else if (mediaResult
-                is ResultError<ExtractionResult>) {
+            } else if (mediaResult is ResultError<ExtractionResult>) {
               final err = mediaResult.error;
-              throw Exception(
-                  err is EnhancedAIServiceException ? err.message : err.toString());
+              throw Exception(err is EnhancedAIServiceException
+                  ? err.message
+                  : err.toString());
             }
           } catch (e) {
             developer.log('Gemini media extraction failed: $e',

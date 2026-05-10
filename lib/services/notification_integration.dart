@@ -141,11 +141,14 @@ class NotificationIntegration {
           .get();
 
       String preferredStudyTime = '10:00'; // Default if not set
+      String userName = 'Learner';
       if (userDoc.exists) {
         final user = UserModel.fromFirestore(userDoc);
         preferredStudyTime = user.preferredStudyTime;
+        userName = user.displayName;
       }
 
+      if (!context.mounted) return;
       final notificationManager = NotificationManager(
         context.read<NotificationService>(),
         context.read<LocalDatabaseService>(),
@@ -156,10 +159,12 @@ class NotificationIntegration {
       // Schedule priming notification (30 min before)
       await notificationManager.scheduleDailyMissionPriming(
         userId: userId,
+        userName: userName,
         preferredStudyTime: preferredStudyTime,
         cardCount: cardCount,
         estimatedMinutes: estimatedMinutes,
       );
+
 
       debugPrint(
           '✅ Mission priming notification scheduled for $preferredStudyTime');

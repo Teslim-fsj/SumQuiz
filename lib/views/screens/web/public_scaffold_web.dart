@@ -38,7 +38,8 @@ class PublicScaffoldWeb extends StatelessWidget {
         final horizontalPadding = isMobile ? 16.0 : 40.0;
         return Container(
           color: Colors.white,
-          padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 20),
+          padding:
+              EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 20),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -75,7 +76,8 @@ class PublicScaffoldWeb extends StatelessWidget {
                     const SizedBox(width: 32),
                     _navLink(isEducatorRoute ? 'Solutions' : 'How it Works'),
                     const SizedBox(width: 32),
-                    _navLink('Pricing', onTap: () => context.push('/subscription')),
+                    _navLink('Pricing',
+                        onTap: () => context.push('/subscription')),
                     if (isEducatorRoute) ...[
                       const SizedBox(width: 32),
                       _navLink('Resources'),

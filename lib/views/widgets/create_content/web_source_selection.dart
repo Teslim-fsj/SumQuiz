@@ -56,7 +56,8 @@ class WebSourceSelection extends StatelessWidget {
               Expanded(
                 child: _SourceCard(
                   title: 'Doc / PDF',
-                  description: 'Upload textbooks, research papers, or study guides for deep structural analysis.',
+                  description:
+                      'Upload textbooks, research papers, or study guides for deep structural analysis.',
                   icon: Icons.description_outlined,
                   buttonText: 'UPLOAD FILES',
                   accentColor: const Color(0xFF3300FF),
@@ -67,7 +68,8 @@ class WebSourceSelection extends StatelessWidget {
               Expanded(
                 child: _SourceCard(
                   title: 'Text / Quick Topic',
-                  description: 'Paste raw text or just type a subject to let the AI build a comprehensive study set.',
+                  description:
+                      'Paste raw text or just type a subject to let the AI build a comprehensive study set.',
                   icon: Icons.edit_note_rounded,
                   buttonText: 'WRITE NOW',
                   accentColor: const Color(0xFF7C4DFF),
@@ -78,7 +80,8 @@ class WebSourceSelection extends StatelessWidget {
               Expanded(
                 child: _SourceCard(
                   title: 'YouTube / Web Link',
-                  description: 'Convert educational videos or online articles into interactive quizzes instantly.',
+                  description:
+                      'Convert educational videos or online articles into interactive quizzes instantly.',
                   icon: Icons.language_rounded,
                   buttonText: 'IMPORT URL',
                   accentColor: const Color(0xFF4A90E2),
@@ -98,7 +101,8 @@ class WebSourceSelection extends StatelessWidget {
               Expanded(
                 child: _SourceCard(
                   title: 'Images / Snap',
-                  description: 'Snap a photo of your handwritten notes or whiteboards to digitize your learning.',
+                  description:
+                      'Snap a photo of your handwritten notes or whiteboards to digitize your learning.',
                   icon: Icons.camera_alt_outlined,
                   buttonText: 'SCAN PAGE',
                   accentColor: const Color(0xFF7C4DFF),
@@ -109,7 +113,8 @@ class WebSourceSelection extends StatelessWidget {
               Expanded(
                 child: _SourceCard(
                   title: 'Audio',
-                  description: 'Upload lecture recordings or voice memos. Perfect for auditory learners.',
+                  description:
+                      'Upload lecture recordings or voice memos. Perfect for auditory learners.',
                   icon: Icons.mic_none_rounded,
                   buttonText: 'LISTEN & LEARN',
                   accentColor: const Color(0xFF7C4DFF),
@@ -211,7 +216,9 @@ class _SourceCardState extends State<_SourceCard> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: _isHovered ? widget.accentColor.withOpacity(0.3) : const Color(0xFFE8ECF4),
+              color: _isHovered
+                  ? widget.accentColor.withOpacity(0.3)
+                  : const Color(0xFFE8ECF4),
             ),
             boxShadow: [
               BoxShadow(
@@ -271,12 +278,13 @@ class _SourceCardState extends State<_SourceCard> {
                         color: Colors.white.withOpacity(0.2),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 28),
+                      child: const Icon(Icons.play_arrow_rounded,
+                          color: Colors.white, size: 28),
                     ),
                   ),
                 ),
               ],
-          const SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextButton(
                 onPressed: widget.onPressed,
                 style: TextButton.styleFrom(
@@ -296,7 +304,8 @@ class _SourceCardState extends State<_SourceCard> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Icon(Icons.arrow_forward_rounded, size: 16, color: widget.accentColor),
+                    Icon(Icons.arrow_forward_rounded,
+                        size: 16, color: widget.accentColor),
                   ],
                 ),
               ),

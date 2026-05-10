@@ -25,8 +25,8 @@ class ExtractionProgressDialog extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 40),
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
-          color: isDark 
-              ? Colors.black.withOpacity(0.6) 
+          color: isDark
+              ? Colors.black.withOpacity(0.6)
               : Colors.white.withOpacity(0.8),
           borderRadius: BorderRadius.circular(32),
           border: Border.all(
@@ -53,9 +53,9 @@ class ExtractionProgressDialog extends StatelessWidget {
                   state: SumiState.thinking,
                   size: 140,
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // 2. Title
                 Text(
                   'Reading Context',
@@ -65,9 +65,9 @@ class ExtractionProgressDialog extends StatelessWidget {
                     color: theme.colorScheme.onSurface,
                   ),
                 ),
-                
+
                 const SizedBox(height: 12),
-                
+
                 // 3. Dynamic Message
                 ValueListenableBuilder<String>(
                   valueListenable: messageNotifier,
@@ -83,9 +83,9 @@ class ExtractionProgressDialog extends StatelessWidget {
                     ).animate(key: ValueKey(message)).fadeIn(duration: 300.ms);
                   },
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // 4. Progress Bar
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
@@ -93,21 +93,25 @@ class ExtractionProgressDialog extends StatelessWidget {
                     width: 200,
                     height: 6,
                     child: LinearProgressIndicator(
-                      backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
-                      valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                      backgroundColor:
+                          theme.colorScheme.primary.withOpacity(0.1),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                          theme.colorScheme.primary),
                     ),
                   ),
                 ),
-                
+
                 if (onCancel != null) ...[
                   const SizedBox(height: 32),
                   TextButton(
                     onPressed: onCancel,
                     style: TextButton.styleFrom(
                       foregroundColor: Colors.redAccent,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
                       backgroundColor: Colors.redAccent.withOpacity(0.05),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(100)),
                     ),
                     child: Text(
                       'Cancel Extraction',

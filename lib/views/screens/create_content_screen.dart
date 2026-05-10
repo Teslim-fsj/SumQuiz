@@ -29,9 +29,11 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final folderId = GoRouterState.of(context).uri.queryParameters['folderId'];
+      final folderId =
+          GoRouterState.of(context).uri.queryParameters['folderId'];
       if (folderId != null) {
-        Provider.of<CreateContentProvider>(context, listen: false).setPreSelectedFolderId(folderId);
+        Provider.of<CreateContentProvider>(context, listen: false)
+            .setPreSelectedFolderId(folderId);
       }
     });
   }
@@ -63,7 +65,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context, CreateContentProvider provider) {
+  PreferredSizeWidget _buildAppBar(
+      BuildContext context, CreateContentProvider provider) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -74,7 +77,7 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
         icon: const Icon(Icons.close_rounded),
         onPressed: () {
           if (provider.phase == CreationPhase.processing) {
-             // Show cancel confirmation if needed
+            // Show cancel confirmation if needed
           }
           provider.reset();
           context.pop();
@@ -111,7 +114,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
     );
   }
 
-  Widget _buildPhaseContent(BuildContext context, CreateContentProvider provider, UserModel? user) {
+  Widget _buildPhaseContent(
+      BuildContext context, CreateContentProvider provider, UserModel? user) {
     switch (provider.phase) {
       case CreationPhase.source:
         return _buildSourceSelection(context, provider, user);
@@ -120,12 +124,19 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
       case CreationPhase.config:
         return _buildConfiguration(context, provider);
       case CreationPhase.processing:
-        return CreationProgressIndicator(message: provider.progressMessage);
+        return CreationProgressIndicator(
+          message: provider.progressMessage,
+          tip: provider.currentTip,
+        );
       case CreationPhase.success:
         return CreationSuccessView(
-          title: provider.fileName ?? (provider.textContent.length > 20 ? '${provider.textContent.substring(0, 20)}...' : provider.textContent),
+          title: provider.fileName ??
+              (provider.textContent.length > 20
+                  ? '${provider.textContent.substring(0, 20)}...'
+                  : provider.textContent),
           onViewPack: () {
-            context.pushNamed('results-view', pathParameters: {'folderId': provider.generatedFolderId});
+            context.pushNamed('results-view',
+                pathParameters: {'folderId': provider.generatedFolderId});
             provider.reset();
           },
           onReset: provider.reset,
@@ -136,9 +147,10 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
   }
 
   // --- PHASE 1: SOURCE SELECTION ---
-  Widget _buildSourceSelection(BuildContext context, CreateContentProvider provider, UserModel? user) {
+  Widget _buildSourceSelection(
+      BuildContext context, CreateContentProvider provider, UserModel? user) {
     final theme = Theme.of(context);
-    
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -174,9 +186,9 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ).animate().fadeIn(delay: 200.ms),
-            
+
             const SizedBox(height: 48),
-            
+
             // --- SECTION: CAPTURE ---
             _buildSectionHeader('Smart Capture', Icons.bolt_rounded),
             const SizedBox(height: 16),
@@ -192,7 +204,7 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
                   title: 'New Note',
                   description: 'Blank workspace',
                   icon: Icons.edit_note_rounded,
-                  onTap: () => context.pushNamed('note-editor', pathParameters: {'noteId': 'new'}),
+                  onTap: () => context.push('/notes/new'),
                   color: Colors.deepPurple,
                   isNew: true,
                 ),
@@ -200,15 +212,18 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
                   title: 'Live Lecture',
                   description: 'Record & Transcribe',
                   icon: Icons.record_voice_over_rounded,
-                  onTap: () => context.pushNamed('note-editor', pathParameters: {'noteId': 'new_recording'}),
+                  onTap: () {
+                    // Navigate to a new note and start recording
+                    context.push('/notes/new?startRecording=true');
+                  },
                   color: Colors.pink,
                   isPro: true,
                 ),
               ],
             ).animate().fadeIn(delay: 400.ms),
-            
+
             const SizedBox(height: 40),
-            
+
             // --- SECTION: AI EXTRACT ---
             _buildSectionHeader('AI Extraction', Icons.auto_awesome_rounded),
             const SizedBox(height: 16),
@@ -231,7 +246,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
                   title: 'PDF/Docs',
                   description: 'Upload local files',
                   icon: Icons.picture_as_pdf_rounded,
-                  onTap: () => _pickFile(context, provider, user, ['pdf', 'doc', 'docx', 'txt'], 'pdf'),
+                  onTap: () => _pickFile(context, provider, user,
+                      ['pdf', 'doc', 'docx', 'txt'], 'pdf'),
                   color: Colors.redAccent,
                 ),
                 SourceChoiceCard(
@@ -247,7 +263,10 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
                   icon: Icons.play_circle_fill_rounded,
                   onTap: () {
                     if (!userMayImportFromYouTube(user)) {
-                      showDialog<void>(context: context, builder: (_) => const UpgradeDialog(featureName: 'YouTube import'));
+                      showDialog<void>(
+                          context: context,
+                          builder: (_) => const UpgradeDialog(
+                              featureName: 'YouTube import'));
                       return;
                     }
                     _showUrlInputDialog(context, provider, isYoutube: true);
@@ -259,7 +278,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
                   title: 'Images',
                   description: 'Scan notes & OCR',
                   icon: Icons.camera_alt_rounded,
-                  onTap: () => _pickFile(context, provider, user, ['jpg', 'jpeg', 'png', 'webp'], 'image'),
+                  onTap: () => _pickFile(context, provider, user,
+                      ['jpg', 'jpeg', 'png', 'webp'], 'image'),
                   color: Colors.indigo,
                   isPro: true,
                 ),
@@ -267,13 +287,14 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
                   title: 'Audio File',
                   description: 'Import recording',
                   icon: Icons.audio_file_rounded,
-                  onTap: () => _pickFile(context, provider, user, ['mp3', 'wav', 'm4a', 'aac'], 'audio'),
+                  onTap: () => _pickFile(context, provider, user,
+                      ['mp3', 'wav', 'm4a', 'aac'], 'audio'),
                   color: Colors.green,
                   isPro: true,
                 ),
               ],
             ).animate().fadeIn(delay: 600.ms),
-            
+
             const SizedBox(height: 80), // Padding for bottom bar
           ],
         ),
@@ -299,10 +320,13 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
     );
   }
 
-  Future<void> _pickFile(BuildContext context, CreateContentProvider provider, UserModel? user, List<String> extensions, String type) async {
+  Future<void> _pickFile(BuildContext context, CreateContentProvider provider,
+      UserModel? user, List<String> extensions, String type) async {
     if (user != null && !user.isPro && type != 'pdf') {
-       showDialog(context: context, builder: (_) => UpgradeDialog(featureName: '$type Uploads'));
-       return;
+      showDialog(
+          context: context,
+          builder: (_) => UpgradeDialog(featureName: '$type Uploads'));
+      return;
     }
 
     final result = await FilePicker.platform.pickFiles(
@@ -322,7 +346,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
     }
   }
 
-  void _showTextInputDialog(BuildContext context, CreateContentProvider provider) {
+  void _showTextInputDialog(
+      BuildContext context, CreateContentProvider provider) {
     _textController.clear();
     showModalBottomSheet(
       context: context,
@@ -356,7 +381,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
               maxLines: 8,
               autofocus: true,
               decoration: InputDecoration(
-                hintText: 'Type your topic here (e.g. Photosynthesis) or paste your long notes...',
+                hintText:
+                    'Type your topic here (e.g. Photosynthesis) or paste your long notes...',
                 hintStyle: GoogleFonts.outfit(color: Colors.grey),
                 filled: true,
                 fillColor: Theme.of(context).cardColor,
@@ -378,7 +404,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
               },
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
               child: const Text('Next'),
             ),
@@ -423,7 +450,9 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
               controller: _textController,
               autofocus: true,
               decoration: InputDecoration(
-                hintText: isYoutube ? 'https://youtube.com/watch?v=...' : 'https://example.com/article',
+                hintText: isYoutube
+                    ? 'https://youtube.com/watch?v=...'
+                    : 'https://example.com/article',
                 hintStyle: GoogleFonts.outfit(color: Colors.grey),
                 filled: true,
                 fillColor: Theme.of(context).cardColor,
@@ -431,7 +460,9 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide.none,
                 ),
-                prefixIcon: Icon(isYoutube ? Icons.play_circle_outline_rounded : Icons.link_rounded),
+                prefixIcon: Icon(isYoutube
+                    ? Icons.play_circle_outline_rounded
+                    : Icons.link_rounded),
               ),
             ),
             const SizedBox(height: 16),
@@ -458,7 +489,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
               },
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
               child: const Text('Next'),
             ),
@@ -474,7 +506,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
     const map = {
       'pdf': 'application/pdf',
       'doc': 'application/msword',
-      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'docx':
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'txt': 'text/plain',
       'jpg': 'image/jpeg',
       'jpeg': 'image/jpeg',
@@ -487,7 +520,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
   }
 
   // --- PHASE 2: CONFIGURATION ---
-  Widget _buildConfiguration(BuildContext context, CreateContentProvider provider) {
+  Widget _buildConfiguration(
+      BuildContext context, CreateContentProvider provider) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return SingleChildScrollView(
@@ -505,7 +539,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
             selectedArchetype: provider.selectedArchetype,
             onDifficultyChanged: (v) => provider.updateConfig(difficulty: v),
             onQuizCountChanged: (v) => provider.updateConfig(quizCount: v),
-            onFlashcardCountChanged: (v) => provider.updateConfig(flashcardCount: v),
+            onFlashcardCountChanged: (v) =>
+                provider.updateConfig(flashcardCount: v),
             onToggleType: (v) => provider.toggleQuestionType(v),
             onArchetypeChanged: (v) => provider.updateConfig(archetype: v),
           ),
@@ -517,6 +552,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
                 provider.startGeneration(
                   user.uid,
                   allowYouTubeImport: userMayImportFromYouTube(user),
+                  allowPdfImport: userMayImportFromPdf(user),
+                  allowWebImport: userMayImportFromWeb(user),
                 );
               }
             },
@@ -524,7 +561,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
               backgroundColor: colorScheme.primary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 18),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
               elevation: 4,
               shadowColor: colorScheme.primary.withOpacity(0.3),
             ),
@@ -560,10 +598,11 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
     );
   }
 
-  Widget _buildSourcePreview(BuildContext context, CreateContentProvider provider) {
+  Widget _buildSourcePreview(
+      BuildContext context, CreateContentProvider provider) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     IconData icon;
     String label;
     String detail;
@@ -660,12 +699,15 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
 
     if (provider.errorMessage.contains('USAGE_LIMIT_REACHED')) {
       displayTitle = 'Study Limit Reached';
-      displayMessage = "You've reached your daily generation limit. Educators and Pro members get unlimited AI extractions!";
+      displayMessage =
+          "You've reached your daily generation limit. Educators and Pro members get unlimited AI extractions!";
     } else if (provider.errorMessage.contains('API key is not configured')) {
-      displayMessage = "Our AI system is currently undergoing maintenance. Please try again in a few minutes.";
+      displayMessage =
+          "Our AI system is currently undergoing maintenance. Please try again in a few minutes.";
     } else if (provider.errorMessage.contains('YouTube Error')) {
       displayTitle = 'YouTube Analysis Error';
-      displayMessage = "We couldn't process this video. It might be too long, private, or have transcripts disabled.";
+      displayMessage =
+          "We couldn't process this video. It might be too long, private, or have transcripts disabled.";
     }
 
     return Padding(
@@ -679,7 +721,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
               color: colorScheme.error.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.error_outline_rounded, color: colorScheme.error, size: 64),
+            child: Icon(Icons.error_outline_rounded,
+                color: colorScheme.error, size: 64),
           ),
           const SizedBox(height: 32),
           Text(
@@ -708,8 +751,10 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: colorScheme.onSurface,
                 foregroundColor: colorScheme.surface,
-                padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
               child: const Text('Try Again'),
             )
@@ -719,8 +764,10 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF3300FF),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
               child: const Text('Upgrade to Pro'),
             ),

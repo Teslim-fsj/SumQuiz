@@ -433,13 +433,19 @@ class _StudentLandingViewState extends State<StudentLandingView> {
               isMobile
                   ? Column(
                       children: [
-                        _buildStepItem(Icons.description, '1. Upload your content',
+                        _buildStepItem(
+                            Icons.description,
+                            '1. Upload your content',
                             'Drop your messy PDFs, voice notes, or lecture photos. Our AI reads and organizes everything instantly.'),
                         const SizedBox(height: 32),
-                        _buildStepItem(Icons.auto_awesome, '2. AI Works Its Magic',
+                        _buildStepItem(
+                            Icons.auto_awesome,
+                            '2. AI Works Its Magic',
                             'In seconds, get syllabus-aligned summaries, flashcards, and exam-standard quizzes generated just for you.'),
                         const SizedBox(height: 32),
-                        _buildStepItem(Icons.verified, '3. Achieve Total Mastery',
+                        _buildStepItem(
+                            Icons.verified,
+                            '3. Achieve Total Mastery',
                             'Track your retention levels, complete daily study missions, and enter your exams with 100% confidence.'),
                       ],
                     )
@@ -447,17 +453,20 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                            child: _buildStepItem(Icons.description,
+                            child: _buildStepItem(
+                                Icons.description,
                                 '1. Upload your content',
                                 'Drop your messy PDFs, voice notes, or lecture photos. Our AI reads and organizes everything instantly.')),
                         _buildConnector(),
                         Expanded(
-                            child: _buildStepItem(Icons.auto_awesome,
+                            child: _buildStepItem(
+                                Icons.auto_awesome,
                                 '2. AI Works Its Magic',
                                 'In seconds, get syllabus-aligned summaries, flashcards, and exam-standard quizzes generated just for you.')),
                         _buildConnector(),
                         Expanded(
-                            child: _buildStepItem(Icons.verified,
+                            child: _buildStepItem(
+                                Icons.verified,
                                 '3. Achieve Total Mastery',
                                 'Track your retention levels, complete daily study missions, and enter your exams with 100% confidence.')),
                       ],
@@ -490,11 +499,12 @@ class _StudentLandingViewState extends State<StudentLandingView> {
         ),
         const SizedBox(height: 24),
         Text(title,
-            style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w800)),
+            style:
+                GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w800)),
         const SizedBox(height: 12),
         Text(desc,
-            style:
-                GoogleFonts.inter(fontSize: 14, color: Colors.grey[600], height: 1.5)),
+            style: GoogleFonts.inter(
+                fontSize: 14, color: Colors.grey[600], height: 1.5)),
       ],
     );
   }
@@ -522,13 +532,17 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                     Text(
                         'Traditional studying is slow. SumQuiz uses neuroscience-backed AI to accelerate your learning.',
                         style: GoogleFonts.inter(
-                            fontSize: 14, color: Colors.grey[600], height: 1.5)),
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                            height: 1.5)),
                     const SizedBox(height: 24),
-                    _buildCheckFeature('Curated Content for Nigerian Syllabuses'),
+                    _buildCheckFeature(
+                        'Curated Content for Nigerian Syllabuses'),
                     const SizedBox(height: 12),
                     _buildCheckFeature('AI Summary of 50-page PDFs in seconds'),
                     const SizedBox(height: 12),
-                    _buildCheckFeature('24/7 Accessibility on all your devices'),
+                    _buildCheckFeature(
+                        '24/7 Accessibility on all your devices'),
                     const SizedBox(height: 40),
                     GridView.count(
                       crossAxisCount: 2,
@@ -538,14 +552,14 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                       crossAxisSpacing: 16,
                       childAspectRatio: 1.1,
                       children: [
-                        _buildGridCard(
-                            Icons.lock, 'Private & Secure', 'Your study data is encrypted.'),
+                        _buildGridCard(Icons.lock, 'Private & Secure',
+                            'Your study data is encrypted.'),
                         _buildGridCard(Icons.update, 'Smart Spacing',
                             'Review facts exactly when needed.'),
-                        _buildGridCard(
-                            Icons.wifi_off, 'Offline Ready', 'Study anywhere, anytime.'),
-                        _buildGridCard(
-                            Icons.flag, 'Daily Missions', 'Gamified challenges for motivation.'),
+                        _buildGridCard(Icons.wifi_off, 'Offline Ready',
+                            'Study anywhere, anytime.'),
+                        _buildGridCard(Icons.flag, 'Daily Missions',
+                            'Gamified challenges for motivation.'),
                       ],
                     ),
                   ],
@@ -619,12 +633,15 @@ class _StudentLandingViewState extends State<StudentLandingView> {
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
               color: const Color(0xFFEEF2FF), shape: BoxShape.circle),
-          child: const Icon(Icons.check, size: 14, color: WebColors.purplePrimary),
+          child:
+              const Icon(Icons.check, size: 14, color: WebColors.purplePrimary),
         ),
         const SizedBox(width: 16),
         Text(text,
             style: GoogleFonts.inter(
-                fontSize: 15, fontWeight: FontWeight.w600, color: const Color(0xFF1F1F1F))),
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1F1F1F))),
       ],
     );
   }
@@ -648,7 +665,8 @@ class _StudentLandingViewState extends State<StudentLandingView> {
           Icon(icon, color: WebColors.purplePrimary, size: 28),
           const SizedBox(height: 16),
           Text(title,
-              style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800)),
+              style: GoogleFonts.outfit(
+                  fontSize: 18, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
           Text(desc,
               style: GoogleFonts.inter(
@@ -664,8 +682,8 @@ class _StudentLandingViewState extends State<StudentLandingView> {
         final isMobile = constraints.maxWidth < 900;
         final hPad = isMobile ? 24.0 : 80.0;
         return Container(
-          padding:
-              EdgeInsets.symmetric(horizontal: hPad, vertical: isMobile ? 60 : 100),
+          padding: EdgeInsets.symmetric(
+              horizontal: hPad, vertical: isMobile ? 60 : 100),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -696,12 +714,13 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                       children: [
                         IconButton(
                             onPressed: () {},
-                            icon: const Icon(Icons.arrow_back, color: Colors.grey)),
+                            icon: const Icon(Icons.arrow_back,
+                                color: Colors.grey)),
                         const SizedBox(width: 8),
                         IconButton(
                             onPressed: () {},
-                            icon:
-                                const Icon(Icons.arrow_forward, color: Colors.black)),
+                            icon: const Icon(Icons.arrow_forward,
+                                color: Colors.black)),
                       ],
                     )
                 ],
@@ -767,7 +786,9 @@ class _StudentLandingViewState extends State<StudentLandingView> {
         children: [
           Row(
               children: List.generate(
-                  5, (index) => const Icon(Icons.star, color: Colors.amber, size: 16))),
+                  5,
+                  (index) =>
+                      const Icon(Icons.star, color: Colors.amber, size: 16))),
           const SizedBox(height: 24),
           Text('"$quote"',
               style: GoogleFonts.inter(
@@ -781,7 +802,8 @@ class _StudentLandingViewState extends State<StudentLandingView> {
               CircleAvatar(
                   backgroundColor: Colors.grey[300],
                   radius: 16,
-                  child: const Icon(Icons.person, color: Colors.white, size: 16)),
+                  child:
+                      const Icon(Icons.person, color: Colors.white, size: 16)),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -794,7 +816,8 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                             color: const Color(0xFF1F1F1F))),
                     Text(
                       school,
-                      style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[500]),
+                      style: GoogleFonts.inter(
+                          fontSize: 11, color: Colors.grey[500]),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
@@ -854,7 +877,8 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: WebColors.purplePrimary,
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 40, vertical: 24),
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
@@ -862,25 +886,30 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                   ),
                   child: Text(
                     'Get Started for Free',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: GoogleFonts.inter(
+                        fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.check_circle, color: Colors.white54, size: 14),
+                    const Icon(Icons.check_circle,
+                        color: Colors.white54, size: 14),
                     const SizedBox(width: 8),
                     Text(
                       'No credit card',
-                      style: GoogleFonts.inter(fontSize: 12, color: Colors.white70),
+                      style: GoogleFonts.inter(
+                          fontSize: 12, color: Colors.white70),
                     ),
                     const SizedBox(width: 24),
-                    const Icon(Icons.check_circle, color: Colors.white54, size: 14),
+                    const Icon(Icons.check_circle,
+                        color: Colors.white54, size: 14),
                     const SizedBox(width: 8),
                     Text(
                       'Cancel anytime',
-                      style: GoogleFonts.inter(fontSize: 12, color: Colors.white70),
+                      style: GoogleFonts.inter(
+                          fontSize: 12, color: Colors.white70),
                     ),
                   ],
                 ),
@@ -1081,8 +1110,9 @@ class _StudentLandingViewState extends State<StudentLandingView> {
         const SizedBox(height: 24),
         ...links.map((e) => Padding(
               padding: const EdgeInsets.only(bottom: 16),
-              child:
-                  Text(e, style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[400])),
+              child: Text(e,
+                  style:
+                      GoogleFonts.inter(fontSize: 12, color: Colors.grey[400])),
             )),
       ],
     );

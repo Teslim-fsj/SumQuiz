@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:sumquiz/providers/theme_provider.dart';
 import 'package:sumquiz/services/notification_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class PreferencesScreen extends StatelessWidget {
   const PreferencesScreen({super.key});
@@ -111,23 +112,37 @@ class PreferencesScreen extends StatelessWidget {
                           value: themeProvider.notificationsEnabled,
                           icon: Icons.notifications_none,
                           onChanged: (value) async {
-                            themeProvider.toggleNotifications(value);
-                            // Also update the notification service
                             final notificationService =
                                 context.read<NotificationService>();
-                            await notificationService
-                                .toggleNotifications(value);
 
-                            // Show confirmation
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(value
-                                    ? 'Notifications enabled'
-                                    : 'Notifications disabled'),
-                                backgroundColor:
-                                    value ? Colors.green : Colors.orange,
-                              ),
-                            );
+                            if (value) {
+                              // If turning ON, check/request permissions
+                              await notificationService.requestPermissions();
+                              final granted =
+                                  await notificationService.arePermissionsGranted();
+
+                              if (!granted) {
+                                if (context.mounted) {
+                                  _showPermissionDialog(context);
+                                }
+                                return;
+                              }
+                            }
+
+                            themeProvider.toggleNotifications(value);
+                            await notificationService.toggleNotifications(value);
+
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(value
+                                      ? 'Notifications enabled'
+                                      : 'Notifications disabled'),
+                                  backgroundColor:
+                                      value ? Colors.green : Colors.orange,
+                                ),
+                              );
+                            }
                           },
                           theme: theme,
                         ),
@@ -144,7 +159,7 @@ class PreferencesScreen extends StatelessWidget {
                         ),
                       ],
                     ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
-                    ],
+                  ],
                 ),
               ),
             ),
@@ -179,8 +194,8 @@ class PreferencesScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color: theme.cardColor.withOpacity(0.7),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-                color: theme.cardColor.withOpacity(0.6), width: 1.5),
+            border:
+                Border.all(color: theme.cardColor.withOpacity(0.6), width: 1.5),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
@@ -342,6 +357,31 @@ class PreferencesScreen extends StatelessWidget {
       onChanged: onChanged,
       activeTrackColor: theme.colorScheme.secondary,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+    );
+  }
+
+  void _showPermissionDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Notifications Disabled'),
+        content: const Text(
+          'To receive study reminders, please enable notifications in your system settings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              openAppSettings();
+            },
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
     );
   }
 }

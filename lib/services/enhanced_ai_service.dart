@@ -29,6 +29,7 @@ import 'package:sumquiz/services/sync_service.dart';
 import 'package:sumquiz/models/local_quiz_question.dart';
 import 'package:sumquiz/models/local_flashcard.dart';
 import 'package:sumquiz/providers/create_content_provider.dart';
+import 'package:sumquiz/services/mastery_service.dart';
 export 'ai/ai_types.dart';
 
 // --- EXCEPTIONS moved to ai_types.dart ---
@@ -37,8 +38,14 @@ class EnhancedAIService {
   final YouTubeAIService _youtubeService = YouTubeAIService();
   final WebAIService _webService = WebAIService();
   final GeneratorAIService _generatorService = GeneratorAIService();
+  late final MasteryService _masteryService;
+  
+  GeneratorAIService get generatorService => _generatorService;
 
-  EnhancedAIService({required IAPService iapService}) {
+  EnhancedAIService(
+      {required IAPService iapService, required LocalDatabaseService localDb}) {
+    _masteryService = MasteryService(
+        localDb.getTopicsBox(), localDb.getSpacedRepetitionBox());
     // Initialize services immediately
     _initializeServices();
   }
@@ -95,9 +102,11 @@ class EnhancedAIService {
   Future<Result<ExtractionResult>> analyzeYouTubeVideo(String videoUrl,
       {required String userId, CancellationToken? cancelToken}) async {
     await _checkUsageLimits(userId);
-    final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
     final isPro = userDoc.exists && (userDoc.data()?['isPro'] ?? false);
-    return _youtubeService.analyzeVideo(videoUrl, isPro: isPro, cancelToken: cancelToken);
+    return _youtubeService.analyzeVideo(videoUrl,
+        isPro: isPro, cancelToken: cancelToken);
   }
 
   Future<Result<ExtractionResult>> extractWebpageContent(
@@ -122,7 +131,8 @@ class EnhancedAIService {
     CancellationToken? cancelToken,
   }) async {
     onProgress?.call('Generating summary...');
-    final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
     final isPro = userDoc.exists && (userDoc.data()?['isPro'] ?? false);
     return _generatorService.generateSummary(text,
         userId: userId,
@@ -141,7 +151,8 @@ class EnhancedAIService {
     CancellationToken? cancelToken,
   }) async {
     onProgress?.call('Generating quiz...');
-    final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
     final isPro = userDoc.exists && (userDoc.data()?['isPro'] ?? false);
     return _generatorService.generateQuiz(text,
         userId: userId,
@@ -160,7 +171,8 @@ class EnhancedAIService {
     CancellationToken? cancelToken,
   }) async {
     onProgress?.call('Generating flashcards...');
-    final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
     final isPro = userDoc.exists && (userDoc.data()?['isPro'] ?? false);
     return _generatorService.generateFlashcards(text,
         userId: userId,
@@ -187,11 +199,14 @@ class EnhancedAIService {
     CancellationToken? cancelToken,
   }) async {
     // 1. Check Usage Limits
-    final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
     if (userDoc.exists) {
       final user = UserModel.fromFirestore(userDoc);
       // Teachers (creators) who are NOT Pro have a lifetime limit of 3 exams
-      if (user.role == UserRole.creator && !user.isPro && user.examsGenerated >= 3) {
+      if (user.role == UserRole.creator &&
+          !user.isPro &&
+          user.examsGenerated >= 3) {
         throw EnhancedAIServiceException(
           'You have reached your lifetime limit of 3 free exams. Upgrade to Pro for unlimited generation.',
           code: 'EXAM_LIMIT_REACHED',
@@ -366,12 +381,13 @@ class EnhancedAIService {
         throw EnhancedAIServiceException('Recording file not found.');
       }
       final bytes = await file.readAsBytes();
-      
+
       final result = await analyzeContentFromBytes(
         bytes: bytes,
         mimeType: 'audio/mp4', // Default for record package m4a
         userId: userId,
-        customPrompt: 'Accurately transcribe and extract all educational content from this audio recording. Provide a clean, readable transcript.',
+        customPrompt:
+            'Accurately transcribe and extract all educational content from this audio recording. Provide a clean, readable transcript.',
         cancelToken: cancelToken,
       );
 
@@ -385,6 +401,37 @@ class EnhancedAIService {
       if (e is EnhancedAIServiceException) rethrow;
       throw EnhancedAIServiceException('Failed to transcribe recording: $e');
     }
+  }
+
+  // --- LIVE TRANSCRIPTION (2026 Strategy) ---
+
+  Stream<String> startLiveTranscription({required String userId}) {
+    // In a real 2026 implementation, this would connect to a WebSocket or
+    // use a streaming API like Google Cloud Speech-to-Text or OpenAI Whisper Live.
+    // For this simulation, we'll create a stream that mimics real-time feedback.
+
+    final controller = StreamController<String>();
+
+    Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (controller.isClosed) {
+        timer.cancel();
+        return;
+      }
+      // Mocked live transcription segments
+      final segments = [
+        "The mitochondria is the powerhouse of the cell.",
+        "It generates ATP through oxidative phosphorylation.",
+        "This process occurs across the inner membrane.",
+      ];
+      final index = timer.tick % segments.length;
+      controller.add(segments[index]);
+    });
+
+    return controller.stream;
+  }
+
+  void stopLiveTranscription() {
+    // Logic to close the streaming connection
   }
 
   Future<String> generateAndStoreOutputs({
@@ -413,10 +460,10 @@ class EnhancedAIService {
 
     onProgress('Creating folder...');
     cancelToken?.throwIfCancelled();
-    
+
     final bool isNewFolder = existingFolderId == null;
     final folderId = existingFolderId ?? const Uuid().v4();
-    
+
     if (isNewFolder) {
       final folder = Folder(
         id: folderId,
@@ -463,6 +510,16 @@ class EnhancedAIService {
               if (summary.id.isEmpty) {
                 summary.id = const Uuid().v4();
               }
+
+              // Resolve Topics
+              final List<String> summaryTopicIds = [];
+              for (final name in summary.topicNames) {
+                final topic =
+                    await _masteryService.getOrCreateTopic(userId, name);
+                summaryTopicIds.add(topic.id);
+              }
+              summary.topicIds = summaryTopicIds;
+
               await localDb.saveSummary(summary, folderId);
               break;
 
@@ -476,18 +533,37 @@ class EnhancedAIService {
               if (quiz.id.isEmpty) {
                 quiz.id = const Uuid().v4();
               }
+
+              // Resolve Topics
+              final List<String> quizTopicIds = [];
+              for (final name in quiz.topicNames) {
+                final topic =
+                    await _masteryService.getOrCreateTopic(userId, name);
+                quizTopicIds.add(topic.id);
+              }
+              quiz.topicIds = quizTopicIds;
+
               await localDb.saveQuiz(quiz, folderId);
               break;
 
             case 'flashcards':
               final set = await _generatorService.generateFlashcards(text,
                   userId: userId,
-                  cardCount: cardCount,
                   difficulty: difficulty,
                   cancelToken: cancelToken);
               if (set.id.isEmpty) {
                 set.id = const Uuid().v4();
               }
+
+              // Resolve Topics
+              final List<String> setTopicIds = [];
+              for (final name in set.topicNames) {
+                final topic =
+                    await _masteryService.getOrCreateTopic(userId, name);
+                setTopicIds.add(topic.id);
+              }
+              set.topicIds = setTopicIds;
+
               await localDb.saveFlashcardSet(set, folderId);
               for (final card in set.flashcards) {
                 await srsService.scheduleReview(card.id, userId);
@@ -568,25 +644,29 @@ class EnhancedAIService {
     try {
       cancelToken?.throwIfCancelled();
       final data = await _generatorService.generateFromTopic(
-      topic: topic,
-      depth: depth,
-      archetype: archetype,
-      quizCount: quizCount,
-      cardCount: cardCount,
-      questionTypes: questionTypes,
-      cancelToken: cancelToken,
-    );
+        topic: topic,
+        depth: depth,
+        archetype: archetype,
+        quizCount: quizCount,
+        cardCount: cardCount,
+        questionTypes: questionTypes,
+        cancelToken: cancelToken,
+      );
 
       final title = data['title']?.toString() ?? 'Study Deck';
       onProgress?.call('Creating study deck...');
       cancelToken?.throwIfCancelled();
+
+      // Resolve the main topic
+      final rootTopic = await _masteryService.getOrCreateTopic(userId, topic);
+      final List<String> commonTopicIds = [rootTopic.id];
 
       final bool isNewFolder = existingFolderId == null;
       folderId = existingFolderId ?? const Uuid().v4();
 
       if (isNewFolder) {
         final folder = Folder(
-          id: folderId!,
+          id: folderId,
           name: title,
           userId: userId,
           createdAt: DateTime.now(),
@@ -619,6 +699,8 @@ class EnhancedAIService {
         content: summaryText,
         timestamp: DateTime.now(),
         tags: summaryTags,
+        topicIds: commonTopicIds,
+        topicNames: [rootTopic.name],
       );
       await localDb.saveSummary(summary, folderId);
 
@@ -661,6 +743,8 @@ class EnhancedAIService {
         title: title,
         questions: questions,
         timestamp: DateTime.now(),
+        topicIds: commonTopicIds,
+        topicNames: [rootTopic.name],
       );
       await localDb.saveQuiz(quiz, folderId);
 
@@ -686,6 +770,8 @@ class EnhancedAIService {
         title: title,
         flashcards: flashcards,
         timestamp: DateTime.now(),
+        topicIds: commonTopicIds,
+        topicNames: [rootTopic.name],
       );
       await localDb.saveFlashcardSet(flashcardSet, folderId);
 
@@ -728,7 +814,8 @@ class EnhancedAIService {
 
       throw EnhancedAIServiceException(
           'Failed to generate study materials: ${e.toString().length > 100 ? e.toString().substring(0, 100) : e}',
-          code: 'GENERATION_FAILED', originalError: e);
+          code: 'GENERATION_FAILED',
+          originalError: e);
     }
   }
 
@@ -750,7 +837,8 @@ class EnhancedAIService {
     required String failureData,
     CancellationToken? cancelToken,
   }) async {
-    final prompt = '''You are an educational analytics AI. A teacher has the following exam question failure data:
+    final prompt =
+        '''You are an educational analytics AI. A teacher has the following exam question failure data:
 
 $failureData
 

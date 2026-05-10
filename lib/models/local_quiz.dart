@@ -38,8 +38,17 @@ class LocalQuiz extends HiveObject {
   @HiveField(10)
   late int timeSpent; // In seconds
 
-  @HiveField(11)
+  @HiveField(12)
   late bool isExam;
+
+  @HiveField(13)
+  late List<String> topicIds;
+
+  @HiveField(14)
+  String? sourceId;
+
+  @HiveField(15)
+  String? sourceName;
 
   LocalQuiz({
     required this.id,
@@ -54,7 +63,14 @@ class LocalQuiz extends HiveObject {
     this.creatorName,
     this.timeSpent = 0,
     this.isExam = false,
+    this.topicIds = const [],
+    this.topicNames = const [],
+    this.sourceId,
+    this.sourceName,
   }) : scores = scores ?? [];
+
+  @HiveField(16)
+  late List<String> topicNames;
 
   double? get score => scores.isNotEmpty ? scores.last : null;
 

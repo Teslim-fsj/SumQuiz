@@ -128,8 +128,8 @@ class _PrivacyAboutScreenState extends State<PrivacyAboutScreen> {
                         '© 2026 SumQuiz. All rights reserved.',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface
-                                .withOpacity(0.6)),
+                            color:
+                                theme.colorScheme.onSurface.withOpacity(0.6)),
                       ).animate().fadeIn(delay: 400.ms),
                     ],
                   ),
@@ -151,8 +151,7 @@ class _PrivacyAboutScreenState extends State<PrivacyAboutScreen> {
             color: theme.colorScheme.primary.withOpacity(0.05),
             shape: BoxShape.circle,
             border: Border.all(
-                color: theme.colorScheme.primary.withOpacity(0.1),
-                width: 2),
+                color: theme.colorScheme.primary.withOpacity(0.1), width: 2),
             boxShadow: [
               BoxShadow(
                 color: theme.colorScheme.primary.withOpacity(0.1),
@@ -162,12 +161,12 @@ class _PrivacyAboutScreenState extends State<PrivacyAboutScreen> {
             ],
           ),
           child: Image.asset(
-          'assets/images/sumquiz_logo.png',
-          width: 80,
-          height: 80,
-          errorBuilder: (_, __, ___) => Icon(Icons.info_outline,
-              size: 60, color: theme.colorScheme.primary),
-        ),
+            'assets/images/sumquiz_logo.png',
+            width: 80,
+            height: 80,
+            errorBuilder: (_, __, ___) => Icon(Icons.info_outline,
+                size: 60, color: theme.colorScheme.primary),
+          ),
         ),
         const SizedBox(height: 24),
         Text(
@@ -184,8 +183,8 @@ class _PrivacyAboutScreenState extends State<PrivacyAboutScreen> {
           decoration: BoxDecoration(
             color: theme.colorScheme.primary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-                color: theme.colorScheme.primary.withOpacity(0.2)),
+            border:
+                Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
           ),
           child: Text(
             _version,
@@ -208,8 +207,7 @@ class _PrivacyAboutScreenState extends State<PrivacyAboutScreen> {
           decoration: BoxDecoration(
             color: theme.cardColor.withOpacity(0.7),
             borderRadius: BorderRadius.circular(24),
-            border:
-                Border.all(color: theme.dividerColor.withOpacity(0.6)),
+            border: Border.all(color: theme.dividerColor.withOpacity(0.6)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
@@ -272,7 +270,6 @@ class _PrivacyAboutScreenState extends State<PrivacyAboutScreen> {
 
   Widget _buildDivider(ThemeData theme) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        child: Divider(
-            height: 1, color: theme.dividerColor.withOpacity(0.2)),
+        child: Divider(height: 1, color: theme.dividerColor.withOpacity(0.2)),
       );
 }

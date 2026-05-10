@@ -78,8 +78,7 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Set your focus duration:',
-                      style: GoogleFonts.outfit()),
+                  Text('Set your focus duration:', style: GoogleFonts.outfit()),
                   const SizedBox(height: 20),
                   Slider(
                     value: selectedMinutes.toDouble(),
@@ -127,8 +126,7 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
 
   String get _minutesStr =>
       (_secondsRemaining / 60).floor().toString().padLeft(2, '0');
-  String get _secondsStr =>
-      (_secondsRemaining % 60).toString().padLeft(2, '0');
+  String get _secondsStr => (_secondsRemaining % 60).toString().padLeft(2, '0');
 
   @override
   void dispose() {

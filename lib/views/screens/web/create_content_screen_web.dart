@@ -47,20 +47,25 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
     );
   }
 
-  Widget _buildPhaseContent(BuildContext context, CreateContentProvider provider, UserModel? user) {
+  Widget _buildPhaseContent(
+      BuildContext context, CreateContentProvider provider, UserModel? user) {
     switch (provider.phase) {
       case CreationPhase.source:
         return WebSourceSelection(
           key: ValueKey(provider.phase),
           onTranslate: (t) {},
-          onUploadFiles: () => _pickFile(context, provider, user, ['pdf', 'doc', 'docx', 'txt'], 'pdf'),
+          onUploadFiles: () => _pickFile(
+              context, provider, user, ['pdf', 'doc', 'docx', 'txt'], 'pdf'),
           onWriteNow: () => _showInputDialog(context, provider, user,
               'Text / Quick Topic', 'Type a topic or paste text...',
               isTopic: true),
           onImportUrl: () => _showInputDialog(context, provider, user,
-              'YouTube / Web Link', 'Paste URL here...', isLink: true),
-          onScanPage: () => _pickFile(context, provider, user, ['jpg', 'jpeg', 'png'], 'image'),
-          onListenAndLearn: () => _pickFile(context, provider, user, ['mp3', 'wav', 'm4a'], 'audio'),
+              'YouTube / Web Link', 'Paste URL here...',
+              isLink: true),
+          onScanPage: () => _pickFile(
+              context, provider, user, ['jpg', 'jpeg', 'png'], 'image'),
+          onListenAndLearn: () => _pickFile(
+              context, provider, user, ['mp3', 'wav', 'm4a'], 'audio'),
         );
       case CreationPhase.config:
         return WebConfiguration(
@@ -71,6 +76,8 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
               provider.startGeneration(
                 user.uid,
                 allowYouTubeImport: userMayImportFromYouTube(user),
+                allowPdfImport: userMayImportFromPdf(user),
+                allowWebImport: userMayImportFromWeb(user),
               );
             }
           },
@@ -81,9 +88,13 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
         return const SizedBox.shrink();
       case CreationPhase.success:
         return CreationSuccessView(
-          title: provider.fileName ?? (provider.textContent.length > 30 ? '${provider.textContent.substring(0, 30)}...' : provider.textContent),
+          title: provider.fileName ??
+              (provider.textContent.length > 30
+                  ? '${provider.textContent.substring(0, 30)}...'
+                  : provider.textContent),
           onViewPack: () {
-            context.pushNamed('results-view', pathParameters: {'folderId': provider.generatedFolderId});
+            context.pushNamed('results-view',
+                pathParameters: {'folderId': provider.generatedFolderId});
             provider.reset();
           },
           onReset: provider.reset,
@@ -93,11 +104,17 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
     }
   }
 
-  Future<void> _pickFile(BuildContext context, CreateContentProvider provider, UserModel? user, List<String> extensions, String type) async {
+  Future<void> _pickFile(BuildContext context, CreateContentProvider provider,
+      UserModel? user, List<String> extensions, String type) async {
     // Only lock for non-pro students. Teachers (creators) get free access.
-    if (user != null && !user.isPro && user.role != UserRole.creator && type != 'pdf') {
-       showDialog(context: context, builder: (_) => UpgradeDialog(featureName: '$type Uploads'));
-       return;
+    if (user != null &&
+        !user.isPro &&
+        user.role != UserRole.creator &&
+        type != 'pdf') {
+      showDialog(
+          context: context,
+          builder: (_) => UpgradeDialog(featureName: '$type Uploads'));
+      return;
     }
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -106,7 +123,10 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
     );
     if (result != null && result.files.single.bytes != null) {
       final file = result.files.single;
-      provider.setSource(type, fileName: file.name, bytes: file.bytes, mime: _getMimeType(file.name));
+      provider.setSource(type,
+          fileName: file.name,
+          bytes: file.bytes,
+          mime: _getMimeType(file.name));
     }
   }
 
@@ -124,7 +144,8 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(title, style: GoogleFonts.outfit(fontWeight: FontWeight.w800)),
+        title:
+            Text(title, style: GoogleFonts.outfit(fontWeight: FontWeight.w800)),
         content: SizedBox(
           width: 500,
           child: TextField(
@@ -136,20 +157,23 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
               hintStyle: GoogleFonts.outfit(color: Colors.grey),
               filled: true,
               fillColor: Theme.of(context).scaffoldBackgroundColor,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none),
             ),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               final text = _textController.text.trim();
               if (text.isNotEmpty) {
                 final bool isYoutube =
                     text.contains('youtube.com') || text.contains('youtu.be');
-                if (isYoutube &&
-                    !userMayImportFromYouTube(subscriptionUser)) {
+                if (isYoutube && !userMayImportFromYouTube(subscriptionUser)) {
                   showDialog<void>(
                     context: context,
                     builder: (_) =>
@@ -159,7 +183,9 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
                 }
                 Navigator.pop(context);
                 provider.setSource(
-                  isTopic ? 'topic' : (isYoutube ? 'youtube' : (isLink ? 'link' : 'text')),
+                  isTopic
+                      ? 'topic'
+                      : (isYoutube ? 'youtube' : (isLink ? 'link' : 'text')),
                   text: text,
                 );
               }
@@ -168,7 +194,8 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
               backgroundColor: const Color(0xFF3300FF),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text('Next'),
           ),
@@ -182,7 +209,8 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
     const map = {
       'pdf': 'application/pdf',
       'doc': 'application/msword',
-      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'docx':
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'txt': 'text/plain',
       'jpg': 'image/jpeg',
       'jpeg': 'image/jpeg',
@@ -195,19 +223,22 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
 
   Widget _buildErrorView(BuildContext context, CreateContentProvider provider) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     // Friendly error mapping
     String displayMessage = provider.errorMessage;
     String displayTitle = 'Extraction Failed';
 
     if (provider.errorMessage.contains('USAGE_LIMIT_REACHED')) {
       displayTitle = 'Study Limit Reached';
-      displayMessage = "You've reached your daily generation limit. Educators and Pro members get unlimited AI extractions!";
+      displayMessage =
+          "You've reached your daily generation limit. Educators and Pro members get unlimited AI extractions!";
     } else if (provider.errorMessage.contains('API key is not configured')) {
-      displayMessage = "Our AI system is currently undergoing maintenance. Please try again in a few minutes.";
+      displayMessage =
+          "Our AI system is currently undergoing maintenance. Please try again in a few minutes.";
     } else if (provider.errorMessage.contains('YouTube Error')) {
       displayTitle = 'YouTube Analysis Error';
-      displayMessage = "We couldn't process this video. It might be too long, private, or have transcripts disabled.";
+      displayMessage =
+          "We couldn't process this video. It might be too long, private, or have transcripts disabled.";
     }
 
     return Container(
@@ -223,28 +254,41 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
         children: [
           Icon(Icons.error_outline_rounded, color: colorScheme.error, size: 60),
           const SizedBox(height: 32),
-          Text(displayTitle, 
-            style: GoogleFonts.outfit(fontSize: 28, fontWeight: FontWeight.w900, color: colorScheme.onSurface)),
+          Text(displayTitle,
+              style: GoogleFonts.outfit(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  color: colorScheme.onSurface)),
           const SizedBox(height: 16),
-          Text(displayMessage, 
-            textAlign: TextAlign.center, 
-            style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w500, color: colorScheme.onSurfaceVariant, height: 1.5)),
+          Text(displayMessage,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.outfit(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.5)),
           const SizedBox(height: 48),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              TextButton(onPressed: provider.reset, child: const Text('Choose Different Source')),
+              TextButton(
+                  onPressed: provider.reset,
+                  child: const Text('Choose Different Source')),
               const SizedBox(width: 20),
               if (!provider.errorMessage.contains('USAGE_LIMIT_REACHED'))
                 ElevatedButton(
                   onPressed: provider.backToConfig,
-                  style: ElevatedButton.styleFrom(backgroundColor: colorScheme.onSurface, foregroundColor: colorScheme.surface),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.onSurface,
+                      foregroundColor: colorScheme.surface),
                   child: const Text('Try Again'),
                 )
               else
                 ElevatedButton(
                   onPressed: () => context.push('/settings/subscription'),
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF3300FF), foregroundColor: Colors.white),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF3300FF),
+                      foregroundColor: Colors.white),
                   child: const Text('Upgrade to Pro'),
                 ),
             ],

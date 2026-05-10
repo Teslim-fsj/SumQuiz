@@ -58,7 +58,8 @@ class MissionService {
     // 3. Generate New Mission if none found
     UserModel? user;
     try {
-      final userDoc = await _firestoreService.db.collection('users').doc(userId).get();
+      final userDoc =
+          await _firestoreService.db.collection('users').doc(userId).get();
       if (userDoc.exists) {
         user = UserModel.fromFirestore(userDoc);
       }
@@ -69,7 +70,7 @@ class MissionService {
     final difficulty = user?.difficultyPreference ?? 3;
     final dueCardIds = await _srs.getDueFlashcardIds(userId);
     final failedCardIds = await _srs.getRecentlyFailedIds(userId, limit: 15);
-    
+
     List<String> selectedFlashcards = [];
     int targetCount = 10;
     int estimatedMinutes = 6;
@@ -86,14 +87,16 @@ class MissionService {
     }
 
     // Combine and prioritize failed cards first, then due cards
-    final List<String> combinedPool = <String>{...failedCardIds, ...dueCardIds}.toList();
+    final List<String> combinedPool =
+        <String>{...failedCardIds, ...dueCardIds}.toList();
     selectedFlashcards = combinedPool.take(targetCount).toList();
 
     // FALLBACK: If we don't have enough cards in the pool, pick random ones
     if (selectedFlashcards.length < targetCount) {
       final allTrackedIds = await _srs.getAllTrackedIds(userId);
-      final nonSelectedIds =
-          allTrackedIds.where((id) => !selectedFlashcards.contains(id)).toList();
+      final nonSelectedIds = allTrackedIds
+          .where((id) => !selectedFlashcards.contains(id))
+          .toList();
 
       nonSelectedIds.shuffle();
       final needed = targetCount - selectedFlashcards.length;
@@ -138,6 +141,7 @@ class MissionService {
       try {
         await _notificationService.schedulePrimingNotification(
           userId: userId,
+          userName: user.displayName ?? 'Student',
           preferredStudyTime: user.preferredStudyTime,
           cardCount: mission.flashcardIds.length,
           estimatedMinutes: mission.estimatedTimeMinutes,
@@ -324,6 +328,7 @@ class MissionService {
       return false;
     }
   }
+
   /// Fetches flashcards for a mission, with Firestore fallback if not found locally
   Future<List<Flashcard>> fetchMissionCards(
       String userId, List<String> cardIds) async {

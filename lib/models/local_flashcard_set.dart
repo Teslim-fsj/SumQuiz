@@ -32,6 +32,9 @@ class LocalFlashcardSet extends HiveObject {
   @HiveField(8)
   String? creatorName;
 
+  @HiveField(9)
+  late List<String> topicIds;
+
   LocalFlashcardSet({
     required this.id,
     required this.title,
@@ -42,7 +45,12 @@ class LocalFlashcardSet extends HiveObject {
     this.isReadOnly = false,
     this.publicDeckId,
     this.creatorName,
+    this.topicIds = const [],
+    this.topicNames = const [],
   });
+
+  @HiveField(10)
+  late List<String> topicNames;
 
   LocalFlashcardSet.empty() {
     id = '';

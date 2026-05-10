@@ -13,13 +13,17 @@ import 'package:sumquiz/services/time_sync_service.dart';
 /// Direct Play Store integration for subscription management
 class IAPService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  static const String _proStarterId  = 'sumquiz_pro_starter';   // $7.99 – 50 sessions
-  static const String _proMonthlyId  = 'sumquiz_pro_monthly';   // $14.99 – 160 sessions
-  static const String _proEliteId    = 'sumquiz_pro_elite';     // $29.99 – 400 sessions
-  static const String _proCreatorId  = 'sumquiz_pro_creator';   // $49.99 – 1000 sessions
+  static const String _proStarterId =
+      'sumquiz_pro_starter'; // $7.99 – 50 sessions
+  static const String _proMonthlyId =
+      'sumquiz_pro_monthly'; // $14.99 – 160 sessions
+  static const String _proEliteId =
+      'sumquiz_pro_elite'; // $29.99 – 400 sessions
+  static const String _proCreatorId =
+      'sumquiz_pro_creator'; // $49.99 – 1000 sessions
   /// 3-day free trial subscription — must be created in Play Console with a
   /// free trial of 3 days before this product ID appears in query results.
-  static const String _proTrialId    = 'sumquiz_pro_trial';
+  static const String _proTrialId = 'sumquiz_pro_trial';
 
   late StreamSubscription<List<PurchaseDetails>> _subscription;
   final Set<String> _productIds = {
@@ -159,12 +163,12 @@ class IAPService {
 
       // Credit amounts per plan
       final int credits = switch (productId) {
-        _proStarterId  => 50,
-        _proMonthlyId  => 160,
-        _proEliteId    => 400,
-        _proCreatorId  => 1000,
-        _proTrialId    => 30,
-        _           => 0,
+        _proStarterId => 50,
+        _proMonthlyId => 160,
+        _proEliteId => 400,
+        _proCreatorId => 1000,
+        _proTrialId => 30,
+        _ => 0,
       };
 
       final Map<String, dynamic> update = {
@@ -172,7 +176,8 @@ class IAPService {
         'isTrial': isTrial,
         'currentProduct': productId,
         'lastVerified': FieldValue.serverTimestamp(),
-        'purchaseToken': purchaseDetails.verificationData.serverVerificationData,
+        'purchaseToken':
+            purchaseDetails.verificationData.serverVerificationData,
         'studySessionsRemaining': FieldValue.increment(credits),
       };
 
@@ -374,7 +379,8 @@ class IAPService {
       if (!_isInitialized) await initialize();
 
       final products = await _getProductDetails();
-      final trialProduct = products.where((p) => p.id == _proTrialId).firstOrNull;
+      final trialProduct =
+          products.where((p) => p.id == _proTrialId).firstOrNull;
 
       if (trialProduct == null) {
         developer.log(

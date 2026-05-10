@@ -101,7 +101,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
                     ),
                     Expanded(
                       child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -160,10 +161,14 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.lock_person, size: 60, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+          Icon(Icons.lock_person,
+              size: 60, color: theme.colorScheme.onSurface.withOpacity(0.5)),
           const SizedBox(height: 20),
           Text("Please Log In to View Library",
-              style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.w700)),
+              style: TextStyle(
+                  color: theme.colorScheme.onSurface,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700)),
           const SizedBox(height: 32),
           ElevatedButton(
             onPressed: () => context.go('/auth'),
@@ -217,7 +222,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
               const SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: WebColors.purplePrimary),
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: WebColors.purplePrimary),
               ).animate().fadeIn(),
             ],
           ],
@@ -258,15 +264,23 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
               borderRadius: BorderRadius.circular(20),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: isSelected ? Colors.white : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSelected ? WebColors.purplePrimary : const Color(0xFFE2E8F0),
+                    color: isSelected
+                        ? WebColors.purplePrimary
+                        : const Color(0xFFE2E8F0),
                   ),
                   boxShadow: isSelected
-                      ? [BoxShadow(color: WebColors.purplePrimary.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))]
+                      ? [
+                          BoxShadow(
+                              color: WebColors.purplePrimary.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4))
+                        ]
                       : [],
                 ),
                 child: Row(
@@ -274,7 +288,9 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
                     Icon(
                       categories[index]['icon'] as IconData,
                       size: 18,
-                      color: isSelected ? WebColors.purplePrimary : const Color(0xFF64748B),
+                      color: isSelected
+                          ? WebColors.purplePrimary
+                          : const Color(0xFF64748B),
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -282,7 +298,9 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
                       style: GoogleFonts.outfit(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
-                        color: isSelected ? WebColors.purplePrimary : const Color(0xFF64748B),
+                        color: isSelected
+                            ? WebColors.purplePrimary
+                            : const Color(0xFF64748B),
                       ),
                     ),
                   ],
@@ -334,7 +352,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
     );
   }
 
-  Widget _buildContentGrid(List<LibraryItem> items, String userId, LibraryViewModel viewModel) {
+  Widget _buildContentGrid(
+      List<LibraryItem> items, String userId, LibraryViewModel viewModel) {
     final cardData = items.map((item) {
       IconData icon;
       Color bgColor;
@@ -348,14 +367,18 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
           bgColor = WebColors.secondary.withOpacity(0.1);
           textColor = WebColors.secondary;
           typeName = 'SUMMARY';
-          badge = item.itemCount != null ? '${item.itemCount} Sections' : 'Detailed Analysis';
+          badge = item.itemCount != null
+              ? '${item.itemCount} Sections'
+              : 'Detailed Analysis';
           break;
         case LibraryItemType.quiz:
           icon = Icons.quiz_outlined;
           bgColor = WebColors.accentOrange.withOpacity(0.1);
           textColor = WebColors.accentOrange;
           typeName = 'QUIZ';
-          badge = item.score != null ? 'Score: ${(item.score! * 100).round()}%' : '${item.itemCount ?? 0} Questions';
+          badge = item.score != null
+              ? 'Score: ${(item.score! * 100).round()}%'
+              : '${item.itemCount ?? 0} Questions';
           break;
         case LibraryItemType.flashcards:
           icon = Icons.style_outlined;
@@ -369,7 +392,9 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
           bgColor = WebColors.purplePrimary.withOpacity(0.1);
           textColor = WebColors.purplePrimary;
           typeName = 'EXAM';
-          badge = item.score != null ? 'Score: ${(item.score! * 100).round()}%' : '${item.itemCount ?? 0} Questions';
+          badge = item.score != null
+              ? 'Score: ${(item.score! * 100).round()}%'
+              : '${item.itemCount ?? 0} Questions';
           break;
         case LibraryItemType.note:
           icon = Icons.note_alt_outlined;
@@ -492,11 +517,13 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
                             color: card.textColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Icon(card.icon, color: card.textColor, size: 24),
+                          child:
+                              Icon(card.icon, color: card.textColor, size: 24),
                         ),
                         if (card.typeName.isNotEmpty)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
                               color: card.textColor.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(8),
@@ -542,7 +569,9 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
                         Icon(
                           card.typeName == 'QUIZ'
                               ? Icons.emoji_events_outlined
-                              : (card.typeName == 'FLASHCARDS' ? Icons.layers_outlined : Icons.read_more_outlined),
+                              : (card.typeName == 'FLASHCARDS'
+                                  ? Icons.layers_outlined
+                                  : Icons.read_more_outlined),
                           size: 14,
                           color: card.textColor,
                         ),
@@ -556,7 +585,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
                           ),
                         ),
                         const Spacer(),
-                        Icon(Icons.arrow_forward, size: 16, color: card.textColor.withOpacity(0.5)),
+                        Icon(Icons.arrow_forward,
+                            size: 16, color: card.textColor.withOpacity(0.5)),
                       ],
                     ),
                   ],
@@ -575,7 +605,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
   }
 
   Future<void> _navigateToContent(LibraryItem item) async {
-    debugPrint('🔍 Navigating to content: ${item.type} - ${item.title} (ID: ${item.id})');
+    debugPrint(
+        '🔍 Navigating to content: ${item.type} - ${item.title} (ID: ${item.id})');
     setState(() => _isNavigating = true);
 
     try {
@@ -588,10 +619,16 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
       debugPrint('🚀 Navigating to results view screen...');
       int tab = 0;
       switch (item.type) {
-        case LibraryItemType.summary: tab = 0; break;
+        case LibraryItemType.summary:
+          tab = 0;
+          break;
         case LibraryItemType.quiz:
-        case LibraryItemType.exam: tab = 1; break;
-        case LibraryItemType.flashcards: tab = 2; break;
+        case LibraryItemType.exam:
+          tab = 1;
+          break;
+        case LibraryItemType.flashcards:
+          tab = 2;
+          break;
         case LibraryItemType.note:
           context.push('/note/${item.id}');
           return;

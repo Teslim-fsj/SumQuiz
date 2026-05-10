@@ -29,7 +29,8 @@ class ReferralViewModel extends ChangeNotifier {
   }
 
   void update(ReferralService newService, AuthService authService) {
-    final userChanged = _authService.currentUser?.uid != authService.currentUser?.uid;
+    final userChanged =
+        _authService.currentUser?.uid != authService.currentUser?.uid;
     _referralService = newService;
     _authService = authService;
 

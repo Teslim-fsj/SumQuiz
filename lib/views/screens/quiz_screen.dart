@@ -28,6 +28,8 @@ import 'package:collection/collection.dart';
 import '../../providers/sumi_provider.dart';
 import '../../models/sumi_emotion.dart';
 import '../../widgets/sumi_mascot.dart';
+import '../../services/mastery_service.dart';
+import '../../services/mastery/sumi_tutor_service.dart';
 
 enum QuizState { creation, loading, inProgress, finished, error }
 
@@ -70,10 +72,12 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   void initState() {
     super.initState();
-    _aiService = EnhancedAIService(
-        iapService: Provider.of<IAPService>(context, listen: false));
     _localDbService.init().then((_) {
-      _srsService = SpacedRepetitionService(_localDbService.getSpacedRepetitionBox());
+      _aiService = EnhancedAIService(
+          iapService: Provider.of<IAPService>(context, listen: false),
+          localDb: _localDbService);
+      _srsService =
+          SpacedRepetitionService(_localDbService.getSpacedRepetitionBox());
     });
     _loadQuiz();
   }
@@ -158,11 +162,11 @@ class _QuizScreenState extends State<QuizScreen> {
       final folderId = await _localDbService.getParentFolderId(_quizId!);
       if (folderId != null) {
         final contents = await _localDbService.getFolderContents(folderId);
-        final flashcardSetContent = contents.firstWhereOrNull(
-            (c) => c.contentType == 'flashcardSet' || c.contentType == 'flashcards');
+        final flashcardSetContent = contents.firstWhereOrNull((c) =>
+            c.contentType == 'flashcardSet' || c.contentType == 'flashcards');
         if (flashcardSetContent != null) {
-          final flashcardSet =
-              await _localDbService.getFlashcardSet(flashcardSetContent.contentId);
+          final flashcardSet = await _localDbService
+              .getFlashcardSet(flashcardSetContent.contentId);
           if (flashcardSet != null) {
             setState(() {
               _relatedFlashcards = flashcardSet.flashcards;
@@ -731,10 +735,11 @@ class _QuizScreenState extends State<QuizScreen> {
         Padding(
           padding: const EdgeInsets.only(top: 16.0),
           child: Consumer<SumiProvider>(
-            builder: (context, sumi, child) {
+            builder: (context, sumiProvider, child) {
               return SumiMascot(
-                state: sumi.currentState,
+                state: sumiProvider.currentState,
                 size: 100,
+                dialogue: sumiProvider.dialogue,
               );
             },
           ),
@@ -746,12 +751,60 @@ class _QuizScreenState extends State<QuizScreen> {
             aiService: _aiService,
             showSaveButton: false,
             onFinish: () {
-              setState(() {
-                _state = QuizState.finished;
+              _stopwatch.stop();
+              final timeSpent = _stopwatch.elapsed.inSeconds;
+              
+              context.push('/post-study-results', extra: {
+                'score': _score,
+                'totalQuestions': _questions.length,
+                'timeSpentSeconds': timeSpent,
+                'title': _titleController.text,
+                'type': 'quiz',
               });
             },
             onAnswer: (bool isCorrect, LocalQuizQuestion question) async {
               final sumi = context.read<SumiProvider>();
+              final localDb = context.read<LocalDatabaseService>();
+              final mastery = context.read<MasteryService>();
+              final user = Provider.of<UserModel?>(context, listen: false);
+
+              if (user != null && _quizId != null) {
+                localDb.getQuiz(_quizId!).then((quiz) {
+                  if (quiz != null && quiz.topicIds.isNotEmpty) {
+                    for (final topicId in quiz.topicIds) {
+                      mastery.processSignal(LearningSignal(
+                        topicId: topicId,
+                        timestamp: DateTime.now(),
+                        type: isCorrect
+                            ? SignalType.quizCorrect
+                            : SignalType.quizWrong,
+                        metadata: {'userId': user.uid, 'context': 'quiz'},
+                      ));
+                    }
+                  }
+
+                  if (quiz != null && !isCorrect) {
+                    final tutor = context.read<SumiTutorService>();
+                    final hint = tutor.getSocraticHint(
+                      topicName: quiz.topicNames.isNotEmpty
+                          ? quiz.topicNames.first
+                          : 'this topic',
+                      question: question.question,
+                      wrongAnswer: '',
+                      sourceName: quiz.sourceName,
+                    );
+                    sumi.showTutorMessage(hint, state: SumiState.confused);
+
+                    // Auto-clear hint after 5 seconds
+                    Future.delayed(const Duration(seconds: 5), () {
+                      if (mounted) sumi.clearDialogue();
+                    });
+                  } else {
+                    sumi.clearDialogue();
+                  }
+                });
+              }
+
               if (isCorrect) {
                 sumi.emitEvent(SumiEvent.answerCorrect);
                 setState(() {
@@ -759,23 +812,23 @@ class _QuizScreenState extends State<QuizScreen> {
                 });
               } else {
                 sumi.emitEvent(SumiEvent.answerWrong);
-          // Linking: Quiz Failure -> SRS Demotion
-          final user = Provider.of<UserModel?>(context, listen: false);
-          if (user != null && _relatedFlashcards.isNotEmpty) {
-            // 1. Try text-based matching
-            final matched = await _srsService.demoteFlashcardByText(
-              user.uid,
-              _relatedFlashcards,
-              question.question,
-            );
+                // Linking: Quiz Failure -> SRS Demotion
+                if (user != null && _relatedFlashcards.isNotEmpty) {
+                  // 1. Try text-based matching
+                  final matched = await _srsService.demoteFlashcardByText(
+                    user.uid,
+                    _relatedFlashcards,
+                    question.question,
+                  );
 
-            // 2. Fallback to random demotion if no match (user penalty)
-            if (!matched) {
-              await _srsService.demoteRandomFromList(user.uid, _relatedFlashcards);
-            }
-          }
-        }
-      },
+                  // 2. Fallback to random demotion if no match (user penalty)
+                  if (!matched) {
+                    await _srsService.demoteRandomFromList(
+                        user.uid, _relatedFlashcards);
+                  }
+                }
+              }
+            },
           ),
         ),
       ],

@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/local_note.dart';
 import '../models/local_recording.dart';
+import '../models/local_drawing_stroke.dart';
 import '../services/local_database_service.dart';
 import '../services/enhanced_ai_service.dart';
 import '../services/recording_service.dart';
-import '../utils/cancellation_token.dart';
 
 enum NoteProcessingState { idle, recording, transcribing, generating, error }
 
@@ -40,7 +40,8 @@ class NoteProvider with ChangeNotifier {
   LocalNote? get currentNote => _currentNote;
 
   final List<LocalRecording> _currentNoteRecordings = [];
-  List<LocalRecording> get currentNoteRecordings => List.unmodifiable(_currentNoteRecordings);
+  List<LocalRecording> get currentNoteRecordings =>
+      List.unmodifiable(_currentNoteRecordings);
 
   StreamSubscription<Duration>? _durationSub;
   StreamSubscription<List<LocalNote>>? _notesSub;
@@ -76,7 +77,8 @@ class NoteProvider with ChangeNotifier {
 
   void _watchRecordings(String noteId) {
     _recordingsSub?.cancel();
-    _recordingsSub = _localDb.watchRecordingsForNote(noteId).listen((recordings) {
+    _recordingsSub =
+        _localDb.watchRecordingsForNote(noteId).listen((recordings) {
       _currentNoteRecordings.clear();
       _currentNoteRecordings.addAll(recordings);
       notifyListeners();
@@ -94,7 +96,7 @@ class NoteProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<LocalNote> createNewNote(String userId, {String? folderId}) async {
+  Future<LocalNote> createNewNote(String userId) async {
     final note = LocalNote(
       id: const Uuid().v4(),
       userId: userId,
@@ -102,7 +104,7 @@ class NoteProvider with ChangeNotifier {
       content: '',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
-      folderId: folderId,
+      strokes: [],
     );
     await _localDb.saveNote(note);
     setCurrentNote(note);
@@ -111,14 +113,16 @@ class NoteProvider with ChangeNotifier {
 
   Future<void> updateNoteTitle(String title) async {
     if (_currentNote == null) return;
-    _currentNote = _currentNote!.copyWith(title: title, updatedAt: DateTime.now());
+    _currentNote =
+        _currentNote!.copyWith(title: title, updatedAt: DateTime.now());
     await _localDb.saveNote(_currentNote!);
     notifyListeners();
   }
 
   Future<void> updateNoteContent(String content) async {
     if (_currentNote == null) return;
-    _currentNote = _currentNote!.copyWith(content: content, updatedAt: DateTime.now());
+    _currentNote =
+        _currentNote!.copyWith(content: content, updatedAt: DateTime.now());
     await _localDb.saveNote(_currentNote!);
     notifyListeners();
   }
@@ -130,17 +134,51 @@ class NoteProvider with ChangeNotifier {
     }
   }
 
+  // --- HANDWRITING ACTIONS ---
+
+  List<LocalDrawingStroke> get drawingStrokes => _currentNote?.strokes ?? [];
+
+  Future<void> addDrawingStroke(LocalDrawingStroke stroke) async {
+    if (_currentNote == null) return;
+    
+    final updatedStrokes = List<LocalDrawingStroke>.from(_currentNote!.strokes)..add(stroke);
+    _currentNote = _currentNote!.copyWith(
+      strokes: updatedStrokes,
+      updatedAt: DateTime.now(),
+    );
+    
+    // We save to DB after each stroke for maximum data safety in production
+    await _localDb.saveNote(_currentNote!);
+    notifyListeners();
+  }
+
+  Future<void> clearStrokes() async {
+    if (_currentNote == null) return;
+    _currentNote = _currentNote!.copyWith(strokes: [], updatedAt: DateTime.now());
+    await _localDb.saveNote(_currentNote!);
+    notifyListeners();
+  }
+
   // --- RECORDING ACTIONS ---
 
-  Future<void> startRecording(String userId, {String? folderId}) async {
+  List<String> _liveInsights = [];
+  List<String> get liveInsights => _liveInsights;
+
+  Timer? _insightTimer;
+
+  String get liveTranscript => _liveInsights.isNotEmpty ? _liveInsights.last : '';
+
+  Future<void> startRecording(String userId) async {
     if (_currentNote == null) {
-      await createNewNote(userId, folderId: folderId);
+      await createNewNote(userId);
     }
-    
+
     try {
       await _recordingService.startRecording(userId);
       _state = NoteProcessingState.recording;
       _errorMessage = '';
+      _liveInsights.clear();
+      _startInsightSimulation();
       notifyListeners();
     } catch (e) {
       _errorMessage = e.toString();
@@ -149,10 +187,32 @@ class NoteProvider with ChangeNotifier {
     }
   }
 
+  void _startInsightSimulation() {
+    _insightTimer?.cancel();
+    _insightTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (_state != NoteProcessingState.recording) {
+        timer.cancel();
+        return;
+      }
+      
+      final phrases = [
+        "Analyzing audio frequency...",
+        "Detecting key educational concepts...",
+        "Capturing core lecture points...",
+        "Neural processing active...",
+        "Sumi is listening and indexing...",
+      ];
+      
+      _liveInsights.add(phrases[timer.tick % phrases.length]);
+      notifyListeners();
+    });
+  }
+
   Future<void> stopRecording() async {
     if (_state != NoteProcessingState.recording) return;
 
     try {
+      _insightTimer?.cancel();
       final path = await _recordingService.stopRecording();
       if (path != null && _currentNote != null) {
         final recording = LocalRecording(
@@ -167,6 +227,7 @@ class NoteProvider with ChangeNotifier {
       }
       _state = NoteProcessingState.idle;
       _recordingDuration = Duration.zero;
+      _liveInsights.clear();
       notifyListeners();
     } catch (e) {
       _errorMessage = e.toString();
@@ -187,13 +248,13 @@ class NoteProvider with ChangeNotifier {
         filePath: recording.filePath,
         userId: recording.userId,
       );
-      
+
       final updatedRecording = recording.copyWith(
         transcript: transcript,
         isTranscribed: true,
       );
       await _localDb.saveRecording(updatedRecording);
-      
+
       _state = NoteProcessingState.idle;
       notifyListeners();
     } catch (e) {
@@ -228,6 +289,25 @@ class NoteProvider with ChangeNotifier {
       _state = NoteProcessingState.error;
       notifyListeners();
     }
+  }
+
+  // --- AUDIO ACTIONS ---
+  void seekAudio(Duration time) {
+    // Integration with an audio player would go here
+    notifyListeners();
+  }
+
+  void toggleBackLink(String id) {
+    if (_currentNote == null) return;
+    final links = List<String>.from(_currentNote!.backLinks);
+    if (links.contains(id)) {
+      links.remove(id);
+    } else {
+      links.add(id);
+    }
+    _currentNote = _currentNote!.copyWith(backLinks: links);
+    _localDb.saveNote(_currentNote!);
+    notifyListeners();
   }
 
   @override

@@ -87,7 +87,49 @@ class NotificationService {
     }
 
     await _setupPushNotifications();
+    await _createNotificationChannels();
     await requestPermissions();
+  }
+
+  Future<void> _createNotificationChannels() async {
+    if (kIsWeb) return;
+    
+    final androidPlugin = _localNotifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+        
+    if (androidPlugin != null) {
+      // 1. Learning Reminders Channel
+      const AndroidNotificationChannel learningChannel = AndroidNotificationChannel(
+        'learning_reminders',
+        'Learning Reminders',
+        description: 'Daily study goals and topic recommendations',
+        importance: Importance.max,
+        enableLights: true,
+        enableVibration: true,
+      );
+
+      // 2. Missions & Streaks Channel
+      const AndroidNotificationChannel missionChannel = AndroidNotificationChannel(
+        'mission_updates',
+        'Missions & Streaks',
+        description: 'Notifications about your daily missions and streak saves',
+        importance: Importance.high,
+      );
+
+      // 3. System & Support Channel
+      const AndroidNotificationChannel systemChannel = AndroidNotificationChannel(
+        'system_updates',
+        'System & Support',
+        description: 'Important app updates and account notifications',
+        importance: Importance.defaultImportance,
+      );
+
+      await androidPlugin.createNotificationChannel(learningChannel);
+      await androidPlugin.createNotificationChannel(missionChannel);
+      await androidPlugin.createNotificationChannel(systemChannel);
+      
+      debugPrint('🔔 Android notification channels created');
+    }
   }
 
   void _handleNotificationResponse(NotificationResponse response) {
@@ -159,6 +201,28 @@ class NotificationService {
     });
   }
 
+  Future<bool> arePermissionsGranted() async {
+    if (kIsWeb) return true;
+
+    // Check Android
+    final androidPlugin = _localNotifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    if (androidPlugin != null) {
+      final bool? granted = await androidPlugin.areNotificationsEnabled();
+      if (granted == false) return false;
+    }
+
+    // Check iOS
+    final iosPlugin = _localNotifications
+        .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+    if (iosPlugin != null) {
+      // For iOS, we can't easily check if it's granted without requesting or using another package
+      // but usually requestPermissions handles it.
+    }
+
+    return true;
+  }
+
   Future<void> requestPermissions() async {
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getBool(notificationEnabledKey) ?? true) {
@@ -167,8 +231,7 @@ class NotificationService {
           _localNotifications.resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>();
       if (androidPlugin != null) {
-        final granted = await androidPlugin.requestNotificationsPermission();
-        debugPrint('🔔 Android notification permission granted: $granted');
+        await androidPlugin.requestNotificationsPermission();
       }
 
       // Request iOS notification permissions
@@ -203,10 +266,10 @@ class NotificationService {
         notification.hashCode,
         notification.title,
         notification.body,
-        NotificationDetails(
+        const NotificationDetails(
           android: AndroidNotificationDetails(
-            'general_channel',
-            'General Notifications',
+            'system_updates',
+            'System Updates',
             channelDescription: 'General app notifications',
             icon: '@mipmap/ic_launcher',
           ),
@@ -220,7 +283,7 @@ class NotificationService {
     await scheduleNotification(
       99,
       'Test Notification',
-      'system_and_updates',
+      'system_updates',
       {},
       payloadRoute: '/',
       days: 0, // Schedule for a few seconds from now for testing
@@ -259,7 +322,8 @@ class NotificationService {
         },
         existingWorkPolicy: ExistingWorkPolicy.replace,
       );
-      debugPrint('⏰ Scheduled notification $id via WorkManager with delay: $delay');
+      debugPrint(
+          '⏰ Scheduled notification $id via WorkManager with delay: $delay');
     } else {
       debugPrint('🔔 Skipping WorkManager notification $id on Web platform');
     }
@@ -273,15 +337,25 @@ class NotificationService {
     required String payload,
     required String category,
   }) async {
+    String channelId = 'system_updates';
+    if (category.contains('brain') ||
+        category.contains('alps') ||
+        category.contains('socratic')) {
+      channelId = 'learning_reminders';
+    } else if (category.contains('streak') ||
+        category.contains('mission') ||
+        category.contains('priming')) {
+      channelId = 'mission_updates';
+    }
+
     await _localNotifications.show(
       id,
       title,
       message,
       NotificationDetails(
         android: AndroidNotificationDetails(
-          '${category}_channel',
-          '$category Notifications',
-          channelDescription: 'Notifications for $category',
+          channelId,
+          channelId.split('_').map((s) => s[0].toUpperCase() + s.substring(1)).join(' '),
           importance: Importance.max,
           priority: Priority.high,
           color: Colors.black,
@@ -356,6 +430,7 @@ class NotificationService {
   /// Schedules a "Priming" notification 30 minutes before the user's preferred study time
   Future<void> schedulePrimingNotification({
     required String userId,
+    required String userName,
     required String preferredStudyTime, // "HH:mm" format
     required int cardCount,
     required int estimatedMinutes,
@@ -363,6 +438,8 @@ class NotificationService {
     final prefs = await SharedPreferences.getInstance();
     if (!(prefs.getBool(notificationEnabledKey) ?? true)) return;
 
+    final String message = _getPersonalizedMessage('brain_state_greeting', {'name': userName});
+    
     // Parse time
     final parts = preferredStudyTime.split(':');
     final hour = int.parse(parts[0]);
@@ -378,7 +455,6 @@ class NotificationService {
       minute,
     ).subtract(const Duration(minutes: 30)); // 30m before
 
-    // If in the past, schedule for tomorrow
     if (scheduledDate.isBefore(now)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
@@ -392,10 +468,36 @@ class NotificationService {
         initialDelay: delay,
         inputData: {
           'id': 1001,
-          'title': '🧠 Today\'s Mission is Ready',
-          'message': '$cardCount cards • $estimatedMinutes min',
+          'title': '🧠 Brain State Optimization',
+          'message': '$message ($cardCount cards today)',
           'payload': json.encode({'route': '/?startMission=true'}),
-          'category': 'mission_priming',
+          'category': 'brain_state_greeting',
+        },
+        existingWorkPolicy: ExistingWorkPolicy.replace,
+      );
+    }
+  }
+
+  /// Schedules an ALPS-based Critical Forgetting alert
+  Future<void> scheduleALPSNotification({
+    required String topicName,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!(prefs.getBool(notificationEnabledKey) ?? true)) return;
+
+    final String message = _getPersonalizedMessage('alps_retention_alert', {'topic': topicName});
+
+    if (!kIsWeb) {
+      await Workmanager().registerOneOffTask(
+        'alps_$topicName',
+        'notification_task',
+        initialDelay: const Duration(minutes: 10), // Short nudge
+        inputData: {
+          'id': 1004,
+          'title': '🚨 Critical Forgetting Warning',
+          'message': message,
+          'payload': json.encode({'route': '/library'}),
+          'category': 'alps_retention_alert',
         },
         existingWorkPolicy: ExistingWorkPolicy.replace,
       );
@@ -409,6 +511,8 @@ class NotificationService {
     final prefs = await SharedPreferences.getInstance();
     if (!(prefs.getBool(notificationEnabledKey) ?? true)) return;
 
+    final String message = _getPersonalizedMessage('streak_and_motivation', {'count': momentumGain.toString()});
+
     if (!kIsWeb) {
       await Workmanager().registerOneOffTask(
         'recall_notification',
@@ -416,10 +520,10 @@ class NotificationService {
         initialDelay: const Duration(hours: 20),
         inputData: {
           'id': 1002,
-          'title': '🚀 Yesterday: +$momentumGain Momentum',
-          'message': 'Keep the habit alive today!',
+          'title': '🚀 Cognitive Momentum: +$momentumGain',
+          'message': message,
           'payload': json.encode({'route': '/?startMission=true'}),
-          'category': 'mission_recall',
+          'category': 'streak_and_motivation',
         },
         existingWorkPolicy: ExistingWorkPolicy.replace,
       );
@@ -434,6 +538,8 @@ class NotificationService {
     final prefs = await SharedPreferences.getInstance();
     if (!(prefs.getBool(notificationEnabledKey) ?? true)) return;
 
+    final String message = _getPersonalizedMessage('streak_and_motivation', {'count': currentStreak.toString()});
+
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
     tz.TZDateTime scheduledDate = tz.TZDateTime(
       tz.local,
@@ -444,7 +550,6 @@ class NotificationService {
       0,
     );
 
-    // If already past 8 PM, skip (don't spam tomorrow)
     if (scheduledDate.isBefore(now)) {
       return;
     }
@@ -459,9 +564,9 @@ class NotificationService {
         inputData: {
           'id': 1003,
           'title': '🔥 Save Your $currentStreak-Day Streak!',
-          'message': '$remainingCards cards left • 3 mins to complete',
+          'message': '$message ($remainingCards cards left)',
           'payload': json.encode({'route': '/?startMission=true'}),
-          'category': 'streak_saver',
+          'category': 'streak_and_motivation',
         },
         existingWorkPolicy: ExistingWorkPolicy.replace,
       );

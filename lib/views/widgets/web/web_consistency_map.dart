@@ -73,7 +73,9 @@ class WebConsistencyMap extends StatelessWidget {
               children: List.generate(7, (dayIndex) {
                 // Determine color based on intensity
                 final dataIndex = weekIndex * 7 + dayIndex;
-                final intensity = engagementData.length > dataIndex ? engagementData[dataIndex] : 0;
+                final intensity = engagementData.length > dataIndex
+                    ? engagementData[dataIndex]
+                    : 0;
                 return Container(
                   margin: const EdgeInsets.only(bottom: 4),
                   width: 14,
@@ -138,12 +140,18 @@ class WebConsistencyMap extends StatelessWidget {
 
   Color _getColorForIntensity(int intensity) {
     switch (intensity) {
-      case 0: return const Color(0xFFF1F5F9);
-      case 1: return const Color(0xFFC7D2FE);
-      case 2: return const Color(0xFF818CF8);
-      case 3: return const Color(0xFF4F46E5);
-      case 4: return const Color(0xFF312E81);
-      default: return const Color(0xFFF1F5F9);
+      case 0:
+        return const Color(0xFFF1F5F9);
+      case 1:
+        return const Color(0xFFC7D2FE);
+      case 2:
+        return const Color(0xFF818CF8);
+      case 3:
+        return const Color(0xFF4F46E5);
+      case 4:
+        return const Color(0xFF312E81);
+      default:
+        return const Color(0xFFF1F5F9);
     }
   }
 }

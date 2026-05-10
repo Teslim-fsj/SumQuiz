@@ -12,7 +12,6 @@ class ExamPdfConfig {
   final String? shareCode;
   final String? creatorName;
 
-
   // Marks per section
   final int marksA; // MCQ / True-False
   final int marksB; // Short Answer
@@ -33,7 +32,6 @@ class ExamPdfConfig {
     this.shareCode,
     this.creatorName,
     this.marksA = 2,
-
     this.marksB = 5,
     this.marksC = 10,
     this.includeAnswerSheet = true,
@@ -110,15 +108,16 @@ class ExamPdfGenerator {
     final sectionC = allQuestions.where(_isSectionC).toList();
 
     // Optionally shuffle MCQ options
-    final processedA = config.randomizeOptions ? _shuffleOptions(sectionA) : sectionA;
+    final processedA =
+        config.randomizeOptions ? _shuffleOptions(sectionA) : sectionA;
 
     doc.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: _pageMargin,
         footer: (pw.Context context) => _buildFooter(context, config),
-        header: (pw.Context context) =>
-            _buildPageHeader(context, config, isFirstPage: context.pageNumber == 1, questions: allQuestions),
+        header: (pw.Context context) => _buildPageHeader(context, config,
+            isFirstPage: context.pageNumber == 1, questions: allQuestions),
         build: (pw.Context context) {
           final List<pw.Widget> content = [];
           int globalIndex = 0;
@@ -128,9 +127,9 @@ class ExamPdfGenerator {
             content.add(_buildSectionTitle(
                 'SECTION A – OBJECTIVE (${processedA.length * config.marksA} MARKS)'));
             content.add(pw.SizedBox(height: 6));
-            content.add(pw.Text(
-                'Choose the correct option for each question.',
-                style: pw.TextStyle(fontSize: _smallSize, fontStyle: pw.FontStyle.italic)));
+            content.add(pw.Text('Choose the correct option for each question.',
+                style: pw.TextStyle(
+                    fontSize: _smallSize, fontStyle: pw.FontStyle.italic)));
             content.add(pw.SizedBox(height: 8));
             for (final q in processedA) {
               globalIndex++;
@@ -144,13 +143,14 @@ class ExamPdfGenerator {
             content.add(_buildSectionTitle(
                 'SECTION B – SHORT ANSWER (${sectionB.length * config.marksB} MARKS)'));
             content.add(pw.SizedBox(height: 6));
-            content.add(pw.Text(
-                'Answer each question in the spaces provided.',
-                style: pw.TextStyle(fontSize: _smallSize, fontStyle: pw.FontStyle.italic)));
+            content.add(pw.Text('Answer each question in the spaces provided.',
+                style: pw.TextStyle(
+                    fontSize: _smallSize, fontStyle: pw.FontStyle.italic)));
             content.add(pw.SizedBox(height: 8));
             for (final q in sectionB) {
               globalIndex++;
-              content.add(_buildShortAnswerQuestion(globalIndex, q, config.marksB));
+              content.add(
+                  _buildShortAnswerQuestion(globalIndex, q, config.marksB));
             }
             content.add(pw.SizedBox(height: _sectionSpacing));
           }
@@ -160,9 +160,9 @@ class ExamPdfGenerator {
             content.add(_buildSectionTitle(
                 'SECTION C – THEORY / ESSAY (${sectionC.length * config.marksC} MARKS)'));
             content.add(pw.SizedBox(height: 6));
-            content.add(pw.Text(
-                'Answer the following questions in detail.',
-                style: pw.TextStyle(fontSize: _smallSize, fontStyle: pw.FontStyle.italic)));
+            content.add(pw.Text('Answer the following questions in detail.',
+                style: pw.TextStyle(
+                    fontSize: _smallSize, fontStyle: pw.FontStyle.italic)));
             content.add(pw.SizedBox(height: 8));
             for (final q in sectionC) {
               globalIndex++;
@@ -201,7 +201,8 @@ class ExamPdfGenerator {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: _pageMargin,
-        footer: (pw.Context context) => _buildFooter(context, config, isMarkingScheme: true),
+        footer: (pw.Context context) =>
+            _buildFooter(context, config, isMarkingScheme: true),
         header: (pw.Context context) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
@@ -209,7 +210,8 @@ class ExamPdfGenerator {
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text(config.schoolName.toUpperCase(),
-                    style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                    style: pw.TextStyle(
+                        fontSize: 14, fontWeight: pw.FontWeight.bold)),
                 pw.Text('CONFIDENTIAL – FOR TEACHER USE ONLY',
                     style: pw.TextStyle(
                         fontSize: _tinySize,
@@ -219,10 +221,12 @@ class ExamPdfGenerator {
             ),
             pw.SizedBox(height: 4),
             pw.Text('${config.examTitle} – MARKING SCHEME & ANSWER KEY',
-                style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                style:
+                    pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(height: 2),
             pw.Row(children: [
-              pw.Text('Subject: ${config.subject}  |  Class: ${config.classLevel}  |  Total Marks: ${config.totalMarks(questions)}',
+              pw.Text(
+                  'Subject: ${config.subject}  |  Class: ${config.classLevel}  |  Total Marks: ${config.totalMarks(questions)}',
                   style: const pw.TextStyle(fontSize: _headerMetaSize)),
             ]),
             pw.SizedBox(height: 8),
@@ -237,7 +241,9 @@ class ExamPdfGenerator {
           // SECTION A Answers
           if (sectionA.isNotEmpty) {
             content.add(pw.Text('SECTION A – OBJECTIVE ANSWERS',
-                style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: _sectionTitleSize)));
+                style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: _sectionTitleSize)));
             content.add(pw.SizedBox(height: 8));
 
             // Table format for MCQ answers
@@ -248,7 +254,8 @@ class ExamPdfGenerator {
               globalIndex++;
               final q = sectionA[i];
               final letterIdx = q.options.indexOf(q.correctAnswer);
-              final letter = letterIdx >= 0 ? String.fromCharCode(65 + letterIdx) : '—';
+              final letter =
+                  letterIdx >= 0 ? String.fromCharCode(65 + letterIdx) : '—';
               tableData.add([
                 '$globalIndex',
                 q.correctAnswer,
@@ -258,9 +265,11 @@ class ExamPdfGenerator {
             }
 
             content.add(pw.TableHelper.fromTextArray(
-              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: _smallSize),
+              headerStyle: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold, fontSize: _smallSize),
               cellStyle: const pw.TextStyle(fontSize: _smallSize),
-              headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
+              headerDecoration:
+                  const pw.BoxDecoration(color: PdfColors.grey200),
               cellAlignment: pw.Alignment.centerLeft,
               data: tableData,
             ));
@@ -270,7 +279,9 @@ class ExamPdfGenerator {
           // SECTION B Answers
           if (sectionB.isNotEmpty) {
             content.add(pw.Text('SECTION B – SHORT ANSWER',
-                style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: _sectionTitleSize)));
+                style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: _sectionTitleSize)));
             content.add(pw.SizedBox(height: 8));
             for (int i = 0; i < sectionB.length; i++) {
               globalIndex++;
@@ -281,21 +292,31 @@ class ExamPdfGenerator {
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.RichText(text: pw.TextSpan(children: [
+                      pw.RichText(
+                          text: pw.TextSpan(children: [
                         pw.TextSpan(
                             text: '$globalIndex. ',
-                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: _optionSize)),
+                            style: pw.TextStyle(
+                                fontWeight: pw.FontWeight.bold,
+                                fontSize: _optionSize)),
                         pw.TextSpan(
                             text: q.question,
                             style: const pw.TextStyle(fontSize: _optionSize)),
                       ])),
                       pw.SizedBox(height: 3),
                       pw.Text('Expected Answer: ${q.correctAnswer}',
-                          style: pw.TextStyle(fontSize: _optionSize, color: PdfColors.green800, fontWeight: pw.FontWeight.bold)),
-                      if (q.explanation != null && q.explanation!.isNotEmpty) ...[
+                          style: pw.TextStyle(
+                              fontSize: _optionSize,
+                              color: PdfColors.green800,
+                              fontWeight: pw.FontWeight.bold)),
+                      if (q.explanation != null &&
+                          q.explanation!.isNotEmpty) ...[
                         pw.SizedBox(height: 2),
                         pw.Text('Note: ${q.explanation}',
-                            style: pw.TextStyle(fontSize: _smallSize, fontStyle: pw.FontStyle.italic, color: PdfColors.grey700)),
+                            style: pw.TextStyle(
+                                fontSize: _smallSize,
+                                fontStyle: pw.FontStyle.italic,
+                                color: PdfColors.grey700)),
                       ],
                       pw.Divider(thickness: 0.3, color: PdfColors.grey300),
                     ],
@@ -309,7 +330,9 @@ class ExamPdfGenerator {
           // SECTION C Answers
           if (sectionC.isNotEmpty) {
             content.add(pw.Text('SECTION C – THEORY / ESSAY',
-                style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: _sectionTitleSize)));
+                style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: _sectionTitleSize)));
             content.add(pw.SizedBox(height: 8));
             for (int i = 0; i < sectionC.length; i++) {
               globalIndex++;
@@ -320,32 +343,46 @@ class ExamPdfGenerator {
                   padding: const pw.EdgeInsets.all(8),
                   decoration: pw.BoxDecoration(
                     border: pw.Border.all(width: 0.5, color: PdfColors.grey300),
-                    borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+                    borderRadius:
+                        const pw.BorderRadius.all(pw.Radius.circular(4)),
                   ),
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.RichText(text: pw.TextSpan(children: [
+                      pw.RichText(
+                          text: pw.TextSpan(children: [
                         pw.TextSpan(
                             text: '$globalIndex. ',
-                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: _optionSize)),
+                            style: pw.TextStyle(
+                                fontWeight: pw.FontWeight.bold,
+                                fontSize: _optionSize)),
                         pw.TextSpan(
                             text: q.question,
                             style: const pw.TextStyle(fontSize: _optionSize)),
                         pw.TextSpan(
                             text: '  (${config.marksC} Marks)',
-                            style: pw.TextStyle(fontSize: _smallSize, fontWeight: pw.FontWeight.bold)),
+                            style: pw.TextStyle(
+                                fontSize: _smallSize,
+                                fontWeight: pw.FontWeight.bold)),
                       ])),
                       pw.SizedBox(height: 4),
                       pw.Text('Expected Key Points:',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: _smallSize, color: PdfColors.green800)),
+                          style: pw.TextStyle(
+                              fontWeight: pw.FontWeight.bold,
+                              fontSize: _smallSize,
+                              color: PdfColors.green800)),
                       pw.SizedBox(height: 2),
                       pw.Text(q.correctAnswer,
-                          style: const pw.TextStyle(fontSize: _smallSize, color: PdfColors.green800)),
-                      if (q.explanation != null && q.explanation!.isNotEmpty) ...[
+                          style: const pw.TextStyle(
+                              fontSize: _smallSize, color: PdfColors.green800)),
+                      if (q.explanation != null &&
+                          q.explanation!.isNotEmpty) ...[
                         pw.SizedBox(height: 4),
                         pw.Text('Marking Guide: ${q.explanation}',
-                            style: pw.TextStyle(fontSize: _smallSize, fontStyle: pw.FontStyle.italic, color: PdfColors.grey700)),
+                            style: pw.TextStyle(
+                                fontSize: _smallSize,
+                                fontStyle: pw.FontStyle.italic,
+                                color: PdfColors.grey700)),
                       ],
                     ],
                   ),
@@ -401,13 +438,17 @@ class ExamPdfGenerator {
         // School name
         pw.Center(
           child: pw.Text(config.schoolName.toUpperCase(),
-              style: pw.TextStyle(fontSize: _titleSize, fontWeight: pw.FontWeight.bold)),
+              style: pw.TextStyle(
+                  fontSize: _titleSize, fontWeight: pw.FontWeight.bold)),
         ),
         if (config.examTitle.isNotEmpty) ...[
           pw.SizedBox(height: 4),
           pw.Center(
             child: pw.Text(config.examTitle.toUpperCase(),
-                style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
+                style: pw.TextStyle(
+                    fontSize: 12,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.grey700)),
           ),
         ],
         pw.SizedBox(height: 8),
@@ -434,22 +475,29 @@ class ExamPdfGenerator {
                     children: [
                       _headerMetaLine('DATE', '____________________'),
                       pw.SizedBox(width: 20),
-                      _headerMetaLine('TIME ALLOWED', '${config.durationMinutes} MIN'),
+                      _headerMetaLine(
+                          'TIME ALLOWED', '${config.durationMinutes} MIN'),
                     ],
                   ),
                   pw.SizedBox(height: 3),
-                  _headerMetaLine('TOTAL MARKS', '${config.totalMarks(questions)}'),
+                  _headerMetaLine(
+                      'TOTAL MARKS', '${config.totalMarks(questions)}'),
                   if (config.creatorName != null) ...[
                     pw.SizedBox(height: 3),
-                    _headerMetaLine('CREATED BY', config.creatorName!.toUpperCase()),
+                    _headerMetaLine(
+                        'CREATED BY', config.creatorName!.toUpperCase()),
                   ],
                   pw.SizedBox(height: 6),
-
-                  pw.Text('STUDENT NAME: _____________________________________________',
-                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: _headerMetaSize)),
+                  pw.Text(
+                      'STUDENT NAME: _____________________________________________',
+                      style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: _headerMetaSize)),
                   pw.SizedBox(height: 3),
                   pw.Text('CANDIDATE NO: ___________________',
-                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: _headerMetaSize)),
+                      style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: _headerMetaSize)),
                 ],
               ),
             ),
@@ -460,13 +508,16 @@ class ExamPdfGenerator {
                 padding: const pw.EdgeInsets.all(8),
                 decoration: pw.BoxDecoration(
                   border: pw.Border.all(color: PdfColors.grey300),
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+                  borderRadius:
+                      const pw.BorderRadius.all(pw.Radius.circular(6)),
                 ),
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.center,
                   children: [
                     pw.Text('Scan to Practice Online',
-                        style: pw.TextStyle(fontSize: _tinySize, fontWeight: pw.FontWeight.bold)),
+                        style: pw.TextStyle(
+                            fontSize: _tinySize,
+                            fontWeight: pw.FontWeight.bold)),
                     pw.SizedBox(height: 4),
                     pw.Container(
                       height: 60,
@@ -479,7 +530,8 @@ class ExamPdfGenerator {
                     ),
                     pw.SizedBox(height: 4),
                     pw.Text('sumquiz.xyz/s/${config.shareCode}',
-                        style: const pw.TextStyle(fontSize: 7, color: PdfColors.blue800)),
+                        style: const pw.TextStyle(
+                            fontSize: 7, color: PdfColors.blue800)),
                   ],
                 ),
               ),
@@ -499,11 +551,14 @@ class ExamPdfGenerator {
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               pw.Text('INSTRUCTIONS:',
-                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: _headerMetaSize)),
+                  style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: _headerMetaSize)),
               pw.SizedBox(height: 2),
               pw.Text('1. Answer ALL questions in the spaces provided.',
                   style: const pw.TextStyle(fontSize: _smallSize)),
-              pw.Text('2. Section A carries ${config.marksA} mark${config.marksA > 1 ? 's' : ''} each.',
+              pw.Text(
+                  '2. Section A carries ${config.marksA} mark${config.marksA > 1 ? 's' : ''} each.',
                   style: const pw.TextStyle(fontSize: _smallSize)),
               pw.Text('3. Section B carries ${config.marksB} marks each.',
                   style: const pw.TextStyle(fontSize: _smallSize)),
@@ -522,7 +577,8 @@ class ExamPdfGenerator {
   pw.Widget _headerMetaLine(String label, String value) {
     return pw.Row(children: [
       pw.Text('$label: ',
-          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: _headerMetaSize)),
+          style: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold, fontSize: _headerMetaSize)),
       pw.Text(value, style: const pw.TextStyle(fontSize: _headerMetaSize)),
     ]);
   }
@@ -531,14 +587,17 @@ class ExamPdfGenerator {
   // FOOTER
   // ═══════════════════════════════════════════════════════════════════
 
-  pw.Widget _buildFooter(pw.Context context, ExamPdfConfig config, {bool isMarkingScheme = false}) {
+  pw.Widget _buildFooter(pw.Context context, ExamPdfConfig config,
+      {bool isMarkingScheme = false}) {
     return pw.Container(
       margin: const pw.EdgeInsets.only(top: 4),
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           pw.Text(
-            isMarkingScheme ? 'MARKING SCHEME – CONFIDENTIAL' : 'Generated by SumQuiz – sumquiz.xyz',
+            isMarkingScheme
+                ? 'MARKING SCHEME – CONFIDENTIAL'
+                : 'Generated by SumQuiz – sumquiz.xyz',
             style: pw.TextStyle(
               fontSize: 7,
               color: PdfColors.grey500,
@@ -570,7 +629,8 @@ class ExamPdfGenerator {
       ),
       width: double.infinity,
       child: pw.Text(title,
-          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: _sectionTitleSize)),
+          style: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold, fontSize: _sectionTitleSize)),
     );
   }
 
@@ -590,7 +650,9 @@ class ExamPdfGenerator {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Text('$number. ',
-                    style: pw.TextStyle(fontSize: _questionSize, fontWeight: pw.FontWeight.bold)),
+                    style: pw.TextStyle(
+                        fontSize: _questionSize,
+                        fontWeight: pw.FontWeight.bold)),
                 pw.Expanded(
                   child: pw.RichText(
                     text: pw.TextSpan(children: [
@@ -628,7 +690,8 @@ class ExamPdfGenerator {
   }
 
   /// Short Answer question with ruled lines.
-  pw.Widget _buildShortAnswerQuestion(int number, LocalQuizQuestion q, int marks) {
+  pw.Widget _buildShortAnswerQuestion(
+      int number, LocalQuizQuestion q, int marks) {
     return pw.Partition(
       child: pw.Container(
         margin: const pw.EdgeInsets.only(bottom: _questionSpacing),
@@ -639,7 +702,9 @@ class ExamPdfGenerator {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Text('$number. ',
-                    style: pw.TextStyle(fontSize: _questionSize, fontWeight: pw.FontWeight.bold)),
+                    style: pw.TextStyle(
+                        fontSize: _questionSize,
+                        fontWeight: pw.FontWeight.bold)),
                 pw.Expanded(
                   child: pw.RichText(
                     text: pw.TextSpan(children: [
@@ -687,7 +752,9 @@ class ExamPdfGenerator {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Text('$number. ',
-                    style: pw.TextStyle(fontSize: _questionSize, fontWeight: pw.FontWeight.bold)),
+                    style: pw.TextStyle(
+                        fontSize: _questionSize,
+                        fontWeight: pw.FontWeight.bold)),
                 pw.Expanded(
                   child: pw.RichText(
                     text: pw.TextSpan(children: [
@@ -744,13 +811,18 @@ class ExamPdfGenerator {
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               pw.Text(config.schoolName.toUpperCase(),
-                  style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                  style: pw.TextStyle(
+                      fontSize: 14, fontWeight: pw.FontWeight.bold)),
               pw.Text('ANSWER KEY',
-                  style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.red700)),
+                  style: pw.TextStyle(
+                      fontSize: 14,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.red700)),
             ],
           ),
           pw.SizedBox(height: 2),
-          pw.Text('${config.subject} – ${config.classLevel} – ${config.examTitle}',
+          pw.Text(
+              '${config.subject} – ${config.classLevel} – ${config.examTitle}',
               style: const pw.TextStyle(fontSize: _headerMetaSize)),
           pw.SizedBox(height: 6),
           pw.Divider(thickness: 1),
@@ -763,7 +835,9 @@ class ExamPdfGenerator {
           // Section A answers in grid format
           if (sectionA.isNotEmpty) {
             content.add(pw.Text('SECTION A – OBJECTIVE',
-                style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: _sectionTitleSize)));
+                style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: _sectionTitleSize)));
             content.add(pw.SizedBox(height: 8));
 
             final tableData = <List<String>>[
@@ -774,13 +848,20 @@ class ExamPdfGenerator {
               final q = sectionA[i];
               final idx = q.options.indexOf(q.correctAnswer);
               final letter = idx >= 0 ? String.fromCharCode(65 + idx) : '—';
-              tableData.add(['$globalIndex', letter, q.correctAnswer, '${config.marksA}']);
+              tableData.add([
+                '$globalIndex',
+                letter,
+                q.correctAnswer,
+                '${config.marksA}'
+              ]);
             }
 
             content.add(pw.TableHelper.fromTextArray(
-              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: _smallSize),
+              headerStyle: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold, fontSize: _smallSize),
               cellStyle: const pw.TextStyle(fontSize: _smallSize),
-              headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
+              headerDecoration:
+                  const pw.BoxDecoration(color: PdfColors.grey200),
               cellAlignment: pw.Alignment.centerLeft,
               data: tableData,
             ));
@@ -790,7 +871,9 @@ class ExamPdfGenerator {
           // Section B answers
           if (sectionB.isNotEmpty) {
             content.add(pw.Text('SECTION B – SHORT ANSWER',
-                style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: _sectionTitleSize)));
+                style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: _sectionTitleSize)));
             content.add(pw.SizedBox(height: 8));
             for (int i = 0; i < sectionB.length; i++) {
               globalIndex++;
@@ -801,10 +884,16 @@ class ExamPdfGenerator {
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text('$globalIndex. ${q.correctAnswer}',
-                        style: pw.TextStyle(fontSize: _optionSize, color: PdfColors.green800, fontWeight: pw.FontWeight.bold)),
+                        style: pw.TextStyle(
+                            fontSize: _optionSize,
+                            color: PdfColors.green800,
+                            fontWeight: pw.FontWeight.bold)),
                     if (q.explanation != null && q.explanation!.isNotEmpty)
                       pw.Text('   ${q.explanation}',
-                          style: pw.TextStyle(fontSize: _smallSize, fontStyle: pw.FontStyle.italic, color: PdfColors.grey600)),
+                          style: pw.TextStyle(
+                              fontSize: _smallSize,
+                              fontStyle: pw.FontStyle.italic,
+                              color: PdfColors.grey600)),
                   ],
                 ),
               ));
@@ -815,7 +904,9 @@ class ExamPdfGenerator {
           // Section C answers
           if (sectionC.isNotEmpty) {
             content.add(pw.Text('SECTION C – THEORY / ESSAY',
-                style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: _sectionTitleSize)));
+                style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: _sectionTitleSize)));
             content.add(pw.SizedBox(height: 8));
             for (int i = 0; i < sectionC.length; i++) {
               globalIndex++;
@@ -829,15 +920,22 @@ class ExamPdfGenerator {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text('$globalIndex. Expected Answer (${config.marksC} marks):',
-                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: _optionSize)),
+                    pw.Text(
+                        '$globalIndex. Expected Answer (${config.marksC} marks):',
+                        style: pw.TextStyle(
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: _optionSize)),
                     pw.SizedBox(height: 2),
                     pw.Text(q.correctAnswer,
-                        style: const pw.TextStyle(fontSize: _smallSize, color: PdfColors.green800)),
+                        style: const pw.TextStyle(
+                            fontSize: _smallSize, color: PdfColors.green800)),
                     if (q.explanation != null && q.explanation!.isNotEmpty) ...[
                       pw.SizedBox(height: 3),
                       pw.Text('Marking Guide: ${q.explanation}',
-                          style: pw.TextStyle(fontSize: _smallSize, fontStyle: pw.FontStyle.italic, color: PdfColors.grey700)),
+                          style: pw.TextStyle(
+                              fontSize: _smallSize,
+                              fontStyle: pw.FontStyle.italic,
+                              color: PdfColors.grey700)),
                     ],
                   ],
                 ),

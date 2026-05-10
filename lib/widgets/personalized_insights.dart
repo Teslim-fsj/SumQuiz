@@ -159,7 +159,7 @@ class PersonalizedInsights extends StatelessWidget {
       final content = 'Personalized Learning Insights\n\n$insightText';
       final path = await PdfExportService()
           .exportTextAsPdf(content, 'My_Insights.pdf', user.uid);
-      
+
       // Share the exported file
       await Share.shareXFiles(
         [XFile(path, mimeType: 'application/pdf', name: 'My_Insights.pdf')],
@@ -168,7 +168,8 @@ class PersonalizedInsights extends StatelessWidget {
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Insights exported and ready to share.')),
+          const SnackBar(
+              content: Text('Insights exported and ready to share.')),
         );
       }
     } catch (e) {

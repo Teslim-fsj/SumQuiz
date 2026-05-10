@@ -65,11 +65,10 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
   void _handleReview(bool knewIt) {
     if (knewIt) {
       _knewCount++;
-    } else {
-    }
-    
+    } else {}
+
     widget.onReview?.call(_currentIndex, knewIt);
-    
+
     if (_currentIndex < widget.flashcards.length - 1) {
       if (_isFlipped) {
         _cardKey.currentState?.toggleCard();
@@ -204,13 +203,16 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
                   child: FlipCard(
                     key: _cardKey,
                     onFlip: () => setState(() => _isFlipped = !_isFlipped),
-                    front: _buildCardSide(currentCard.question, 'QUESTION', true),
+                    front:
+                        _buildCardSide(currentCard.question, 'QUESTION', true),
                     back: _buildCardSide(currentCard.answer, 'ANSWER', false),
                   ),
                 ),
                 const SizedBox(width: 20),
                 IconButton(
-                  onPressed: _currentIndex < widget.flashcards.length - 1 ? _nextCard : null,
+                  onPressed: _currentIndex < widget.flashcards.length - 1
+                      ? _nextCard
+                      : null,
                   icon: const Icon(Icons.arrow_forward_ios_rounded),
                   style: IconButton.styleFrom(
                     backgroundColor: WebColors.primary,
@@ -228,9 +230,11 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildReviewButton('Need Review', const Color(0xFFF97316), () => _handleReview(false)),
+              _buildReviewButton('Need Review', const Color(0xFFF97316),
+                  () => _handleReview(false)),
               const SizedBox(width: 24),
-              _buildReviewButton('Known', const Color(0xFF10B981), () => _handleReview(true)),
+              _buildReviewButton(
+                  'Known', const Color(0xFF10B981), () => _handleReview(true)),
             ],
           ),
 
@@ -239,9 +243,16 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
           // Stats at the Bottom
           Row(
             children: [
-              Expanded(child: _buildStatCard('Mastered', '$_knewCount/${widget.flashcards.length}', Icons.check_circle_rounded, const Color(0xFF22C55E))),
+              Expanded(
+                  child: _buildStatCard(
+                      'Mastered',
+                      '$_knewCount/${widget.flashcards.length}',
+                      Icons.check_circle_rounded,
+                      const Color(0xFF22C55E))),
               const SizedBox(width: 16),
-              Expanded(child: _buildStatCard('Study Time', _timeString, Icons.timer_rounded, const Color(0xFF6366F1))),
+              Expanded(
+                  child: _buildStatCard('Study Time', _timeString,
+                      Icons.timer_rounded, const Color(0xFF6366F1))),
             ],
           ),
         ],
@@ -302,7 +313,8 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.touch_app_outlined, size: 20, color: WebColors.textTertiary),
+                      const Icon(Icons.touch_app_outlined,
+                          size: 20, color: WebColors.textTertiary),
                       const SizedBox(width: 8),
                       Text(
                         'Tap to reveal answer',
@@ -341,8 +353,12 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(label == 'Known' ? Icons.check_circle_outline_rounded : Icons.refresh_rounded,
-                    color: color, size: 24),
+                Icon(
+                    label == 'Known'
+                        ? Icons.check_circle_outline_rounded
+                        : Icons.refresh_rounded,
+                    color: color,
+                    size: 24),
                 const SizedBox(width: 12),
                 Text(
                   label,
@@ -360,7 +376,8 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String label, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(

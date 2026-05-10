@@ -184,475 +184,494 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
       body: Stack(
         children: [
           SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 24),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Left: Editor
-                    Expanded(
-                      flex: 3,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest
-                              .withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                              color: theme.colorScheme.outline
-                                  .withOpacity(0.1)),
-                          boxShadow: [
-                            BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
-                                blurRadius: 20,
-                                offset: const Offset(0, 4))
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(24),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(colors: [
-                                        theme.colorScheme.primary,
-                                        theme.colorScheme.tertiary
-                                      ]),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Icon(Icons.edit_note,
-                                        color: Colors.white, size: 24),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          "Source Content",
-                                          style: GoogleFonts.outfit(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w700,
-                                            color: Theme.of(context)
-                                                .textTheme
-                                                .titleLarge
-                                                ?.color,
-                                          ),
-                                        ),
-                                        Text(
-                                          "Review and edit your content before generating",
-                                          style: GoogleFonts.outfit(
-                                            fontSize: 14,
-                                            color: Theme.of(context)
-                                                .textTheme
-                                                .bodyMedium
-                                                ?.color
-                                                ?.withOpacity(0.7),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
+            child: Column(
+              children: [
+                _buildHeader(),
+                const SizedBox(height: 24),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Left: Editor
+                        Expanded(
+                          flex: 3,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceContainerHighest
+                                  .withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                  color: theme.colorScheme.outline
+                                      .withOpacity(0.1)),
+                              boxShadow: [
+                                BoxShadow(
+                                    color: Colors.black.withOpacity(0.08),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 4))
+                              ],
                             ),
-                            const Divider(height: 1),
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(24),
-                                child: TextField(
-                                  controller: _textController,
-                                  maxLines: null,
-                                  expands: true,
-                                  style: GoogleFonts.outfit(
-                                    color: Theme.of(context)
-                                        .textTheme
-                                        .bodyLarge
-                                        ?.color,
-                                    fontSize: 16,
-                                    height: 1.7,
-                                  ),
-                                  decoration: InputDecoration(
-                                    contentPadding: const EdgeInsets.all(20),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: BorderSide(
-                                          color: theme.colorScheme.outline
-                                              .withOpacity(0.2),
-                                          width: 1.5),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: BorderSide(
-                                          color: theme.colorScheme.outline
-                                              .withOpacity(0.2),
-                                          width: 1.5),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: BorderSide(
-                                          color: theme.colorScheme.primary,
-                                          width: 2),
-                                    ),
-                                    hintText:
-                                        "Edit your content here... The AI will process this text to generate summaries, quizzes, and flashcards",
-                                    hintStyle: GoogleFonts.outfit(
-                                      color: theme.colorScheme.onSurface
-                                          .withOpacity(0.4),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ).animate().slideX(begin: -0.05).fadeIn(),
-
-                    const SizedBox(width: 32),
-
-                    // Right: Configuration
-                    SizedBox(
-                      width: 380,
-                      child: Container(
-                        padding: const EdgeInsets.all(32),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest
-                              .withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                              color: theme.colorScheme.outline
-                                  .withOpacity(0.1)),
-                          boxShadow: [
-                            BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
-                                blurRadius: 20,
-                                offset: const Offset(0, 4))
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Configuration",
-                              style: GoogleFonts.outfit(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w800,
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .headlineMedium
-                                    ?.color,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              "Customize your learning materials",
-                              style: GoogleFonts.outfit(
-                                fontSize: 16,
-                                color: theme.colorScheme.onSurface
-                                    .withOpacity(0.6),
-                              ),
-                            ),
-                            const SizedBox(height: 40),
-
-                            // Title Section
-                            Text(
-                              "TITLE",
-                              style: GoogleFonts.outfit(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .labelSmall
-                                    ?.color
-                                    ?.withOpacity(0.5),
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            TextField(
-                              controller: _titleController,
-                              style: GoogleFonts.outfit(
-                                  color: Theme.of(context)
-                                      .textTheme
-                                      .bodyLarge
-                                      ?.color,
-                                  fontSize: 16),
-                              decoration: InputDecoration(
-                                hintText: "Enter a title for your content...",
-                                hintStyle: GoogleFonts.outfit(
-                                    color: theme.colorScheme.onSurface
-                                        .withOpacity(0.4)),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                      color: Theme.of(context).dividerColor),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                      color: Theme.of(context).dividerColor),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                      color: theme.colorScheme.primary,
-                                      width: 2),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-
-                            // Output types section
-                            Text(
-                              "OUTPUT TYPES",
-                              style: GoogleFonts.outfit(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .labelSmall
-                                    ?.color
-                                    ?.withOpacity(0.5),
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            ...OutputType.values.map((type) {
-                              final isSelected =
-                                  _selectedOutputs.contains(type);
-                              final gradients = {
-                                OutputType.summary: const LinearGradient(
-                                  colors: [
-                                    Color(0xFF6366F1),
-                                    Color(0xFF8B5CF6)
-                                  ],
-                                ),
-                                OutputType.quiz: const LinearGradient(
-                                  colors: [
-                                    Color(0xFF10B981),
-                                    Color(0xFF06B6D4)
-                                  ],
-                                ),
-                                OutputType.flashcards: const LinearGradient(
-                                  colors: [
-                                    Color(0xFFEC4899),
-                                    Color(0xFFF97316)
-                                  ],
-                                ),
-                              };
-                              final icons = {
-                                OutputType.summary: Icons.article_outlined,
-                                OutputType.quiz: Icons.quiz_outlined,
-                                OutputType.flashcards: Icons.style_outlined,
-                              };
-
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: GestureDetector(
-                                  onTap: () => _toggleOutput(type),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 200),
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      gradient:
-                                          isSelected ? gradients[type] : null,
-                                      color: !isSelected
-                                          ? Theme.of(context)
-                                              .colorScheme
-                                              .surfaceContainerHighest
-                                              .withOpacity(0.3)
-                                          : null,
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: isSelected
-                                            ? Colors.transparent
-                                            : Theme.of(context).dividerColor,
-                                      ),
-                                      boxShadow: isSelected
-                                          ? [
-                                              BoxShadow(
-                                                color: gradients[type]!
-                                                    .colors
-                                                    .first
-                                                    .withOpacity(0.3),
-                                                blurRadius: 12,
-                                                offset: const Offset(0, 4),
-                                              ),
-                                            ]
-                                          : null,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          icons[type],
-                                          color: isSelected
-                                              ? Colors.white
-                                              : Theme.of(context)
-                                                  .iconTheme
-                                                  .color
-                                                  ?.withOpacity(0.7),
-                                          size: 24,
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Text(
-                                            type.name.toUpperCase(),
-                                            style: GoogleFonts.outfit(
-                                              color: isSelected
-                                                  ? Colors.white
-                                                  : Theme.of(context)
-                                                      .textTheme
-                                                      .bodyLarge
-                                                      ?.color,
-                                              fontWeight: isSelected
-                                                  ? FontWeight.w700
-                                                  : FontWeight.w500,
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                        ),
-                                        if (isSelected)
-                                          Icon(
-                                            Icons.check_circle,
-                                            color: Colors.white,
-                                            size: 20,
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }),
-
-                            const SizedBox(height: 32),
-
-                            // Confidence indicator
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .surfaceContainerHighest
-                                    .withOpacity(0.3),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                    color: Theme.of(context).dividerColor),
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: theme.colorScheme.primaryContainer
-                                          .withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Icon(Icons.shield_outlined,
-                                        color: theme.colorScheme.primary,
-                                        size: 20),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'AI Confidence',
-                                          style: GoogleFonts.outfit(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            color: Theme.of(context)
-                                                .textTheme
-                                                .titleSmall
-                                                ?.color,
-                                          ),
-                                        ),
-                                        Text(
-                                          'High confidence in content quality',
-                                          style: GoogleFonts.outfit(
-                                            fontSize: 12,
-                                            color: theme.colorScheme.onSurface
-                                                .withOpacity(0.6),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            const Spacer(),
-
-                            // Generate button
-                            Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(colors: [
-                                    theme.colorScheme.primary,
-                                    theme.colorScheme.tertiary
-                                  ]),
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: theme.colorScheme.primaryContainer
-                                          .withOpacity(0.3),
-                                      blurRadius: 16,
-                                      offset: const Offset(0, 8),
-                                    ),
-                                  ],
-                                ),
-                                child: ElevatedButton(
-                                  onPressed: _isLoading ? null : _handleGenerate,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.transparent,
-                                    shadowColor: Colors.transparent,
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 20),
-                                    minimumSize: const Size(double.infinity, 0),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(24),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      const Icon(Icons.auto_awesome,
-                                          color: Colors.white),
-                                      const SizedBox(width: 12),
-                                      Text(
-                                        'GENERATE CONTENT',
-                                        style: GoogleFonts.outfit(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.white,
+                                      Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(colors: [
+                                            theme.colorScheme.primary,
+                                            theme.colorScheme.tertiary
+                                          ]),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Icon(Icons.edit_note,
+                                            color: Colors.white, size: 24),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              "Source Content",
+                                              style: GoogleFonts.outfit(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.w700,
+                                                color: Theme.of(context)
+                                                    .textTheme
+                                                    .titleLarge
+                                                    ?.color,
+                                              ),
+                                            ),
+                                            Text(
+                                              "Review and edit your content before generating",
+                                              style: GoogleFonts.outfit(
+                                                fontSize: 14,
+                                                color: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyMedium
+                                                    ?.color
+                                                    ?.withOpacity(0.7),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ).animate().slideX(begin: 0.05).fadeIn(),
-                  ],
+                                const Divider(height: 1),
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(24),
+                                    child: TextField(
+                                      controller: _textController,
+                                      maxLines: null,
+                                      expands: true,
+                                      style: GoogleFonts.outfit(
+                                        color: Theme.of(context)
+                                            .textTheme
+                                            .bodyLarge
+                                            ?.color,
+                                        fontSize: 16,
+                                        height: 1.7,
+                                      ),
+                                      decoration: InputDecoration(
+                                        contentPadding:
+                                            const EdgeInsets.all(20),
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                          borderSide: BorderSide(
+                                              color: theme.colorScheme.outline
+                                                  .withOpacity(0.2),
+                                              width: 1.5),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                          borderSide: BorderSide(
+                                              color: theme.colorScheme.outline
+                                                  .withOpacity(0.2),
+                                              width: 1.5),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                          borderSide: BorderSide(
+                                              color: theme.colorScheme.primary,
+                                              width: 2),
+                                        ),
+                                        hintText:
+                                            "Edit your content here... The AI will process this text to generate summaries, quizzes, and flashcards",
+                                        hintStyle: GoogleFonts.outfit(
+                                          color: theme.colorScheme.onSurface
+                                              .withOpacity(0.4),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ).animate().slideX(begin: -0.05).fadeIn(),
+
+                        const SizedBox(width: 32),
+
+                        // Right: Configuration
+                        SizedBox(
+                          width: 380,
+                          child: Container(
+                            padding: const EdgeInsets.all(32),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceContainerHighest
+                                  .withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                  color: theme.colorScheme.outline
+                                      .withOpacity(0.1)),
+                              boxShadow: [
+                                BoxShadow(
+                                    color: Colors.black.withOpacity(0.08),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 4))
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Configuration",
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w800,
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .headlineMedium
+                                        ?.color,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  "Customize your learning materials",
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 16,
+                                    color: theme.colorScheme.onSurface
+                                        .withOpacity(0.6),
+                                  ),
+                                ),
+                                const SizedBox(height: 40),
+
+                                // Title Section
+                                Text(
+                                  "TITLE",
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.color
+                                        ?.withOpacity(0.5),
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                TextField(
+                                  controller: _titleController,
+                                  style: GoogleFonts.outfit(
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.color,
+                                      fontSize: 16),
+                                  decoration: InputDecoration(
+                                    hintText:
+                                        "Enter a title for your content...",
+                                    hintStyle: GoogleFonts.outfit(
+                                        color: theme.colorScheme.onSurface
+                                            .withOpacity(0.4)),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                          color:
+                                              Theme.of(context).dividerColor),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                          color:
+                                              Theme.of(context).dividerColor),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                          color: theme.colorScheme.primary,
+                                          width: 2),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 32),
+
+                                // Output types section
+                                Text(
+                                  "OUTPUT TYPES",
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.color
+                                        ?.withOpacity(0.5),
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                ...OutputType.values.map((type) {
+                                  final isSelected =
+                                      _selectedOutputs.contains(type);
+                                  final gradients = {
+                                    OutputType.summary: const LinearGradient(
+                                      colors: [
+                                        Color(0xFF6366F1),
+                                        Color(0xFF8B5CF6)
+                                      ],
+                                    ),
+                                    OutputType.quiz: const LinearGradient(
+                                      colors: [
+                                        Color(0xFF10B981),
+                                        Color(0xFF06B6D4)
+                                      ],
+                                    ),
+                                    OutputType.flashcards: const LinearGradient(
+                                      colors: [
+                                        Color(0xFFEC4899),
+                                        Color(0xFFF97316)
+                                      ],
+                                    ),
+                                  };
+                                  final icons = {
+                                    OutputType.summary: Icons.article_outlined,
+                                    OutputType.quiz: Icons.quiz_outlined,
+                                    OutputType.flashcards: Icons.style_outlined,
+                                  };
+
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: GestureDetector(
+                                      onTap: () => _toggleOutput(type),
+                                      child: AnimatedContainer(
+                                        duration:
+                                            const Duration(milliseconds: 200),
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          gradient: isSelected
+                                              ? gradients[type]
+                                              : null,
+                                          color: !isSelected
+                                              ? Theme.of(context)
+                                                  .colorScheme
+                                                  .surfaceContainerHighest
+                                                  .withOpacity(0.3)
+                                              : null,
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                          border: Border.all(
+                                            color: isSelected
+                                                ? Colors.transparent
+                                                : Theme.of(context)
+                                                    .dividerColor,
+                                          ),
+                                          boxShadow: isSelected
+                                              ? [
+                                                  BoxShadow(
+                                                    color: gradients[type]!
+                                                        .colors
+                                                        .first
+                                                        .withOpacity(0.3),
+                                                    blurRadius: 12,
+                                                    offset: const Offset(0, 4),
+                                                  ),
+                                                ]
+                                              : null,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              icons[type],
+                                              color: isSelected
+                                                  ? Colors.white
+                                                  : Theme.of(context)
+                                                      .iconTheme
+                                                      .color
+                                                      ?.withOpacity(0.7),
+                                              size: 24,
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Text(
+                                                type.name.toUpperCase(),
+                                                style: GoogleFonts.outfit(
+                                                  color: isSelected
+                                                      ? Colors.white
+                                                      : Theme.of(context)
+                                                          .textTheme
+                                                          .bodyLarge
+                                                          ?.color,
+                                                  fontWeight: isSelected
+                                                      ? FontWeight.w700
+                                                      : FontWeight.w500,
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                            ),
+                                            if (isSelected)
+                                              Icon(
+                                                Icons.check_circle,
+                                                color: Colors.white,
+                                                size: 20,
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }),
+
+                                const SizedBox(height: 32),
+
+                                // Confidence indicator
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .surfaceContainerHighest
+                                        .withOpacity(0.3),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                        color: Theme.of(context).dividerColor),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: theme
+                                              .colorScheme.primaryContainer
+                                              .withOpacity(0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Icon(Icons.shield_outlined,
+                                            color: theme.colorScheme.primary,
+                                            size: 20),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'AI Confidence',
+                                              style: GoogleFonts.outfit(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
+                                                color: Theme.of(context)
+                                                    .textTheme
+                                                    .titleSmall
+                                                    ?.color,
+                                              ),
+                                            ),
+                                            Text(
+                                              'High confidence in content quality',
+                                              style: GoogleFonts.outfit(
+                                                fontSize: 12,
+                                                color: theme
+                                                    .colorScheme.onSurface
+                                                    .withOpacity(0.6),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                const Spacer(),
+
+                                // Generate button
+                                Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(colors: [
+                                      theme.colorScheme.primary,
+                                      theme.colorScheme.tertiary
+                                    ]),
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: theme
+                                            .colorScheme.primaryContainer
+                                            .withOpacity(0.3),
+                                        blurRadius: 16,
+                                        offset: const Offset(0, 8),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ElevatedButton(
+                                    onPressed:
+                                        _isLoading ? null : _handleGenerate,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.transparent,
+                                      shadowColor: Colors.transparent,
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 20),
+                                      minimumSize:
+                                          const Size(double.infinity, 0),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(Icons.auto_awesome,
+                                            color: Colors.white),
+                                        const SizedBox(width: 12),
+                                        Text(
+                                          'GENERATE CONTENT',
+                                          style: GoogleFonts.outfit(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ).animate().slideX(begin: 0.05).fadeIn(),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
           if (_isLoading)
             GenerationLoadingOverlay(
               message: 'Generating Content...',
@@ -672,11 +691,9 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
       decoration: BoxDecoration(
-        color:
-            theme.colorScheme.surfaceContainerHighest.withOpacity(0.05),
+        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.05),
         borderRadius: BorderRadius.circular(24),
-        border:
-            Border.all(color: theme.colorScheme.outline.withOpacity(0.1)),
+        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
               color: Colors.black.withOpacity(0.08),
@@ -748,5 +765,4 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
       ),
     );
   }
-
 }

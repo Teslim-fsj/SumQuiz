@@ -629,6 +629,8 @@ class _CreateContentScreenState extends State<CreateContentScreen>
         userId: user.uid,
         mimeType: mimeType,
         allowYouTubeImport: userMayImportFromYouTube(user),
+        allowPdfImport: userMayImportFromPdf(user),
+        allowWebImport: userMayImportFromWeb(user),
         cancelToken: cancelToken,
         onProgress: (message) {
           if (!cancelToken.isCancelled && mounted) {
@@ -1602,30 +1604,33 @@ class _CreateContentScreenState extends State<CreateContentScreen>
   String _getUserFriendlyError(dynamic error) {
     final errorStr = error.toString().toLowerCase();
 
+    if (errorStr.contains('stabilizing') || errorStr.contains('momentum')) {
+      return '🧘 Your neural momentum is currently stabilizing! Sumi suggests a quick 5-minute focus break while your learning circuits reset.';
+    }
+
     if (errorStr.contains('neural pathway to clear') ||
-        errorStr.contains('over-saturated')) {
-      return '🚦 Neural circuits are critical. We are pausing to let the systems recover. Please wait 2-3 minutes.';
+        errorStr.contains('over-saturated') ||
+        errorStr.contains('system_overloaded')) {
+      return '🚦 Learning pathways are currently high-intensity. We are pausing to let the systems recover. Please wait 2-3 minutes.';
     }
 
     if (errorStr.contains('rate limit') ||
-        errorStr.contains('quota exceeded')) {
-      return '🏎️ Speed limit reached. Shifting to fallback intelligence. Please retry in 30 seconds.';
+        errorStr.contains('quota exceeded') ||
+        errorStr.contains('exhausted')) {
+      return '🏎️ Mental speed limit reached. Sumi is shifting to efficiency mode. Please retry in 30 seconds.';
     }
 
     if (errorStr.contains('api') ||
         errorStr.contains('quota') ||
         errorStr.contains('full') ||
         errorStr.contains('overloaded')) {
-      return '🔑 Intelligence access is currently full or restricted. Please try again in 30 seconds.';
+      return '🔑 Intelligence access is currently full or restricted. Sumi recommends continuing with manual notes for a moment.';
     }
+    
     if (errorStr.contains('too long')) {
-      return '📏 Concept too vast for single transmutation. Try a shorter text.';
+      return '📏 Concept too vast for single transmutation. Try a shorter segment.';
     }
-    if (errorStr.contains('youtube')) {
-      return '🎥 Visual stream unavailable or restricted.';
-    }
-    if (errorStr.contains('pdf')) return '📄 Document structure unreadable.';
-    if (errorStr.contains('image')) return '🖼️ Visual pattern unrecognized.';
-    return '❌ Conceptual breach detected ($error). Please retry.';
+    
+    return '❌ Sumi hit a small bump in the neural path. Please retry or refresh your momentum.';
   }
 }

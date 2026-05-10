@@ -49,13 +49,13 @@ class SourceChoiceCard extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: isDark 
-                      ? theme.cardColor.withOpacity(0.7) 
+                  color: isDark
+                      ? theme.cardColor.withOpacity(0.7)
                       : Colors.white.withOpacity(0.9),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: isDark 
-                        ? Colors.white.withOpacity(0.08) 
+                    color: isDark
+                        ? Colors.white.withOpacity(0.08)
                         : color.withOpacity(0.15),
                     width: 1.5,
                   ),
@@ -92,11 +92,14 @@ class SourceChoiceCard extends StatelessWidget {
                         ),
                         if (isPro)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: const Color(0xFFFFD700).withOpacity(0.15),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.3)),
+                              border: Border.all(
+                                  color:
+                                      const Color(0xFFFFD700).withOpacity(0.3)),
                             ),
                             child: Text(
                               'PRO',
@@ -110,11 +113,13 @@ class SourceChoiceCard extends StatelessWidget {
                           )
                         else if (isNew)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: Colors.blue.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                              border: Border.all(
+                                  color: Colors.blue.withOpacity(0.3)),
                             ),
                             child: Text(
                               'NEW',
@@ -146,7 +151,8 @@ class SourceChoiceCard extends StatelessWidget {
                       style: GoogleFonts.outfit(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
-                        color: theme.colorScheme.onSurfaceVariant.withOpacity(0.8),
+                        color:
+                            theme.colorScheme.onSurfaceVariant.withOpacity(0.8),
                         height: 1.3,
                       ),
                     ),

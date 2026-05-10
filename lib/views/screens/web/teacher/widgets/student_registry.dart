@@ -25,96 +25,122 @@ class _StudentRegistryState extends State<StudentRegistry> {
   @override
   Widget build(BuildContext context) {
     final filtered = widget.students.where((s) {
-      return s.studentName.toLowerCase().contains(_searchQuery.toLowerCase()) || 
-             s.studentEmail.toLowerCase().contains(_searchQuery.toLowerCase());
+      return s.studentName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          s.studentEmail.toLowerCase().contains(_searchQuery.toLowerCase());
     }).toList();
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isMobile = constraints.maxWidth < 800;
-        
-        return SingleChildScrollView(
-          padding: EdgeInsets.all(isMobile ? 12 : 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (isMobile) ...[
-                Text('Student Roster', style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w900, color: const Color(0xFF1F1F1F), letterSpacing: -0.5)),
-                const SizedBox(height: 8),
-                Text('Track your students performance.', style: GoogleFonts.outfit(fontSize: 14, color: const Color(0xFF6B7280))),
-                const SizedBox(height: 20),
-                _buildSearchBar(isMobile: true),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
+    return LayoutBuilder(builder: (context, constraints) {
+      final isMobile = constraints.maxWidth < 800;
+
+      return SingleChildScrollView(
+        padding: EdgeInsets.all(isMobile ? 12 : 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (isMobile) ...[
+              Text('Student Roster',
+                  style: GoogleFonts.outfit(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF1F1F1F),
+                      letterSpacing: -0.5)),
+              const SizedBox(height: 8),
+              Text('Track your students performance.',
+                  style: GoogleFonts.outfit(
+                      fontSize: 14, color: const Color(0xFF6B7280))),
+              const SizedBox(height: 20),
+              _buildSearchBar(isMobile: true),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: widget.onInviteStudent,
+                      icon: const Icon(Icons.person_add, size: 18),
+                      label: const Text('Add Student'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: WebColors.purplePrimary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ] else
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Student Roster',
+                          style: GoogleFonts.outfit(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF1F1F1F),
+                              letterSpacing: -0.5)),
+                      const SizedBox(height: 4),
+                      Text(
+                          'Overview of all active students and their engagement trends.',
+                          style: GoogleFonts.outfit(
+                              fontSize: 14, color: const Color(0xFF6B7280))),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      _buildSearchBar(),
+                      const SizedBox(width: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                            border: Border.all(color: WebColors.border),
+                            borderRadius: BorderRadius.circular(12)),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.filter_list, size: 18),
+                            const SizedBox(width: 8),
+                            Text('Classes',
+                                style: GoogleFonts.outfit(
+                                    fontWeight: FontWeight.bold, fontSize: 13)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                              border: Border.all(color: WebColors.border),
+                              shape: BoxShape.circle),
+                          child: const Icon(Icons.sort, size: 18)),
+                      const SizedBox(width: 12),
+                      ElevatedButton.icon(
                         onPressed: widget.onInviteStudent,
                         icon: const Icon(Icons.person_add, size: 18),
                         label: const Text('Add Student'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: WebColors.purplePrimary,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              ] else 
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Student Roster', style: GoogleFonts.outfit(fontSize: 26, fontWeight: FontWeight.w900, color: const Color(0xFF1F1F1F), letterSpacing: -0.5)),
-                        const SizedBox(height: 4),
-                        Text('Overview of all active students and their engagement trends.', style: GoogleFonts.outfit(fontSize: 14, color: const Color(0xFF6B7280))),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        _buildSearchBar(),
-                        const SizedBox(width: 16),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(border: Border.all(color: WebColors.border), borderRadius: BorderRadius.circular(12)),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.filter_list, size: 18),
-                              const SizedBox(width: 8),
-                              Text('Classes', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 13)),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(border: Border.all(color: WebColors.border), shape: BoxShape.circle), child: const Icon(Icons.sort, size: 18)),
-                        const SizedBox(width: 12),
-                        ElevatedButton.icon(
-                          onPressed: widget.onInviteStudent,
-                          icon: const Icon(Icons.person_add, size: 18),
-                          label: const Text('Add Student'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: WebColors.purplePrimary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        )
-                      ],
-                    )
-                  ],
-                ),
-              const SizedBox(height: 24),
-              _buildTable(filtered, isMobile: isMobile),
-            ],
-          ),
-        );
-      }
-    );
+                      )
+                    ],
+                  )
+                ],
+              ),
+            const SizedBox(height: 24),
+            _buildTable(filtered, isMobile: isMobile),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildSearchBar({bool isMobile = false}) {
@@ -130,8 +156,10 @@ class _StudentRegistryState extends State<StudentRegistry> {
         onChanged: (v) => setState(() => _searchQuery = v),
         decoration: InputDecoration(
           hintText: 'Search student...',
-          hintStyle: GoogleFonts.outfit(fontSize: 14, color: WebColors.textTertiary),
-          prefixIcon: const Icon(Icons.search, size: 18, color: WebColors.textTertiary),
+          hintStyle:
+              GoogleFonts.outfit(fontSize: 14, color: WebColors.textTertiary),
+          prefixIcon:
+              const Icon(Icons.search, size: 18, color: WebColors.textTertiary),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 14),
         ),
@@ -144,7 +172,10 @@ class _StudentRegistryState extends State<StudentRegistry> {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: WebColors.border)),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: WebColors.border)),
         child: const Center(child: Text('No students found.')),
       );
     }
@@ -168,15 +199,53 @@ class _StudentRegistryState extends State<StudentRegistry> {
           children: [
             if (!isMobile)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 color: const Color(0xFFF9FAFB),
                 child: Row(
                   children: [
-                    Expanded(flex: 3, child: Text('STUDENT NAME', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[600], letterSpacing: 1))),
-                    Expanded(flex: 2, child: Text('CLASS', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[600], letterSpacing: 1))),
-                    if (!isMobile) Expanded(flex: 2, child: Text('LAST ACTIVE', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[600], letterSpacing: 1))),
-                    Expanded(flex: 2, child: Text('AVERAGE', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[600], letterSpacing: 1))),
-                    if (!isMobile) Expanded(flex: 2, child: Text('ACTIVITY', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[600], letterSpacing: 1))),
+                    Expanded(
+                        flex: 3,
+                        child: Text('STUDENT NAME',
+                            style: GoogleFonts.outfit(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[600],
+                                letterSpacing: 1))),
+                    Expanded(
+                        flex: 2,
+                        child: Text('CLASS',
+                            style: GoogleFonts.outfit(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[600],
+                                letterSpacing: 1))),
+                    if (!isMobile)
+                      Expanded(
+                          flex: 2,
+                          child: Text('LAST ACTIVE',
+                              style: GoogleFonts.outfit(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey[600],
+                                  letterSpacing: 1))),
+                    Expanded(
+                        flex: 2,
+                        child: Text('AVERAGE',
+                            style: GoogleFonts.outfit(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[600],
+                                letterSpacing: 1))),
+                    if (!isMobile)
+                      Expanded(
+                          flex: 2,
+                          child: Text('ACTIVITY',
+                              style: GoogleFonts.outfit(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey[600],
+                                  letterSpacing: 1))),
                     const SizedBox(width: 40),
                   ],
                 ),
@@ -185,7 +254,8 @@ class _StudentRegistryState extends State<StudentRegistry> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: students.length,
-              separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF3F4F6)),
+              separatorBuilder: (_, __) =>
+                  const Divider(height: 1, color: Color(0xFFF3F4F6)),
               itemBuilder: (context, i) {
                 final student = students[i];
                 return _buildTableRow(student, i, isMobile: isMobile);
@@ -197,9 +267,11 @@ class _StudentRegistryState extends State<StudentRegistry> {
     );
   }
 
-  Widget _buildTableRow(StudentLink student, int index, {bool isMobile = false}) {
+  Widget _buildTableRow(StudentLink student, int index,
+      {bool isMobile = false}) {
     final isActive = student.lastActiveAt != null &&
-        student.lastActiveAt!.isAfter(DateTime.now().subtract(const Duration(days: 7)));
+        student.lastActiveAt!
+            .isAfter(DateTime.now().subtract(const Duration(days: 7)));
 
     if (isMobile) {
       return Container(
@@ -212,8 +284,13 @@ class _StudentRegistryState extends State<StudentRegistry> {
                   radius: 20,
                   backgroundColor: const Color(0xFFF3E8FF),
                   child: Text(
-                    student.studentName.isNotEmpty ? student.studentName[0].toUpperCase() : '?',
-                    style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.bold, color: WebColors.purplePrimary),
+                    student.studentName.isNotEmpty
+                        ? student.studentName[0].toUpperCase()
+                        : '?',
+                    style: GoogleFonts.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: WebColors.purplePrimary),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -221,19 +298,31 @@ class _StudentRegistryState extends State<StudentRegistry> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(student.studentName, style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.bold)),
-                      Text(student.studentEmail.isNotEmpty ? student.studentEmail : 'No Email', style: GoogleFonts.outfit(fontSize: 11, color: Colors.grey[500])),
+                      Text(student.studentName,
+                          style: GoogleFonts.outfit(
+                              fontSize: 14, fontWeight: FontWeight.bold)),
+                      Text(
+                          student.studentEmail.isNotEmpty
+                              ? student.studentEmail
+                              : 'No Email',
+                          style: GoogleFonts.outfit(
+                              fontSize: 11, color: Colors.grey[500])),
                     ],
                   ),
                 ),
                 PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_horiz, color: Colors.grey, size: 20),
+                  icon: const Icon(Icons.more_horiz,
+                      color: Colors.grey, size: 20),
                   onSelected: (val) {
-                    if (val == 'analytics') context.go('/progress?studentId=${student.studentId}');
+                    if (val == 'analytics') {
+                      context.go('/progress?studentId=${student.studentId}');
+                    }
                   },
                   itemBuilder: (context) => [
-                    const PopupMenuItem(value: 'analytics', child: Text('View Performance')),
-                    const PopupMenuItem(value: 'unlink', child: Text('Exclude')),
+                    const PopupMenuItem(
+                        value: 'analytics', child: Text('View Performance')),
+                    const PopupMenuItem(
+                        value: 'unlink', child: Text('Exclude')),
                   ],
                 )
               ],
@@ -245,20 +334,43 @@ class _StudentRegistryState extends State<StudentRegistry> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('AVG. SCORE', style: GoogleFonts.outfit(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey[500])),
+                    Text('AVG. SCORE',
+                        style: GoogleFonts.outfit(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[500])),
                     const SizedBox(height: 4),
-                    Text('${student.averageScore.toStringAsFixed(1)}%', style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w900, color: WebColors.purplePrimary)),
+                    Text('${student.averageScore.toStringAsFixed(1)}%',
+                        style: GoogleFonts.outfit(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            color: WebColors.purplePrimary)),
                   ],
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('STATUS', style: GoogleFonts.outfit(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey[500])),
+                    Text('STATUS',
+                        style: GoogleFonts.outfit(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[500])),
                     const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(color: isActive ? const Color(0xFFDCFCE7) : const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(20)),
-                      child: Text(isActive ? 'Active' : 'Inactive', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: isActive ? const Color(0xFF166534) : Colors.grey[600])),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                          color: isActive
+                              ? const Color(0xFFDCFCE7)
+                              : const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(20)),
+                      child: Text(isActive ? 'Active' : 'Inactive',
+                          style: GoogleFonts.outfit(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: isActive
+                                  ? const Color(0xFF166534)
+                                  : Colors.grey[600])),
                     ),
                   ],
                 ),
@@ -282,7 +394,9 @@ class _StudentRegistryState extends State<StudentRegistry> {
                   radius: 18,
                   backgroundColor: const Color(0xFFF3E8FF),
                   child: Text(
-                    student.studentName.isNotEmpty ? student.studentName[0].toUpperCase() : '?',
+                    student.studentName.isNotEmpty
+                        ? student.studentName[0].toUpperCase()
+                        : '?',
                     style: GoogleFonts.outfit(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
@@ -293,9 +407,15 @@ class _StudentRegistryState extends State<StudentRegistry> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(student.studentName, style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF1F1F1F))),
+                    Text(student.studentName,
+                        style: GoogleFonts.outfit(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF1F1F1F))),
                     if (student.studentEmail.isNotEmpty)
-                      Text(student.studentEmail, style: GoogleFonts.outfit(fontSize: 11, color: Colors.grey[500])),
+                      Text(student.studentEmail,
+                          style: GoogleFonts.outfit(
+                              fontSize: 11, color: Colors.grey[500])),
                   ],
                 ),
               ],
@@ -306,16 +426,25 @@ class _StudentRegistryState extends State<StudentRegistry> {
             child: Align(
               alignment: Alignment.centerLeft,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(12)),
-                child: Text('Default Class', style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[800])),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(12)),
+                child: Text('Default Class',
+                    style: GoogleFonts.outfit(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800])),
               ),
             ),
           ),
           Expanded(
             flex: 2,
             child: Text(
-              student.lastActiveAt != null ? DateFormat.MMMEd().format(student.lastActiveAt!) : 'Never',
+              student.lastActiveAt != null
+                  ? DateFormat.MMMEd().format(student.lastActiveAt!)
+                  : 'Never',
               style: GoogleFonts.outfit(fontSize: 13, color: Colors.grey[700]),
             ),
           ),
@@ -323,7 +452,11 @@ class _StudentRegistryState extends State<StudentRegistry> {
             flex: 2,
             child: Row(
               children: [
-                Text('${student.averageScore.toStringAsFixed(1)}%', style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF1F1F1F))),
+                Text('${student.averageScore.toStringAsFixed(1)}%',
+                    style: GoogleFonts.outfit(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF1F1F1F))),
                 const SizedBox(width: 8),
                 Expanded(
                   child: ClipRRect(
@@ -331,7 +464,8 @@ class _StudentRegistryState extends State<StudentRegistry> {
                     child: LinearProgressIndicator(
                       value: student.averageScore / 100,
                       backgroundColor: const Color(0xFFF3F4F6),
-                      valueColor: const AlwaysStoppedAnimation(WebColors.purplePrimary),
+                      valueColor:
+                          const AlwaysStoppedAnimation(WebColors.purplePrimary),
                       minHeight: 6,
                     ),
                   ),
@@ -345,21 +479,36 @@ class _StudentRegistryState extends State<StudentRegistry> {
             child: Align(
               alignment: Alignment.centerLeft,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: isActive ? const Color(0xFFDCFCE7) : const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(12)),
-                child: Text(isActive ? 'Active Learner' : 'Inactive', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: isActive ? const Color(0xFF166534) : Colors.grey[600])),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                    color: isActive
+                        ? const Color(0xFFDCFCE7)
+                        : const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(12)),
+                child: Text(isActive ? 'Active Learner' : 'Inactive',
+                    style: GoogleFonts.outfit(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: isActive
+                            ? const Color(0xFF166534)
+                            : Colors.grey[600])),
               ),
             ),
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_horiz, color: Colors.grey),
             onSelected: (val) {
-              if (val == 'analytics') context.go('/progress?studentId=${student.studentId}');
+              if (val == 'analytics') {
+                context.go('/progress?studentId=${student.studentId}');
+              }
               // Other actions could be added here
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(value: 'analytics', child: Text('View Performance')),
-              const PopupMenuItem(value: 'unlink', child: Text('Exclude from Roster')),
+              const PopupMenuItem(
+                  value: 'analytics', child: Text('View Performance')),
+              const PopupMenuItem(
+                  value: 'unlink', child: Text('Exclude from Roster')),
             ],
           )
         ],

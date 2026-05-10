@@ -6,11 +6,13 @@ import 'package:sumquiz/theme/web_theme.dart';
 
 class CreationProgressIndicator extends StatelessWidget {
   final String message;
+  final String? tip;
   final double? progress;
 
   const CreationProgressIndicator({
     super.key,
     required this.message,
+    this.tip,
     this.progress,
   });
 
@@ -18,14 +20,18 @@ class CreationProgressIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     // Determine current pipeline step based on message
     int activeStep = 0;
-    if (message.toLowerCase().contains('analyzing') || message.toLowerCase().contains('reading')) {
+    if (message.toLowerCase().contains('analyzing') ||
+        message.toLowerCase().contains('reading')) {
       activeStep = 0;
-    } else if (message.toLowerCase().contains('generating') || message.toLowerCase().contains('creating')) {
+    } else if (message.toLowerCase().contains('generating') ||
+        message.toLowerCase().contains('creating')) {
       activeStep = 1;
-    } else if (message.toLowerCase().contains('finalizing') || message.toLowerCase().contains('done') || message.toLowerCase().contains('complete')) {
+    } else if (message.toLowerCase().contains('finalizing') ||
+        message.toLowerCase().contains('done') ||
+        message.toLowerCase().contains('complete')) {
       activeStep = 2;
     } else {
       activeStep = 1; // Default to middle step
@@ -35,15 +41,15 @@ class CreationProgressIndicator extends StatelessWidget {
       children: [
         // 1. Animated Background Blobs
         _buildBackgroundExtras(),
-        
+
         // 2. Main Content
         Center(
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 24),
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: isDark 
-                  ? Colors.black.withOpacity(0.4) 
+              color: isDark
+                  ? Colors.black.withOpacity(0.4)
                   : Colors.white.withOpacity(0.7),
               borderRadius: BorderRadius.circular(40),
               border: Border.all(
@@ -67,19 +73,19 @@ class CreationProgressIndicator extends StatelessWidget {
                   children: [
                     // A. Premium Progress Ring
                     _buildPremiumRing(theme),
-                    
+
                     const SizedBox(height: 40),
-                    
+
                     // B. Strategic Messaging
                     _buildMainTitle(theme),
-                    
+
                     const SizedBox(height: 32),
-                    
+
                     // C. AI Synthesis Pipeline
                     _buildPipeline(theme, activeStep),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // D. Detailed Status
                     Text(
                       message,
@@ -88,13 +94,43 @@ class CreationProgressIndicator extends StatelessWidget {
                         color: theme.colorScheme.onSurface.withOpacity(0.5),
                         fontWeight: FontWeight.w500,
                       ),
-                    ).animate(onPlay: (c) => c.repeat()).shimmer(duration: 2.seconds),
+                    )
+                        .animate(onPlay: (c) => c.repeat())
+                        .shimmer(duration: 2.seconds),
+
+                    if (tip != null && tip!.isNotEmpty) ...[
+                      const SizedBox(height: 32),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: theme.colorScheme.primary.withOpacity(0.1),
+                          ),
+                        ),
+                        child: Text(
+                          tip!,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.outfit(
+                            fontSize: 13,
+                            fontStyle: FontStyle.italic,
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ).animate(key: ValueKey(tip)).fadeIn().slideY(begin: 0.2),
+                    ],
                   ],
                 ),
               ),
             ),
           ),
-        ).animate().fadeIn(duration: 600.ms).scale(begin: const Offset(0.9, 0.9), curve: Curves.easeOutCubic),
+        )
+            .animate()
+            .fadeIn(duration: 600.ms)
+            .scale(begin: const Offset(0.9, 0.9), curve: Curves.easeOutCubic),
       ],
     );
   }
@@ -106,12 +142,16 @@ class CreationProgressIndicator extends StatelessWidget {
           top: 100,
           right: -50,
           child: _buildBlob(const Color(0xFF6366F1), 300),
-        ).animate(onPlay: (c) => c.repeat(reverse: true)).moveY(begin: 0, end: 100, duration: 10.seconds),
+        )
+            .animate(onPlay: (c) => c.repeat(reverse: true))
+            .moveY(begin: 0, end: 100, duration: 10.seconds),
         Positioned(
           bottom: 100,
           left: -80,
           child: _buildBlob(const Color(0xFFEC4899), 250),
-        ).animate(onPlay: (c) => c.repeat(reverse: true)).moveX(begin: 0, end: 80, duration: 8.seconds),
+        )
+            .animate(onPlay: (c) => c.repeat(reverse: true))
+            .moveX(begin: 0, end: 80, duration: 8.seconds),
       ],
     );
   }
@@ -144,8 +184,11 @@ class CreationProgressIndicator extends StatelessWidget {
             shape: BoxShape.circle,
             color: theme.colorScheme.primary.withOpacity(0.05),
           ),
-        ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(begin: const Offset(0.9, 0.9), end: const Offset(1.1, 1.1), duration: 2.seconds),
-        
+        ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(
+            begin: const Offset(0.9, 0.9),
+            end: const Offset(1.1, 1.1),
+            duration: 2.seconds),
+
         // Spinning Dash ring
         SizedBox(
           width: 110,
@@ -167,7 +210,8 @@ class CreationProgressIndicator extends StatelessWidget {
             strokeWidth: 6,
             strokeCap: StrokeCap.round,
             value: progress,
-            valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+            valueColor:
+                AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
             backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
           ),
         ),
@@ -187,8 +231,11 @@ class CreationProgressIndicator extends StatelessWidget {
               ),
             ],
           ),
-          child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 26),
-        ).animate(onPlay: (c) => c.repeat()).shimmer(duration: 1.5.seconds, color: Colors.white24),
+          child: const Icon(Icons.auto_awesome_rounded,
+              color: Colors.white, size: 26),
+        )
+            .animate(onPlay: (c) => c.repeat())
+            .shimmer(duration: 1.5.seconds, color: Colors.white24),
       ],
     );
   }
@@ -221,14 +268,18 @@ class CreationProgressIndicator extends StatelessWidget {
   Widget _buildPipeline(ThemeData theme, int activeStep) {
     return Column(
       children: [
-        _buildPipelineStep('Deep Content Analysis', activeStep >= 0, activeStep == 0, theme),
-        _buildPipelineStep('Knowledge Synthesis', activeStep >= 1, activeStep == 1, theme),
-        _buildPipelineStep('Structuring Study Pack', activeStep >= 2, activeStep == 2, theme),
+        _buildPipelineStep(
+            'Deep Content Analysis', activeStep >= 0, activeStep == 0, theme),
+        _buildPipelineStep(
+            'Knowledge Synthesis', activeStep >= 1, activeStep == 1, theme),
+        _buildPipelineStep(
+            'Structuring Study Pack', activeStep >= 2, activeStep == 2, theme),
       ],
     );
   }
 
-  Widget _buildPipelineStep(String label, bool isDone, bool isActive, ThemeData theme) {
+  Widget _buildPipelineStep(
+      String label, bool isDone, bool isActive, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -239,22 +290,27 @@ class CreationProgressIndicator extends StatelessWidget {
             height: 14,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isActive 
-                  ? theme.colorScheme.primary 
-                  : (isDone ? WebColors.success : theme.colorScheme.onSurface.withOpacity(0.1)),
+              color: isActive
+                  ? theme.colorScheme.primary
+                  : (isDone
+                      ? WebColors.success
+                      : theme.colorScheme.onSurface.withOpacity(0.1)),
             ),
-            child: isDone && !isActive 
+            child: isDone && !isActive
                 ? const Icon(Icons.check, size: 8, color: Colors.white)
                 : null,
-          ).animate(target: isActive ? 1 : 0).scale(duration: 400.ms).shimmer(duration: 1.seconds),
+          )
+              .animate(target: isActive ? 1 : 0)
+              .scale(duration: 400.ms)
+              .shimmer(duration: 1.seconds),
           const SizedBox(width: 16),
           Text(
             label,
             style: GoogleFonts.outfit(
               fontSize: 15,
               fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-              color: isActive 
-                  ? theme.colorScheme.onSurface 
+              color: isActive
+                  ? theme.colorScheme.onSurface
                   : theme.colorScheme.onSurface.withOpacity(isDone ? 0.6 : 0.2),
             ),
           ),

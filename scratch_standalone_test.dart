@@ -5,7 +5,7 @@ void main() async {
   // API Key loaded from build arguments via --dart-define=API_KEY
   const apiKey = String.fromEnvironment('API_KEY');
   final modelStr = 'gemini-3.1-flash-lite-preview';
-  
+
   print('Initializing model \$modelStr...');
   final model = GenerativeModel(
     model: modelStr,
@@ -24,9 +24,8 @@ void main() async {
 
   try {
     print('Sending prompt...');
-    final response = await model.generateContent([
-      Content.text('Generate a short test summary in JSON format.')
-    ]);
+    final response = await model.generateContent(
+        [Content.text('Generate a short test summary in JSON format.')]);
     print('Response received!');
     print(response.text);
   } catch (e) {

@@ -19,7 +19,8 @@ class TeacherService {
           .get();
       return snap.docs.map((d) => PublicDeck.fromFirestore(d)).toList();
     } catch (e) {
-      print('TeacherService.getTeacherContent error (falling back to unsorted): $e');
+      print(
+          'TeacherService.getTeacherContent error (falling back to unsorted): $e');
       // Fallback to unsorted if index is missing
       final snap = await _db
           .collection('public_decks')
@@ -37,7 +38,8 @@ class TeacherService {
   }
 
   /// Duplicate content with a new ID and share code.
-  Future<void> duplicateContent(PublicDeck deck, String newId, String newCode) async {
+  Future<void> duplicateContent(
+      PublicDeck deck, String newId, String newCode) async {
     final data = deck.toFirestore();
     data['id'] = newId;
     data['shareCode'] = newCode;
@@ -47,7 +49,8 @@ class TeacherService {
   }
 
   /// Update content metadata.
-  Future<void> updateContent(String contentId, Map<String, dynamic> updates) async {
+  Future<void> updateContent(
+      String contentId, Map<String, dynamic> updates) async {
     await _db.collection('public_decks').doc(contentId).update(updates);
   }
 
@@ -70,7 +73,7 @@ class TeacherService {
       // Limit to most recent 12 decks for stats calculation
       final activeContent = content.take(12).toList();
       if (activeContent.isEmpty) {
-         return TeacherStats(
+        return TeacherStats(
           totalExams: exams,
           totalStudyPacks: packs,
           totalStudents: 0,
@@ -82,10 +85,11 @@ class TeacherService {
 
       // Parallelize attempt fetching with overall timeout/error handling
       final snapshots = await Future.wait(activeContent.map((deck) => _db
-          .collection('attempts')
-          .where('contentId', isEqualTo: deck.id)
-          .limit(50) 
-          .get().catchError((e) {
+              .collection('attempts')
+              .where('contentId', isEqualTo: deck.id)
+              .limit(50)
+              .get()
+              .catchError((e) {
             print('Error fetching attempts for deck ${deck.id}: $e');
             return null; // Don't crash wait
           })));
@@ -96,13 +100,13 @@ class TeacherService {
           totalAttempts++;
           final sid = data['studentId'] as String? ?? '';
           if (sid.isNotEmpty) studentIds.add(sid);
-          
+
           final score = (data['score'] as num?)?.toDouble();
           if (score != null) {
             totalScore += score;
             scoredAttempts++;
           }
-          
+
           final ts = (data['attemptedAt'] as Timestamp?)?.toDate();
           if (ts != null && ts.isAfter(sevenDaysAgo)) {
             if (sid.isNotEmpty) activeStudentIds.add(sid);
@@ -172,8 +176,9 @@ class TeacherService {
                           ts.isAfter(existing.lastActiveAt!))
                   ? ts
                   : existing.lastActiveAt,
-              averageScore: (existing.averageScore * existing.totalAttempts + score) /
-                  (existing.totalAttempts + 1),
+              averageScore:
+                  (existing.averageScore * existing.totalAttempts + score) /
+                      (existing.totalAttempts + 1),
               totalAttempts: existing.totalAttempts + 1,
               completionRate: existing.completionRate,
             );
@@ -204,14 +209,15 @@ class TeacherService {
   }
 
   /// Manually link a student to a piece of content using its share code.
-  Future<void> registerStudentWithCode(String uid, String studentEmail, String shareCode) async {
+  Future<void> registerStudentWithCode(
+      String uid, String studentEmail, String shareCode) async {
     // 1. Find the content by shareCode
     final deckSnap = await _db
         .collection('public_decks')
         .where('shareCode', isEqualTo: shareCode)
         .limit(1)
         .get();
-    
+
     if (deckSnap.docs.isEmpty) throw Exception('Invalid share code');
     final deckId = deckSnap.docs.first.id;
     final deckTitle = deckSnap.docs.first.data()['title'] ?? 'Content';
@@ -331,10 +337,11 @@ class TeacherService {
             final score = (data['score'] as num?)?.toDouble() ?? 0.0;
             items.add(ActivityItem(
               type: 'attempt',
-              title: '${data['studentName'] ?? 'A student'} attempted ${deck.title}',
+              title:
+                  '${data['studentName'] ?? 'A student'} attempted ${deck.title}',
               subtitle: 'Score: ${score.toStringAsFixed(0)}%',
-              timestamp:
-                  (data['attemptedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+              timestamp: (data['attemptedAt'] as Timestamp?)?.toDate() ??
+                  DateTime.now(),
               contentId: deck.id,
             ));
           }
@@ -353,8 +360,8 @@ class TeacherService {
 
   /// Listen to real-time activity for the teacher's content.
   Stream<List<ActivityItem>> getActivityStream(String uid) {
-    // For simplicity, we listen to the last 20 attempts globally 
-    // and filter them. In a production app, we'd add 'creatorId' 
+    // For simplicity, we listen to the last 20 attempts globally
+    // and filter them. In a production app, we'd add 'creatorId'
     // to attempts or use advanced composite listeners.
     return _db
         .collection('attempts')
@@ -374,9 +381,11 @@ class TeacherService {
           final score = (data['score'] as num?)?.toDouble() ?? 0.0;
           items.add(ActivityItem(
             type: 'attempt',
-            title: '${data['studentName'] ?? 'A student'} attempted ${deck.title}',
+            title:
+                '${data['studentName'] ?? 'A student'} attempted ${deck.title}',
             subtitle: 'Score: ${score.toStringAsFixed(0)}%',
-            timestamp: (data['attemptedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+            timestamp:
+                (data['attemptedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
             contentId: contentId,
           ));
         }
@@ -416,9 +425,10 @@ class TeacherService {
           final snap = await _db
               .collection('attempts')
               .where('contentId', isEqualTo: id)
-              .where('attemptedAt', isGreaterThanOrEqualTo: Timestamp.fromDate(thirtyDaysAgo))
+              .where('attemptedAt',
+                  isGreaterThanOrEqualTo: Timestamp.fromDate(thirtyDaysAgo))
               .get();
-          
+
           for (final doc in snap.docs) {
             final ts = (doc.data()['attemptedAt'] as Timestamp?)?.toDate();
             if (ts != null) {

@@ -53,17 +53,17 @@ class UserModel {
   final DateTime? lastVerified;
   final String? purchaseToken;
 
-  // Credit Economy Fields
-  final int credits;
-  final int lifetimeCreditsEarned;
+  // Invisible Compute Economy (Neural Capacity)
+  final double computeUnits;
+  final double maxComputeCapacity;
+  final String? computeSessionId;
+  final String? tier; // free, starter_pro, standard_pro, power_pro, creator
+
+  final Map<String, dynamic> creatorProfile;
+  final bool isEmailVerified;
   final bool isTrialActive;
   final DateTime? trialStartDate;
   final DateTime? lastCreditRefillDate;
-
-  // Creator Profile
-  final Map<String, dynamic> creatorProfile;
-  final bool isEmailVerified;
-  final String? tier; // Human-readable plan name for manual Firestore selection
 
   UserModel({
     required this.uid,
@@ -103,13 +103,33 @@ class UserModel {
     this.creatorProfile = const {},
     this.photoUrl,
     this.isEmailVerified = false,
-    this.credits = 20, // Default for 🆓 FREE TIER
-    this.lifetimeCreditsEarned = 20,
+    this.computeUnits = 20.0, // Default for 🆓 FREE TIER (Neural Capacity)
+    this.maxComputeCapacity = 20.0,
+    this.computeSessionId,
     this.isTrialActive = false,
     this.trialStartDate,
     this.lastCreditRefillDate,
     this.tier = 'free', // Default tier
   }) : _isTrialUser = isTrial;
+
+  // Legacy compatibility getters (mapped to Compute Units)
+  int get credits => computeUnits.floor();
+  int get lifetimeCreditsEarned => (credits + totalDecksGenerated * 5); // Approximate
+
+  // Compute Energy States (Invisible UX Logic)
+  double get computeEnergyLevel => (computeUnits / maxComputeCapacity).clamp(0.0, 1.0);
+  
+  bool get isHighEnergy => computeEnergyLevel >= 0.5;
+  bool get isFatigued => computeEnergyLevel > 0.1 && computeEnergyLevel < 0.5;
+  bool get isExhausted => computeEnergyLevel > 0.0 && computeEnergyLevel <= 0.1;
+  bool get isDepleted => computeEnergyLevel <= 0.0;
+
+  String get neuralStateLabel {
+    if (isHighEnergy) return 'High Momentum';
+    if (isFatigued) return 'Steady Flow';
+    if (isExhausted) return 'Cognitive Load High';
+    return 'Recharging';
+  }
 
   String? get photoURL => photoUrl;
 
@@ -153,7 +173,6 @@ class UserModel {
     if (isPro) return 'Pro Member';
     return role == UserRole.creator ? 'Free Educator' : 'Free Scholar';
   }
-
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
@@ -200,11 +219,13 @@ class UserModel {
       creatorProfile: data['creatorProfile'] ?? {},
       photoUrl: data['photoUrl'] ?? data['photoURL'],
       isEmailVerified: data['isEmailVerified'] ?? false,
-      credits: data['credits'] ?? 20,
-      lifetimeCreditsEarned: data['lifetimeCreditsEarned'] ?? 20,
+      computeUnits: (data['computeUnits'] as num?)?.toDouble() ?? (data['credits'] as num?)?.toDouble() ?? 20.0,
+      maxComputeCapacity: (data['maxComputeCapacity'] as num?)?.toDouble() ?? 20.0,
+      computeSessionId: data['computeSessionId'],
       isTrialActive: data['isTrialActive'] ?? false,
       trialStartDate: (data['trialStartDate'] as Timestamp?)?.toDate(),
-      lastCreditRefillDate: (data['lastCreditRefillDate'] as Timestamp?)?.toDate(),
+      lastCreditRefillDate:
+          (data['lastCreditRefillDate'] as Timestamp?)?.toDate(),
       tier: data['tier'] ?? 'free',
     );
   }
@@ -238,7 +259,8 @@ class UserModel {
       'hasUsedTrial': hasUsedTrial,
       'currentProduct': currentProduct,
       if (referralCode != null) 'referralCode': referralCode,
-      if (appliedReferralCode != null) 'appliedReferralCode': appliedReferralCode,
+      if (appliedReferralCode != null)
+        'appliedReferralCode': appliedReferralCode,
       if (referredBy != null) 'referredBy': referredBy,
       if (referralAppliedAt != null)
         'referralAppliedAt': Timestamp.fromDate(referralAppliedAt!),
@@ -251,11 +273,14 @@ class UserModel {
       'creatorProfile': creatorProfile,
       'photoUrl': photoUrl,
       'isEmailVerified': isEmailVerified,
-      'credits': credits,
-      'lifetimeCreditsEarned': lifetimeCreditsEarned,
+      'computeUnits': computeUnits,
+      'maxComputeCapacity': maxComputeCapacity,
+      if (computeSessionId != null) 'computeSessionId': computeSessionId,
       'isTrialActive': isTrialActive,
-      if (trialStartDate != null) 'trialStartDate': Timestamp.fromDate(trialStartDate!),
-      if (lastCreditRefillDate != null) 'lastCreditRefillDate': Timestamp.fromDate(lastCreditRefillDate!),
+      if (trialStartDate != null)
+        'trialStartDate': Timestamp.fromDate(trialStartDate!),
+      if (lastCreditRefillDate != null)
+        'lastCreditRefillDate': Timestamp.fromDate(lastCreditRefillDate!),
       'tier': tier,
     };
   }
@@ -298,11 +323,13 @@ class UserModel {
     Map<String, dynamic>? creatorProfile,
     String? photoUrl,
     bool? isEmailVerified,
-    int? credits,
-    int? lifetimeCreditsEarned,
+    double? computeUnits,
+    double? maxComputeCapacity,
+    String? computeSessionId,
     bool? isTrialActive,
     DateTime? trialStartDate,
     DateTime? lastCreditRefillDate,
+    String? tier,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -344,12 +371,13 @@ class UserModel {
       creatorProfile: creatorProfile ?? this.creatorProfile,
       photoUrl: photoUrl ?? this.photoUrl,
       isEmailVerified: isEmailVerified ?? this.isEmailVerified,
-      credits: credits ?? this.credits,
-      lifetimeCreditsEarned: lifetimeCreditsEarned ?? this.lifetimeCreditsEarned,
+      computeUnits: computeUnits ?? this.computeUnits,
+      maxComputeCapacity: maxComputeCapacity ?? this.maxComputeCapacity,
+      computeSessionId: computeSessionId ?? this.computeSessionId,
       isTrialActive: isTrialActive ?? this.isTrialActive,
       trialStartDate: trialStartDate ?? this.trialStartDate,
       lastCreditRefillDate: lastCreditRefillDate ?? this.lastCreditRefillDate,
-      tier: tier ?? tier,
+      tier: tier ?? this.tier,
     );
   }
 }

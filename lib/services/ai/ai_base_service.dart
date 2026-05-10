@@ -72,7 +72,7 @@ abstract class AIBaseService {
         generationConfig: defaultConfig,
         systemInstruction: eduInstruction,
       );
-      
+
       _secondaryModel = GenerativeModel(
         model: AIConfig.secondaryModel,
         apiKey: apiKey,
@@ -93,7 +93,7 @@ abstract class AIBaseService {
         generationConfig: defaultConfig,
         systemInstruction: eduInstruction,
       );
-      
+
       _fallbackModel = GenerativeModel(
         model: AIConfig.fallbackModel,
         apiKey: apiKey,
@@ -268,7 +268,8 @@ abstract class AIBaseService {
       GenerationConfig? generationConfig,
       bool isPro = false,
       CancellationToken? cancelToken}) async {
-    developer.log('generateMultimodal called (isPro: $isPro)', name: 'AIBaseService');
+    developer.log('generateMultimodal called (isPro: $isPro)',
+        name: 'AIBaseService');
     if (!await ensureInitialized()) {
       throw AIServiceException('AI Service not ready: $_initializationError',
           code: 'SERVICE_NOT_READY');
@@ -276,8 +277,10 @@ abstract class AIBaseService {
 
     // --- 2026 Anomaly Guardrail ---
     if (AIConfig.isCriticalAnomaly) {
-      developer.log('CRITICAL: Blocking request due to high anomaly score (${AIConfig.anomalyScore})', 
-          name: 'AIBaseService', level: 1000);
+      developer.log(
+          'CRITICAL: Blocking request due to high anomaly score (${AIConfig.anomalyScore})',
+          name: 'AIBaseService',
+          level: 1000);
       throw AIServiceException(
           'Learning circuits are currently over-saturated. Please wait a few minutes for the neural pathway to clear.',
           code: 'SYSTEM_OVERLOADED');
@@ -291,25 +294,72 @@ abstract class AIBaseService {
       return part;
     }).toList();
 
-    // Model cascade (2026 Edition): Primary → Secondary → Fallback
+    // --- 2026 Neural Orchestration (Invisible Economy) ---
+    if (AIConfig.shouldHardLimit) {
+      developer.log('NEURAL CAPACITY DEPLETED: Blocking request silently.', name: 'AIBaseService', level: 1000);
+      throw AIServiceException(
+          'Your neural momentum is stabilizing. Sumi suggests a short focus break to integrate what you\'ve learned.',
+          code: 'CAPACITY_DEPLETED');
+    }
+
+    // Model cascade (2026 Adaptive Edition)
     List<GenerativeModel> modelChain = [];
-    if (customModel != null) {
+    
+    if (customModel != null && !AIConfig.shouldDegradeModel) {
       modelChain.add(customModel);
-      if (_secondaryModel != null && customModel != _secondaryModel) {
-        modelChain.add(_secondaryModel!);
+    }
+
+    // Adaptive Selection based on Neural State
+    if (AIConfig.currentNeuralState == NeuralState.highEnergy) {
+      if (isPro) {
+        // High Energy Pro: Pro -> Primary -> Secondary
+        modelChain.addAll([
+          _proModel,
+          _model,
+          _secondaryModel,
+        ].whereType<GenerativeModel>());
+      } else {
+        // High Energy Standard: Primary -> Secondary -> Tertiary
+        modelChain.addAll([
+          _model,
+          _secondaryModel,
+          _tertiaryModel,
+        ].whereType<GenerativeModel>());
       }
-      if (_fallbackModel != null && customModel != _fallbackModel) {
-        modelChain.add(_fallbackModel!);
-      }
+    } else if (AIConfig.currentNeuralState == NeuralState.fatigued) {
+      // Fatigued: Efficiency Mode (Flash/Secondary -> Tertiary)
+      modelChain.addAll([
+        _secondaryModel,
+        _tertiaryModel,
+        _fallbackModel,
+      ].whereType<GenerativeModel>());
+      
+      // Reduce max output to save compute
+      generationConfig = GenerationConfig(
+          maxOutputTokens: 2048,
+          temperature: generationConfig?.temperature,
+          responseMimeType: generationConfig?.responseMimeType);
     } else {
-      modelChain.addAll([_model, _secondaryModel, _tertiaryModel, _fallbackModel]
-          .whereType<GenerativeModel>());
+      // Exhausted: Survival Mode (Fallback Lite only)
+      modelChain.addAll([
+        _tertiaryModel,
+        _fallbackModel,
+      ].whereType<GenerativeModel>());
+      
+      // Strict truncation
+      generationConfig = GenerationConfig(
+          maxOutputTokens: 512,
+          temperature: generationConfig?.temperature,
+          responseMimeType: generationConfig?.responseMimeType);
     }
 
     if (modelChain.isEmpty) {
-      throw AIServiceException('No models available', code: 'MODEL_NOT_AVAILABLE');
+      throw AIServiceException('Neural pathways saturated.', code: 'MODEL_NOT_AVAILABLE');
     }
-    
+
+    developer.log('Adaptive Model Chain: ${modelChain.length} model(s) in state ${AIConfig.currentNeuralState}',
+        name: 'AIBaseService');
+
     // 2026 Stability Update: Allowing cascade for all users.
     // Fallback models are essential when the primary hits its 15 RPM free tier limit.
 
@@ -333,11 +383,12 @@ abstract class AIBaseService {
     while (attempt < AIConfig.maxRetries) {
       try {
         cancelToken?.throwIfCancelled();
-        
+
         // Pick the model from the chain based on the current cascade level
         final targetModel = modelChain[currentModelIndex % modelChain.length];
 
-        developer.log('AI CALL: Attempting model (ModelIndex: $currentModelIndex, Attempt: $attempt)',
+        developer.log(
+            'AI CALL: Attempting model (ModelIndex: $currentModelIndex, Attempt: $attempt)',
             name: 'AIBaseService');
 
         final response = await targetModel.generateContent(
@@ -381,21 +432,24 @@ abstract class AIBaseService {
 
         // --- 2026 Anomaly Reporting ---
         if (isQuotaError || isServerIssue) {
-          AIConfig.recordAction(isQuotaError ? 15 : 40); // Server issues carry higher weight
-          developer.log('ANOMALY: Updated score to ${AIConfig.anomalyScore} due to $e', 
+          AIConfig.recordAction(
+              isQuotaError ? 15 : 40); // Server issues carry higher weight
+          developer.log(
+              'ANOMALY: Updated score to ${AIConfig.anomalyScore} due to $e',
               name: 'AIBaseService');
         }
 
         // --- Model Cascade Logic ---
         // If we hit a quota or server error, and we have more models in the chain,
         // move immediately to the next model and reset the attempt counter for that model.
-        if ((isQuotaError || isServerIssue || isTimeout) && currentModelIndex < modelChain.length - 1) {
+        if ((isQuotaError || isServerIssue || isTimeout) &&
+            currentModelIndex < modelChain.length - 1) {
           currentModelIndex++;
           attempt = 0; // Reset retries to give the new model a fair chance
           developer.log(
               'RETRY: Cascading to model at index $currentModelIndex due to error: $e',
               name: 'AIBaseService');
-          continue; 
+          continue;
         }
 
         // --- Standard Retry Logic (Same Model) ---
@@ -423,12 +477,71 @@ abstract class AIBaseService {
           rethrow; // Don't retry on auth errors
         }
 
-        developer.log('AI Retry attempt $attempt in ${delay}ms on current model',
-            name: 'AIBaseService', error: e);
+        developer.log(
+            'AI Retry attempt $attempt in ${delay}ms on current model',
+            name: 'AIBaseService',
+            error: e);
         await Future.delayed(Duration(milliseconds: delay));
       }
     }
     throw AIServiceException('Max retries exceeded', code: 'MAX_RETRIES');
+  }
+
+  Stream<String> generateStream(String prompt,
+      {GenerativeModel? customModel,
+      GenerationConfig? generationConfig,
+      bool isPro = false,
+      CancellationToken? cancelToken}) async* {
+    if (!await ensureInitialized()) {
+      throw AIServiceException('AI Service not ready', code: 'NOT_READY');
+    }
+
+    final sanitizedPrompt = _sanitizeInput(prompt);
+
+    // Model cascade for streaming
+    List<GenerativeModel> modelChain = [];
+    if (customModel != null && !AIConfig.shouldDegradeModel) {
+      modelChain.add(customModel);
+    }
+
+    if (AIConfig.currentNeuralState == NeuralState.highEnergy) {
+      if (isPro) {
+        modelChain.addAll([_proModel, _model, _secondaryModel].whereType<GenerativeModel>());
+      } else {
+        modelChain.addAll([_model, _secondaryModel, _tertiaryModel].whereType<GenerativeModel>());
+      }
+    } else {
+      modelChain.addAll([_secondaryModel, _tertiaryModel, _fallbackModel].whereType<GenerativeModel>());
+    }
+
+    if (modelChain.isEmpty) modelChain = [_model!];
+
+    int currentModelIndex = 0;
+    bool success = false;
+
+    while (currentModelIndex < modelChain.length && !success) {
+      final targetModel = modelChain[currentModelIndex];
+      try {
+        final responseStream = targetModel.generateContentStream(
+          [Content.text(sanitizedPrompt)],
+          generationConfig: generationConfig,
+        );
+
+        await for (final chunk in responseStream) {
+          cancelToken?.throwIfCancelled();
+          final text = chunk.text;
+          if (text != null) yield text;
+        }
+        success = true;
+      } catch (e) {
+        developer.log('Streaming failed on model $currentModelIndex: $e', name: 'AIBaseService');
+        currentModelIndex++;
+        if (currentModelIndex >= modelChain.length) {
+          rethrow;
+        }
+        developer.log('Cascading streaming to next model...', name: 'AIBaseService');
+      }
+    }
   }
 
   String extractJson(String response) {

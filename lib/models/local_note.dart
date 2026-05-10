@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'local_drawing_stroke.dart';
 
 part 'local_note.g.dart';
 
@@ -37,6 +38,18 @@ class LocalNote extends HiveObject {
   @HiveField(10)
   late bool isSynced;
 
+  @HiveField(11)
+  late List<String> backLinks;
+
+  @HiveField(12)
+  late List<String> topicIds;
+
+  @HiveField(13)
+  late List<String> topicNames;
+
+  @HiveField(14)
+  late List<LocalDrawingStroke> strokes;
+
   LocalNote({
     required this.id,
     required this.userId,
@@ -49,6 +62,10 @@ class LocalNote extends HiveObject {
     this.linkedItemType,
     this.tags = const [],
     this.isSynced = false,
+    this.backLinks = const [],
+    this.topicIds = const [],
+    this.topicNames = const [],
+    this.strokes = const [],
   });
 
   LocalNote copyWith({
@@ -63,6 +80,10 @@ class LocalNote extends HiveObject {
     String? linkedItemType,
     List<String>? tags,
     bool? isSynced,
+    List<String>? backLinks,
+    List<String>? topicIds,
+    List<String>? topicNames,
+    List<LocalDrawingStroke>? strokes,
   }) {
     return LocalNote(
       id: id ?? this.id,
@@ -76,6 +97,10 @@ class LocalNote extends HiveObject {
       linkedItemType: linkedItemType ?? this.linkedItemType,
       tags: tags ?? this.tags,
       isSynced: isSynced ?? this.isSynced,
+      backLinks: backLinks ?? this.backLinks,
+      topicIds: topicIds ?? this.topicIds,
+      topicNames: topicNames ?? this.topicNames,
+      strokes: strokes ?? this.strokes,
     );
   }
 
@@ -90,6 +115,9 @@ class LocalNote extends HiveObject {
       'linkedItemId': linkedItemId,
       'linkedItemType': linkedItemType,
       'tags': tags,
+      'backLinks': backLinks,
+      'topicIds': topicIds,
+      'topicNames': topicNames,
     };
   }
 
@@ -105,7 +133,11 @@ class LocalNote extends HiveObject {
       linkedItemId: data['linkedItemId'],
       linkedItemType: data['linkedItemType'],
       tags: List<String>.from(data['tags'] ?? []),
+      backLinks: List<String>.from(data['backLinks'] ?? []),
+      topicIds: List<String>.from(data['topicIds'] ?? []),
+      topicNames: List<String>.from(data['topicNames'] ?? []),
       isSynced: true,
+      strokes: [], // Strokes are local only for now to save bandwidth
     );
   }
 }

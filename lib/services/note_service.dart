@@ -46,7 +46,7 @@ class NoteService {
     await init();
     yield _notesBox.values.where((n) => n.userId == userId).toList()
       ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-    
+
     await for (final _ in _notesBox.watch()) {
       yield _notesBox.values.where((n) => n.userId == userId).toList()
         ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
@@ -66,7 +66,8 @@ class NoteService {
   Future<void> deleteNote(String id) async {
     await init();
     // Delete associated recordings first
-    final associatedRecordings = _recordingsBox.values.where((r) => r.noteId == id).toList();
+    final associatedRecordings =
+        _recordingsBox.values.where((r) => r.noteId == id).toList();
     for (final rec in associatedRecordings) {
       await deleteRecording(rec.id);
     }

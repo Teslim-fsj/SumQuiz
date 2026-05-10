@@ -78,6 +78,7 @@ class NotificationTrigger extends StatelessWidget {
   static Future<void> onDailyMissionGenerated(
     BuildContext context, {
     required String userId,
+    required String userName,
     required String preferredStudyTime,
     required int cardCount,
     required int estimatedMinutes,
@@ -89,6 +90,7 @@ class NotificationTrigger extends StatelessWidget {
 
     await notificationManager.scheduleDailyMissionPriming(
       userId: userId,
+      userName: userName,
       preferredStudyTime: preferredStudyTime,
       cardCount: cardCount,
       estimatedMinutes: estimatedMinutes,

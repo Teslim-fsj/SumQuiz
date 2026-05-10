@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/user_model.dart';
+import '../../widgets/sumi_mascot.dart';
+import '../../models/sumi_emotion.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -131,9 +133,44 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             bottom: MediaQuery.of(context).padding.bottom + 16,
             child: _buildBottomControls(cs),
           ),
+
+          // Sumi floating at the bottom right corner
+          Positioned(
+            bottom: MediaQuery.of(context).padding.bottom + 80,
+            right: -20, // Slightly off-screen to look like she's peeking
+            child: AnimatedOpacity(
+              opacity: _currentPage < 3 ? 1.0 : 0.0,
+              duration: 300.ms,
+              child: IgnorePointer( // Don't block taps
+                child: SumiMascot(
+                  state: _getSumiStateForPage(_currentPage),
+                  size: 140,
+                  dialogue: _getSumiDialogueForPage(_currentPage),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  SumiState _getSumiStateForPage(int page) {
+    switch (page) {
+      case 0: return SumiState.idle;
+      case 1: return SumiState.analytical;
+      case 2: return SumiState.streakBoost;
+      default: return SumiState.idle;
+    }
+  }
+
+  String _getSumiDialogueForPage(int page) {
+    switch (page) {
+      case 0: return "I'm Sumi! I'll help you master any subject.";
+      case 1: return "Just paste a link, and I'll create a quiz for you!";
+      case 2: return "Become a superhuman learner!";
+      default: return "";
+    }
   }
 
   // ───────────────────────────────────────────────────────────

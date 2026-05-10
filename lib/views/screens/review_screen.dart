@@ -18,13 +18,19 @@ import '../../services/mission_service.dart';
 import '../../services/user_service.dart';
 import 'flashcards_screen.dart';
 import 'summary_screen.dart';
-import 'quiz_screen.dart';
-import '../../models/local_summary.dart';
-import '../../models/local_quiz.dart';
-import '../../models/local_flashcard_set.dart';
+import '../../services/mastery/recommendation_service.dart';
 import 'package:sumquiz/views/screens/spaced_repetition_screen.dart';
 import '../../services/spaced_repetition_service.dart';
 import 'package:rxdart/rxdart.dart';
+import '../../providers/sumi_provider.dart';
+import '../../services/mastery/sumi_tutor_service.dart';
+import '../widgets/sumi_live_sandbox_overlay.dart';
+import '../../models/sumi_emotion.dart';
+import '../../widgets/sumi_mascot.dart';
+import '../../models/local_summary.dart';
+import '../../models/local_quiz.dart';
+import '../../models/local_flashcard_set.dart';
+import 'quiz_screen.dart';
 
 class ReviewScreen extends StatefulWidget {
   final bool autoStartMission;
@@ -73,7 +79,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
       _loadMission(),
       _loadSrsStats(),
     ]);
-    
+
     // Auto-start mission if requested via deep link
     if (widget.autoStartMission) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -176,7 +182,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
             SnackBar(
               content: Text(
                 'Mission flashcards could not be found locally. Please try syncing again.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white),
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: Colors.white),
               ),
               backgroundColor: Colors.orange,
               duration: const Duration(seconds: 4),
@@ -421,6 +430,54 @@ class _ReviewScreenState extends State<ReviewScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Quick Tutor Sandbox Trigger
+          // _buildQuickTutorTrigger(theme),
+          const SizedBox(height: 16),
+
+          // Sumi Tutor Proactive Section
+          Center(
+            child: Consumer<SumiProvider>(
+              builder: (context, sumi, child) {
+                final isSuperMode = sumi.currentState == SumiState.analytical;
+
+                return Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    if (isSuperMode)
+                      Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: theme.colorScheme.primary.withOpacity(0.4),
+                              blurRadius: 40,
+                              spreadRadius: 10,
+                            ),
+                          ],
+                        ),
+                      )
+                          .animate(onPlay: (c) => c.repeat(reverse: true))
+                          .scale(
+                              duration: 1.seconds,
+                              begin: const Offset(0.8, 0.8),
+                              end: const Offset(1.2, 1.2))
+                          .shimmer(
+                              color:
+                                  theme.colorScheme.primary.withOpacity(0.2)),
+                    SumiMascot(
+                      state: sumi.currentState,
+                      size: 100,
+                      dialogue: sumi.dialogue,
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+
           // Premium Welcome Header
           Container(
             padding: EdgeInsets.all(isMobile ? 12 : 16),
@@ -631,7 +688,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
               ],
             ),
           ).animate().fadeIn(delay: 100.ms).slideX(),
-
+          const SizedBox(height: 16),
+          _buildBrainState(user, theme),
           SizedBox(height: isMobile ? 16 : 24),
 
           // Premium Stats Row
@@ -1455,5 +1513,242 @@ class _ReviewScreenState extends State<ReviewScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
+  }
+
+  Widget _buildBrainState(UserModel? user, ThemeData theme) {
+    if (user == null) return const SizedBox.shrink();
+
+    return Consumer<RecommendationService>(
+      builder: (context, recService, child) {
+        final recs = recService.getDailyRecommendations(user.uid);
+
+        if (recs.isEmpty) return const SizedBox.shrink();
+
+        // Trigger Sumi Alert if we have high-priority recommendations
+        if (recs.any((r) => r.priorityScore > 0.6)) {
+          final tutor = context.read<SumiTutorService>();
+          final greeting = tutor.getProactiveGreeting(
+              user.uid, user.displayName ?? 'Student');
+
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final sumi = context.read<SumiProvider>();
+            sumi.showTutorMessage(greeting, state: SumiState.analytical);
+          });
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Row(
+                children: [
+                  Image.asset('assets/images/sumi.png', width: 24, height: 24),
+                  const SizedBox(width: 8),
+                  Text("Today's Brain State",
+                      style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Premium Live Sandbox Trigger
+            GestureDetector(
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => const SumiLiveSandboxOverlay(),
+                );
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      theme.colorScheme.primary,
+                      theme.colorScheme.secondary,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: theme.colorScheme.primary.withOpacity(0.3),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.mic_none_rounded,
+                          color: Colors.white, size: 28),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Sumi Live Sandbox",
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            "Instant voice tutoring from any resource",
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.white.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios,
+                        color: Colors.white, size: 16),
+                  ],
+                ),
+              )
+                  .animate(onPlay: (c) => c.repeat())
+                  .shimmer(duration: 3.seconds, color: Colors.white24),
+            ),
+
+            const SizedBox(height: 24),
+            SizedBox(
+              height: 140,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: recs.length,
+                itemBuilder: (context, index) {
+                  final rec = recs[index];
+                  return Container(
+                    width: 260,
+                    margin: const EdgeInsets.only(right: 12),
+                    child: _buildGlassCard(
+                      theme: theme,
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              _getRecommendationIcon(rec.type, theme),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  rec.topic.name,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            rec.description,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurface
+                                    .withOpacity(0.7)),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const Spacer(),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 32,
+                            child: ElevatedButton(
+                              onPressed: () =>
+                                  _handleRecommendationAction(context, rec),
+                              style: ElevatedButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8)),
+                                backgroundColor:
+                                    theme.colorScheme.primary.withOpacity(0.1),
+                                foregroundColor: theme.colorScheme.primary,
+                                elevation: 0,
+                              ),
+                              child: Text(rec.actionLabel,
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _getRecommendationIcon(RecommendationType type, ThemeData theme) {
+    IconData icon;
+    Color color;
+
+    switch (type) {
+      case RecommendationType.quickRefresh:
+        icon = Icons.bolt_rounded;
+        color = Colors.amber;
+        break;
+      case RecommendationType.weaknessDrill:
+        icon = Icons.biotech_rounded;
+        color = Colors.redAccent;
+        break;
+      case RecommendationType.deepDive:
+        icon = Icons.auto_stories_rounded;
+        color = Colors.blueAccent;
+        break;
+      case RecommendationType.stableMaintenance:
+        icon = Icons.verified_user_rounded;
+        color = Colors.greenAccent;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, color: color, size: 16),
+    );
+  }
+
+  void _handleRecommendationAction(
+      BuildContext context, StudyRecommendation rec) {
+    switch (rec.type) {
+      case RecommendationType.quickRefresh:
+      case RecommendationType.weaknessDrill:
+        // Navigate to Quiz/Flashcards for this topic
+        // For now, go to the content generation screen to create more or library
+        context.push('/library');
+        break;
+      case RecommendationType.deepDive:
+        context.push('/library');
+        break;
+      case RecommendationType.stableMaintenance:
+        context.push('/library');
+        break;
+    }
   }
 }

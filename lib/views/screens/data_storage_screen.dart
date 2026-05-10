@@ -209,8 +209,8 @@ class DataStorageScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color: theme.colorScheme.primary.withOpacity(0.05),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-                color: theme.colorScheme.primary.withOpacity(0.1)),
+            border:
+                Border.all(color: theme.colorScheme.primary.withOpacity(0.1)),
           ),
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -385,8 +385,7 @@ class DataStorageScreen extends StatelessWidget {
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(24)),
                 border: Border(
-                  top:
-                      BorderSide(color: theme.cardColor.withOpacity(0.6)),
+                  top: BorderSide(color: theme.cardColor.withOpacity(0.6)),
                 ),
               ),
               padding: const EdgeInsets.all(24.0),
@@ -534,7 +533,6 @@ class DataStorageScreen extends StatelessWidget {
       ),
     );
   }
-
 
   Future<double> _calculateStorageUsage(
       LocalDatabaseService localDB, String userId) async {

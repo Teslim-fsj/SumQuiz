@@ -42,7 +42,8 @@ class ContentFolder extends HiveObject {
       folderId: data['folderId'] ?? '',
       contentType: data['contentType'] ?? '',
       userId: data['userId'] ?? '',
-      assignedAt: (data['assignedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      assignedAt:
+          (data['assignedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 

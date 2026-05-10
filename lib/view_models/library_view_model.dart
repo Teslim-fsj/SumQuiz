@@ -32,7 +32,7 @@ class LibraryViewModel with ChangeNotifier {
   late Stream<List<LibraryItem>> allNotes$;
   late Stream<List<LibraryItem>> allRecentlyViewed$;
   late Stream<List<Folder>> allFolders$;
-  
+
   // Composite streams
   late Stream<List<LibraryItem>> studyPack$;
 
@@ -53,7 +53,8 @@ class LibraryViewModel with ChangeNotifier {
     // Create independent streams for each content type from the database
     final allSummariesFromDb$ = localDb
         .watchAllSummaries(userId)
-        .map((summaries) => summaries.map(LibraryItem.fromLocalSummary).toList())
+        .map(
+            (summaries) => summaries.map(LibraryItem.fromLocalSummary).toList())
         .shareReplay(maxSize: 1);
 
     final allQuizzesAndExamsFromDb$ = localDb
@@ -96,8 +97,12 @@ class LibraryViewModel with ChangeNotifier {
         allQuizzesAndExamsFromDb$,
         allFlashcardsFromDb$,
         allNotesFromDb$,
-        (summaries, quizzes, flashcards, notes) =>
-            [...summaries, ...quizzes, ...flashcards, ...notes]).shareReplay(maxSize: 1);
+        (summaries, quizzes, flashcards, notes) => [
+              ...summaries,
+              ...quizzes,
+              ...flashcards,
+              ...notes
+            ]).shareReplay(maxSize: 1);
 
     // Study Pack combines summaries, quizzes, flashcards
     studyPack$ = Rx.combineLatest3<List<LibraryItem>, List<LibraryItem>,

@@ -46,7 +46,6 @@ class ProStatusWidget extends StatelessWidget {
                       : theme.colorScheme.onTertiaryContainer,
                 ),
               ),
-
               const Spacer(),
               if (!isPro)
                 Icon(

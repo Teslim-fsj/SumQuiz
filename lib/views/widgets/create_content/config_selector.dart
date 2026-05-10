@@ -39,17 +39,14 @@ class ConfigSelector extends StatelessWidget {
         const SizedBox(height: 12),
         _buildDifficultyOptions(context),
         const SizedBox(height: 24),
-        
         _buildSectionTitle(context, 'Volume of Materials'),
         const SizedBox(height: 12),
         _buildCountRow(context),
         const SizedBox(height: 24),
-
         _buildSectionTitle(context, 'Study Archetype'),
         const SizedBox(height: 12),
         _buildArchetypeOptions(context),
         const SizedBox(height: 24),
-
         _buildSectionTitle(context, 'Quiz Format'),
         const SizedBox(height: 12),
         _buildQuizTypeOptions(context),
@@ -92,18 +89,35 @@ class ConfigSelector extends StatelessWidget {
                 color: isSelected ? colorScheme.primary : theme.cardColor,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isSelected ? colorScheme.primary : colorScheme.onSurface.withOpacity(0.1),
+                  color: isSelected
+                      ? colorScheme.primary
+                      : colorScheme.onSurface.withOpacity(0.1),
                   width: 1.5,
                 ),
                 boxShadow: isSelected
-                    ? [BoxShadow(color: colorScheme.primary.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4))]
+                    ? [
+                        BoxShadow(
+                            color: colorScheme.primary.withOpacity(0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4))
+                      ]
                     : null,
               ),
               child: Column(
                 children: [
-                  Icon(opt.$3, color: isSelected ? Colors.white : colorScheme.onSurfaceVariant, size: 22),
+                  Icon(opt.$3,
+                      color: isSelected
+                          ? Colors.white
+                          : colorScheme.onSurfaceVariant,
+                      size: 22),
                   const SizedBox(height: 8),
-                  Text(opt.$2, style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w800, color: isSelected ? Colors.white : colorScheme.onSurface)),
+                  Text(opt.$2,
+                      style: GoogleFonts.outfit(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: isSelected
+                              ? Colors.white
+                              : colorScheme.onSurface)),
                 ],
               ),
             ),
@@ -120,9 +134,14 @@ class ConfigSelector extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('QUIZ ITEMS', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+              Text('QUIZ ITEMS',
+                  style: GoogleFonts.outfit(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey)),
               const SizedBox(height: 8),
-              _buildCompactCountSelector(context, const [5, 10, 15, 20], selectedQuizCount, onQuizCountChanged, 'Quiz Items'),
+              _buildCompactCountSelector(context, const [5, 10, 15, 20],
+                  selectedQuizCount, onQuizCountChanged, 'Quiz Items'),
             ],
           ),
         ),
@@ -131,9 +150,18 @@ class ConfigSelector extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('FLASHCARDS', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+              Text('FLASHCARDS',
+                  style: GoogleFonts.outfit(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey)),
               const SizedBox(height: 8),
-              _buildCompactCountSelector(context, const [10, 20, 30, 50], selectedFlashcardCount, onFlashcardCountChanged, 'Flashcards'),
+              _buildCompactCountSelector(
+                  context,
+                  const [10, 20, 30, 50],
+                  selectedFlashcardCount,
+                  onFlashcardCountChanged,
+                  'Flashcards'),
             ],
           ),
         ),
@@ -141,27 +169,37 @@ class ConfigSelector extends StatelessWidget {
     );
   }
 
-  Widget _buildCompactCountSelector(BuildContext context, List<int> values, int selected, ValueChanged<int> onChanged, String title) {
+  Widget _buildCompactCountSelector(BuildContext context, List<int> values,
+      int selected, ValueChanged<int> onChanged, String title) {
     final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: theme.brightness == Brightness.dark ? Colors.white10 : const Color(0xFFF3F4F6),
+        color: theme.brightness == Brightness.dark
+            ? Colors.white10
+            : const Color(0xFFF3F4F6),
         borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<int>(
           value: values.contains(selected) ? selected : null,
-          hint: Text('$selected', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+          hint: Text('$selected',
+              style: GoogleFonts.outfit(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary)),
           items: [
-            ...values.map((v) => DropdownMenuItem(value: v, child: Text('$v', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)))),
+            ...values.map((v) => DropdownMenuItem(
+                value: v,
+                child: Text('$v',
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.bold)))),
             DropdownMenuItem(
               value: -1,
               child: Row(
                 children: [
                   const Icon(Icons.edit_note_rounded, size: 18),
                   const SizedBox(width: 8),
-                  Text('Custom', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+                  Text('Custom',
+                      style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -180,7 +218,8 @@ class ConfigSelector extends StatelessWidget {
     );
   }
 
-  void _showCustomCountDialog(BuildContext context, String title, int current, ValueChanged<int> onChanged) {
+  void _showCustomCountDialog(BuildContext context, String title, int current,
+      ValueChanged<int> onChanged) {
     final controller = TextEditingController(text: current.toString());
     showDialog(
       context: context,
@@ -196,7 +235,9 @@ class ConfigSelector extends StatelessWidget {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               final val = int.tryParse(controller.text);
@@ -256,14 +297,26 @@ class ConfigSelector extends StatelessWidget {
             decoration: BoxDecoration(
               color: isSelected ? colorScheme.secondary : theme.cardColor,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isSelected ? colorScheme.secondary : colorScheme.onSurface.withOpacity(0.1)),
+              border: Border.all(
+                  color: isSelected
+                      ? colorScheme.secondary
+                      : colorScheme.onSurface.withOpacity(0.1)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(type.$2, color: isSelected ? Colors.white : colorScheme.onSurfaceVariant, size: 16),
+                Icon(type.$2,
+                    color: isSelected
+                        ? Colors.white
+                        : colorScheme.onSurfaceVariant,
+                    size: 16),
                 const SizedBox(width: 8),
-                Text(type.$1, style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w700, color: isSelected ? Colors.white : colorScheme.onSurface)),
+                Text(type.$1,
+                    style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color:
+                            isSelected ? Colors.white : colorScheme.onSurface)),
               ],
             ),
           ),
@@ -297,28 +350,43 @@ class _ArchetypeMobileCard extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primary.withOpacity(0.05) : Colors.white,
+          color:
+              isSelected ? colorScheme.primary.withOpacity(0.05) : Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? colorScheme.primary : const Color(0xFFE5E7EB), width: 1.5),
+          border: Border.all(
+              color: isSelected ? colorScheme.primary : const Color(0xFFE5E7EB),
+              width: 1.5),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: isSelected ? colorScheme.primary : const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(12)),
-              child: Icon(icon, color: isSelected ? Colors.white : colorScheme.primary, size: 20),
+              decoration: BoxDecoration(
+                  color: isSelected
+                      ? colorScheme.primary
+                      : const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon,
+                  color: isSelected ? Colors.white : colorScheme.primary,
+                  size: 20),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.bold)),
-                  Text(description, style: GoogleFonts.outfit(fontSize: 11, color: Colors.grey[600])),
+                  Text(title,
+                      style: GoogleFonts.outfit(
+                          fontSize: 15, fontWeight: FontWeight.bold)),
+                  Text(description,
+                      style: GoogleFonts.outfit(
+                          fontSize: 11, color: Colors.grey[600])),
                 ],
               ),
             ),
-            if (isSelected) const Icon(Icons.check_circle_rounded, color: Colors.green, size: 20),
+            if (isSelected)
+              const Icon(Icons.check_circle_rounded,
+                  color: Colors.green, size: 20),
           ],
         ),
       ),

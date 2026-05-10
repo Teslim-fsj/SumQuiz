@@ -313,8 +313,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                           ?.copyWith(fontWeight: FontWeight.bold)),
                   subtitle: Text('Question ${widget.index + 1}',
                       style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withOpacity(0.6))),
+                          color: theme.colorScheme.onSurface.withOpacity(0.6))),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -327,8 +326,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                         _isExpanded
                             ? Icons.keyboard_arrow_up
                             : Icons.keyboard_arrow_down,
-                        color:
-                            theme.colorScheme.onSurface.withOpacity(0.6),
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ],
                   ),
@@ -339,8 +337,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     child: Column(
                       children: [
-                        Divider(
-                            color: theme.dividerColor.withOpacity(0.2)),
+                        Divider(color: theme.dividerColor.withOpacity(0.2)),
                         const SizedBox(height: 8),
                         // Question Text Input
                         _buildGlassInput(
@@ -445,8 +442,8 @@ class _QuestionEditorState extends State<_QuestionEditor> {
           fontWeight: isCorrect ? FontWeight.bold : FontWeight.normal),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(
-            color: theme.colorScheme.onSurface.withOpacity(0.6)),
+        labelStyle:
+            TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
         filled: true,
         fillColor: isCorrect
             ? Colors.green.withOpacity(0.1)

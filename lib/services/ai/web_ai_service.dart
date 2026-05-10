@@ -29,30 +29,39 @@ class WebAIService extends AIBaseService {
     developer.log('Tier 1: Attempting native Gemini grounding for $url',
         name: 'WebAIService');
     try {
-      final geminiResult = await _analyzeWithGemini(url, cancelToken: cancelToken)
-          .timeout(const Duration(seconds: AIConfig.webpageTimeoutSeconds + 30));
-      
+      final geminiResult =
+          await _analyzeWithGemini(url, cancelToken: cancelToken).timeout(
+              const Duration(seconds: AIConfig.webpageTimeoutSeconds + 30));
+
       if (geminiResult != null && geminiResult.text.length > 500) {
         developer.log('Tier 1 succeeded with grounding.', name: 'WebAIService');
         return Result.ok(geminiResult);
       }
-      developer.log('Tier 1 result sparse, attempting Tier 2 (HTML parsing)', name: 'WebAIService');
+      developer.log('Tier 1 result sparse, attempting Tier 2 (HTML parsing)',
+          name: 'WebAIService');
     } on CancelledException {
       return Result.error(EnhancedAIServiceException(
           'Extraction cancelled by user.',
           code: 'CANCELLED'));
     } on TimeoutException {
-      developer.log('Tier 1 (Gemini grounding) timed out for $url. Falling back to Tier 2.', name: 'WebAIService');
+      developer.log(
+          'Tier 1 (Gemini grounding) timed out for $url. Falling back to Tier 2.',
+          name: 'WebAIService');
     } catch (e) {
-      developer.log('Tier 1 (Gemini grounding) failed for $url: $e. Falling back to Tier 2.', name: 'WebAIService', error: e);
+      developer.log(
+          'Tier 1 (Gemini grounding) failed for $url: $e. Falling back to Tier 2.',
+          name: 'WebAIService',
+          error: e);
     }
 
     // ── Tier 2: Traditional HTML Parsing fallback ──
-    developer.log('Tier 2: Attempting traditional HTML parsing for $url', name: 'WebAIService');
+    developer.log('Tier 2: Attempting traditional HTML parsing for $url',
+        name: 'WebAIService');
     try {
       final doc = await _fetchDocument(url);
       if (doc == null) {
-        return Result.error(EnhancedAIServiceException('Failed to fetch webpage or non-HTML content',
+        return Result.error(EnhancedAIServiceException(
+            'Failed to fetch webpage or non-HTML content',
             code: 'FETCH_FAILED'));
       }
 
@@ -67,7 +76,8 @@ class WebAIService extends AIBaseService {
         ));
       }
 
-      developer.log('Tier 2 succeeded with HTML parsing.', name: 'WebAIService');
+      developer.log('Tier 2 succeeded with HTML parsing.',
+          name: 'WebAIService');
       return Result.ok(ExtractionResult(
         text: mainContent,
         suggestedTitle: title,
@@ -79,7 +89,8 @@ class WebAIService extends AIBaseService {
           code: 'CANCELLED'));
     } catch (e) {
       developer.log('Tier 2 failed: $e', name: 'WebAIService', error: e);
-      return Result.error(EnhancedAIServiceException('Web extraction failed: $e'));
+      return Result.error(
+          EnhancedAIServiceException('Web extraction failed: $e'));
     }
   }
 
@@ -146,14 +157,13 @@ OUTPUT (JSON):
   /// Private helper to fetch and parse HTML document
   Future<html.Document?> _fetchDocument(String url) async {
     try {
-      final response = await http
-          .get(Uri.parse(url), headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          })
-          .timeout(Duration(seconds: AIConfig.webpageTimeoutSeconds));
+      final response = await http.get(Uri.parse(url), headers: {
+        'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      }).timeout(Duration(seconds: AIConfig.webpageTimeoutSeconds));
 
       if (response.statusCode != 200) return null;
-      
+
       final contentType = response.headers['content-type'] ?? '';
       if (!contentType.toLowerCase().contains('text/html')) return null;
 
@@ -168,9 +178,20 @@ OUTPUT (JSON):
   String _extractMainContent(html.Document document) {
     // Remove unwanted elements
     final unwantedSelectors = [
-      'script', 'style', 'nav', 'footer', 'header', 'aside', 'iframe', 
-      'noscript', 'form', '.advertisement', '.ad', '.social-share', 
-      '.comments', '.related-posts'
+      'script',
+      'style',
+      'nav',
+      'footer',
+      'header',
+      'aside',
+      'iframe',
+      'noscript',
+      'form',
+      '.advertisement',
+      '.ad',
+      '.social-share',
+      '.comments',
+      '.related-posts'
     ];
 
     for (var selector in unwantedSelectors) {

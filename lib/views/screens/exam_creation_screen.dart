@@ -1216,9 +1216,10 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
             ? _customLevelController.text
             : _selectedLevel,
         questionCount: _numberOfQuestions,
-        easyCount: ((1.0 - _difficultyValue) * _numberOfQuestions * 0.7).round(),
-        mediumCount: (_numberOfQuestions - 
-            ((1.0 - _difficultyValue) * _numberOfQuestions * 0.7).round() - 
+        easyCount:
+            ((1.0 - _difficultyValue) * _numberOfQuestions * 0.7).round(),
+        mediumCount: (_numberOfQuestions -
+            ((1.0 - _difficultyValue) * _numberOfQuestions * 0.7).round() -
             (_difficultyValue * _numberOfQuestions * 0.7).round()),
         hardCount: (_difficultyValue * _numberOfQuestions * 0.7).round(),
         questionTypes: questionTypes,
@@ -2126,7 +2127,8 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
         config: config,
       );
       final bytes = await studentPaper.save();
-      final fileName = '${widget.examTitle.replaceAll(' ', '_')}_Exam_Paper.pdf';
+      final fileName =
+          '${widget.examTitle.replaceAll(' ', '_')}_Exam_Paper.pdf';
 
       if (mounted) {
         setState(() => _isProcessing = false);

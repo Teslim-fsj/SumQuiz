@@ -4,10 +4,10 @@ void main(List<String> args) {
   if (args.isEmpty) return;
   final file = File(args[0]);
   final content = file.readAsStringSync();
-  
+
   final stack = <Map<String, dynamic>>[];
   final pairs = {'(': ')', '{': '}', '[': ']'};
-  
+
   for (var i = 0; i < content.length; i++) {
     final char = content[i];
     if (char == '(' || char == '{' || char == '[') {
@@ -20,13 +20,14 @@ void main(List<String> args) {
       }
       final top = stack.removeLast();
       if (pairs[top['char']] != char) {
-        print("Mismatched '$char' at position $i, expected '${pairs[top['char']]}' to match '${top['char']}' from position ${top['pos']}");
+        print(
+            "Mismatched '$char' at position $i, expected '${pairs[top['char']]}' to match '${top['char']}' from position ${top['pos']}");
         printContext(content, i);
         return;
       }
     }
   }
-  
+
   if (stack.isNotEmpty) {
     for (final item in stack) {
       print("Unclosed '${item['char']}' from position ${item['pos']}");

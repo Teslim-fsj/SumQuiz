@@ -4,7 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:sumquiz/theme/web_theme.dart';
 
 class SharedTeacherWidgets {
-  static Widget moduleHeader(String title, String subtitle, {bool isMobile = false}) {
+  static Widget moduleHeader(String title, String subtitle,
+      {bool isMobile = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -21,7 +22,8 @@ class SharedTeacherWidgets {
     );
   }
 
-  static Widget sectionCard({required String title, required IconData icon, required Widget child}) {
+  static Widget sectionCard(
+      {required String title, required IconData icon, required Widget child}) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -88,7 +90,8 @@ class SharedTeacherWidgets {
       ),
       child: Column(
         children: [
-          const Icon(Icons.inbox_outlined, size: 48, color: WebColors.textTertiary),
+          const Icon(Icons.inbox_outlined,
+              size: 48, color: WebColors.textTertiary),
           const SizedBox(height: 16),
           Text(title,
               style: GoogleFonts.outfit(

@@ -402,7 +402,8 @@ class FirestoreService {
             .collection('notes')
             .doc(item.id)
             .get();
-        return LocalNote.fromFirestore(doc.id, doc.data() as Map<String, dynamic>);
+        return LocalNote.fromFirestore(
+            doc.id, doc.data() as Map<String, dynamic>);
       case LibraryItemType.exam:
         doc = await _db
             .collection('users')
@@ -435,7 +436,7 @@ class FirestoreService {
   }
 
   // CREATOR TOOLS
-  
+
   String _generateSlug(String title) {
     // Basic slugification: lower case, replace spaces with dashes, remove special chars
     final base = title
@@ -443,9 +444,10 @@ class FirestoreService {
         .replaceAll(RegExp(r'[^a-z0-9\s-]'), '')
         .replaceAll(RegExp(r'\s+'), '-')
         .trim();
-    
+
     // Add 4 chars of entropy to ensure high likelihood of uniqueness
-    final entropy = DateTime.now().millisecondsSinceEpoch.toString().substring(9);
+    final entropy =
+        DateTime.now().millisecondsSinceEpoch.toString().substring(9);
     return '$base-$entropy';
   }
 

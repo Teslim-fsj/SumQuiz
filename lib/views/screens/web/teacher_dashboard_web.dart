@@ -88,7 +88,9 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
   }
 
   void _onModuleChanged() {
-    if ((_activeModule == _NavModule.analytics || _activeModule == _NavModule.students) && _trends.isEmpty) {
+    if ((_activeModule == _NavModule.analytics ||
+            _activeModule == _NavModule.students) &&
+        _trends.isEmpty) {
       _loadTrends();
       for (final deck in _content) {
         _loadAnalyticsForContent(deck);
@@ -120,7 +122,13 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
       final results = await Future.wait([
         _svc.getTeacherStats(_uid!).catchError((e) {
           debugPrint('Stats Load Error: $e');
-          return TeacherStats(totalExams: 0, totalStudyPacks: 0, totalStudents: 0, activeStudents: 0, averageScore: 0, totalAttempts: 0);
+          return TeacherStats(
+              totalExams: 0,
+              totalStudyPacks: 0,
+              totalStudents: 0,
+              activeStudents: 0,
+              averageScore: 0,
+              totalAttempts: 0);
         }),
         _svc.getTeacherContent(_uid!).catchError((e) {
           debugPrint('Content Load Error: $e');
@@ -134,12 +142,19 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
           debugPrint('Activity Load Error: $e');
           return <ActivityItem>[];
         }),
-      ]).timeout(const Duration(seconds: 10), onTimeout: () => [
-        TeacherStats(totalExams: 0, totalStudyPacks: 0, totalStudents: 0, activeStudents: 0, averageScore: 0, totalAttempts: 0),
-        <PublicDeck>[],
-        <StudentLink>[],
-        <ActivityItem>[],
-      ]);
+      ]).timeout(const Duration(seconds: 10),
+          onTimeout: () => [
+                TeacherStats(
+                    totalExams: 0,
+                    totalStudyPacks: 0,
+                    totalStudents: 0,
+                    activeStudents: 0,
+                    averageScore: 0,
+                    totalAttempts: 0),
+                <PublicDeck>[],
+                <StudentLink>[],
+                <ActivityItem>[],
+              ]);
 
       if (!mounted) return;
       setState(() {
@@ -149,7 +164,8 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
         _activity = results[3] as List<ActivityItem>;
       });
 
-      if (_activeModule == _NavModule.analytics || _activeModule == _NavModule.students) {
+      if (_activeModule == _NavModule.analytics ||
+          _activeModule == _NavModule.students) {
         _loadTrends();
       }
     } catch (e) {
@@ -157,7 +173,13 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
       // Set default stats so UI can render
       if (mounted && _stats == null) {
         setState(() {
-          _stats = TeacherStats(totalExams: 0, totalStudyPacks: 0, totalStudents: 0, activeStudents: 0, averageScore: 0, totalAttempts: 0);
+          _stats = TeacherStats(
+              totalExams: 0,
+              totalStudyPacks: 0,
+              totalStudents: 0,
+              activeStudents: 0,
+              averageScore: 0,
+              totalAttempts: 0);
         });
       }
     } finally {
@@ -196,7 +218,8 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
         return;
       }
 
-      final result = await ai.generatePedagogicalInsights(failureData: buffer.toString());
+      final result =
+          await ai.generatePedagogicalInsights(failureData: buffer.toString());
       if (mounted) {
         setState(() {
           _feedbackInsight = result;
@@ -219,7 +242,9 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
   Widget build(BuildContext context) {
     final userModel = context.watch<UserModel?>();
     // Allow access if user is Pro OR if they are a Creator (Teacher)
-    if (userModel != null && !userModel.isPro && userModel.role != UserRole.creator) {
+    if (userModel != null &&
+        !userModel.isPro &&
+        userModel.role != UserRole.creator) {
       return _buildUpgradeView();
     }
 
@@ -240,11 +265,13 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline_rounded, size: 48, color: theme.colorScheme.error),
+          Icon(Icons.error_outline_rounded,
+              size: 48, color: theme.colorScheme.error),
           const SizedBox(height: 16),
           Text(
             'Failed to load dashboard data',
-            style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold),
+            style:
+                GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           ElevatedButton(
@@ -297,7 +324,10 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
                         labelColor: Theme.of(context).colorScheme.primary,
                         unselectedLabelColor: Colors.grey,
                         indicatorColor: Theme.of(context).colorScheme.primary,
-                        tabs: const [Tab(text: 'Roster'), Tab(text: 'Analytics')],
+                        tabs: const [
+                          Tab(text: 'Roster'),
+                          Tab(text: 'Analytics')
+                        ],
                       ),
                     ),
                     Expanded(
@@ -373,8 +403,7 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
                   'Manually link a student to your content using its share code.',
                   style: GoogleFonts.outfit(
                       fontSize: 13,
-                      color:
-                          theme.colorScheme.onSurface.withOpacity(0.6))),
+                      color: theme.colorScheme.onSurface.withOpacity(0.6))),
               const SizedBox(height: 20),
               TextField(
                 controller: emailController,
@@ -492,7 +521,12 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(32),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 4))],
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 4))
+          ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -542,5 +576,4 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
       ).animate().fadeIn().scale(),
     );
   }
-
 }

@@ -609,8 +609,10 @@ class _ContentManagerState extends State<ContentManager> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _statBubble(Icons.article, 'Summary'),
-                _statBubble(Icons.quiz, '${(deck.quizData['questions'] as List?)?.length ?? 0} Questions'),
-                _statBubble(Icons.style, '${(deck.flashcardData['flashcards'] as List?)?.length ?? 0} Cards'),
+                _statBubble(Icons.quiz,
+                    '${(deck.quizData['questions'] as List?)?.length ?? 0} Questions'),
+                _statBubble(Icons.style,
+                    '${(deck.flashcardData['flashcards'] as List?)?.length ?? 0} Cards'),
               ],
             )
           ],

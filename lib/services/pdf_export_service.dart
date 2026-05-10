@@ -81,12 +81,13 @@ class PdfExportService {
     final PdfPage page = document.pages.add();
     final PdfGraphics graphics = page.graphics;
     final PdfFont font = PdfStandardFont(PdfFontFamily.helvetica, 12);
-    final PdfFont questionFont = PdfStandardFont(PdfFontFamily.helvetica, 14, style: PdfFontStyle.bold);
+    final PdfFont questionFont =
+        PdfStandardFont(PdfFontFamily.helvetica, 14, style: PdfFontStyle.bold);
 
     double y = 0;
     for (var i = 0; i < quiz.questions.length; i++) {
       final question = quiz.questions[i];
-      
+
       // Check for page overflow (simple approximation)
       if (y > page.getClientSize().height - 150) {
         // Add new page if likely to overflow
@@ -94,7 +95,8 @@ class PdfExportService {
         // but for this simple fix we'll just be more conservative with space.
       }
 
-      graphics.drawString('Question ${i + 1}: ${question.question}', questionFont,
+      graphics.drawString(
+          'Question ${i + 1}: ${question.question}', questionFont,
           bounds: Rect.fromLTWH(0, y, page.getClientSize().width, 50));
       y += 55;
 
@@ -129,7 +131,8 @@ class PdfExportService {
     final PdfPage page = document.pages.add();
     final PdfGraphics graphics = page.graphics;
     final PdfFont font = PdfStandardFont(PdfFontFamily.helvetica, 12);
-    final PdfFont termFont = PdfStandardFont(PdfFontFamily.helvetica, 14, style: PdfFontStyle.bold);
+    final PdfFont termFont =
+        PdfStandardFont(PdfFontFamily.helvetica, 14, style: PdfFontStyle.bold);
 
     double y = 0;
     for (final flashcard in flashcardSet.flashcards) {
@@ -139,8 +142,9 @@ class PdfExportService {
       graphics.drawString('Definition: ${flashcard.answer}', font,
           bounds: Rect.fromLTWH(0, y, page.getClientSize().width, 50));
       y += 60;
-      
-      graphics.drawLine(PdfPens.gray, Offset(0, y), Offset(page.getClientSize().width, y));
+
+      graphics.drawLine(
+          PdfPens.gray, Offset(0, y), Offset(page.getClientSize().width, y));
       y += 15;
     }
 

@@ -146,7 +146,6 @@ class _LibraryViewState extends State<_LibraryView>
     });
   }
 
-
   @override
   void dispose() {
     _mainTabController.dispose();
@@ -184,10 +183,14 @@ class _LibraryViewState extends State<_LibraryView>
                     key: const ValueKey('main_tab_view'),
                     controller: _mainTabController,
                     children: [
-                      _buildContentList(viewModel.allItems$, theme, viewModel), // All
-                      _buildFolderList(viewModel, theme), // Study Pack (Folders)
-                      _buildContentList(viewModel.allNotes$, theme, viewModel), // Notes
-                      _buildContentList(viewModel.allExams$, theme, viewModel), // Exams
+                      _buildContentList(
+                          viewModel.allItems$, theme, viewModel), // All
+                      _buildFolderList(
+                          viewModel, theme), // Study Pack (Folders)
+                      _buildContentList(
+                          viewModel.allNotes$, theme, viewModel), // Notes
+                      _buildContentList(
+                          viewModel.allExams$, theme, viewModel), // Exams
                     ],
                   );
                 } else {
@@ -195,9 +198,18 @@ class _LibraryViewState extends State<_LibraryView>
                     key: const ValueKey('folder_tab_view'),
                     controller: _folderTabController,
                     children: [
-                      _buildContentList(viewModel.getFolderStudyPackStream(selectedFolder.id), theme, viewModel), // Study Pack
-                      _buildContentList(viewModel.getFolderNotesStream(selectedFolder.id), theme, viewModel), // Notes
-                      _buildContentList(viewModel.getFolderExamsStream(selectedFolder.id), theme, viewModel), // Exams
+                      _buildContentList(
+                          viewModel.getFolderStudyPackStream(selectedFolder.id),
+                          theme,
+                          viewModel), // Study Pack
+                      _buildContentList(
+                          viewModel.getFolderNotesStream(selectedFolder.id),
+                          theme,
+                          viewModel), // Notes
+                      _buildContentList(
+                          viewModel.getFolderExamsStream(selectedFolder.id),
+                          theme,
+                          viewModel), // Exams
                     ],
                   );
                 }
@@ -260,7 +272,8 @@ class _LibraryViewState extends State<_LibraryView>
               label: const Text('Import Deck via Code'),
               style: ElevatedButton.styleFrom(
                 elevation: 0,
-                backgroundColor: theme.colorScheme.primaryContainer.withAlpha(128),
+                backgroundColor:
+                    theme.colorScheme.primaryContainer.withAlpha(128),
                 foregroundColor: theme.colorScheme.primary,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
@@ -307,7 +320,8 @@ class _LibraryViewState extends State<_LibraryView>
       BuildContext context, ThemeData theme, LibraryViewModel viewModel) {
     final selectedFolder = viewModel.selectedFolder;
     return TabBar(
-      controller: selectedFolder == null ? _mainTabController : _folderTabController,
+      controller:
+          selectedFolder == null ? _mainTabController : _folderTabController,
       isScrollable: true,
       tabs: selectedFolder == null
           ? const [
@@ -374,16 +388,16 @@ class _LibraryViewState extends State<_LibraryView>
           itemBuilder: (context, index) {
             final folder = filteredFolders[index];
             return _buildGlassListTile(
-      title: folder.name,
-      subtitle: 'Created: ${folder.createdAt.toString().split(' ')[0]}',
-      icon: Icons.book,
-      iconColor: Colors.deepPurple,
-      theme: theme,
-      onTap: () => viewModel.selectFolder(folder),
-    )
-        .animate()
-        .fadeIn(delay: (50 * index).ms)
-        .slideY(begin: 0.1, duration: 300.ms);
+              title: folder.name,
+              subtitle: 'Created: ${folder.createdAt.toString().split(' ')[0]}',
+              icon: Icons.book,
+              iconColor: Colors.deepPurple,
+              theme: theme,
+              onTap: () => viewModel.selectFolder(folder),
+            )
+                .animate()
+                .fadeIn(delay: (50 * index).ms)
+                .slideY(begin: 0.1, duration: 300.ms);
           },
         );
       },
@@ -611,7 +625,7 @@ class _LibraryViewState extends State<_LibraryView>
                   ),
                   child: Icon(icon, color: iconColor, size: 20),
                 ),
-                 const SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -886,8 +900,10 @@ class _LibraryViewState extends State<_LibraryView>
 
       if (item.type == LibraryItemType.note) {
         if (context.mounted) {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (_) => NoteEditorScreen(noteId: item.id)));
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => NoteEditorScreen(noteId: item.id)));
         }
         return;
       }
@@ -1002,7 +1018,8 @@ class _LibraryViewState extends State<_LibraryView>
     }
   }
 
-  void _showAddContentOptions(BuildContext context, LibraryViewModel viewModel) {
+  void _showAddContentOptions(
+      BuildContext context, LibraryViewModel viewModel) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final selectedFolder = viewModel.selectedFolder;
@@ -1055,7 +1072,8 @@ class _LibraryViewState extends State<_LibraryView>
               onTap: () {
                 Navigator.pop(context);
                 // Navigate to CreateContentScreen with folder context
-                context.pushNamed('create-content', queryParameters: {'folderId': selectedFolder.id});
+                context.pushNamed('create-content',
+                    queryParameters: {'folderId': selectedFolder.id});
               },
             ),
             const SizedBox(height: 32),
@@ -1115,7 +1133,9 @@ class _LibraryViewState extends State<_LibraryView>
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+            Icon(Icons.chevron_right,
+                color:
+                    theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
           ],
         ),
       ),

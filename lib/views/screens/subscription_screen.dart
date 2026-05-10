@@ -19,7 +19,8 @@ class SubscriptionScreen extends StatefulWidget {
 
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
   bool _isCreatorMode = false;
-  final PageController _pageController = PageController(viewportFraction: 0.85, initialPage: 1);
+  final PageController _pageController =
+      PageController(viewportFraction: 0.85, initialPage: 1);
   int _currentPage = 1;
 
   final List<Map<String, dynamic>> _studentTiers = [
@@ -107,21 +108,22 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   @override
   Widget build(BuildContext context) {
     final subProvider = context.watch<SubscriptionProvider>();
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: _buildAppBar(),
-      body: subProvider.isLoading 
-        ? const Center(child: CircularProgressIndicator(color: WebColors.purplePrimary))
-        : LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth > 900) {
-                return _buildWebLayout();
-              } else {
-                return _buildMobileLayout();
-              }
-            },
-          ),
+      body: subProvider.isLoading
+          ? const Center(
+              child: CircularProgressIndicator(color: WebColors.purplePrimary))
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth > 900) {
+                  return _buildWebLayout();
+                } else {
+                  return _buildMobileLayout();
+                }
+              },
+            ),
     );
   }
 
@@ -177,7 +179,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: (_isCreatorMode ? _creatorTiers : _studentTiers).asMap().entries.map((entry) {
+              children: (_isCreatorMode ? _creatorTiers : _studentTiers)
+                  .asMap()
+                  .entries
+                  .map((entry) {
                 return Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -268,12 +273,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _toggleButton('Student', !_isCreatorMode, () => setState(() {
-            _isCreatorMode = false;
-          })),
-          _toggleButton('Creator', _isCreatorMode, () => setState(() {
-            _isCreatorMode = true;
-          })),
+          _toggleButton(
+              'Student',
+              !_isCreatorMode,
+              () => setState(() {
+                    _isCreatorMode = false;
+                  })),
+          _toggleButton(
+              'Creator',
+              _isCreatorMode,
+              () => setState(() {
+                    _isCreatorMode = true;
+                  })),
         ],
       ),
     );
@@ -287,13 +298,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         decoration: BoxDecoration(
           color: active ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
-          boxShadow: active ? [
-            BoxShadow(
-              color: Colors.black.withAlpha(12),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            )
-          ] : [],
+          boxShadow: active
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(12),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  )
+                ]
+              : [],
         ),
         child: Text(
           text,
@@ -307,7 +320,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-  Widget _buildTierCard(Map<String, dynamic> tier, int index, {required bool isWeb}) {
+  Widget _buildTierCard(Map<String, dynamic> tier, int index,
+      {required bool isWeb}) {
     bool isFeatured = tier['label'] == 'MOST CHOSEN';
     Color tierColor = tier['color'];
     final user = context.watch<UserModel?>();
@@ -316,13 +330,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     // Get real price from IAP if on mobile
     String displayPrice = tier['price'];
     if (!isWeb) {
-      final iapProduct = subProvider.products.where((p) => p.id == tier['id']).firstOrNull;
+      final iapProduct =
+          subProvider.products.where((p) => p.id == tier['id']).firstOrNull;
       if (iapProduct != null) {
         displayPrice = iapProduct.price;
       }
     }
 
-    bool isCurrentPlan = subProvider.currentProduct == tier['id'] && subProvider.isActive;
+    bool isCurrentPlan =
+        subProvider.currentProduct == tier['id'] && subProvider.isActive;
 
     return Container(
       padding: const EdgeInsets.all(32),
@@ -351,7 +367,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               right: 0,
               child: Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   decoration: BoxDecoration(
                     color: WebColors.purplePrimary,
                     borderRadius: BorderRadius.circular(8),
@@ -376,7 +393,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 style: GoogleFonts.outfit(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: isFeatured ? const Color(0xFF0F172A) : const Color(0xFF475569),
+                  color: isFeatured
+                      ? const Color(0xFF0F172A)
+                      : const Color(0xFF475569),
                 ),
               ),
               const SizedBox(height: 12),
@@ -405,51 +424,65 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              ...tier['features'].map<Widget>((f) => Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: tierColor.withAlpha(25),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.check, color: tierColor, size: 16),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        f,
-                        style: GoogleFonts.inter(
-                          fontSize: 15,
-                          color: const Color(0xFF475569),
-                          fontWeight: FontWeight.w500,
+              ...tier['features']
+                  .map<Widget>((f) => Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: tierColor.withAlpha(25),
+                                shape: BoxShape.circle,
+                              ),
+                              child:
+                                  Icon(Icons.check, color: tierColor, size: 16),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                f,
+                                style: GoogleFonts.inter(
+                                  fontSize: 15,
+                                  color: const Color(0xFF475569),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              )).toList(),
+                      ))
+                  .toList(),
               const Spacer(),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: isCurrentPlan ? null : () => _handlePurchase(tier, user),
+                  onPressed:
+                      isCurrentPlan ? null : () => _handlePurchase(tier, user),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isCurrentPlan 
-                      ? const Color(0xFF10B981) // Success green
-                      : (isFeatured ? WebColors.purplePrimary : (isWeb ? const Color(0xFFDBEAFE) : WebColors.purplePrimary)),
-                    foregroundColor: isCurrentPlan 
-                      ? Colors.white 
-                      : (isFeatured ? Colors.white : (isWeb ? WebColors.purplePrimary : Colors.white)),
+                    backgroundColor: isCurrentPlan
+                        ? const Color(0xFF10B981) // Success green
+                        : (isFeatured
+                            ? WebColors.purplePrimary
+                            : (isWeb
+                                ? const Color(0xFFDBEAFE)
+                                : WebColors.purplePrimary)),
+                    foregroundColor: isCurrentPlan
+                        ? Colors.white
+                        : (isFeatured
+                            ? Colors.white
+                            : (isWeb ? WebColors.purplePrimary : Colors.white)),
                     padding: const EdgeInsets.symmetric(vertical: 20),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     elevation: 0,
                   ),
                   child: Text(
-                    isCurrentPlan ? 'Current Plan' : (isWeb ? 'Get Started Now' : 'Select Plan'),
-                    style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16),
+                    isCurrentPlan
+                        ? 'Current Plan'
+                        : (isWeb ? 'Get Started Now' : 'Select Plan'),
+                    style: GoogleFonts.inter(
+                        fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
               ),
@@ -474,7 +507,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.stars_rounded, color: WebColors.purplePrimary, size: 28),
+            const Icon(Icons.stars_rounded,
+                color: WebColors.purplePrimary, size: 28),
             const SizedBox(width: 16),
             Flexible(
               child: Text(
@@ -493,10 +527,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return const SizedBox.shrink();
   }
 
-  Future<void> _handlePurchase(Map<String, dynamic> tier, UserModel? user) async {
+  Future<void> _handlePurchase(
+      Map<String, dynamic> tier, UserModel? user) async {
     final productId = tier['id'] as String;
     bool success = false;
-    
+
     if (kIsWeb && user != null) {
       final webService = WebPaymentService();
       final product = WebPaymentService.webProducts.firstWhere(
@@ -512,7 +547,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         user: user,
       );
     } else if (user != null) {
-      success = await context.read<SubscriptionProvider>().purchaseProduct(productId);
+      success =
+          await context.read<SubscriptionProvider>().purchaseProduct(productId);
       if (success && mounted) {
         _showAppreciationDialog();
       }
@@ -528,7 +564,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           children: [
             const SumiMascot(state: SumiState.streakBoost, size: 40),
             const SizedBox(width: 10),
-            Text('Thank You!', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+            Text('Thank You!',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
           ],
         ),
         content: Text(
@@ -542,7 +579,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: WebColors.purplePrimary,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
             ),
             child: const Text('Let\'s Go!'),
           ),
@@ -561,7 +599,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           height: 8,
           width: _currentPage == index ? 24 : 8,
           decoration: BoxDecoration(
-            color: _currentPage == index ? WebColors.purplePrimary : const Color(0xFFE2E8F0),
+            color: _currentPage == index
+                ? WebColors.purplePrimary
+                : const Color(0xFFE2E8F0),
             borderRadius: BorderRadius.circular(4),
           ),
         );
@@ -583,11 +623,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.verified_user_outlined, color: WebColors.purplePrimary, size: 24),
+              const Icon(Icons.verified_user_outlined,
+                  color: WebColors.purplePrimary, size: 24),
               const SizedBox(width: 12),
               Text(
                 'Satisfaction Guarantee',
-                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF0F172A)),
               ),
             ],
           ),
@@ -595,7 +639,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           Text(
             'Not seeing the results you expected? We offer a 14-day full refund policy\nfor any student who feels SumQuiz hasn\'t improved their revision efficiency.',
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(fontSize: 16, color: const Color(0xFF64748B), height: 1.5),
+            style: GoogleFonts.inter(
+                fontSize: 16, color: const Color(0xFF64748B), height: 1.5),
           ),
           const SizedBox(height: 40),
           Row(
@@ -645,9 +690,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           children: [
             const Icon(Icons.credit_card, color: Color(0xFF94A3B8), size: 32),
             const SizedBox(width: 24),
-            const Icon(Icons.account_balance, color: Color(0xFF94A3B8), size: 32),
+            const Icon(Icons.account_balance,
+                color: Color(0xFF94A3B8), size: 32),
             const SizedBox(width: 24),
-            const Icon(Icons.contactless_outlined, color: Color(0xFF94A3B8), size: 32),
+            const Icon(Icons.contactless_outlined,
+                color: Color(0xFF94A3B8), size: 32),
           ],
         ),
       ],
@@ -665,13 +712,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: WebColors.purplePrimary,
         unselectedItemColor: const Color(0xFF94A3B8),
-        selectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 12),
-        unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 12),
+        selectedLabelStyle:
+            GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 12),
+        unselectedLabelStyle:
+            GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 12),
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.menu_book_outlined), label: 'Study'),
-          BottomNavigationBarItem(icon: Icon(Icons.stars_outlined), label: 'Plans'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined), label: 'Home'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.menu_book_outlined), label: 'Study'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.stars_outlined), label: 'Plans'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline), label: 'Profile'),
         ],
         onTap: (index) {
           // Navigation logic

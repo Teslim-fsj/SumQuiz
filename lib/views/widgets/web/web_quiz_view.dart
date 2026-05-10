@@ -33,7 +33,7 @@ const _essayTypes = {
 bool _isEssayQuestion(LocalQuizQuestion q) {
   // If options are empty but we have a correct answer, it's likely a theory question
   if (q.options.isEmpty && q.correctAnswer.isNotEmpty) return true;
-  
+
   if (q.questionType == null) return false;
   return _essayTypes.contains(q.questionType!.toLowerCase().trim());
 }
@@ -92,10 +92,11 @@ class _WebQuizViewState extends State<WebQuizView> {
 
   void _submitAnswer() {
     if (_selectedIndex == null || _isAnswered) return;
-    
-    final isCorrect = widget.questions[_currentIndex].options[_selectedIndex!] == 
-                      widget.questions[_currentIndex].correctAnswer;
-    
+
+    final isCorrect =
+        widget.questions[_currentIndex].options[_selectedIndex!] ==
+            widget.questions[_currentIndex].correctAnswer;
+
     setState(() {
       _isAnswered = true;
     });
@@ -173,7 +174,8 @@ class _WebQuizViewState extends State<WebQuizView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.subtitle?.toUpperCase() ?? 'CELL BIOLOGY : MODULE 4',
+                      widget.subtitle?.toUpperCase() ??
+                          'CELL BIOLOGY : MODULE 4',
                       style: GoogleFonts.outfit(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
@@ -257,7 +259,8 @@ class _WebQuizViewState extends State<WebQuizView> {
                   currentQuestion.options[index],
                   _selectedIndex == index,
                   _isAnswered,
-                  currentQuestion.options[index] == currentQuestion.correctAnswer,
+                  currentQuestion.options[index] ==
+                      currentQuestion.correctAnswer,
                 ),
               ),
             ),
@@ -269,16 +272,22 @@ class _WebQuizViewState extends State<WebQuizView> {
           Row(
             children: [
               TextButton.icon(
-                onPressed: _currentIndex > 0 ? () => setState(() => _currentIndex--) : null,
+                onPressed: _currentIndex > 0
+                    ? () => setState(() => _currentIndex--)
+                    : null,
                 icon: const Icon(Icons.arrow_back_rounded),
-                label: Text('Previous', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
-                style: TextButton.styleFrom(foregroundColor: WebColors.textPrimary),
+                label: Text('Previous',
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
+                style: TextButton.styleFrom(
+                    foregroundColor: WebColors.textPrimary),
               ),
               const Spacer(),
               TextButton(
                 onPressed: _nextQuestion,
-                style: TextButton.styleFrom(foregroundColor: WebColors.textPrimary),
-                child: Text('Skip for now', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
+                style: TextButton.styleFrom(
+                    foregroundColor: WebColors.textPrimary),
+                child: Text('Skip for now',
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
               ),
               const SizedBox(width: 24),
               Container(
@@ -293,21 +302,35 @@ class _WebQuizViewState extends State<WebQuizView> {
                   boxShadow: WebColors.subtleShadow,
                 ),
                 child: ElevatedButton(
-                  onPressed: _isEssay 
-                      ? (_isAnswered ? _nextQuestion : (_essayController.text.isNotEmpty ? _verifyWithAI : null))
-                      : (_selectedIndex != null ? (_isAnswered ? _nextQuestion : _submitAnswer) : null),
+                  onPressed: _isEssay
+                      ? (_isAnswered
+                          ? _nextQuestion
+                          : (_essayController.text.isNotEmpty
+                              ? _verifyWithAI
+                              : null))
+                      : (_selectedIndex != null
+                          ? (_isAnswered ? _nextQuestion : _submitAnswer)
+                          : null),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     shadowColor: Colors.transparent,
                     padding: const EdgeInsets.symmetric(horizontal: 48),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: _isVerifying 
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : Text(
-                        _isAnswered ? 'Next Question' : (_isEssay ? 'Verify with AI' : 'Submit Answer'),
-                        style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 16),
-                      ),
+                  child: _isVerifying
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white))
+                      : Text(
+                          _isAnswered
+                              ? 'Next Question'
+                              : (_isEssay ? 'Verify with AI' : 'Submit Answer'),
+                          style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.w800, fontSize: 16),
+                        ),
                 ),
               ),
             ],
@@ -329,7 +352,9 @@ class _WebQuizViewState extends State<WebQuizView> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: _isAnswered
-              ? (_aiFeedback?['isCorrect'] == true ? Colors.green : Colors.orange)
+              ? (_aiFeedback?['isCorrect'] == true
+                  ? Colors.green
+                  : Colors.orange)
               : WebColors.border,
           width: 1.5,
         ),
@@ -338,7 +363,8 @@ class _WebQuizViewState extends State<WebQuizView> {
         controller: _essayController,
         maxLines: 8,
         enabled: !_isAnswered && !_isVerifying,
-        style: GoogleFonts.outfit(fontSize: 15, color: WebColors.textPrimary, height: 1.5),
+        style: GoogleFonts.outfit(
+            fontSize: 15, color: WebColors.textPrimary, height: 1.5),
         decoration: InputDecoration(
           hintText: 'Type your detailed answer here...',
           hintStyle: GoogleFonts.outfit(color: WebColors.textTertiary),
@@ -369,22 +395,30 @@ class _WebQuizViewState extends State<WebQuizView> {
         children: [
           Row(
             children: [
-              Icon(isCorrect ? Icons.check_circle_rounded : Icons.info_rounded, color: accentColor, size: 24),
+              Icon(isCorrect ? Icons.check_circle_rounded : Icons.info_rounded,
+                  color: accentColor, size: 24),
               const SizedBox(width: 12),
               Text(
                 'AI Score: $score%',
-                style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w800, color: accentColor),
+                style: GoogleFonts.outfit(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: accentColor),
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: accentColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(30),
                 ),
                 child: Text(
                   isCorrect ? 'Correct' : 'Needs Review',
-                  style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w800, color: accentColor),
+                  style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: accentColor),
                 ),
               ),
             ],
@@ -392,7 +426,8 @@ class _WebQuizViewState extends State<WebQuizView> {
           const SizedBox(height: 12),
           Text(
             feedback,
-            style: GoogleFonts.outfit(fontSize: 14, color: WebColors.textPrimary, height: 1.5),
+            style: GoogleFonts.outfit(
+                fontSize: 14, color: WebColors.textPrimary, height: 1.5),
           ),
         ],
       ),
@@ -412,26 +447,33 @@ class _WebQuizViewState extends State<WebQuizView> {
         children: [
           Row(
             children: [
-              const Icon(Icons.menu_book_rounded, color: WebColors.textSecondary, size: 20),
+              const Icon(Icons.menu_book_rounded,
+                  color: WebColors.textSecondary, size: 20),
               const SizedBox(width: 12),
               Text(
                 'REFERENCE ANSWER',
-                style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w800, color: WebColors.textSecondary, letterSpacing: 1),
+                style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: WebColors.textSecondary,
+                    letterSpacing: 1),
               ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
             _currentQuestion.correctAnswer,
-            style: GoogleFonts.outfit(fontSize: 14, color: WebColors.textSecondary, height: 1.5),
+            style: GoogleFonts.outfit(
+                fontSize: 14, color: WebColors.textSecondary, height: 1.5),
           ),
         ],
       ),
     ).animate().fadeIn(delay: 200.ms);
   }
-  
+
   Widget _buildQuestionCard(String question) {
-    String insight = 'Focus on the relationship between structure and function.';
+    String insight =
+        'Focus on the relationship between structure and function.';
     if (widget.summaryContent != null && widget.summaryContent!.length > 100) {
       // Very simple extraction: first sentence or snippet
       insight = widget.summaryContent!.split('.').first;
@@ -454,14 +496,16 @@ class _WebQuizViewState extends State<WebQuizView> {
             top: 0,
             child: Opacity(
               opacity: 0.1,
-              child: Icon(Icons.school_rounded, size: 120, color: WebColors.primary),
+              child: Icon(Icons.school_rounded,
+                  size: 120, color: WebColors.primary),
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEEF2FF),
                   borderRadius: BorderRadius.circular(8),
@@ -469,7 +513,8 @@ class _WebQuizViewState extends State<WebQuizView> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.auto_awesome_rounded, size: 14, color: Color(0xFF6366F1)),
+                    const Icon(Icons.auto_awesome_rounded,
+                        size: 14, color: Color(0xFF6366F1)),
                     const SizedBox(width: 8),
                     Text(
                       'AI INSIGHT',
@@ -511,13 +556,14 @@ class _WebQuizViewState extends State<WebQuizView> {
     );
   }
 
-  Widget _buildOptionTile(int index, String text, bool isSelected, bool isAnswered, bool isCorrect) {
+  Widget _buildOptionTile(int index, String text, bool isSelected,
+      bool isAnswered, bool isCorrect) {
     String letter = String.fromCharCode(65 + index); // A, B, C, D
-    
+
     Color borderColor = WebColors.border;
     Color letterBg = WebColors.backgroundAlt;
     Color letterColor = WebColors.textPrimary;
-    
+
     if (isSelected) {
       borderColor = const Color(0xFF6366F1);
       letterBg = const Color(0xFF0F172A);
@@ -540,7 +586,9 @@ class _WebQuizViewState extends State<WebQuizView> {
         duration: 200.ms,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFF5F3FF).withOpacity(0.5) : Colors.white,
+          color: isSelected
+              ? const Color(0xFFF5F3FF).withOpacity(0.5)
+              : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: borderColor,
@@ -599,12 +647,14 @@ class _WebQuizViewState extends State<WebQuizView> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               image: const DecorationImage(
-                image: NetworkImage('https://images.unsplash.com/photo-1550989460-0adf9ea622e2?q=80&w=1000'),
+                image: NetworkImage(
+                    'https://images.unsplash.com/photo-1550989460-0adf9ea622e2?q=80&w=1000'),
                 fit: BoxFit.cover,
               ),
             ),
             child: const Center(
-              child: Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 40),
+              child: Icon(Icons.play_circle_fill_rounded,
+                  color: Colors.white, size: 40),
             ),
           ),
           const SizedBox(width: 24),

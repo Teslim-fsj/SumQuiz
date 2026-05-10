@@ -29,6 +29,7 @@ import '../../services/notification_integration.dart';
 import '../../providers/sumi_provider.dart';
 import '../../models/sumi_emotion.dart';
 import '../../widgets/sumi_mascot.dart';
+import '../../services/mastery_service.dart';
 
 enum FlashcardState { creation, loading, review, finished, error }
 
@@ -64,8 +65,10 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
   String _loadingMessage = 'Generating Flashcards...';
   String _errorMessage = '';
 
-  List<Flashcard> _flashcards = [];
+   List<Flashcard> _flashcards = [];
+  List<String> _topicIds = [];
   int _correctCount = 0;
+  final Stopwatch _stopwatch = Stopwatch();
   bool get _isCreationMode => widget.flashcardSet == null;
 
   @override
@@ -80,7 +83,11 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
       setState(() {
         _flashcards = widget.flashcardSet!.flashcards;
         _titleController.text = widget.flashcardSet!.title;
+        if (widget.flashcardSet is LocalFlashcardSet) {
+          _topicIds = (widget.flashcardSet as LocalFlashcardSet).topicIds;
+        }
         _state = FlashcardState.review;
+        _stopwatch.start();
       });
     } else if (widget.id != null) {
       setState(() {
@@ -99,8 +106,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
           final user = Provider.of<UserModel?>(context, listen: false);
           if (user != null) {
             final firestore = FirestoreService();
-            final fsDoc =
-                await firestore.getFlashcardSet(user.uid, widget.id!);
+            final fsDoc = await firestore.getFlashcardSet(user.uid, widget.id!);
             if (fsDoc != null) {
               localSet = LocalFlashcardSet(
                 id: fsDoc.id,
@@ -130,6 +136,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
                       answer: f.answer,
                     ))
                 .toList();
+            _topicIds = ls.topicIds;
             _titleController.text = ls.title;
             _state = FlashcardState.review;
           });
@@ -151,10 +158,12 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
   }
 
   Future<void> _initializeServices() async {
-    _aiService = EnhancedAIService(
-        iapService: Provider.of<IAPService>(context, listen: false));
+    final iapService = Provider.of<IAPService>(context, listen: false);
     _localDbService = LocalDatabaseService();
     await _localDbService.init();
+    _aiService = EnhancedAIService(
+        iapService: iapService,
+        localDb: _localDbService);
     _srsService =
         SpacedRepetitionService(_localDbService as Box<SpacedRepetitionItem>);
   }
@@ -372,8 +381,8 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
               ),
             if (_flashcards.isNotEmpty && _state == FlashcardState.review)
               IconButton(
-                icon: const Icon(Icons.picture_as_pdf,
-                    color: Color(0xFFEC4899)),
+                icon:
+                    const Icon(Icons.picture_as_pdf, color: Color(0xFFEC4899)),
                 onPressed: () {
                   final user = context.read<UserModel?>();
                   if (user != null && !user.isPro) {
@@ -485,8 +494,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
           const SizedBox(height: 32),
           Text(_loadingMessage,
               style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFFEC4899))),
+                  fontWeight: FontWeight.w600, color: const Color(0xFFEC4899))),
         ],
       ).animate().fadeIn(),
     );
@@ -649,9 +657,26 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
                 : widget.creatorName,
             onReview: (index, knewIt, {int? quality}) {
               final sumi = context.read<SumiProvider>();
+              final mastery = context.read<MasteryService>();
+              final user = Provider.of<UserModel?>(context, listen: false);
+
               final flashcardId = _flashcards[index].id;
               _srsService.updateReview(flashcardId, knewIt, quality: quality);
-              
+
+              // Mastery Signal
+              if (user != null && _topicIds.isNotEmpty) {
+                for (final topicId in _topicIds) {
+                  mastery.processSignal(LearningSignal(
+                    topicId: topicId,
+                    type: knewIt
+                        ? SignalType.flashcardSuccess
+                        : SignalType.flashcardFailure,
+                    timestamp: DateTime.now(),
+                    metadata: {'context': 'flashcard_review', 'userId': user.uid},
+                  ));
+                }
+              }
+
               if (knewIt) {
                 _correctCount++;
                 sumi.emitEvent(SumiEvent.answerCorrect);
@@ -660,7 +685,16 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
               }
             },
             onFinish: () {
-              setState(() => _state = FlashcardState.finished);
+              _stopwatch.stop();
+              final timeSpent = _stopwatch.elapsed.inSeconds;
+              
+              context.push('/post-study-results', extra: {
+                'score': _correctCount,
+                'totalQuestions': _flashcards.length,
+                'timeSpentSeconds': timeSpent,
+                'title': _titleController.text,
+                'type': 'flashcards',
+              });
             },
           ),
         ),
