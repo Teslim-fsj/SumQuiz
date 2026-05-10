@@ -13,7 +13,8 @@ import '../../widgets/sumi_mascot.dart';
 
 class NoteEditorScreen extends StatefulWidget {
   final String noteId;
-  const NoteEditorScreen({super.key, required this.noteId});
+  final String? folderId;
+  const NoteEditorScreen({super.key, required this.noteId, this.folderId});
 
   @override
   State<NoteEditorScreen> createState() => _NoteEditorScreenState();
@@ -35,9 +36,11 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
 
     if (widget.noteId == 'new') {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        final note = await noteProvider.createNewNote(user?.uid ?? '');
+        final noteProvider = context.read<NoteProvider>();
+        final user = Provider.of<UserModel?>(context, listen: false);
+        final uri = GoRouterState.of(context).uri;
+        await noteProvider.createNewNote(user?.uid ?? '');
         if (mounted) {
-          final uri = GoRouterState.of(context).uri;
           if (uri.queryParameters['startRecording'] == 'true') {
             noteProvider.startRecording(user?.uid ?? '');
           }
@@ -66,14 +69,14 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
 
       // Send Signal
       final user = Provider.of<UserModel?>(context, listen: false);
+      final mastery = Provider.of<MasteryService>(context, listen: false);
+      if (!mounted) return;
       if (user != null && note.topicIds.isNotEmpty) {
-        final mastery = Provider.of<MasteryService>(context, listen: false);
         for (final topicId in note.topicIds) {
           mastery.processSignal(LearningSignal(
             topicId: topicId,
-            userId: user.uid,
             type: SignalType.noteReread,
-            context: 'note_editor',
+            timestamp: DateTime.now(),
           ));
         }
       }
@@ -395,10 +398,10 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     final image = await picker.pickImage(source: ImageSource.gallery);
     if (image == null) return;
 
-    final bytes = await image.readAsBytes();
+    await image.readAsBytes();
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+    ScaffoldMessenger.of(this.context).showSnackBar(const SnackBar(
         content:
             Text('Analyzing diagram and creating "Label the Image" quiz...')));
 
