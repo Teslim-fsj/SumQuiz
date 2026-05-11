@@ -19,15 +19,59 @@ class SubscriptionScreen extends StatefulWidget {
 
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
   bool _isCreatorMode = false;
+  bool _isYearly = true;
   final PageController _pageController =
       PageController(viewportFraction: 0.85, initialPage: 1);
   int _currentPage = 1;
 
+  final List<Map<String, dynamic>> _boostPacks = [
+    {
+      'id': 'boost_micro',
+      'title': 'Neural Pulse',
+      'credits': '15',
+      'price': r'$1.99',
+      'icon': Icons.bolt_outlined,
+      'color': Colors.amber,
+    },
+    {
+      'id': 'boost_standard',
+      'title': 'Cognitive Surge',
+      'credits': '50',
+      'price': r'$4.99',
+      'icon': Icons.auto_awesome,
+      'color': Colors.cyan,
+    },
+    {
+      'id': 'boost_macro',
+      'title': 'Synaptic Overload',
+      'credits': '120',
+      'price': r'$9.99',
+      'icon': Icons.rocket_launch,
+      'color': Colors.deepPurple,
+    },
+  ];
+
   final List<Map<String, dynamic>> _studentTiers = [
+    {
+      'id': 'free_hub',
+      'title': 'Free Neural Hub',
+      'price': r'$0',
+      'sessions': '20',
+      'label': 'LEARNER',
+      'color': Colors.grey,
+      'description': 'Essential tools for every learner.',
+      'features': [
+        '20 Daily Neural Credits',
+        'Basic AI Summaries',
+        'Local Flashcards',
+        'Neural Hub Access'
+      ]
+    },
     {
       'id': 'sumquiz_pro_starter',
       'title': 'Starter Academic',
       'price': r'$7.99',
+      'yearlyPrice': r'$75.99',
       'sessions': '50',
       'label': 'FOCUS MODE',
       'color': Colors.blue,
@@ -43,6 +87,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       'id': 'sumquiz_pro_monthly',
       'title': 'High-Performer Pro',
       'price': r'$14.99',
+      'yearlyPrice': r'$139.99',
       'sessions': '160',
       'label': 'MOST CHOSEN',
       'color': WebColors.purplePrimary,
@@ -58,6 +103,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       'id': 'sumquiz_pro_elite',
       'title': 'Dean\'s List Elite',
       'price': r'$29.99',
+      'yearlyPrice': r'$279.99',
       'sessions': '400',
       'label': 'ELITE STUDENT',
       'color': Colors.orange,
@@ -172,7 +218,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           const SizedBox(height: 20),
           _buildActiveSubscriptionBanner(),
           const SizedBox(height: 20),
-          _buildRoleToggle(),
+          _buildToggles(),
           const SizedBox(height: 60),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -192,6 +238,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               }).toList(),
             ),
           ),
+          const SizedBox(height: 100),
+          _buildBoostSection(isWeb: true),
           const SizedBox(height: 80),
           _buildSatisfactionSection(),
           const SizedBox(height: 60),
@@ -236,7 +284,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           const SizedBox(height: 16),
           _buildActiveSubscriptionBanner(),
           const SizedBox(height: 16),
-          _buildRoleToggle(),
+          _buildToggles(),
           const SizedBox(height: 40),
           SizedBox(
             height: 520,
@@ -255,11 +303,24 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           ),
           const SizedBox(height: 20),
           _buildPageIndicator(tiers.length),
+          const SizedBox(height: 60),
+          _buildBoostSection(isWeb: false),
+          const SizedBox(height: 60),
           const SizedBox(height: 40),
           _buildSecurePaymentSection(),
           const SizedBox(height: 40),
         ],
       ),
+    );
+  }
+
+  Widget _buildToggles() {
+    return Column(
+      children: [
+        _buildRoleToggle(),
+        const SizedBox(height: 16),
+        _buildBillingToggle(),
+      ],
     );
   }
 
@@ -287,6 +348,57 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   })),
         ],
       ),
+    );
+  }
+
+  Widget _buildBillingToggle() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          'Monthly',
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: _isYearly ? FontWeight.w500 : FontWeight.bold,
+            color: _isYearly ? const Color(0xFF64748B) : WebColors.purplePrimary,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Switch(
+          value: _isYearly,
+          onChanged: (val) => setState(() => _isYearly = val),
+          activeColor: WebColors.purplePrimary,
+        ),
+        const SizedBox(width: 12),
+        Row(
+          children: [
+            Text(
+              'Yearly',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: _isYearly ? FontWeight.bold : FontWeight.w500,
+                color: _isYearly ? WebColors.purplePrimary : const Color(0xFF64748B),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                'Save 20%',
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -403,7 +515,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    displayPrice,
+                    _isYearly && tier['yearlyPrice'] != null 
+                        ? tier['yearlyPrice'] 
+                        : displayPrice,
                     style: GoogleFonts.outfit(
                       fontSize: 40,
                       fontWeight: FontWeight.w900,
@@ -413,7 +527,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8, left: 4),
                     child: Text(
-                      '/mo',
+                      _isYearly && tier['yearlyPrice'] != null ? '/yr' : '/mo',
                       style: GoogleFonts.inter(
                         fontSize: 16,
                         color: const Color(0xFF64748B),
@@ -696,6 +810,116 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             const Icon(Icons.contactless_outlined,
                 color: Color(0xFF94A3B8), size: 32),
           ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBoostSection({required bool isWeb}) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            children: [
+              Text(
+                'Neural Energy Boosters',
+                style: GoogleFonts.outfit(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Low on energy? Refill your neural capacity instantly.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  color: const Color(0xFF64748B),
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 32),
+        Container(
+          height: 180,
+          padding: EdgeInsets.symmetric(horizontal: isWeb ? 40 : 12),
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: _boostPacks.length,
+            shrinkWrap: true,
+            physics: const BouncingScrollPhysics(),
+            itemBuilder: (context, index) {
+              final pack = _boostPacks[index];
+              return Container(
+                width: isWeb ? 300 : 260,
+                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(5),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    )
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: pack['color'].withAlpha(25),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(pack['icon'], color: pack['color'], size: 32),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            pack['title'],
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                          Text(
+                            '+${pack['credits']} Credits',
+                            style: GoogleFonts.inter(
+                              color: const Color(0xFF10B981),
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          ElevatedButton(
+                            onPressed: () {},
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFF1F5F9),
+                              foregroundColor: const Color(0xFF0F172A),
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: Text('Buy ${pack['price']}'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ],
     );

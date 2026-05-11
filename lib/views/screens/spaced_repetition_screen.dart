@@ -10,6 +10,8 @@ import '../../models/local_flashcard.dart';
 import '../../models/spaced_repetition.dart';
 import 'package:flip_card/flip_card.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../widgets/sumi_mascot.dart';
+import '../../models/sumi_emotion.dart';
 
 class SpacedRepetitionScreen extends StatefulWidget {
   const SpacedRepetitionScreen({super.key});
@@ -109,25 +111,31 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
     }
   }
 
-  Future<void> _processReview(bool answeredCorrectly) async {
+  Future<void> _processReview(int quality) async {
     if (_currentIndex >= _dueFlashcards.length) return;
 
     final flashcard = _dueFlashcards[_currentIndex];
     try {
       await _spacedRepetitionService.updateReview(
-          flashcard.id, answeredCorrectly);
+          flashcard.id, quality >= 3, quality: quality);
+
+      _showStabilityGain(quality);
 
       if (_currentIndex < _dueFlashcards.length - 1) {
-        setState(() {
-          _currentIndex++;
-          _isFlipping = false;
+        Future.delayed(300.ms, () {
+          if (mounted) {
+            setState(() {
+              _currentIndex++;
+              _isFlipping = false;
+            });
+            _flipCardKey.currentState?.toggleCard();
+          }
         });
-        _flipCardKey.currentState?.toggleCard(); // Flip back to question
       } else {
         setState(() {
-          _message = 'You\'ve completed all due flashcards for now!';
+          _message = 'Neural pathways strengthened. Session complete!';
           _dueFlashcards.clear();
-          _confettiController.play(); // Celebrate!
+          _confettiController.play();
         });
       }
     } catch (e) {
@@ -138,6 +146,21 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
     }
   }
 
+  void _showStabilityGain(int quality) {
+    String gainText = quality >= 4 ? '+15% Stability' : (quality >= 3 ? '+5% Stability' : '-20% Stability');
+    Color gainColor = quality >= 3 ? Colors.greenAccent : Colors.redAccent;
+
+    // This would ideally be a floating animation over the card
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(gainText, style: TextStyle(color: gainColor, fontWeight: FontWeight.bold)),
+        duration: 500.ms,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -146,53 +169,22 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text('Daily Review',
+        title: Text('Neural Review',
             style: theme.textTheme.titleLarge
-                ?.copyWith(fontWeight: FontWeight.bold)),
+                ?.copyWith(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: theme.colorScheme.onSurface),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: theme.colorScheme.onSurface),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: Stack(
         children: [
-          // Animated Background
-          Animate(
-            onPlay: (controller) => controller.repeat(reverse: true),
-            effects: [
-              CustomEffect(
-                duration: 10.seconds,
-                builder: (context, value, child) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: isDark
-                            ? [
-                                theme.colorScheme.surface,
-                                Color.lerp(theme.colorScheme.surface,
-                                    theme.colorScheme.primaryContainer, value)!,
-                              ]
-                            : [
-                                const Color(0xFFE0F2F1), // Teal 50
-                                Color.lerp(
-                                    const Color(0xFFE0F2F1),
-                                    const Color(0xFFB2DFDB),
-                                    value)!, // Teal 100
-                              ],
-                      ),
-                    ),
-                    child: child,
-                  );
-                },
-              )
-            ],
-            child: Container(),
-          ),
+          // Dynamic Gradient Background
+          _buildAnimatedBackground(theme, isDark),
+          
           SafeArea(
             child: _isLoading
                 ? Center(
@@ -202,19 +194,14 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
                     ? _buildCompletionOrMessageView(theme)
                     : _buildFlashcardReview(theme),
           ),
+          
           Align(
             alignment: Alignment.topCenter,
             child: ConfettiWidget(
               confettiController: _confettiController,
               blastDirectionality: BlastDirectionality.explosive,
               shouldLoop: false,
-              colors: const [
-                Colors.green,
-                Colors.blue,
-                Colors.pink,
-                Colors.orange,
-                Colors.purple
-              ],
+              colors: const [Colors.cyan, Colors.blue, Colors.indigo],
             ),
           ),
         ],
@@ -222,21 +209,52 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
     );
   }
 
-  Widget _buildGlassCard(ThemeData theme, {required Widget child}) {
+  Widget _buildAnimatedBackground(ThemeData theme, bool isDark) {
+    return Animate(
+      onPlay: (controller) => controller.repeat(reverse: true),
+      effects: [
+        CustomEffect(
+          duration: 8.seconds,
+          builder: (context, value, child) {
+            return Container(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment(value * 0.5 - 0.25, value * 0.5 - 0.25),
+                  radius: 1.5,
+                  colors: isDark
+                      ? [
+                          theme.colorScheme.primaryContainer.withValues(alpha: 0.15),
+                          theme.colorScheme.surface,
+                        ]
+                      : [
+                          theme.colorScheme.primary.withValues(alpha: 0.05),
+                          const Color(0xFFF8FAFC),
+                        ],
+                ),
+              ),
+            );
+          },
+        )
+      ],
+      child: Container(),
+    );
+  }
+
+  Widget _buildGlassCard(ThemeData theme, {required Widget child, Color? borderColor}) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(32),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
           decoration: BoxDecoration(
-            color: theme.cardColor.withOpacity(0.8),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: theme.dividerColor.withOpacity(0.2)),
+            color: theme.cardColor.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(color: borderColor ?? theme.dividerColor.withValues(alpha: 0.1)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                color: theme.colorScheme.primary.withValues(alpha: 0.05),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
               ),
             ],
           ),
@@ -249,15 +267,15 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
   Widget _buildCompletionOrMessageView(ThemeData theme) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.task_alt, size: 100, color: theme.colorScheme.primary)
+            const SumiMascot(state: SumiState.celebrating, size: 120)
                 .animate()
                 .scale()
                 .fadeIn(),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             Text(_message,
                     style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
@@ -266,18 +284,17 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
                 .animate()
                 .fadeIn(delay: 200.ms)
                 .slideY(begin: 0.1),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
+            const SizedBox(height: 48),
+            ElevatedButton(
               onPressed: () => Navigator.of(context).pop(),
-              icon: const Icon(Icons.arrow_back),
-              label: const Text('Back to Library'),
               style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.secondary,
-                  foregroundColor: theme.colorScheme.onSecondary,
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: theme.colorScheme.onPrimary,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30)),
+                      borderRadius: BorderRadius.circular(20)),
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 30, vertical: 15)),
+                      const EdgeInsets.symmetric(horizontal: 48, vertical: 18)),
+              child: const Text('Return to Core', style: TextStyle(fontWeight: FontWeight.bold)),
             ).animate().fadeIn(delay: 400.ms),
           ],
         ),
@@ -293,154 +310,199 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
     final flashcard = _dueFlashcards[_currentIndex];
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      padding: const EdgeInsets.all(24.0),
       child: Column(
         children: [
-          Row(
-            children: [
-              const SizedBox(width: 48), // Spacer to balance
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: (_currentIndex + 1) / _dueFlashcards.length,
-                    backgroundColor:
-                        theme.colorScheme.onSurface.withOpacity(0.1),
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                        theme.colorScheme.secondary),
-                    minHeight: 8,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Text('${_currentIndex + 1}/${_dueFlashcards.length}',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
-                      fontWeight: FontWeight.bold)),
-            ],
-          ),
-          const SizedBox(height: 24),
-
+          _buildHeader(theme),
+          const SizedBox(height: 32),
           Expanded(
             child: FlipCard(
               key: _flipCardKey,
-              flipOnTouch: false, // We control flips manually
-              front:
-                  _buildCardSide('Question', flashcard.question, true, theme),
-              back: _buildCardSide('Answer', flashcard.answer, false, theme),
+              flipOnTouch: false,
+              front: _buildCardSide('QUESTION', flashcard.question, true, theme),
+              back: _buildCardSide('REVEALED', flashcard.answer, false, theme),
             ),
           ),
           const SizedBox(height: 32),
-
-          // Action buttons based on flip state
-          SizedBox(
-            height: 80,
-            child: _isFlipping
-                ? _buildAnswerButtons(theme)
-                    .animate()
-                    .fadeIn(duration: 200.ms)
-                    .slideY(begin: 0.2)
-                : _buildShowAnswerButton(theme)
-                    .animate()
-                    .fadeIn(duration: 200.ms)
-                    .slideY(begin: 0.2),
-          ),
-          const SizedBox(height: 16),
+          _buildActionArea(theme),
         ],
       ),
     );
   }
 
-  Widget _buildCardSide(
-      String title, String content, bool isQuestion, ThemeData theme) {
-    return GestureDetector(
-      onTap: isQuestion ? _flipCard : null,
-      child: _buildGlassCard(
-        theme,
-        child: Container(
-          width: double.infinity,
-          height: double.infinity,
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildHeader(ThemeData theme) {
+    return Row(
+      children: [
+        Expanded(
+          child: Stack(
             children: [
-              Text(title.toUpperCase(),
-                  style: theme.textTheme.labelMedium?.copyWith(
-                      color: isQuestion
-                          ? Colors.orangeAccent
-                          : Colors.lightBlueAccent,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.5)),
-              const SizedBox(height: 24),
-              Expanded(
-                child: Center(
-                  child: SingleChildScrollView(
-                    child: Text(content,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                            color: theme.colorScheme.onSurface,
-                            height: 1.5,
-                            fontWeight: FontWeight.w500)),
+              Container(
+                height: 12,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+              Animate(
+                effects: [
+                  ScaleEffect(
+                    begin: const Offset(0, 1),
+                    end: const Offset(1, 1),
+                    alignment: Alignment.centerLeft,
+                    duration: 500.ms,
+                  ),
+                ],
+                child: Container(
+                  height: 12,
+                  width: MediaQuery.of(context).size.width * 
+                         ((_currentIndex + 1) / _dueFlashcards.length),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                      )
+                    ],
                   ),
                 ),
               ),
-              if (isQuestion)
-                Center(
-                    child: Text('Tap to reveal answer',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface.withOpacity(0.5),
-                            fontStyle: FontStyle.italic)))
             ],
           ),
+        ),
+        const SizedBox(width: 16),
+        Text('${_currentIndex + 1}/${_dueFlashcards.length}',
+            style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.primary)),
+      ],
+    );
+  }
+
+  Widget _buildActionArea(ThemeData theme) {
+    return SizedBox(
+      height: 140,
+      child: _isFlipping
+          ? _buildQualitySelector(theme)
+              .animate()
+              .fadeIn()
+              .slideY(begin: 0.2)
+          : _buildShowAnswerButton(theme)
+              .animate()
+              .fadeIn()
+              .scale(),
+    );
+  }
+
+  Widget _buildCardSide(String label, String content, bool isQuestion, ThemeData theme) {
+    return _buildGlassCard(
+      theme,
+      borderColor: isQuestion ? null : theme.colorScheme.primary.withValues(alpha: 0.3),
+      child: Container(
+        width: double.infinity,
+        height: double.infinity,
+        padding: const EdgeInsets.all(40.0),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(label,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2)),
+                Icon(isQuestion ? Icons.help_outline : Icons.auto_awesome, 
+                     color: theme.colorScheme.primary.withValues(alpha: 0.5)),
+              ],
+            ),
+            const Spacer(),
+            SingleChildScrollView(
+              child: Text(content,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                      height: 1.4,
+                      fontWeight: FontWeight.w600)),
+            ),
+            const Spacer(),
+            if (isQuestion)
+              Text('TAP TO FLIP',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                      letterSpacing: 1)),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildShowAnswerButton(ThemeData theme) {
-    return ElevatedButton(
-      onPressed: _flipCard,
-      style: ElevatedButton.styleFrom(
-        minimumSize: const Size(200, 56),
-        backgroundColor: theme.colorScheme.surface,
-        foregroundColor: theme.colorScheme.onSurface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-        elevation: 0,
-        side: BorderSide(color: theme.dividerColor),
+    return Center(
+      child: GestureDetector(
+        onTap: _flipCard,
+        child: _buildGlassCard(
+          theme,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 20),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.visibility_rounded),
+                const SizedBox(width: 12),
+                Text('REVEAL ANSWER', 
+                     style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
+        ),
       ),
-      child: Text('Show Answer',
-          style: theme.textTheme.titleMedium
-              ?.copyWith(fontWeight: FontWeight.bold)),
     );
   }
 
-  Widget _buildAnswerButtons(ThemeData theme) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  Widget _buildQualitySelector(ThemeData theme) {
+    return Column(
       children: [
-        _buildFeedbackButton('Hard', Icons.close, Colors.redAccent,
-            () => _processReview(false), theme),
-        _buildFeedbackButton('Easy', Icons.check, Colors.greenAccent.shade700,
-            () => _processReview(true), theme),
+        Text('How well did you know this?', 
+             style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildQualityBtn('Blackout', Colors.grey, 0, theme),
+            _buildQualityBtn('Hard', Colors.orange, 2, theme),
+            _buildQualityBtn('Good', Colors.blue, 4, theme),
+            _buildQualityBtn('Easy', Colors.green, 5, theme),
+          ],
+        ),
       ],
     );
   }
 
-  Widget _buildFeedbackButton(String label, IconData icon, Color color,
-      VoidCallback onPressed, ThemeData theme) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, size: 24),
-      label: Text(label,
-          style: theme.textTheme.titleMedium
-              ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: Colors.white,
-        minimumSize: const Size(140, 56),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-        elevation: 0,
-      ),
+  Widget _buildQualityBtn(String label, Color color, int val, ThemeData theme) {
+    return Column(
+      children: [
+        IconButton.filled(
+          onPressed: () => _processReview(val),
+          icon: Icon(_getIconForQuality(val)),
+          style: IconButton.styleFrom(
+            backgroundColor: color.withValues(alpha: 0.1),
+            foregroundColor: color,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(label, style: theme.textTheme.labelSmall?.copyWith(fontSize: 10)),
+      ],
     );
   }
+
+  IconData _getIconForQuality(int q) {
+    if (q == 0) return Icons.sentiment_very_dissatisfied;
+    if (q == 2) return Icons.sentiment_dissatisfied;
+    if (q == 4) return Icons.sentiment_satisfied;
+    return Icons.sentiment_very_satisfied;
+  }
 }
+

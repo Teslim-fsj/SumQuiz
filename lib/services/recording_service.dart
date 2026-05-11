@@ -50,6 +50,10 @@ class RecordingService {
     return await _recorder.isRecording();
   }
 
+  Future<Amplitude> getAmplitude() async {
+    return await _recorder.getAmplitude();
+  }
+
   void _startTimer() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -70,6 +74,10 @@ class RecordingService {
 
   Future<void> play(String path) async {
     await _player.play(DeviceFileSource(path));
+  }
+
+  Future<void> playUrl(String url) async {
+    await _player.play(UrlSource(url));
   }
 
   Future<void> pause() async {

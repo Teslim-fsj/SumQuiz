@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sumquiz/theme/web_theme.dart';
+import 'package:sumquiz/widgets/sumi_mascot.dart';
+import 'package:sumquiz/models/sumi_emotion.dart';
 
 class CreationProgressIndicator extends StatelessWidget {
   final String message;
@@ -49,16 +51,16 @@ class CreationProgressIndicator extends StatelessWidget {
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
               color: isDark
-                  ? Colors.black.withOpacity(0.4)
-                  : Colors.white.withOpacity(0.7),
+                  ? Colors.black.withValues(alpha: 0.4)
+                  : Colors.white.withValues(alpha: 0.7),
               borderRadius: BorderRadius.circular(40),
               border: Border.all(
-                color: (isDark ? Colors.white : Colors.black).withOpacity(0.1),
+                color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1),
                 width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 40,
                   offset: const Offset(0, 20),
                 ),
@@ -72,7 +74,7 @@ class CreationProgressIndicator extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // A. Premium Progress Ring
-                    _buildPremiumRing(theme),
+                    _buildPremiumRing(theme, activeStep),
 
                     const SizedBox(height: 40),
 
@@ -91,7 +93,7 @@ class CreationProgressIndicator extends StatelessWidget {
                       message,
                       style: GoogleFonts.outfit(
                         fontSize: 14,
-                        color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                         fontWeight: FontWeight.w500,
                       ),
                     )
@@ -104,10 +106,10 @@ class CreationProgressIndicator extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 12),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withOpacity(0.05),
+                          color: theme.colorScheme.primary.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: theme.colorScheme.primary.withOpacity(0.1),
+                            color: theme.colorScheme.primary.withValues(alpha: 0.1),
                           ),
                         ),
                         child: Text(
@@ -164,15 +166,15 @@ class CreationProgressIndicator extends StatelessWidget {
         shape: BoxShape.circle,
         gradient: RadialGradient(
           colors: [
-            color.withOpacity(0.15),
-            color.withOpacity(0.0),
+            color.withValues(alpha: 0.15),
+            color.withValues(alpha: 0.0),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPremiumRing(ThemeData theme) {
+  Widget _buildPremiumRing(ThemeData theme, int activeStep) {
     return Stack(
       alignment: Alignment.center,
       children: [
@@ -182,7 +184,7 @@ class CreationProgressIndicator extends StatelessWidget {
           height: 140,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: theme.colorScheme.primary.withOpacity(0.05),
+            color: theme.colorScheme.primary.withValues(alpha: 0.05),
           ),
         ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(
             begin: const Offset(0.9, 0.9),
@@ -197,7 +199,7 @@ class CreationProgressIndicator extends StatelessWidget {
             value: progress ?? 0.7,
             strokeWidth: 2,
             strokeCap: StrokeCap.round,
-            color: theme.colorScheme.primary.withOpacity(0.3),
+            color: theme.colorScheme.primary.withValues(alpha: 0.3),
             backgroundColor: Colors.transparent,
           ),
         ).animate(onPlay: (c) => c.repeat()).rotate(duration: 3.seconds),
@@ -212,27 +214,31 @@ class CreationProgressIndicator extends StatelessWidget {
             value: progress,
             valueColor:
                 AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
-            backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+            backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
           ),
         ),
 
-        // Central AI Gem
+        // Central Sumi Mascot
         Container(
-          width: 54,
-          height: 54,
+          width: 80,
+          height: 80,
           decoration: BoxDecoration(
-            gradient: WebColors.PremiumGradient,
+            color: theme.colorScheme.surface,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: theme.colorScheme.primary.withOpacity(0.4),
+                color: theme.colorScheme.primary.withValues(alpha: 0.2),
                 blurRadius: 15,
                 spreadRadius: 2,
               ),
             ],
           ),
-          child: const Icon(Icons.auto_awesome_rounded,
-              color: Colors.white, size: 26),
+          child: Center(
+            child: SumiMascot(
+              state: activeStep == 2 ? SumiState.celebrating : SumiState.thinking,
+              size: 64,
+            ),
+          ),
         )
             .animate(onPlay: (c) => c.repeat())
             .shimmer(duration: 1.5.seconds, color: Colors.white24),
@@ -294,7 +300,7 @@ class CreationProgressIndicator extends StatelessWidget {
                   ? theme.colorScheme.primary
                   : (isDone
                       ? WebColors.success
-                      : theme.colorScheme.onSurface.withOpacity(0.1)),
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.1)),
             ),
             child: isDone && !isActive
                 ? const Icon(Icons.check, size: 8, color: Colors.white)
@@ -311,7 +317,7 @@ class CreationProgressIndicator extends StatelessWidget {
               fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
               color: isActive
                   ? theme.colorScheme.onSurface
-                  : theme.colorScheme.onSurface.withOpacity(isDone ? 0.6 : 0.2),
+                  : theme.colorScheme.onSurface.withValues(alpha: isDone ? 0.6 : 0.2),
             ),
           ),
         ],

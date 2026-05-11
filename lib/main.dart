@@ -42,6 +42,7 @@ import 'package:workmanager/workmanager.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:sumquiz/services/deep_link_service.dart';
 import 'package:sumquiz/services/recording_service.dart';
+import 'package:sumquiz/services/speech_service.dart';
 import 'package:sumquiz/providers/note_provider.dart';
 import 'package:sumquiz/providers/sumi_provider.dart';
 import 'package:sumquiz/services/mastery_service.dart';
@@ -249,6 +250,12 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
         Provider<AuthService>.value(value: widget.authService),
         Provider<NotificationService>.value(value: widget.notificationService),
+        ProxyProvider<AuthService, UsageService?>(
+          update: (context, authService, previous) {
+            final user = authService.currentUser;
+            return user != null ? UsageService() : null;
+          },
+        ),
         Provider<FirestoreService>(create: (_) => FirestoreService()),
         Provider<LocalDatabaseService>(create: (_) => LocalDatabaseService()),
         Provider<SpacedRepetitionService>(
@@ -292,13 +299,20 @@ class _MyAppState extends State<MyApp> {
             return service;
           },
         ),
-        ChangeNotifierProxyProvider2<EnhancedAIService, LocalDatabaseService, SumiProvider>(
+        ChangeNotifierProxyProvider4<EnhancedAIService, LocalDatabaseService, UsageService?, AuthService, SumiProvider>(
           create: (context) => SumiProvider(
             aiService: context.read<EnhancedAIService>().generatorService,
             localDb: context.read<LocalDatabaseService>(),
+            usageService: context.read<UsageService?>(),
+            authService: context.read<AuthService>(),
           ),
-          update: (context, ai, localDb, previous) =>
-              previous ?? SumiProvider(aiService: ai.generatorService, localDb: localDb),
+          update: (context, ai, localDb, usage, auth, previous) =>
+              previous ?? SumiProvider(
+                aiService: ai.generatorService, 
+                localDb: localDb,
+                usageService: usage,
+                authService: auth,
+              ),
         ),
         ProxyProvider<EnhancedAIService, ContentExtractionService>(
           update: (context, enhancedAIService, previous) =>
@@ -318,12 +332,6 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProxyProvider<SyncService, SyncProvider>(
           create: (context) => SyncProvider(context.read<SyncService>()),
           update: (context, syncService, previous) => SyncProvider(syncService),
-        ),
-        ProxyProvider<AuthService, UsageService?>(
-          update: (context, authService, previous) {
-            final user = authService.currentUser;
-            return user != null ? UsageService() : null;
-          },
         ),
         ProxyProvider<AuthService, ReferralService>(
           update: (context, authService, previous) {
@@ -375,6 +383,7 @@ class _MyAppState extends State<MyApp> {
               ),
         ),
         Provider<RecordingService>(create: (_) => RecordingService()),
+        Provider<SpeechService>(create: (_) => SpeechService()),
         ProxyProvider<MasteryService, RecommendationService>(
           update: (context, masteryService, previous) =>
               RecommendationService(masteryService),
@@ -384,19 +393,25 @@ class _MyAppState extends State<MyApp> {
           update: (context, mastery, recs, notifications, previous) =>
               SumiTutorService(mastery, recs, notifications),
         ),
-        ChangeNotifierProxyProvider3<LocalDatabaseService, EnhancedAIService,
-            RecordingService, NoteProvider>(
+        ChangeNotifierProxyProvider6<LocalDatabaseService, EnhancedAIService,
+            RecordingService, SpeechService, UsageService?, AuthService, NoteProvider>(
           create: (context) => NoteProvider(
             localDb: context.read<LocalDatabaseService>(),
             aiService: context.read<EnhancedAIService>(),
             recordingService: context.read<RecordingService>(),
+            speechService: context.read<SpeechService>(),
+            usageService: context.read<UsageService?>(),
+            authService: context.read<AuthService>(),
           ),
-          update: (context, localDb, ai, recording, previous) =>
+          update: (context, localDb, ai, recording, speech, usage, auth, previous) =>
               previous ??
               NoteProvider(
                 localDb: localDb,
                 aiService: ai,
                 recordingService: recording,
+                speechService: speech,
+                usageService: usage,
+                authService: auth,
               ),
         ),
         ChangeNotifierProxyProvider2<AuthService, MasteryService,

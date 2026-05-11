@@ -9,8 +9,6 @@ import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/services/local_database_service.dart';
 import 'package:sumquiz/services/spaced_repetition_service.dart';
 import 'package:sumquiz/widgets/activity_chart.dart';
-import 'package:sumquiz/widgets/daily_goal_tracker.dart';
-import 'package:sumquiz/widgets/goal_setting_dialog.dart';
 import 'package:sumquiz/services/user_service.dart';
 import 'package:sumquiz/views/screens/spaced_repetition_screen.dart';
 import '../../widgets/sumi_mascot.dart';
@@ -187,33 +185,20 @@ class _ProgressScreenState extends State<ProgressScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Center(
-                          child: SumiMascot(
-                            state: SumiState.celebrating,
-                            size: 100,
-                          ),
-                        ),
+                        _buildHeroSection(theme, stats),
+                        const SizedBox(height: 32),
+                        _buildSectionTitle(context, 'Retention Hotspots',
+                            Icons.auto_awesome_rounded, theme),
+                        const SizedBox(height: 16),
+                        _buildPriorityTopics(theme),
+                        const SizedBox(height: 32),
+                        _buildSectionTitle(context, 'Study Momentum',
+                            Icons.trending_up_rounded, theme),
                         const SizedBox(height: 16),
                         _buildMomentumAndStreak(user, theme),
-                        const SizedBox(height: 24),
-                        _buildGlassContainer(
-                          theme,
-                          child: DailyGoalTracker(
-                            itemsCompleted: user.itemsCompletedToday,
-                            dailyGoal: user.dailyGoal,
-                            onSetGoal: () => _setDailyGoal(user),
-                          ),
-                        ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
-                        const SizedBox(height: 24),
-                        _buildSectionTitle(context, 'Overall Stats',
-                            Icons.pie_chart_outline_rounded, theme),
-                        const SizedBox(height: 16),
-                        _buildOverallStats(stats, theme)
-                            .animate()
-                            .fadeIn(delay: 200.ms),
-                        const SizedBox(height: 24),
-                        _buildSectionTitle(context, 'Recent Activity',
-                            Icons.trending_up_rounded, theme),
+                        const SizedBox(height: 32),
+                        _buildSectionTitle(context, 'Historical Retention',
+                            Icons.history_edu_rounded, theme),
                         const SizedBox(height: 16),
                         _buildGlassContainer(
                           theme,
@@ -225,16 +210,10 @@ class _ProgressScreenState extends State<ProgressScreen> {
                                           as List<MapEntry<DateTime, int>>? ??
                                       [])),
                         ).animate().fadeIn(delay: 300.ms),
-                        const SizedBox(height: 24),
-                        _buildReviewBanner(
-                                stats['dueForReviewCount'] as int? ?? 0, theme)
+                        const SizedBox(height: 32),
+                        _buildOverallStats(stats, theme)
                             .animate()
-                            .fadeIn(delay: 400.ms),
-                        const SizedBox(height: 24),
-                        _buildSectionTitle(context, 'Topic Mastery',
-                            Icons.auto_awesome_rounded, theme),
-                        const SizedBox(height: 16),
-                        _buildTopicMastery(theme),
+                            .fadeIn(delay: 200.ms),
                         const SizedBox(height: 40),
                       ],
                     ),
@@ -245,6 +224,135 @@ class _ProgressScreenState extends State<ProgressScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildHeroSection(ThemeData theme, Map<String, dynamic> stats) {
+    return Consumer<MasteryViewModel>(
+      builder: (context, masteryVm, _) {
+        final retentionScore = masteryVm.overallMastery;
+        return _buildGlassContainer(
+          theme,
+          padding: const EdgeInsets.all(24),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Retention Health',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${(retentionScore * 100).toStringAsFixed(1)}%',
+                      style: theme.textTheme.displayMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                        letterSpacing: -1,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _getRetentionStatus(retentionScore),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: _getMasteryColor(retentionScore),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    width: 100,
+                    height: 100,
+                    child: CircularProgressIndicator(
+                      value: retentionScore,
+                      strokeWidth: 12,
+                      backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+                      valueColor: AlwaysStoppedAnimation<Color>(_getMasteryColor(retentionScore)),
+                      strokeCap: StrokeCap.round,
+                    ),
+                  ),
+                  const SumiMascot(state: SumiState.celebrating, size: 60),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String _getRetentionStatus(double score) {
+    if (score > 0.8) return 'Elite Stability';
+    if (score > 0.6) return 'Growth Phase';
+    if (score > 0.4) return 'Consolidating';
+    return 'Action Required';
+  }
+
+  Widget _buildPriorityTopics(ThemeData theme) {
+    return Consumer<MasteryViewModel>(
+      builder: (context, masteryVm, _) {
+        final priorityTopics = masteryVm.highRiskTopics.take(3).toList();
+        if (priorityTopics.isEmpty) {
+          return const Center(child: Text('All topics stable!'));
+        }
+
+        return Column(
+          children: priorityTopics.map((topic) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              child: _buildGlassContainer(
+                theme,
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 4,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            topic.name,
+                            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            'Forgetting Risk: ${(topic.forgettingRisk * 100).toStringAsFixed(0)}%',
+                            style: theme.textTheme.bodySmall?.copyWith(color: Colors.redAccent),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton.filledTonal(
+                      onPressed: () {
+                        // Navigate to specific topic review
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => const SpacedRepetitionScreen()));
+                      },
+                      icon: const Icon(Icons.play_arrow_rounded),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 
@@ -274,27 +382,6 @@ class _ProgressScreenState extends State<ProgressScreen> {
     );
   }
 
-  Future<void> _setDailyGoal(UserModel user) async {
-    final userService = Provider.of<UserService>(context, listen: false);
-    final newGoal = await showDialog<int>(
-      context: context,
-      builder: (context) => GoalSettingDialog(currentGoal: user.dailyGoal),
-    );
-
-    if (newGoal != null && newGoal > 0) {
-      try {
-        await userService.updateDailyGoal(user.uid, newGoal);
-        setState(() {
-          _statsFuture = _loadStats(user.uid);
-        });
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update goal: $e')),
-        );
-      }
-    }
-  }
 
   Widget _buildSectionTitle(
       BuildContext context, String title, IconData icon, ThemeData theme) {
@@ -415,61 +502,6 @@ class _ProgressScreenState extends State<ProgressScreen> {
     return '${minutes}m';
   }
 
-  Widget _buildReviewBanner(int dueCount, ThemeData theme) {
-    if (dueCount == 0) return const SizedBox.shrink();
-    return GestureDetector(
-      onTap: () async {
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const SpacedRepetitionScreen(),
-          ),
-        );
-        // Refresh stats after returning from review
-        if (mounted &&
-            Provider.of<UserModel?>(context, listen: false) != null) {
-          setState(() {
-            _statsFuture = _loadStats(
-                Provider.of<UserModel?>(context, listen: false)!.uid);
-          });
-        }
-      },
-      child: _buildGlassContainer(
-        theme,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                  color: Colors.amber.withValues(alpha: 0.2), shape: BoxShape.circle),
-              child: const Icon(Icons.notifications_active_rounded,
-                  color: Colors.amber, size: 24),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('$dueCount items due',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.onSurface)),
-                  Text('Review now to retain better',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                          fontSize: 13,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_forward_ios_rounded,
-                color: theme.disabledColor, size: 16),
-          ],
-        ),
-      ),
-    );
-  }
 
   Color _getMasteryColor(double score) {
     if (score < 0.3) return Colors.redAccent;
@@ -477,111 +509,6 @@ class _ProgressScreenState extends State<ProgressScreen> {
     return Colors.greenAccent;
   }
 
-  Widget _buildTopicMastery(ThemeData theme) {
-    return Consumer<MasteryViewModel>(
-      builder: (context, masteryVm, child) {
-        if (masteryVm.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final topics = masteryVm.topics;
-        if (topics.isEmpty) {
-          return _buildGlassContainer(
-            theme,
-            padding: const EdgeInsets.all(24),
-            child: Center(
-              child: Column(
-                children: [
-                  Icon(Icons.auto_stories_rounded,
-                      color: theme.colorScheme.primary.withValues(alpha: 0.3), size: 48),
-                  const SizedBox(height: 16),
-                  Text('No topics tracked yet',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
-                ],
-              ),
-            ),
-          );
-        }
-
-        return Column(
-          children: topics.map((topic) {
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              child: _buildGlassContainer(
-                theme,
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            topic.name,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.onSurface),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Text(
-                          '${(topic.masteryScore * 100).toStringAsFixed(0)}%',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: topic.masteryScore,
-                        minHeight: 8,
-                        backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          _getMasteryColor(topic.masteryScore),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Stability: ${(topic.stabilityScore * 100).toStringAsFixed(0)}%',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
-                        ),
-                        if (topic.forgettingRisk > 0.5)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.red.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text(
-                              'High Risk',
-                              style: TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-        );
-      },
-    );
-  }
 
 }
 

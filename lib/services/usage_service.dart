@@ -10,7 +10,9 @@ class UsageConfig {
   static const double cuMicro = 1.5;     // Summaries, Title generation
   static const double cuStandard = 6.0;  // Quizzes (10q), Flashcards (20c)
   static const double cuMacro = 20.0;    // Exams, Long PDFs, YouTube
-  static const double cuExtreme = 60.0;  // Live Lecture recordings
+  static const double cuExtreme = 45.0;  // Live Lecture recordings (Neural Intake)
+  static const double cuTutor = 8.0;      // AI Tutor Interaction (Voice or Chat)
+  static const double cuTutorSession = 25.0; // Start a Live Voice Session
 
   // Adaptive Multipliers
   static const double multiYoutube = 1.5;
@@ -133,6 +135,8 @@ class UsageService {
     if (actionType == 'summary' || actionType == 'note') base = UsageConfig.cuMicro;
     if (actionType == 'exam') base = UsageConfig.cuMacro;
     if (actionType == 'lecture') base = UsageConfig.cuExtreme;
+    if (actionType == 'tutor') base = UsageConfig.cuTutor;
+    if (actionType == 'tutor_session') base = UsageConfig.cuTutorSession;
     if (actionType == 'mascot') base = UsageConfig.cuNano;
 
     if (isYoutube) base *= UsageConfig.multiYoutube;

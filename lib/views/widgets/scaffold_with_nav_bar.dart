@@ -204,7 +204,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                           children: [
                             if (_isExpanded) ...[
                               Image.asset(
-                                'assets/images/sumquiz_logo.png',
+                                'assets/images/sumquiz_logo.jpg',
                                 width: 28,
                                 height: 28,
                                 errorBuilder: (context, error, stackTrace) =>
@@ -233,7 +233,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 16),
                                 child: Image.asset(
-                                  'assets/images/sumquiz_logo.png',
+                                  'assets/images/sumquiz_logo.jpg',
                                   width: 28,
                                   height: 28,
                                   errorBuilder: (context, error, stackTrace) =>

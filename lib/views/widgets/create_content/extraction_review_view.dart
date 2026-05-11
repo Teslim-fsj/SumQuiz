@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/create_content_provider.dart';
+import '../../../widgets/sumi_mascot.dart';
+import '../../../models/sumi_emotion.dart';
 
 class ExtractionReviewView extends StatefulWidget {
   const ExtractionReviewView({super.key});
@@ -47,14 +49,9 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.auto_stories_rounded,
-                    color: colorScheme.primary),
+              const SumiMascot(
+                state: SumiState.idle,
+                size: 60,
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -62,7 +59,7 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Review Extracted Content',
+                      'Review Neural Extraction',
                       style: GoogleFonts.outfit(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
@@ -130,7 +127,7 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
                 border: Border.all(color: colorScheme.outlineVariant),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -165,9 +162,9 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: colorScheme.primary.withOpacity(0.05),
+              color: colorScheme.primary.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: colorScheme.primary.withOpacity(0.1)),
+              border: Border.all(color: colorScheme.primary.withValues(alpha: 0.1)),
             ),
             child: Row(
               children: [
@@ -199,7 +196,7 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
                 Switch.adaptive(
                   value: provider.saveAsNote,
                   onChanged: (v) => provider.toggleSaveAsNote(v),
-                  activeColor: colorScheme.primary,
+                  activeTrackColor: colorScheme.primary,
                 ),
               ],
             ),
@@ -218,7 +215,7 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20)),
               elevation: 4,
-              shadowColor: colorScheme.primary.withOpacity(0.3),
+              shadowColor: colorScheme.primary.withValues(alpha: 0.3),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,

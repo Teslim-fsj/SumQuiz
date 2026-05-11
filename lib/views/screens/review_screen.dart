@@ -30,6 +30,8 @@ import '../../widgets/sumi_mascot.dart';
 import '../../models/local_summary.dart';
 import '../../models/local_quiz.dart';
 import '../../models/local_flashcard_set.dart';
+import 'package:sumquiz/view_models/mastery_view_model.dart';
+import 'package:sumquiz/views/widgets/knowledge_graph_view.dart';
 import 'quiz_screen.dart';
 
 class ReviewScreen extends StatefulWidget {
@@ -324,421 +326,352 @@ class _ReviewScreenState extends State<ReviewScreen> {
           ),
 
           SafeArea(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _error != null
-                    ? Center(
-                        child: Text(_error!, style: theme.textTheme.bodyMedium))
-                    : _buildMissionDashboard(user, theme),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMissionDashboard(UserModel? user, ThemeData theme) {
-    // Show helpful message if mission is null instead of blank screen
-    if (_dailyMission == null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: _buildGlassCard(
-            theme: theme,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        theme.colorScheme.primary.withValues(alpha: 0.1),
-                        theme.colorScheme.secondary.withValues(alpha: 0.1),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.auto_awesome_rounded,
-                      size: 64, color: theme.colorScheme.primary),
-                ).animate().scale(duration: 800.ms, curve: Curves.elasticOut),
-                const SizedBox(height: 32),
-                Text(
-                  'Your Learning Journey Awaits',
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ).animate().fadeIn(delay: 200.ms),
-                const SizedBox(height: 16),
-                Text(
-                  'Transform any content into personalized study materials.\nStart by summarizing a document or article.',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                    height: 1.6,
-                  ),
-                  textAlign: TextAlign.center,
-                ).animate().fadeIn(delay: 400.ms),
-                const SizedBox(height: 40),
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        theme.colorScheme.primary,
-                        theme.colorScheme.secondary,
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: ElevatedButton.icon(
-                    onPressed: () => context.push('/create-content'),
-                    icon: const Icon(Icons.auto_awesome, size: 24),
-                    label: const Text('Generate My First Mission',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w600)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 32, vertical: 20),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
-                    ),
-                  ),
-                ).animate().scale(delay: 600.ms),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-    final isCompleted = _dailyMission!.isCompleted;
-
-    final isMobile = MediaQuery.of(context).size.width < 600;
-
-    return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 12 : 16, vertical: isMobile ? 8 : 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Quick Tutor Sandbox Trigger
-          // _buildQuickTutorTrigger(theme),
-          const SizedBox(height: 16),
-
-          // Sumi Tutor Proactive Section
-          Center(
-            child: Consumer<SumiProvider>(
-              builder: (context, sumi, child) {
-                final isSuperMode = sumi.currentState == SumiState.analytical;
-
-                return Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    if (isSuperMode)
-                      Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: theme.colorScheme.primary.withOpacity(0.4),
-                              blurRadius: 40,
-                              spreadRadius: 10,
-                            ),
-                          ],
-                        ),
-                      )
-                          .animate(onPlay: (c) => c.repeat(reverse: true))
-                          .scale(
-                              duration: 1.seconds,
-                              begin: const Offset(0.8, 0.8),
-                              end: const Offset(1.2, 1.2))
-                          .shimmer(
-                              color:
-                                  theme.colorScheme.primary.withOpacity(0.2)),
-                    SumiMascot(
-                      state: sumi.currentState,
-                      size: 100,
-                      dialogue: sumi.dialogue,
-                    ),
-                  ],
-                );
+            child: Consumer<MasteryViewModel>(
+              builder: (context, masteryVm, _) {
+                if (masteryVm.isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                return _buildNeuralDashboard(user, masteryVm, theme);
               },
             ),
           ),
-          const SizedBox(height: 16),
-
-          // Premium Welcome Header
-          Container(
-            padding: EdgeInsets.all(isMobile ? 12 : 16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  theme.colorScheme.primary.withValues(alpha: 0.1),
-                  theme.colorScheme.secondary.withValues(alpha: 0.05),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: theme.colorScheme.primary.withValues(alpha: 0.2),
-                width: 1.2,
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        theme.colorScheme.primary,
-                        theme.colorScheme.secondary,
-                      ],
-                    ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Icon(Icons.auto_awesome,
-                      color: Colors.white, size: isMobile ? 18 : 22),
-                ),
-                SizedBox(width: isMobile ? 12 : 20),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Welcome back,',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.7),
-                        ),
-                      ),
-                      Text(
-                        user?.displayName ?? 'Learner',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border:
-                        Border.all(color: Colors.amber.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.local_fire_department,
-                          color: Colors.amber[700], size: 18),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${user?.missionCompletionStreak ?? 0} day streak',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: Colors.amber[800],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ).animate().fadeIn().slideX(),
-
-          SizedBox(height: isMobile ? 12 : 16),
-          // SRS Banner
-          _buildSrsBanner(theme),
-          SizedBox(height: isMobile ? 12 : 16),
-
-          // Premium Mastery Overview
-          Container(
-            padding: EdgeInsets.all(isMobile ? 12 : 16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  theme.colorScheme.surface,
-                  theme.colorScheme.surfaceContainerHighest
-                      .withValues(alpha: 0.3),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                width: 1.2,
-              ),
-            ),
-            child: Row(
-              children: [
-                // Circular progress with enhanced styling
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Container(
-                      height: isMobile ? 48 : 60,
-                      width: isMobile ? 48 : 60,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [
-                            theme.colorScheme.primary.withValues(alpha: 0.1),
-                            theme.colorScheme.secondary.withValues(alpha: 0.05),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      height: isMobile ? 40 : 52,
-                      width: isMobile ? 40 : 52,
-                      child: CircularProgressIndicator(
-                        value: _masteryScore / 100,
-                        strokeWidth: 6,
-                        color: const Color(0xFF0D9488), // secondaryTeal
-                        backgroundColor: theme.colorScheme.outlineVariant
-                            .withValues(alpha: 0.2),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0D9488).withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.auto_awesome_rounded,
-                          color: Color(0xFF0D9488), size: 20),
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Knowledge Mastery',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.8))),
-                      const SizedBox(height: 4),
-                      Text('${_masteryScore.toStringAsFixed(1)}%',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: theme.colorScheme.onSurface)),
-                      const SizedBox(height: 8),
-                      LinearProgressIndicator(
-                        value: _masteryScore / 100,
-                        backgroundColor: theme.colorScheme.outlineVariant
-                            .withValues(alpha: 0.2),
-                        color: const Color(0xFF0D9488),
-                        borderRadius: BorderRadius.circular(10),
-                        minHeight: 6,
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer
-                        .withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                        color:
-                            theme.colorScheme.primary.withValues(alpha: 0.2)),
-                  ),
-                  child: TextButton(
-                    onPressed: () => context.push('/progress'),
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: const Size(0, 0),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: const Text('View Insights',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 12)),
-                  ),
-                ),
-              ],
-            ),
-          ).animate().fadeIn(delay: 100.ms).slideX(),
-          const SizedBox(height: 16),
-          _buildBrainState(user, theme),
-          SizedBox(height: isMobile ? 16 : 24),
-
-          // Premium Stats Row
-          Row(
-            children: [
-              Expanded(
-                child: _buildPremiumStatCard(
-                  title: 'Learning Momentum',
-                  value: (user?.currentMomentum ?? 0).toStringAsFixed(0),
-                  subtitle: 'XP Points',
-                  icon: Icons.local_fire_department_rounded,
-                  iconColor: Colors.orange,
-                  gradient: const LinearGradient(
-                    colors: [Colors.orange, Colors.deepOrange],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  theme: theme,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildPremiumGoalCard(user, theme),
-              ),
-            ],
-          ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.1),
-
-          const SizedBox(height: 16),
-          // Mission Card
-          _buildMissionCard(isCompleted, theme),
-
-          const SizedBox(height: 16),
-          // Recent Activity
-          Text('Jump Back In',
-              style: theme.textTheme.titleMedium?.copyWith(
-                  fontSize: isMobile ? 14 : 16,
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8))),
-          SizedBox(height: isMobile ? 8 : 16),
-          SizedBox(
-            height: isMobile ? 150 : 180,
-            child: _buildRecentActivity(user, theme),
-          ).animate().fadeIn(delay: 400.ms),
-
-          SizedBox(height: isMobile ? 16 : 24),
         ],
       ),
     );
   }
+
+  Widget _buildNeuralDashboard(UserModel? user, MasteryViewModel masteryVm, ThemeData theme) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    
+    return RefreshIndicator(
+      onRefresh: () async {
+        await _loadDashboardData();
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.symmetric(
+            horizontal: isMobile ? 16 : 24, vertical: isMobile ? 12 : 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildNeuralHeader(user, theme),
+            const SizedBox(height: 24),
+            
+            _buildSumiProactiveSection(theme),
+            const SizedBox(height: 24),
+
+            _buildLiveSandboxLink(theme),
+            const SizedBox(height: 24),
+
+            _buildRetentionHealthCard(masteryVm, theme),
+            const SizedBox(height: 24),
+
+            _buildNeuralHotspots(masteryVm, theme),
+            const SizedBox(height: 24),
+
+            _buildNeuralHistory(user, theme),
+            const SizedBox(height: 24),
+
+            _buildDailyMissionSection(theme),
+            const SizedBox(height: 24),
+
+            _buildLearningMomentum(user, theme),
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNeuralHeader(UserModel? user, ThemeData theme) {
+    return Row(
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'NEURAL HUB',
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+              ),
+            ),
+            Text(
+              user?.displayName?.toUpperCase() ?? 'LEARNER',
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ],
+        ),
+        const Spacer(),
+        _buildStreakBadge(user, theme),
+      ],
+    ).animate().fadeIn().slideX(begin: -0.2);
+  }
+
+  Widget _buildStreakBadge(UserModel? user, ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.orange.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.local_fire_department_rounded, color: Colors.orange, size: 20),
+          const SizedBox(width: 4),
+          Text(
+            '${user?.missionCompletionStreak ?? 0}',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Colors.orange,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSumiProactiveSection(ThemeData theme) {
+    return Consumer<SumiProvider>(
+      builder: (context, sumi, _) {
+        return Center(
+          child: Column(
+            children: [
+              SumiMascot(
+                state: sumi.currentState,
+                size: 100,
+                dialogue: sumi.dialogue,
+              ).animate(onPlay: (c) => c.repeat(reverse: true))
+               .scale(duration: 2.seconds, begin: const Offset(0.95, 0.95), end: const Offset(1.05, 1.05)),
+              const SizedBox(height: 12),
+              _buildGlassCard(
+                theme: theme,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                child: Text(
+                  sumi.dialogue ?? "Ready to strengthen your neural pathways?",
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
+                ),
+              ).animate().fadeIn(delay: 400.ms),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRetentionHealthCard(MasteryViewModel masteryVm, ThemeData theme) {
+    final score = masteryVm.overallMastery;
+    return GestureDetector(
+      onTap: () => context.push('/progress'),
+      child: _buildGlassCard(
+        theme: theme,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('RETENTION HEALTH', 
+                  style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${(score * 100).toStringAsFixed(1)}%',
+                        style: theme.textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w900, color: theme.colorScheme.primary)),
+                      const SizedBox(height: 4),
+                      Text('System Stability: Optimal', style: theme.textTheme.bodySmall),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  width: 60,
+                  height: 60,
+                  child: CircularProgressIndicator(
+                    value: score,
+                    strokeWidth: 8,
+                    strokeCap: StrokeCap.round,
+                    backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1);
+  }
+
+  Widget _buildNeuralHotspots(MasteryViewModel masteryVm, ThemeData theme) {
+    final hotspots = masteryVm.highRiskTopics.take(2).toList();
+    if (hotspots.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('NEURAL HOTSPOTS', 
+          style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold, letterSpacing: 1.5, color: Colors.redAccent)),
+        const SizedBox(height: 12),
+        ...hotspots.map((topic) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _buildGlassCard(
+            theme: theme,
+            borderColor: Colors.redAccent.withValues(alpha: 0.2),
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: Colors.redAccent.withValues(alpha: 0.1), shape: BoxShape.circle),
+                child: const Icon(Icons.flash_on_rounded, color: Colors.redAccent),
+              ),
+              title: Text(topic.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text('Forgetting Risk: ${(topic.forgettingRisk * 100).toStringAsFixed(0)}%'),
+              trailing: IconButton.filledTonal(
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SpacedRepetitionScreen())),
+                icon: const Icon(Icons.psychology_rounded),
+                style: IconButton.styleFrom(foregroundColor: Colors.redAccent),
+              ),
+            ),
+          ),
+        )),
+      ],
+    ).animate().fadeIn(delay: 300.ms);
+  }
+
+  Widget _buildDailyMissionSection(ThemeData theme) {
+    final isCompleted = _dailyMission?.isCompleted ?? false;
+    return _buildMissionCard(isCompleted, theme);
+  }
+
+  Widget _buildLearningMomentum(UserModel? user, ThemeData theme) {
+    return _buildGlassCard(
+      theme: theme,
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.bolt_rounded, color: Colors.amber),
+              const SizedBox(width: 12),
+              Text('NEURAL MOMENTUM', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+              const Spacer(),
+              Text('${user?.currentMomentum?.toStringAsFixed(0) ?? 0} XP', style: const TextStyle(fontWeight: FontWeight.w900)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LinearProgressIndicator(
+              value: (user?.itemsCompletedToday ?? 0) / (user?.dailyGoal ?? 5),
+              minHeight: 10,
+              backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+              valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: 400.ms);
+  }
+
+  Widget _buildLiveSandboxLink(ThemeData theme) {
+    return GestureDetector(
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => const SumiLiveSandboxOverlay(),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              theme.colorScheme.primary,
+              theme.colorScheme.secondary,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [
+            BoxShadow(
+              color: theme.colorScheme.primary.withValues(alpha: 0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.mic_none_rounded, color: Colors.white, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "NEURAL LINK LIVE",
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  Text(
+                    "Instant voice tutoring session",
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+          ],
+        ),
+      ).animate(onPlay: (c) => c.repeat()).shimmer(duration: 3.seconds, color: Colors.white24),
+    );
+  }
+
+  Widget _buildNeuralHistory(UserModel? user, ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('NEURAL HISTORY', 
+          style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 160,
+          child: _buildRecentActivity(user, theme),
+        ),
+      ],
+    ).animate().fadeIn(delay: 350.ms);
+  }
+
+
 
   Widget _buildGlassCard(
       {required Widget child,

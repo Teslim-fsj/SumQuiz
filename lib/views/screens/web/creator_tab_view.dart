@@ -858,7 +858,7 @@ class _CreatorTabViewState extends State<CreatorTabView> {
                   children: [
                     Row(
                       children: [
-                        Image.asset('assets/images/sumquiz_logo.png',
+                        Image.asset('assets/images/sumquiz_logo.jpg',
                             width: 32,
                             height: 32,
                             errorBuilder: (_, __, ___) => const Icon(
@@ -914,7 +914,7 @@ class _CreatorTabViewState extends State<CreatorTabView> {
                         children: [
                           Row(
                             children: [
-                              Image.asset('assets/images/sumquiz_logo.png',
+                              Image.asset('assets/images/sumquiz_logo.jpg',
                                   width: 32,
                                   height: 32,
                                   errorBuilder: (_, __, ___) => const Icon(

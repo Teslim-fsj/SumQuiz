@@ -14,6 +14,8 @@ import '../widgets/create_content/creation_progress_indicator.dart';
 import '../widgets/create_content/creation_success_view.dart';
 import '../widgets/create_content/extraction_review_view.dart';
 import '../widgets/upgrade_dialog.dart';
+import '../../widgets/sumi_mascot.dart';
+import '../../models/sumi_emotion.dart';
 
 class CreateContentScreen extends StatefulWidget {
   const CreateContentScreen({super.key});
@@ -715,14 +717,9 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: colorScheme.error.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.error_outline_rounded,
-                color: colorScheme.error, size: 64),
+          const SumiMascot(
+            state: SumiState.confused,
+            size: 150,
           ),
           const SizedBox(height: 32),
           Text(

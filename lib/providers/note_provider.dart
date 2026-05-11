@@ -8,6 +8,9 @@ import '../models/local_drawing_stroke.dart';
 import '../services/local_database_service.dart';
 import '../services/enhanced_ai_service.dart';
 import '../services/recording_service.dart';
+import '../services/speech_service.dart';
+import '../services/usage_service.dart';
+import '../services/auth_service.dart';
 
 enum NoteProcessingState { idle, recording, transcribing, generating, error }
 
@@ -15,14 +18,29 @@ class NoteProvider with ChangeNotifier {
   final LocalDatabaseService _localDb;
   final EnhancedAIService _aiService;
   final RecordingService _recordingService;
+  final SpeechService _speechService;
+
+  StreamSubscription? _speechSub;
+  StreamSubscription? _partialSub;
+  final _transcriptChunkController = StreamController<String>.broadcast();
+  Stream<String> get transcriptChunkStream => _transcriptChunkController.stream;
+
+  final UsageService? _usageService;
+  final AuthService _authService;
 
   NoteProvider({
     required LocalDatabaseService localDb,
     required EnhancedAIService aiService,
     required RecordingService recordingService,
+    required SpeechService speechService,
+    UsageService? usageService,
+    required AuthService authService,
   })  : _localDb = localDb,
         _aiService = aiService,
-        _recordingService = recordingService {
+        _recordingService = recordingService,
+        _speechService = speechService,
+        _usageService = usageService,
+        _authService = authService {
     _initRecordingStreams();
   }
 
@@ -161,24 +179,53 @@ class NoteProvider with ChangeNotifier {
 
   // --- RECORDING ACTIONS ---
 
-  List<String> _liveInsights = [];
+  final List<String> _liveInsights = [];
   List<String> get liveInsights => _liveInsights;
 
-  Timer? _insightTimer;
+  String _livePartialTranscript = '';
+  String get livePartialTranscript => _livePartialTranscript;
 
-  String get liveTranscript => _liveInsights.isNotEmpty ? _liveInsights.last : '';
+  String get liveTranscript => _livePartialTranscript.isNotEmpty 
+      ? _livePartialTranscript 
+      : (_liveInsights.isNotEmpty ? _liveInsights.last : '');
 
   Future<void> startRecording(String userId) async {
+    if (userId.isNotEmpty && _usageService != null) {
+      final canProceed = await _usageService.canPerformAction(userId, 'lecture');
+      if (!canProceed) {
+        _errorMessage = "Neural capacity depleted. Upgrade for more intake!";
+        _state = NoteProcessingState.error;
+        notifyListeners();
+        return;
+      }
+    }
+
     if (_currentNote == null) {
       await createNewNote(userId);
     }
 
     try {
       await _recordingService.startRecording(userId);
+      await _speechService.init();
+      
+      _speechSub?.cancel();
+      _speechSub = _speechService.transcriptStream.listen((text) {
+        _liveInsights.add(text);
+        _transcriptChunkController.add(text);
+        _livePartialTranscript = ''; // Clear partial when committed
+        notifyListeners();
+      });
+
+      _partialSub = _speechService.partialStream.listen((text) {
+        _livePartialTranscript = text;
+        notifyListeners();
+      });
+
+      await _speechService.startListening();
+
       _state = NoteProcessingState.recording;
       _errorMessage = '';
       _liveInsights.clear();
-      _startInsightSimulation();
       notifyListeners();
     } catch (e) {
       _errorMessage = e.toString();
@@ -187,32 +234,17 @@ class NoteProvider with ChangeNotifier {
     }
   }
 
-  void _startInsightSimulation() {
-    _insightTimer?.cancel();
-    _insightTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (_state != NoteProcessingState.recording) {
-        timer.cancel();
-        return;
-      }
-      
-      final phrases = [
-        "Analyzing audio frequency...",
-        "Detecting key educational concepts...",
-        "Capturing core lecture points...",
-        "Neural processing active...",
-        "Sumi is listening and indexing...",
-      ];
-      
-      _liveInsights.add(phrases[timer.tick % phrases.length]);
-      notifyListeners();
-    });
-  }
+
 
   Future<void> stopRecording() async {
     if (_state != NoteProcessingState.recording) return;
 
     try {
-      _insightTimer?.cancel();
+      await _speechService.stopListening();
+      _speechSub?.cancel();
+      _partialSub?.cancel();
+      _livePartialTranscript = '';
+      
       final path = await _recordingService.stopRecording();
       if (path != null && _currentNote != null) {
         final recording = LocalRecording(
@@ -224,6 +256,11 @@ class NoteProvider with ChangeNotifier {
           createdAt: DateTime.now(),
         );
         await _localDb.saveRecording(recording);
+        
+        // Record usage after successful capture
+        if (_currentNote != null && _usageService != null) {
+          await _usageService.recordAction(_currentNote!.userId, 'lecture');
+        }
       }
       _state = NoteProcessingState.idle;
       _recordingDuration = Duration.zero;
@@ -291,6 +328,7 @@ class NoteProvider with ChangeNotifier {
     }
   }
 
+
   // --- AUDIO ACTIONS ---
   void seekAudio(Duration time) {
     // Integration with an audio player would go here
@@ -315,6 +353,9 @@ class NoteProvider with ChangeNotifier {
     _durationSub?.cancel();
     _notesSub?.cancel();
     _recordingsSub?.cancel();
+    _speechSub?.cancel();
+    _partialSub?.cancel();
+    _transcriptChunkController.close();
     super.dispose();
   }
 }

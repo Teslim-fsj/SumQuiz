@@ -122,27 +122,37 @@ class _SumiLiveSandboxOverlayState extends State<SumiLiveSandboxOverlay> {
   Widget _buildTutorMode(ThemeData theme, SumiProvider sumi) {
     return Column(
       children: [
-        // Compact Header with Mascot
+        // Compact Header
         Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SumiMascot(
-                state: sumi.currentState,
-                size: 60,
-                showBubble: false,
+              Text(
+                "Sumi Tutor",
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
+                ),
               ),
-              const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(height: 4),
+              Row(
                 children: [
-                  Text(
-                    "Sumi Tutor",
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      shape: BoxShape.circle,
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   Text(
                     "Grounded in: $_currentFileName",
-                    style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.primary),
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
@@ -153,107 +163,11 @@ class _SumiLiveSandboxOverlayState extends State<SumiLiveSandboxOverlay> {
         const Divider(height: 1),
 
         // ChatGPT-Style Chat View
-        const Expanded(
-          child: SumiChatView(),
+        Expanded(
+          child: SumiChatView(groundingContext: _currentFileName),
         ),
 
-        // Voice Controls (Sticky at bottom if needed, or integrated into ChatView)
-        // For now, let's keep them separate as a modern toggle
-        _buildVoiceControls(theme, sumi),
       ],
-    );
-  }
-
-
-  Widget _buildVoiceControls(ThemeData theme, SumiProvider sumi) {
-    return Column(
-      children: [
-        if (_isListening)
-          _buildWaveform(theme)
-        else
-          const SizedBox(height: 40),
-          
-        const SizedBox(height: 20),
-        
-        GestureDetector(
-          onTapDown: (_) => setState(() => _isListening = true),
-          onTapUp: (_) async {
-            setState(() {
-              _isListening = false;
-              _isProcessing = true;
-            });
-            
-            // Compute Orchestration (Invisible Economy)
-            final compute = ComputeManager();
-            final canProceed = await compute.orchestrateAction(
-              "user_id_here", // Should be passed from parent
-              "mascot",
-            );
-
-            if (!canProceed) {
-              sumi.showTutorMessage(
-                "I'm integrating your recent progress. Let's take a quick 1-minute neural reset!",
-                state: SumiState.tired,
-              );
-              setState(() => _isProcessing = false);
-              return;
-            }
-
-            // Simulated Voice Recognition (Production placeholder)
-            await Future.delayed(const Duration(seconds: 1));
-            setState(() => _isProcessing = false);
-            
-            const mockTranscript = "Explain the primary function of the mitochondria.";
-            await sumi.askSumi(mockTranscript, context: "Studying Biology: $_currentFileName");
-          },
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: _isListening ? Colors.red.withValues(alpha: 0.2) : theme.colorScheme.primary,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  spreadRadius: 5,
-                ),
-              ],
-            ),
-            child: Icon(
-              _isListening ? Icons.mic : Icons.mic_none,
-              color: Colors.white,
-              size: 40,
-            ),
-          ).animate(onPlay: (controller) => controller.repeat())
-           .shimmer(duration: 2.seconds, color: Colors.white24),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          _isListening ? "Listening..." : "Hold to Speak",
-          style: theme.textTheme.labelMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildWaveform(ThemeData theme) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(15, (index) {
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 2),
-          width: 4,
-          height: 10 + (math.Random().nextDouble() * 30),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ).animate(onPlay: (c) => c.repeat(reverse: true))
-         .scaleY(duration: (200 + (index * 50)).ms, begin: 0.5, end: 1.5);
-      }),
     );
   }
 }

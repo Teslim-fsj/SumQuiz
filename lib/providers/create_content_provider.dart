@@ -326,7 +326,7 @@ class CreateContentProvider with ChangeNotifier {
             cancelToken: cancelToken,
           );
           _phase = CreationPhase.success;
-          await _usageService.recordAction(userId, 'topic');
+          // Credits orchestrated at start
           notifyListeners();
           return;
         } else {
@@ -383,8 +383,7 @@ class CreateContentProvider with ChangeNotifier {
         return;
       }
 
-      // 3. Record Action
-      await _usageService.recordAction(userId, _selectedSourceType);
+      // 3. (Credits already orchestrated via computeManager above)
 
       // 4. Generate Final Materials
       _progressMessage = 'Generating study materials...';

@@ -24,6 +24,8 @@ class SumiMascot extends StatefulWidget {
 class _SumiMascotState extends State<SumiMascot> {
   VideoPlayerController? _controller;
   String? _currentAsset;
+  bool _hasError = false;
+  bool _isInitializing = false;
 
   final Map<SumiState, String> _assetMap = {
     SumiState.idle: 'assets/mascot/animations/Happy.webm',
@@ -55,9 +57,12 @@ class _SumiMascotState extends State<SumiMascot> {
   Future<void> _initializePlayer() async {
     final asset = _assetMap[widget.state] ?? _assetMap[SumiState.idle]!;
     
-    if (asset == _currentAsset) return;
+    if (asset == _currentAsset && !_hasError) return;
+    if (_isInitializing && asset == _currentAsset) return;
     
     _currentAsset = asset;
+    _isInitializing = true;
+    _hasError = false;
 
     // Handle GIF separately
     if (asset.endsWith('.gif')) {
@@ -65,27 +70,38 @@ class _SumiMascotState extends State<SumiMascot> {
         await _controller!.dispose();
         _controller = null;
       }
+      _isInitializing = false;
       if (mounted) setState(() {});
       return;
     }
 
     // Dispose old controller
     final oldController = _controller;
-    
     _controller = VideoPlayerController.asset(asset);
     
     try {
-      await _controller!.initialize();
-      await _controller!.setLooping(true);
-      await _controller!.play();
+      // Add a 4-second timeout to prevent endless loading
+      await _controller!.initialize().timeout(const Duration(seconds: 4));
+      
+      if (mounted && _currentAsset == asset) {
+        await _controller!.setLooping(true);
+        await _controller!.play();
+        _hasError = false;
+      }
       
       if (oldController != null) {
         await oldController.dispose();
       }
-      
-      if (mounted) setState(() {});
     } catch (e) {
-      debugPrint('Error initializing Sumi video: $e');
+      debugPrint('Error initializing Sumi video ($asset): $e');
+      _hasError = true;
+      if (_controller != null) {
+        await _controller!.dispose();
+        _controller = null;
+      }
+    } finally {
+      _isInitializing = false;
+      if (mounted) setState(() {});
     }
   }
 
@@ -116,12 +132,15 @@ class _SumiMascotState extends State<SumiMascot> {
       width: widget.size,
       height: widget.size,
       child: Center(
-        child: asset.endsWith('.gif')
+        child: _hasError 
+          ? _buildFallbackImage()
+          : (asset.endsWith('.gif')
             ? Image.asset(
                 asset,
                 width: widget.size,
                 height: widget.size,
                 fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => _buildFallbackImage(),
               )
             : (_controller != null && _controller!.value.isInitialized
                 ? FittedBox(
@@ -132,9 +151,18 @@ class _SumiMascotState extends State<SumiMascot> {
                       child: VideoPlayer(_controller!),
                     ),
                   )
-                : const CircularProgressIndicator(strokeWidth: 2)),
+                : const CircularProgressIndicator(strokeWidth: 2))),
       ),
     );
+  }
+
+  Widget _buildFallbackImage() {
+    return Image.asset(
+      'assets/images/sumi.png',
+      width: widget.size,
+      height: widget.size,
+      fit: BoxFit.contain,
+    ).animate().fadeIn();
   }
 
   Widget _buildDialogueBubble(ThemeData theme) {
