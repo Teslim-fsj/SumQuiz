@@ -250,6 +250,25 @@ class CreateContentProvider with ChangeNotifier {
       required bool allowWebImport}) async {
     if (_phase == CreationPhase.processing) return;
 
+    // Phase 1: Extraction (Free, no CU cost yet)
+    if (_extractionResult == null &&
+        _selectedSourceType != 'text' &&
+        _selectedSourceType != 'topic') {
+      await extractContent(userId,
+          allowYouTubeImport: allowYouTubeImport,
+          allowPdfImport: allowPdfImport,
+          allowWebImport: allowWebImport);
+      return;
+    }
+
+    // Phase 2: Generation (Paid, costs CU)
+    await generateStudyPack(userId);
+  }
+
+  Future<void> extractContent(String userId,
+      {required bool allowYouTubeImport,
+      required bool allowPdfImport,
+      required bool allowWebImport}) async {
     _phase = CreationPhase.processing;
     _progressMessage = 'Preparing your content...';
     _errorMessage = '';
@@ -261,92 +280,38 @@ class CreateContentProvider with ChangeNotifier {
     final cancelToken = _cancelToken!;
 
     try {
-      final ComputeManager computeManager = ComputeManager();
-
-      // Helper for gated deduction
-      Future<void> ensureCUDeducted() async {
-        if (_cuDeducted) return;
-        final bool canProceed = await computeManager.orchestrateAction(
-          userId,
-          _selectedSourceType == 'exam' ? 'exam' : 'standard',
-          isHeavy: _fileBytes != null,
-          isYoutube: _selectedSourceType == 'youtube',
-          isMultimodal: _selectedSourceType == 'pdf' || _selectedSourceType == 'image',
-        );
-        if (!canProceed) throw Exception('CAPACITY_STABILIZING');
-        _cuDeducted = true;
-      }
-
-      ExtractionResult? extractionResult;
-
       if (_selectedSourceType == 'youtube' && !allowYouTubeImport) {
         throw Exception(kYoutubeProRequiredMessage);
       }
-
-      // Handle YouTube Transcript via Extraction Service
-      if (_selectedSourceType == 'youtube') {
-        await ensureCUDeducted();
-        _progressMessage = 'Analyzing YouTube video...';
-        notifyListeners();
-        try {
-          extractionResult = await _extractionService.extractContent(
-            type: 'youtube',
-            input: _textContent,
-            userId: userId,
-            allowYouTubeImport: allowYouTubeImport,
-            allowPdfImport: allowPdfImport,
-            allowWebImport: allowWebImport,
-            cancelToken: cancelToken,
-            onProgress: (msg) {
-              _progressMessage = msg;
-              notifyListeners();
-            },
-          );
-        } catch (e) {
-          throw Exception(
-              'YouTube Error: ${e.toString().replaceFirst('Exception: ', '')}');
-        }
+      if (_selectedSourceType == 'pdf' && !allowPdfImport) {
+        throw Exception(kPdfProRequiredMessage);
+      }
+      if (_selectedSourceType == 'link' && !allowWebImport) {
+        throw Exception(kWebProRequiredMessage);
       }
 
-      // 2. Extract Content (Regular sources)
-      else if (_selectedSourceType == 'text' ||
-          _selectedSourceType == 'topic') {
-        if (_textContent.split(' ').length <= 8 &&
-            !_textContent.contains('\n') &&
-            _selectedSourceType == 'topic') {
-          // Topic generation (Fast track)
-          await ensureCUDeducted();
-          _progressMessage = 'Generating full study set from topic...';
-          _generatedFolderId = await _aiService.generateFromTopic(
-            topic: _textContent,
-            userId: userId,
-            localDb: _localDb,
-            depth: _selectedDifficulty,
-            quizCount: _quizCount,
-            cardCount: _flashcardCount,
-            questionTypes: _selectedQuestionTypes,
-            onProgress: (msg) {
-              _progressMessage = msg;
-              notifyListeners();
-            },
-            cancelToken: cancelToken,
-          );
-          _phase = CreationPhase.success;
-          notifyListeners();
-          return;
-        } else {
-          // Regular text
-          extractionResult = ExtractionResult(
-              text: _textContent, suggestedTitle: 'Pasted Content');
-        }
+      ExtractionResult? result;
+
+      if (_selectedSourceType == 'youtube') {
+        _progressMessage = 'Analyzing YouTube video...';
+        notifyListeners();
+        result = await _extractionService.extractContent(
+          type: 'youtube',
+          input: _textContent,
+          userId: userId,
+          allowYouTubeImport: allowYouTubeImport,
+          allowPdfImport: allowPdfImport,
+          allowWebImport: allowWebImport,
+          cancelToken: cancelToken,
+          onProgress: (msg) {
+            _progressMessage = msg;
+            notifyListeners();
+          },
+        );
       } else if (_fileBytes != null) {
-        // According to USER: image ocr is free, but PDF/etc cost CU
-        if (_selectedSourceType != 'image') {
-          await ensureCUDeducted();
-        }
         _progressMessage = 'Extracting content from your file...';
         notifyListeners();
-        extractionResult = await _extractionService.extractContent(
+        result = await _extractionService.extractContent(
           type: _selectedSourceType,
           input: _fileBytes!,
           userId: userId,
@@ -361,10 +326,9 @@ class CreateContentProvider with ChangeNotifier {
           },
         );
       } else if (_selectedSourceType == 'link') {
-        await ensureCUDeducted();
         _progressMessage = 'Analyzing webpage content...';
         notifyListeners();
-        extractionResult = await _extractionService.extractContent(
+        result = await _extractionService.extractContent(
           type: 'link',
           input: _textContent,
           userId: userId,
@@ -379,36 +343,81 @@ class CreateContentProvider with ChangeNotifier {
         );
       }
 
-      if (extractionResult == null) {
+      if (result == null) {
         throw Exception('Failed to extract content. Please try again.');
       }
 
-      // If we are in the source phase, we move to review first
-      if (_phase == CreationPhase.processing && _extractionResult == null) {
-        _extractionResult = extractionResult;
-        _textContent = extractionResult.text;
-        _phase = CreationPhase.extractionReview;
-        _progressMessage = '';
+      _extractionResult = result;
+      _textContent = result.text;
+      _phase = CreationPhase.extractionReview;
+      _progressMessage = '';
+      _stopTipRotation();
+      notifyListeners();
+    } catch (e) {
+      _handleError(e, cancelToken);
+    }
+  }
+
+  Future<void> generateStudyPack(String userId) async {
+    _phase = CreationPhase.processing;
+    _progressMessage = 'Generating study materials...';
+    _errorMessage = '';
+    _isCancelled = false;
+    _startTipRotation();
+    notifyListeners();
+
+    _cancelToken = CancellationToken();
+    final cancelToken = _cancelToken!;
+
+    final startTime = DateTime.now();
+    try {
+      final ComputeManager computeManager = ComputeManager();
+
+      // 1. Gated Usage Deduction (One-time)
+      if (!_cuDeducted) {
+        _progressMessage = 'Orchestrating neural compute...';
+        notifyListeners();
+        
+        final bool canProceed = await computeManager.orchestrateAction(
+          userId,
+          _selectedSourceType == 'exam' ? 'exam' : 'standard',
+          isHeavy: _fileBytes != null,
+          isYoutube: _selectedSourceType == 'youtube',
+          isMultimodal: _selectedSourceType == 'pdf' || _selectedSourceType == 'image',
+        );
+        if (!canProceed) throw Exception('CAPACITY_STABILIZING');
+        _cuDeducted = true;
+      }
+
+      // 2. Fast-track for Topic generation
+      if (_selectedSourceType == 'topic' && _textContent.split(' ').length <= 8) {
+        _progressMessage = 'Generating full study set from topic...';
+        _generatedFolderId = await _aiService.generateFromTopic(
+          topic: _textContent,
+          userId: userId,
+          localDb: _localDb,
+          depth: _selectedDifficulty,
+          quizCount: _quizCount,
+          cardCount: _flashcardCount,
+          questionTypes: _selectedQuestionTypes,
+          onProgress: (msg) {
+            _progressMessage = msg;
+            notifyListeners();
+          },
+          cancelToken: cancelToken,
+        );
+        _phase = CreationPhase.success;
+        _stopTipRotation();
         notifyListeners();
         return;
       }
 
-      // 3. (Credits already orchestrated via computeManager above)
-
-      // 4. Generate Final Materials
-      await ensureCUDeducted();
-      _progressMessage = 'Generating study materials...';
-      notifyListeners();
-
-      final title = extractionResult.suggestedTitle.isNotEmpty
-          ? extractionResult.suggestedTitle
-          : (_fileName ??
-              (_textContent.length > 30
-                  ? '${_textContent.substring(0, 30)}...'
-                  : _textContent));
+      // 3. Standard Generation Flow
+      final textToProcess = _textContent;
+      final title = _fileName ?? _extractionResult?.suggestedTitle ?? 'Study Deck';
 
       _generatedFolderId = await _aiService.generateAndStoreOutputs(
-        text: extractionResult.text,
+        text: textToProcess,
         title: title,
         requestedOutputs: ['summary', 'quiz', 'flashcards'],
         userId: userId,
@@ -425,7 +434,15 @@ class CreateContentProvider with ChangeNotifier {
         cancelToken: cancelToken,
       );
 
-      // 5. Auto-save as Note if requested
+      // 4. Validation Pass
+      onProgress('Verifying neural artifacts...');
+      final folderContents = await _localDb.getFolderContentsForUser(userId);
+      final hasArtifacts = folderContents.any((c) => c.folderId == _generatedFolderId);
+      if (!hasArtifacts) {
+        throw Exception('Generation completed but artifacts were not stored correctly.');
+      }
+
+      // 5. Auto-save as Note
       if (_saveAsNote) {
         _progressMessage = 'Saving as note...';
         notifyListeners();
@@ -433,41 +450,52 @@ class CreateContentProvider with ChangeNotifier {
           id: const Uuid().v4(),
           userId: userId,
           title: title,
-          content: extractionResult.text,
+          content: textToProcess,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
-          folderId: _generatedFolderId.isNotEmpty
-              ? _generatedFolderId
-              : _preSelectedFolderId,
+          folderId: _generatedFolderId,
           tags: [],
           isSynced: false,
         );
         await _localDb.saveNote(note);
       }
 
+      final duration = DateTime.now().difference(startTime);
+      developer.log('Study pack generation SUCCESS in ${duration.inSeconds}s', 
+          name: 'CreateContentProvider');
+      
       _phase = CreationPhase.success;
       _stopTipRotation();
       notifyListeners();
     } catch (e) {
-      _stopTipRotation();
-      if (cancelToken.isCancelled) {
-        _isCancelled = true;
-        _phase = CreationPhase.source;
-      } else {
-        developer.log('Generation error in provider: $e', name: 'CreateContentProvider');
-        final errorStr = e.toString();
-        
-        if (errorStr.contains('CAPACITY_STABILIZING')) {
-          _errorMessage = "Your neural momentum is currently stabilizing! Sumi suggests a quick 5-minute break while your learning circuits reset.";
-        } else if (errorStr.contains('SYSTEM_OVERLOADED')) {
-          _errorMessage = "Learning pathways are currently very busy. Let's try again in a few moments!";
-        } else {
-          _errorMessage = "Sumi hit a small bump in the neural path: ${errorStr.replaceFirst('Exception: ', '')}";
-        }
-        _phase = CreationPhase.error;
-      }
-      notifyListeners();
+      _handleError(e, cancelToken);
     }
+  }
+
+  void _handleError(dynamic e, CancellationToken cancelToken) {
+    _stopTipRotation();
+    if (cancelToken.isCancelled) {
+      _isCancelled = true;
+      _phase = CreationPhase.source;
+    } else {
+      developer.log('Generation error in provider: $e', name: 'CreateContentProvider');
+      final errorStr = e.toString();
+      
+      if (errorStr.contains('CAPACITY_STABILIZING')) {
+        _errorMessage = "Your neural momentum is currently stabilizing! Sumi suggests a quick 5-minute break while your learning circuits reset.";
+      } else if (errorStr.contains('SYSTEM_OVERLOADED')) {
+        _errorMessage = "Learning pathways are currently very busy. Let's try again in a few moments!";
+      } else {
+        _errorMessage = "Sumi hit a small bump in the neural path: ${errorStr.replaceFirst('Exception: ', '')}";
+      }
+      _phase = CreationPhase.error;
+    }
+    notifyListeners();
+  }
+
+  void onProgress(String msg) {
+    _progressMessage = msg;
+    notifyListeners();
   }
 
   void backToConfig() {

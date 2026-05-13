@@ -259,6 +259,10 @@ class _MyAppState extends State<MyApp> {
         ),
         Provider<FirestoreService>(create: (_) => FirestoreService()),
         Provider<LocalDatabaseService>(create: (_) => LocalDatabaseService()),
+        Provider<SyncService>(
+          create: (context) =>
+              SyncService(context.read<LocalDatabaseService>()),
+        ),
         Provider<SpacedRepetitionService>(
             create: (context) => SpacedRepetitionService(
                 context.read<LocalDatabaseService>().getSpacedRepetitionBox())),
@@ -291,9 +295,17 @@ class _MyAppState extends State<MyApp> {
           update: (context, iapService, previous) =>
               previous!..update(iapService),
         ),
-        ProxyProvider2<IAPService, LocalDatabaseService, EnhancedAIService>(
-          update: (context, iapService, localDb, previous) {
-            final service = EnhancedAIService(iapService: iapService, localDb: localDb);
+        ProxyProvider3<IAPService?, LocalDatabaseService, SyncService, EnhancedAIService>(
+          update: (context, iapService, localDb, syncService, previous) {
+            if (iapService == null) {
+              // Return a temporary service or handle null
+              // (EnhancedAIService needs IAPService for usage logic)
+            }
+            final service = EnhancedAIService(
+              iapService: iapService!, 
+              localDb: localDb,
+              syncService: syncService,
+            );
             // Initialize the service asynchronously
             service.initialize().catchError((e) {
               debugPrint('Error initializing EnhancedAIService: $e');
@@ -322,10 +334,6 @@ class _MyAppState extends State<MyApp> {
         ),
         Provider<YoutubeService>(create: (_) => YoutubeService()),
         Provider<UserService>(create: (_) => UserService()),
-        Provider<SyncService>(
-          create: (context) =>
-              SyncService(context.read<LocalDatabaseService>()),
-        ),
         ChangeNotifierProvider<QuizViewModel>(
           create: (context) => QuizViewModel(
               context.read<LocalDatabaseService>(),
@@ -450,9 +458,9 @@ class _MyAppState extends State<MyApp> {
               return NotificationNavigator(
                 child: MaterialApp.router(
                   title: 'SumQuiz',
-                  theme: CyberNeuralTheme.theme,
-                  darkTheme: CyberNeuralTheme.theme,
-                  themeMode: ThemeMode.dark,
+                  theme: themeProvider.getTheme(),
+                  darkTheme: themeProvider.getTheme(),
+                  themeMode: themeProvider.themeMode,
                   routerConfig: _router,
                   debugShowCheckedModeBanner: false,
                   localizationsDelegates: const [

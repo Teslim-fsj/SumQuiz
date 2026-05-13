@@ -594,22 +594,41 @@ abstract class AIBaseService {
     }
   }
 
-  /// Safely decode JSON with a fallback. Returns fallback if parsing fails.
+  /// Safely decode JSON with optional key validation.
   Map<String, dynamic> safeJsonDecode(String jsonStr,
-      {Map<String, dynamic> fallback = const {}}) {
+      {List<String>? requiredKeys, Map<String, dynamic> fallback = const {}}) {
     try {
       final decoded = json.decode(jsonStr);
-      if (decoded is Map<String, dynamic>) return decoded;
-      // If decoded is a Map but not Map<String, dynamic>, attempt cast
-      if (decoded is Map) {
-        return Map<String, dynamic>.from(decoded);
+      Map<String, dynamic> data;
+
+      if (decoded is Map<String, dynamic>) {
+        data = decoded;
+      } else if (decoded is Map) {
+        data = Map<String, dynamic>.from(decoded);
+      } else {
+        developer.log(
+            'JSON decoded but unexpected type: ${decoded.runtimeType}. First 200 chars: ${jsonStr.length > 200 ? jsonStr.substring(0, 200) : jsonStr}',
+            name: 'AIBaseService',
+            level: 900);
+        return fallback;
       }
-      developer.log(
-          'JSON decoded but unexpected type: ${decoded.runtimeType}. First 200 chars: ${jsonStr.length > 200 ? jsonStr.substring(0, 200) : jsonStr}',
-          name: 'AIBaseService',
-          level: 900);
-      return fallback;
+
+      // Validate required keys
+      if (requiredKeys != null) {
+        final missingKeys =
+            requiredKeys.where((key) => !data.containsKey(key)).toList();
+        if (missingKeys.isNotEmpty) {
+          developer.log('Missing required JSON keys: $missingKeys',
+              name: 'AIBaseService', level: 1000);
+          throw AIServiceException(
+              'Malformed AI response: missing keys $missingKeys',
+              code: 'MALFORMED_JSON');
+        }
+      }
+
+      return data;
     } catch (e) {
+      if (e is AIServiceException) rethrow;
       developer.log(
           'JSON decode FAILED: $e\nRaw input (first 500 chars): ${jsonStr.length > 500 ? jsonStr.substring(0, 500) : jsonStr}',
           name: 'AIBaseService',

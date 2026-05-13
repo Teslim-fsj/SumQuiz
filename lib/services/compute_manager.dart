@@ -74,6 +74,9 @@ class ComputeManager {
     if (!userDoc.exists) return;
     final user = UserModel.fromFirestore(userDoc);
     
+    // Free tier uses Lifetime credits - do not refill daily
+    if (user.tier == 'free') return;
+
     double newMax = _getMaxCapacityForTier(user.tier ?? 'free');
     
     await _db.collection('users').doc(uid).update({
@@ -85,7 +88,6 @@ class ComputeManager {
 
   double _getMaxCapacityForTier(String tier) {
     switch (tier) {
-      case 'starter_pro': return UsageConfig.capStarterPro;
       case 'standard_pro': return UsageConfig.capStandardPro;
       case 'power_pro': return UsageConfig.capPowerPro;
       case 'creator': return UsageConfig.capCreator;

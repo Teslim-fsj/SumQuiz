@@ -59,13 +59,10 @@ Text: $text''';
       developer.log('AI Response received for summary',
           name: 'GeneratorAIService');
       final jsonStr = extractJson(response);
-      final data = safeJsonDecode(jsonStr);
+      final data = safeJsonDecode(jsonStr, requiredKeys: ['content']);
 
-      if (data['content'] == null || data['content'].toString().isEmpty) {
-        developer.log(
-            'CRITICAL: AI response missing "content" field! JSON: $jsonStr',
-            name: 'GeneratorAIService',
-            level: 1000);
+      if (data['content'].toString().trim().isEmpty) {
+        throw AIServiceException('AI generated an empty summary. Neural circuits might be fatigued.', code: 'EMPTY_SUMMARY');
       }
 
       final List<String> tags = [];
@@ -142,7 +139,7 @@ Text: $text''';
       developer.log('AI Response received for quiz',
           name: 'GeneratorAIService');
       final jsonStr = extractJson(response);
-      final data = safeJsonDecode(jsonStr);
+      final data = safeJsonDecode(jsonStr, requiredKeys: ['questions']);
 
       final questionsData = data['questions'];
       final List<LocalQuizQuestion> questions = [];
@@ -214,7 +211,7 @@ Text: $text''';
       developer.log('AI Response received for flashcards',
           name: 'GeneratorAIService');
       final jsonStr = extractJson(response);
-      final data = safeJsonDecode(jsonStr);
+      final data = safeJsonDecode(jsonStr, requiredKeys: ['flashcards']);
 
       final flashcardsData = data['flashcards'];
       final List<LocalFlashcard> flashcards = [];
@@ -227,6 +224,10 @@ Text: $text''';
             ));
           }
         }
+      }
+
+      if (flashcards.isEmpty) {
+        throw AIServiceException('AI generated an empty flashcard set.', code: 'EMPTY_FLASHCARDS');
       }
 
       return LocalFlashcardSet(
@@ -336,7 +337,7 @@ Text: $text''';
       final response = await generateWithRetry(prompt,
           customModel: educatorModel, isPro: isPro, cancelToken: cancelToken);
       final jsonStr = extractJson(response);
-      var data = safeJsonDecode(jsonStr);
+      var data = safeJsonDecode(jsonStr, requiredKeys: ['summary', 'quiz', 'flashcards']);
 
       // If safeJsonDecode failed, it returned an empty map
       if (data.isEmpty) {

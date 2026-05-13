@@ -19,7 +19,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _currentPage = 0;
   UserRole? _selectedRole;
 
-  static const int _totalPages = 5; 
+  static const int _totalPages = 4; 
 
   @override
   void dispose() {
@@ -109,38 +109,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   onPageChanged: _onPageChanged,
                   physics: const NeverScrollableScrollPhysics(), // Force button navigation for narrative
                   children: [
-                    _OnboardingContentPage(
-                      title: "Hi! I'm Sumi.",
-                      subtitle: "Your personal AI tutor and study companion. I'm here to help you master anything, faster.",
-                      features: const ["AI Study Buddy", "24/7 Availability", "Empathetic Learning"],
-                      colorScheme: cs,
-                    ),
-                    _OnboardingContentPage(
-                      title: "Neural Capture",
-                      subtitle: "I can listen to your live lectures and transcribe them directly into organized study notes in real-time.",
-                      features: const ["Live Transcription", "Smart Formatting", "Key Point Extraction"],
-                      colorScheme: cs,
-                    ),
-                    _OnboardingContentPage(
-                      title: "Live Tutoring",
-                      subtitle: "Let's talk! We can have voice-to-voice tutoring sessions. I'll ask questions to test your depth of knowledge.",
-                      features: const ["Voice-to-Voice", "Active Recall", "Socratic Mentoring"],
-                      colorScheme: cs,
-                    ),
-                    _OnboardingContentPage(
-                      title: "Mastery Hub",
-                      subtitle: "From your notes, I generate adaptive quizzes, flashcards, and visual mastery analytics to track your progress.",
-                      features: const ["Smart Quizzes", "Neural Analytics", "Spaced Repetition"],
-                      colorScheme: cs,
-                    ),
-                    _buildRoleSelection(theme),
+                    _buildIntroPage(cs),
+                    _buildSmartPage(cs),
+                    _buildInputPage(cs),
+                    _buildMasteryPage(cs),
                   ],
                 ),
               ),
 
               // Bottom Controls
               _buildBottomControls(cs),
-              SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
+              SizedBox(height: MediaQuery.of(context).padding.bottom + 10),
+              Text(
+                'Step ${_currentPage + 1} of $_totalPages${_getPageSuffix(_currentPage)}',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: cs.onSurface.withValues(alpha: 0.4),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(context).padding.bottom + 10),
             ],
           ),
         ],
@@ -156,14 +144,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         children: [
           Row(
             children: [
-              Icon(Icons.auto_awesome, color: cs.primary, size: 24),
+              const Icon(Icons.auto_awesome, color: Colors.cyanAccent, size: 24),
               const SizedBox(width: 8),
               Text(
                 'SumQuiz',
                 style: GoogleFonts.outfit(
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
-                  color: cs.primary,
+                  color: Colors.white,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -174,7 +162,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: Text(
               'Skip',
               style: GoogleFonts.outfit(
-                color: cs.onSurface.withValues(alpha: 0.5),
+                color: Colors.white.withValues(alpha: 0.5),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -199,43 +187,61 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               (i) => AnimatedContainer(
                 duration: 300.ms,
                 margin: const EdgeInsets.symmetric(horizontal: 4),
-                height: 8,
-                width: _currentPage == i ? 32 : 8,
+                height: 4,
+                width: _currentPage == i ? 24 : 8,
                 decoration: BoxDecoration(
-                  color: _currentPage == i ? cs.primary : cs.primary.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(4),
+                  color: _currentPage == i ? Colors.cyanAccent : Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
           ),
 
           // Action Button
-          SizedBox(
-            height: 64,
-            width: isLastPage ? 180 : 64,
-            child: ElevatedButton(
-              onPressed: isLastPage
-                  ? (_selectedRole != null ? _finishOnboarding : null)
-                  : _next,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: cs.primary,
-                foregroundColor: cs.onPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(32),
-                ),
-                elevation: 8,
-                shadowColor: cs.primary.withValues(alpha: 0.4),
-                padding: EdgeInsets.zero,
+          Container(
+            height: 56,
+            width: isLastPage ? 200 : 120,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Colors.cyanAccent, Colors.purpleAccent],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
               ),
-              child: isLastPage
-                  ? Text(
-                      'Let\'s Go!',
-                      style: GoogleFonts.outfit(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 18,
-                      ),
-                    )
-                  : const Icon(Icons.arrow_forward_ios_rounded, size: 24),
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.cyanAccent.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                )
+              ],
+            ),
+            child: ElevatedButton(
+              onPressed: _next,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    isLastPage ? 'Start Learning' : 'Next',
+                    style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                      color: const Color(0xFF0F172A),
+                    ),
+                  ),
+                  if (!isLastPage) ...[
+                    const SizedBox(width: 8),
+                    const Icon(Icons.arrow_forward, color: Color(0xFF0F172A), size: 20),
+                  ],
+                ],
+              ),
             ),
           ).animate(target: isLastPage ? 1 : 0).shimmer(delay: 2.seconds, duration: 1.seconds),
         ],
@@ -243,41 +249,158 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildRoleSelection(ThemeData theme) {
-    final cs = theme.colorScheme;
+  String _getPageSuffix(int page) {
+    switch (page) {
+      case 0: return ' — Intro';
+      case 1: return ' — Smart';
+      case 2: return ' — Input';
+      case 3: return ' — Mastery';
+      default: return '';
+    }
+  }
+
+  Widget _buildIntroPage(ColorScheme cs) {
+    return _OnboardingContentPage(
+      title: "Your Learning ",
+      highlightedTitle: "Brain.",
+      subtitle: "Turn messy notes, PDFs, lectures, and videos into personalized learning instantly.",
+      colorScheme: cs,
+    );
+  }
+
+  Widget _buildSmartPage(ColorScheme cs) {
+    return _OnboardingContentPage(
+      title: "Study Smarter, ",
+      highlightedTitle: "Not Longer.",
+      subtitle: "Sumi adapts to your strengths, weaknesses, and forgetting patterns automatically.",
+      colorScheme: cs,
+    );
+  }
+
+  Widget _buildInputPage(ColorScheme cs) {
+    return _OnboardingContentPage(
+      title: "Learn From ",
+      highlightedTitle: "Anything.",
+      subtitle: "Upload notes, record lectures, paste YouTube links, or scan textbooks — Sumi handles the rest.",
+      colorScheme: cs,
+      extra: _buildFeatureGrid(cs),
+    );
+  }
+
+  Widget _buildMasteryPage(ColorScheme cs) {
+    return _OnboardingContentPage(
+      title: "Built for ",
+      highlightedTitle: "Mastery",
+      subtitle: "Stay consistent, beat burnout, and grow into the smartest version of yourself.",
+      colorScheme: cs,
+      extra: _buildStatsGrid(cs),
+    );
+  }
+
+  Widget _buildFeatureGrid(ColorScheme cs) {
+    final features = [
+      {'icon': Icons.picture_as_pdf_rounded, 'label': 'PDFs'},
+      {'icon': Icons.play_circle_fill_rounded, 'label': 'YouTube'},
+      {'icon': Icons.mic_rounded, 'label': 'Voice'},
+      {'icon': Icons.camera_alt_rounded, 'label': 'Textbooks'},
+    ];
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      padding: const EdgeInsets.only(top: 24),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          childAspectRatio: 1.8,
+        ),
+        itemCount: features.length,
+        itemBuilder: (context, index) {
+          final f = features[index];
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(f['icon'] as IconData, color: Colors.cyanAccent, size: 24),
+                const SizedBox(height: 8),
+                Text(
+                  f['label'] as String,
+                  style: GoogleFonts.inter(
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildStatsGrid(ColorScheme cs) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 24),
+      child: Row(
         children: [
-          Text(
-            'Who are you studying as?',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.outfit(
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-              color: cs.onSurface,
+          Expanded(
+            child: _buildStatCard(
+              'CURRENT STREAK',
+              '0 Days',
+              Colors.cyanAccent,
+              cs,
             ),
           ),
-          const SizedBox(height: 32),
-          _RoleOption(
-            role: UserRole.student,
-            title: "I'm a Learner",
-            subtitle: "Studying for exams and mastery.",
-            icon: Icons.school_rounded,
-            isSelected: _selectedRole == UserRole.student,
-            onTap: () => setState(() => _selectedRole = UserRole.student),
-            colorScheme: cs,
+          const SizedBox(width: 16),
+          Expanded(
+            child: _buildStatCard(
+              'GROWTH LEVEL',
+              'Seedling',
+              Colors.purpleAccent,
+              cs,
+            ),
           ),
-          const SizedBox(height: 16),
-          _RoleOption(
-            role: UserRole.creator,
-            title: "I'm an Educator",
-            subtitle: "Creating content and tracking students.",
-            icon: Icons.auto_stories_rounded,
-            isSelected: _selectedRole == UserRole.creator,
-            onTap: () => setState(() => _selectedRole = UserRole.creator),
-            colorScheme: cs,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String label, String value, Color color, ColorScheme cs) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: Colors.white38,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: GoogleFonts.outfit(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
         ],
       ),
@@ -287,10 +410,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   SumiState _getSumiStateForPage(int page) {
     switch (page) {
       case 0: return SumiState.idle;
-      case 1: return SumiState.focused;
-      case 2: return SumiState.thinking;
-      case 3: return SumiState.analytical;
-      case 4: return SumiState.celebrating;
+      case 1: return SumiState.analytical;
+      case 2: return SumiState.focused;
+      case 3: return SumiState.celebrating;
       default: return SumiState.idle;
     }
   }
@@ -298,14 +420,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
 class _OnboardingContentPage extends StatelessWidget {
   final String title;
+  final String highlightedTitle;
   final String subtitle;
-  final List<String> features;
+  final Widget? extra;
   final ColorScheme colorScheme;
 
   const _OnboardingContentPage({
     required this.title,
+    required this.highlightedTitle,
     required this.subtitle,
-    required this.features,
+    this.extra,
     required this.colorScheme,
   });
 
@@ -316,33 +440,43 @@ class _OnboardingContentPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            title,
+          RichText(
             textAlign: TextAlign.center,
-            style: GoogleFonts.outfit(
-              fontSize: 32,
-              fontWeight: FontWeight.w900,
-              color: colorScheme.onSurface,
-              letterSpacing: -1,
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: title,
+                  style: GoogleFonts.outfit(
+                    fontSize: 42,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    letterSpacing: -1,
+                  ),
+                ),
+                TextSpan(
+                  text: highlightedTitle,
+                  style: GoogleFonts.outfit(
+                    fontSize: 42,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.cyanAccent,
+                    letterSpacing: -1,
+                  ),
+                ),
+              ],
             ),
           ).animate().fadeIn().slideY(begin: 0.1),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.inter(
               fontSize: 16,
-              color: colorScheme.onSurface.withValues(alpha: 0.6),
+              color: Colors.white.withValues(alpha: 0.6),
               height: 1.5,
+              fontWeight: FontWeight.w500,
             ),
           ).animate(delay: 200.ms).fadeIn(),
-          const SizedBox(height: 32),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            alignment: WrapAlignment.center,
-            children: features.map((f) => _FeatureBadge(text: f, colorScheme: colorScheme)).toList(),
-          ).animate(delay: 400.ms).fadeIn(duration: 600.ms),
+          if (extra != null) extra!,
         ],
       ),
     );
@@ -471,31 +605,48 @@ class _OnboardingBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
+        // Dark Base
+        Container(color: const Color(0xFF0F172A)),
+        
+        // Radial Glows
         Positioned(
-          top: -100,
+          top: -150,
           right: -100,
-          child: Container(
-            width: 300,
-            height: 300,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: colorScheme.primary.withValues(alpha: 0.05),
-            ),
-          ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), duration: 4.seconds),
+          child: _GlowNode(color: Colors.blueAccent.withValues(alpha: 0.15), size: 400),
         ),
         Positioned(
-          bottom: -50,
+          bottom: -100,
+          left: -100,
+          child: _GlowNode(color: Colors.purpleAccent.withValues(alpha: 0.15), size: 400),
+        ),
+        Positioned(
+          top: MediaQuery.of(context).size.height * 0.3,
           left: -50,
-          child: Container(
-            width: 250,
-            height: 250,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: colorScheme.tertiary.withValues(alpha: 0.05),
-            ),
-          ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(begin: const Offset(1, 1), end: const Offset(1.1, 1.1), duration: 5.seconds),
+          child: _GlowNode(color: Colors.cyanAccent.withValues(alpha: 0.1), size: 300),
         ),
       ],
     );
+  }
+}
+
+class _GlowNode extends StatelessWidget {
+  final Color color;
+  final double size;
+  const _GlowNode({required this.color, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [color, Colors.transparent],
+        ),
+      ),
+    ).animate(onPlay: (c) => c.repeat(reverse: true))
+     .scale(begin: const Offset(1, 1), end: const Offset(1.3, 1.3), duration: 4.seconds)
+     .blur(begin: const Offset(10, 10), end: const Offset(30, 30));
   }
 }

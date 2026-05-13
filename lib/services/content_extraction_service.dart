@@ -205,8 +205,14 @@ class ContentExtractionService {
     developer.log('Starting extraction: type=$type, mimeType=$mimeType',
         name: 'ContentExtractionService');
 
-    developer.log('Processing content type: $type',
-        name: 'ContentExtractionService');
+    // ── Pre-process: Truncate text inputs immediately for memory safety ──
+    if (type == 'text' && input is String && input.length > AIConfig.maxInputLength) {
+      developer.log('Pre-truncating text input from ${input.length} to ${AIConfig.maxInputLength}',
+          name: 'ContentExtractionService');
+      input = input.substring(0, AIConfig.maxInputLength);
+    }
+
+    ExtractionResult? finalResult;
 
     try {
       if (type == 'youtube' ||
@@ -282,7 +288,8 @@ class ContentExtractionService {
                   cancelToken: cancelToken,
                 );
                 if (result is Ok<ExtractionResult>) {
-                  return result.value;
+                  finalResult = result.value;
+                  break;
                 } else if (result is ResultError<ExtractionResult>) {
                   // Handle the error but don't crash
                   String errorMessage =
@@ -320,7 +327,8 @@ class ContentExtractionService {
                   cancelToken: cancelToken,
                 );
                 if (result is Ok<ExtractionResult>) {
-                  return result.value;
+                  finalResult = result.value;
+                  break;
                 } else if (result is ResultError<ExtractionResult>) {
                   // Handle the error but don't crash
                   String errorMessage =
@@ -350,7 +358,8 @@ class ContentExtractionService {
                   cancelToken: cancelToken,
                 );
                 if (result is Ok<ExtractionResult>) {
-                  return result.value;
+                  finalResult = result.value;
+                  break;
                 } else if (result is ResultError<ExtractionResult>) {
                   // Handle the error but don't crash
                   String errorMessage =
@@ -448,7 +457,8 @@ class ContentExtractionService {
                 cancelToken: cancelToken,
               );
               if (result is Ok<ExtractionResult>) {
-                return result.value;
+                finalResult = result.value;
+                break;
               }
             } catch (e) {
               developer.log('AI PDF fallback failed: $e',
@@ -517,10 +527,11 @@ class ContentExtractionService {
               }
 
               if (extractedTexts.isNotEmpty) {
-                return ExtractionResult(
+                finalResult = ExtractionResult(
                   text: extractedTexts.join('\n\n---\n\n'),
                   suggestedTitle: finalTitle,
                 );
+                break;
               }
             } catch (e) {
               developer.log('Native Gemini vision failed: $e',
@@ -558,10 +569,11 @@ class ContentExtractionService {
             }
           }
 
-          return ExtractionResult(
+          finalResult = ExtractionResult(
             text: extractedTexts.join('\n\n---\n\n'),
             suggestedTitle: finalTitle,
           );
+          break;
         case 'audio':
           developer.log('Processing audio with mimeType: $mimeType',
               name: 'ContentExtractionService');
@@ -631,7 +643,7 @@ class ContentExtractionService {
           }
 
           // Fall-through to audio case for multimodal media logic
-          return await _extractContentInternal(
+          finalResult = await _extractContentInternal(
             type: 'audio', // Reuse common media logic
             input: input,
             userId: userId,
@@ -640,6 +652,7 @@ class ContentExtractionService {
             onProgress: onProgress,
             cancelToken: cancelToken,
           );
+          break;
         default:
           throw Exception('Unknown content type: $type');
       }
@@ -647,6 +660,12 @@ class ContentExtractionService {
       developer.log('Error in _extractContentInternal',
           name: 'ContentExtractionService', error: e, stackTrace: stack);
       rethrow;
+    }
+
+    // Unify result handling
+    if (finalResult != null) {
+      rawText = finalResult.text;
+      suggestedTitle = finalResult.suggestedTitle;
     }
 
     if (refineWithAI && rawText.isNotEmpty) {

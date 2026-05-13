@@ -43,11 +43,14 @@ class EnhancedAIService {
   
   GeneratorAIService get generatorService => _generatorService;
 
-  EnhancedAIService(
-      {required IAPService iapService, required LocalDatabaseService localDb}) {
+  EnhancedAIService({
+    required IAPService iapService,
+    required LocalDatabaseService localDb,
+    SyncService? syncService,
+  }) {
     _masteryService = MasteryService(
         localDb.getTopicsBox(), localDb.getSpacedRepetitionBox(), localDb);
-    _syncService = SyncService(localDb);
+    _syncService = syncService ?? SyncService(localDb);
     // Initialize services immediately
     _initializeServices();
   }
@@ -267,7 +270,7 @@ class EnhancedAIService {
         'analyzeContentFromUrl called with URL: $url, mimeType: $mimeType',
         name: 'EnhancedAIService');
     try {
-      await _checkUsageLimits(userId);
+      // Usage is now gated at the Provider level via ComputeManager
       try {
         cancelToken?.throwIfCancelled();
         final response =
@@ -321,7 +324,7 @@ class EnhancedAIService {
         'analyzeContentFromBytes called with mimeType: $mimeType, bytes length: ${bytes.length}',
         name: 'EnhancedAIService');
     try {
-      await _checkUsageLimits(userId);
+      // Usage is now gated at the Provider level via ComputeManager
       await initialize();
 
       try {
@@ -373,7 +376,7 @@ class EnhancedAIService {
     developer.log('transcribeRecording called for: $filePath',
         name: 'EnhancedAIService');
     try {
-      await _checkUsageLimits(userId);
+      // Usage is now gated at the Provider level via ComputeManager
       final file = File(filePath);
       if (!await file.exists()) {
         throw EnhancedAIServiceException('Recording file not found.');

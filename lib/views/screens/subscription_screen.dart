@@ -26,14 +26,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   final List<Map<String, dynamic>> _boostPacks = [
     {
-      'id': 'boost_micro',
-      'title': 'Neural Pulse',
-      'credits': '15',
-      'price': r'$1.99',
-      'icon': Icons.bolt_outlined,
-      'color': Colors.amber,
-    },
-    {
       'id': 'boost_standard',
       'title': 'Cognitive Surge',
       'credits': '50',
@@ -61,26 +53,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       'color': Colors.grey,
       'description': 'Essential tools for every learner.',
       'features': [
-        '20 Daily Neural Credits',
+        '20 Lifetime Neural Credits',
         'Basic AI Summaries',
         'Local Flashcards',
         'Neural Hub Access'
-      ]
-    },
-    {
-      'id': 'sumquiz_pro_starter',
-      'title': 'Starter Academic',
-      'price': r'$7.99',
-      'yearlyPrice': r'$75.99',
-      'sessions': '50',
-      'label': 'FOCUS MODE',
-      'color': Colors.blue,
-      'description': 'Master your current coursework with precision.',
-      'features': [
-        '50 Study Sessions / mo',
-        'Direct PDF & Photo Insights',
-        'Smart Revision Summaries',
-        'Standard AI Support'
       ]
     },
     {
@@ -156,7 +132,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     final subProvider = context.watch<SubscriptionProvider>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(),
       body: subProvider.isLoading
           ? const Center(
@@ -178,7 +154,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       backgroundColor: Colors.transparent,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Color(0xFF1F1F1F)),
+        icon: Icon(Icons.arrow_back, color: Theme.of(context).textTheme.bodyLarge?.color),
         onPressed: () => context.pop(),
       ),
       centerTitle: !kIsWeb,
@@ -186,7 +162,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         kIsWeb ? '' : 'Subscription',
         style: GoogleFonts.outfit(
           fontWeight: FontWeight.bold,
-          color: const Color(0xFF1F1F1F),
+          color: Theme.of(context).textTheme.bodyLarge?.color,
           fontSize: 20,
         ),
       ),
@@ -203,7 +179,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             style: GoogleFonts.outfit(
               fontSize: 48,
               fontWeight: FontWeight.w900,
-              color: const Color(0xFF0F172A),
+              color: Theme.of(context).textTheme.displayLarge?.color,
               letterSpacing: -1,
             ),
           ),
@@ -212,7 +188,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             'Become a Top Performer. Unlock your full academic revision potential.',
             style: GoogleFonts.inter(
               fontSize: 18,
-              color: const Color(0xFF64748B),
+              color: Theme.of(context).textTheme.bodyMedium?.color,
             ),
           ),
           const SizedBox(height: 20),
@@ -264,7 +240,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   style: GoogleFonts.outfit(
                     fontSize: 32,
                     fontWeight: FontWeight.w900,
-                    color: const Color(0xFF0F172A),
+                    color: Theme.of(context).textTheme.displayLarge?.color,
                     height: 1.1,
                   ),
                 ),
@@ -274,7 +250,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                     fontSize: 16,
-                    color: const Color(0xFF64748B),
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
                     height: 1.5,
                   ),
                 ),
@@ -328,7 +304,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFFEDF2F7),
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -360,7 +336,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           style: GoogleFonts.inter(
             fontSize: 14,
             fontWeight: _isYearly ? FontWeight.w500 : FontWeight.bold,
-            color: _isYearly ? const Color(0xFF64748B) : WebColors.purplePrimary,
+            color: _isYearly ? Theme.of(context).textTheme.bodySmall?.color : Theme.of(context).colorScheme.primary,
           ),
         ),
         const SizedBox(width: 12),
@@ -377,7 +353,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: _isYearly ? FontWeight.bold : FontWeight.w500,
-                color: _isYearly ? WebColors.purplePrimary : const Color(0xFF64748B),
+                color: _isYearly ? Theme.of(context).colorScheme.primary : Theme.of(context).textTheme.bodySmall?.color,
               ),
             ),
             const SizedBox(width: 8),
@@ -424,7 +400,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           text,
           style: GoogleFonts.inter(
             fontWeight: FontWeight.bold,
-            color: active ? WebColors.purplePrimary : const Color(0xFF64748B),
+            color: active ? Theme.of(context).colorScheme.primary : Theme.of(context).textTheme.bodySmall?.color,
             fontSize: 14,
           ),
         ),
@@ -435,7 +411,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   Widget _buildTierCard(Map<String, dynamic> tier, int index,
       {required bool isWeb}) {
     bool isFeatured = tier['label'] == 'MOST CHOSEN';
-    Color tierColor = tier['color'];
+    Color tierColor = tier['color'] == WebColors.purplePrimary ? Theme.of(context).colorScheme.primary : tier['color'];
     final user = context.watch<UserModel?>();
     final subProvider = context.watch<SubscriptionProvider>();
 
@@ -455,10 +431,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isFeatured ? WebColors.purplePrimary : const Color(0xFFE2E8F0),
+          color: isFeatured ? Theme.of(context).colorScheme.primary : Theme.of(context).dividerColor,
           width: isFeatured ? 2 : 1,
         ),
         boxShadow: [
@@ -482,7 +458,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   decoration: BoxDecoration(
-                    color: WebColors.purplePrimary,
+                    color: Theme.of(context).colorScheme.primary,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -506,8 +482,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: isFeatured
-                      ? const Color(0xFF0F172A)
-                      : const Color(0xFF475569),
+                      ? Theme.of(context).textTheme.displayLarge?.color
+                      : Theme.of(context).textTheme.bodyMedium?.color,
                 ),
               ),
               const SizedBox(height: 12),
@@ -521,7 +497,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     style: GoogleFonts.outfit(
                       fontSize: 40,
                       fontWeight: FontWeight.w900,
-                      color: const Color(0xFF0F172A),
+                      color: Theme.of(context).textTheme.displayLarge?.color,
                     ),
                   ),
                   Padding(
@@ -530,7 +506,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                       _isYearly && tier['yearlyPrice'] != null ? '/yr' : '/mo',
                       style: GoogleFonts.inter(
                         fontSize: 16,
-                        color: const Color(0xFF64748B),
+                        color: Theme.of(context).textTheme.bodySmall?.color,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -558,7 +534,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                                 f,
                                 style: GoogleFonts.inter(
                                   fontSize: 15,
-                                  color: const Color(0xFF475569),
+                                  color: Theme.of(context).textTheme.bodyMedium?.color,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -827,7 +803,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 style: GoogleFonts.outfit(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF0F172A),
+                  color: Theme.of(context).textTheme.displayLarge?.color,
                 ),
               ),
               const SizedBox(height: 8),
@@ -835,7 +811,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 'Low on energy? Refill your neural capacity instantly.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
-                  color: const Color(0xFF64748B),
+                  color: Theme.of(context).textTheme.bodySmall?.color,
                   fontSize: 16,
                 ),
               ),
@@ -858,9 +834,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardTheme.color,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(color: Theme.of(context).dividerColor),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withAlpha(5),

@@ -19,12 +19,11 @@ class UsageConfig {
   static const double multiPdfImage = 1.3;
   static const double multiHeavy = 1.8;
 
-  // Tier-Based Daily Neural Capacity (CU)
-  static const double capFree = 25.0;
-  static const double capStarterPro = 60.0;
-  static const double capStandardPro = 180.0;
-  static const double capPowerPro = 450.0;
-  static const double capCreator = 1200.0;
+  // Tier-Based Neural Capacity (CU)
+  static const double capFree = 20.0;    // Lifetime for free tier
+  static const double capStandardPro = 180.0; // Monthly Refill
+  static const double capPowerPro = 450.0;   // Monthly Refill
+  static const double capCreator = 1200.0;   // Monthly Refill
 }
 
 class UsageService {
