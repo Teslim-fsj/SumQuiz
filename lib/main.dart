@@ -37,8 +37,6 @@ import 'package:sumquiz/services/mission_service.dart';
 import 'package:sumquiz/services/time_sync_service.dart';
 import 'package:sumquiz/services/notification_integration.dart';
 import 'package:sumquiz/widgets/notification_navigator.dart';
-import 'package:sumquiz/theme/web_theme.dart';
-import 'package:sumquiz/theme/cyber_neural_theme.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:sumquiz/services/deep_link_service.dart';
@@ -120,8 +118,7 @@ void main() async {
 
   if (!kIsWeb) {
     await FirebaseAppCheck.instance.activate(
-      androidProvider:
-          AndroidProvider.debug, // Change to playIntegrity in production
+      androidProvider: AndroidProvider.debug,
       appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.appAttest,
     );
   }
@@ -375,21 +372,21 @@ class _MyAppState extends State<MyApp> {
             ContentExtractionService,
             EnhancedAIService,
             LocalDatabaseService,
-            YoutubeService,
+            NotificationService,
             CreateContentProvider>(
           create: (context) => CreateContentProvider(
             extractionService: context.read<ContentExtractionService>(),
             aiService: context.read<EnhancedAIService>(),
             localDb: context.read<LocalDatabaseService>(),
-            youtubeService: context.read<YoutubeService>(),
+            notificationService: context.read<NotificationService>(),
           ),
-          update: (context, extraction, ai, localDb, youtube, previous) =>
+          update: (context, extraction, ai, localDb, notification, previous) =>
               previous ??
               CreateContentProvider(
                 extractionService: extraction,
                 aiService: ai,
                 localDb: localDb,
-                youtubeService: youtube,
+                notificationService: notification,
               ),
         ),
         Provider<RecordingService>(create: (_) => RecordingService()),

@@ -50,6 +50,21 @@ class NotificationIntegration {
     String userId,
     String title,
   ) async {
+    await coreOnContentGenerated(
+      notificationService: context.read<NotificationService>(),
+      localDb: context.read<LocalDatabaseService>(),
+      userId: userId,
+      topic: title,
+    );
+  }
+
+  /// Core logic for content generation notification (doesn't require BuildContext)
+  static Future<void> coreOnContentGenerated({
+    required NotificationService notificationService,
+    required LocalDatabaseService localDb,
+    required String userId,
+    required String topic,
+  }) async {
     try {
       // Get user model from Firestore
       final userDoc = await FirebaseFirestore.instance
@@ -60,19 +75,16 @@ class NotificationIntegration {
       if (!userDoc.exists) return;
       final user = UserModel.fromFirestore(userDoc);
 
-      final notificationManager = NotificationManager(
-        context.read<NotificationService>(),
-        context.read<LocalDatabaseService>(),
-      );
+      final notificationManager = NotificationManager(notificationService, localDb);
 
       // Extract topic from title (first word or full title if short)
-      final topic = title.split(' ').first;
+      final extractedTopic = topic.split(' ').first;
 
       // Schedule daily learning reminder
       await notificationManager.scheduleDailyLearningReminder(user);
 
       // Schedule topic recommendation
-      await notificationManager.scheduleTopicRecommendation(topic, topic);
+      await notificationManager.scheduleTopicRecommendation(extractedTopic, extractedTopic);
 
       debugPrint('✅ Notifications scheduled after content generation');
     } catch (e) {
@@ -111,11 +123,19 @@ class NotificationIntegration {
   /// 4. WHEN USAGE LIMIT HIT
   /// Call in: lib/services/usage_service.dart when limit reached
   static Future<void> onUsageLimitHit(BuildContext context) async {
+    await coreOnUsageLimitHit(
+      notificationService: context.read<NotificationService>(),
+      localDb: context.read<LocalDatabaseService>(),
+    );
+  }
+
+  /// Core logic for usage limit notification (doesn't require BuildContext)
+  static Future<void> coreOnUsageLimitHit({
+    required NotificationService notificationService,
+    required LocalDatabaseService localDb,
+  }) async {
     try {
-      final notificationManager = NotificationManager(
-        context.read<NotificationService>(),
-        context.read<LocalDatabaseService>(),
-      );
+      final notificationManager = NotificationManager(notificationService, localDb);
 
       // Schedule Pro upgrade reminder
       await notificationManager.scheduleProUpgradeReminder();

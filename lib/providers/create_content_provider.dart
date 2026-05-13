@@ -13,6 +13,10 @@ import 'package:sumquiz/utils/youtube_pro_gate.dart';
 import 'package:uuid/uuid.dart';
 import 'package:sumquiz/models/local_note.dart';
 import 'package:sumquiz/services/compute_manager.dart';
+import 'package:sumquiz/services/notification_service.dart';
+import 'package:sumquiz/services/notification_integration.dart';
+import 'package:sumquiz/services/enhanced_ai_service.dart';
+import 'package:sumquiz/services/content_extraction_service.dart';
 
 enum CreationPhase {
   source,
@@ -29,8 +33,7 @@ class CreateContentProvider with ChangeNotifier {
   final ContentExtractionService _extractionService;
   final EnhancedAIService _aiService;
   final LocalDatabaseService _localDb;
-  final YoutubeService _youtubeService;
-  final UsageService _usageService = UsageService();
+  final NotificationService _notificationService;
 
   final List<String> _studyTips = [
     "Sumi Tip: Active recall is 3x more effective than re-reading!",
@@ -49,11 +52,11 @@ class CreateContentProvider with ChangeNotifier {
     required ContentExtractionService extractionService,
     required EnhancedAIService aiService,
     required LocalDatabaseService localDb,
-    required YoutubeService youtubeService,
+    required NotificationService notificationService,
   })  : _extractionService = extractionService,
-        _aiService = aiService,
-        _localDb = localDb,
-        _youtubeService = youtubeService;
+    _aiService = aiService,
+    _localDb = localDb,
+    _notificationService = notificationService;
 
   // --- STATE ---
   CreationPhase _phase = CreationPhase.source;
@@ -466,6 +469,15 @@ class CreateContentProvider with ChangeNotifier {
       
       _phase = CreationPhase.success;
       _stopTipRotation();
+      
+      // 6. Notifications
+      NotificationIntegration.coreOnContentGenerated(
+        notificationService: _notificationService,
+        localDb: _localDb,
+        userId: userId,
+        topic: title,
+      );
+
       notifyListeners();
     } catch (e) {
       _handleError(e, cancelToken);
@@ -483,6 +495,10 @@ class CreateContentProvider with ChangeNotifier {
       
       if (errorStr.contains('CAPACITY_STABILIZING')) {
         _errorMessage = "Your neural momentum is currently stabilizing! Sumi suggests a quick 5-minute break while your learning circuits reset.";
+        NotificationIntegration.coreOnUsageLimitHit(
+          notificationService: _notificationService,
+          localDb: _localDb,
+        );
       } else if (errorStr.contains('SYSTEM_OVERLOADED')) {
         _errorMessage = "Learning pathways are currently very busy. Let's try again in a few moments!";
       } else {

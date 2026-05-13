@@ -5,12 +5,14 @@ import 'package:sumquiz/services/content_extraction_service.dart';
 import 'package:sumquiz/services/enhanced_ai_service.dart';
 import 'package:sumquiz/services/local_database_service.dart';
 import 'package:sumquiz/services/youtube_service.dart';
+import 'package:sumquiz/services/notification_service.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockExtractionService extends Mock implements ContentExtractionService {}
 class MockAIService extends Mock implements EnhancedAIService {}
 class MockLocalDb extends Mock implements LocalDatabaseService {}
 class MockYoutubeService extends Mock implements YoutubeService {}
+class MockNotificationService extends Mock implements NotificationService {}
 
 void main() {
   late CreateContentProvider provider;
@@ -18,18 +20,20 @@ void main() {
   late MockAIService mockAI;
   late MockLocalDb mockDb;
   late MockYoutubeService mockYoutube;
+  late MockNotificationService mockNotification;
 
   setUp(() {
     mockExtraction = MockExtractionService();
     mockAI = MockAIService();
     mockDb = MockLocalDb();
     mockYoutube = MockYoutubeService();
+    mockNotification = MockNotificationService();
 
     provider = CreateContentProvider(
       extractionService: mockExtraction,
       aiService: mockAI,
       localDb: mockDb,
-      youtubeService: mockYoutube,
+      notificationService: mockNotification,
     );
   });
 

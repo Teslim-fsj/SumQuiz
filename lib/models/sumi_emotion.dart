@@ -11,6 +11,7 @@ enum SumiState {
   tired,
   analytical,
   speaking,
+  shocked,
 }
 
 enum SumiEvent {

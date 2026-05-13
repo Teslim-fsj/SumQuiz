@@ -292,7 +292,7 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
-  Future<void> _saveFinalScoreAndExit() async {
+  Future<void> _saveFinalScoreAndExit({bool navigateToResults = true}) async {
     final user = Provider.of<UserModel?>(context, listen: false);
     final quizViewModel = Provider.of<QuizViewModel>(context, listen: false);
     if (user == null || _quizId == null) return;
@@ -374,10 +374,20 @@ class _QuizScreenState extends State<QuizScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Final score saved!'),
-        ));
-        Navigator.of(context).pop();
+        if (navigateToResults) {
+          context.push('/post-study-results', extra: {
+            'score': _score,
+            'totalQuestions': _questions.length,
+            'timeSpentSeconds': currentSessionSeconds,
+            'title': _titleController.text,
+            'type': 'quiz',
+          });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Final score saved!'),
+          ));
+          Navigator.of(context).pop();
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -750,18 +760,7 @@ class _QuizScreenState extends State<QuizScreen> {
             questions: _questions,
             aiService: _aiService,
             showSaveButton: false,
-            onFinish: () {
-              _stopwatch.stop();
-              final timeSpent = _stopwatch.elapsed.inSeconds;
-              
-              context.push('/post-study-results', extra: {
-                'score': _score,
-                'totalQuestions': _questions.length,
-                'timeSpentSeconds': timeSpent,
-                'title': _titleController.text,
-                'type': 'quiz',
-              });
-            },
+            onFinish: () => _saveFinalScoreAndExit(navigateToResults: true),
             onAnswer: (bool isCorrect, LocalQuizQuestion question) async {
               final sumi = context.read<SumiProvider>();
               final localDb = context.read<LocalDatabaseService>();

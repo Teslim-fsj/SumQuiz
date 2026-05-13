@@ -19,7 +19,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _currentPage = 0;
   UserRole? _selectedRole;
 
-  static const int _totalPages = 4; 
+  static const int _totalPages = 4;
 
   @override
   void dispose() {
@@ -76,7 +76,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               SizedBox(height: MediaQuery.of(context).padding.top + 20),
               // Top Bar
               _buildTopBar(cs),
-              
+
               // Central Mascot Area
               Expanded(
                 flex: 4,
@@ -107,7 +107,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: PageView(
                   controller: _pageController,
                   onPageChanged: _onPageChanged,
-                  physics: const NeverScrollableScrollPhysics(), // Force button navigation for narrative
+                  physics:
+                      const NeverScrollableScrollPhysics(), // Force button navigation for narrative
                   children: [
                     _buildIntroPage(cs),
                     _buildSmartPage(cs),
@@ -144,8 +145,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.auto_awesome, color: Colors.cyanAccent, size: 24),
-              const SizedBox(width: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset(
+                  'assets/images/sumquiz_logo.jpg',
+                  height: 32,
+                  width: 32,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(width: 12),
               Text(
                 'SumQuiz',
                 style: GoogleFonts.outfit(
@@ -190,7 +199,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 height: 4,
                 width: _currentPage == i ? 24 : 8,
                 decoration: BoxDecoration(
-                  color: _currentPage == i ? Colors.cyanAccent : Colors.white.withValues(alpha: 0.2),
+                  color: _currentPage == i
+                      ? Colors.cyanAccent
+                      : Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -238,12 +249,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   if (!isLastPage) ...[
                     const SizedBox(width: 8),
-                    const Icon(Icons.arrow_forward, color: Color(0xFF0F172A), size: 20),
+                    const Icon(Icons.arrow_forward,
+                        color: Color(0xFF0F172A), size: 20),
                   ],
                 ],
               ),
             ),
-          ).animate(target: isLastPage ? 1 : 0).shimmer(delay: 2.seconds, duration: 1.seconds),
+          )
+              .animate(target: isLastPage ? 1 : 0)
+              .shimmer(delay: 2.seconds, duration: 1.seconds),
         ],
       ),
     );
@@ -251,11 +265,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   String _getPageSuffix(int page) {
     switch (page) {
-      case 0: return ' — Intro';
-      case 1: return ' — Smart';
-      case 2: return ' — Input';
-      case 3: return ' — Mastery';
-      default: return '';
+      case 0:
+        return ' — Intro';
+      case 1:
+        return ' — Smart';
+      case 2:
+        return ' — Input';
+      case 3:
+        return ' — Mastery';
+      default:
+        return '';
     }
   }
 
@@ -263,7 +282,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return _OnboardingContentPage(
       title: "Your Learning ",
       highlightedTitle: "Brain.",
-      subtitle: "Turn messy notes, PDFs, lectures, and videos into personalized learning instantly.",
+      subtitle:
+          "Turn messy notes, PDFs, lectures, and videos into personalized learning instantly.",
       colorScheme: cs,
     );
   }
@@ -272,7 +292,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return _OnboardingContentPage(
       title: "Study Smarter, ",
       highlightedTitle: "Not Longer.",
-      subtitle: "Sumi adapts to your strengths, weaknesses, and forgetting patterns automatically.",
+      subtitle:
+          "Sumi adapts to your strengths, weaknesses, and forgetting patterns automatically.",
       colorScheme: cs,
     );
   }
@@ -281,7 +302,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return _OnboardingContentPage(
       title: "Learn From ",
       highlightedTitle: "Anything.",
-      subtitle: "Upload notes, record lectures, paste YouTube links, or scan textbooks — Sumi handles the rest.",
+      subtitle:
+          "Upload notes, record lectures, paste YouTube links, or scan textbooks — Sumi handles the rest.",
       colorScheme: cs,
       extra: _buildFeatureGrid(cs),
     );
@@ -291,7 +313,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return _OnboardingContentPage(
       title: "Built for ",
       highlightedTitle: "Mastery",
-      subtitle: "Stay consistent, beat burnout, and grow into the smartest version of yourself.",
+      subtitle:
+          "Stay consistent, beat burnout, and grow into the smartest version of yourself.",
       colorScheme: cs,
       extra: _buildStatsGrid(cs),
     );
@@ -373,7 +396,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildStatCard(String label, String value, Color color, ColorScheme cs) {
+  Widget _buildStatCard(
+      String label, String value, Color color, ColorScheme cs) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -409,11 +433,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   SumiState _getSumiStateForPage(int page) {
     switch (page) {
-      case 0: return SumiState.idle;
-      case 1: return SumiState.analytical;
-      case 2: return SumiState.focused;
-      case 3: return SumiState.celebrating;
-      default: return SumiState.idle;
+      case 0:
+        return SumiState.idle;
+      case 1:
+        return SumiState.analytical;
+      case 2:
+        return SumiState.focused;
+      case 3:
+        return SumiState.celebrating;
+      default:
+        return SumiState.idle;
     }
   }
 }
@@ -537,26 +566,34 @@ class _RoleOption extends StatelessWidget {
         duration: 300.ms,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primary : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+          color: isSelected
+              ? colorScheme.primary
+              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: isSelected ? colorScheme.primary : colorScheme.outline.withValues(alpha: 0.1),
+            color: isSelected
+                ? colorScheme.primary
+                : colorScheme.outline.withValues(alpha: 0.1),
             width: 2,
           ),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: colorScheme.primary.withValues(alpha: 0.3),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            )
-          ] : [],
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: colorScheme.primary.withValues(alpha: 0.3),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  )
+                ]
+              : [],
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isSelected ? colorScheme.onPrimary.withValues(alpha: 0.2) : colorScheme.primary.withValues(alpha: 0.1),
+                color: isSelected
+                    ? colorScheme.onPrimary.withValues(alpha: 0.2)
+                    : colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
@@ -575,14 +612,18 @@ class _RoleOption extends StatelessWidget {
                     style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
+                      color: isSelected
+                          ? colorScheme.onPrimary
+                          : colorScheme.onSurface,
                     ),
                   ),
                   Text(
                     subtitle,
                     style: GoogleFonts.outfit(
                       fontSize: 14,
-                      color: isSelected ? colorScheme.onPrimary.withValues(alpha: 0.8) : colorScheme.onSurface.withValues(alpha: 0.6),
+                      color: isSelected
+                          ? colorScheme.onPrimary.withValues(alpha: 0.8)
+                          : colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -607,22 +648,25 @@ class _OnboardingBackground extends StatelessWidget {
       children: [
         // Dark Base
         Container(color: const Color(0xFF0F172A)),
-        
+
         // Radial Glows
         Positioned(
           top: -150,
           right: -100,
-          child: _GlowNode(color: Colors.blueAccent.withValues(alpha: 0.15), size: 400),
+          child: _GlowNode(
+              color: Colors.blueAccent.withValues(alpha: 0.15), size: 400),
         ),
         Positioned(
           bottom: -100,
           left: -100,
-          child: _GlowNode(color: Colors.purpleAccent.withValues(alpha: 0.15), size: 400),
+          child: _GlowNode(
+              color: Colors.purpleAccent.withValues(alpha: 0.15), size: 400),
         ),
         Positioned(
           top: MediaQuery.of(context).size.height * 0.3,
           left: -50,
-          child: _GlowNode(color: Colors.cyanAccent.withValues(alpha: 0.1), size: 300),
+          child: _GlowNode(
+              color: Colors.cyanAccent.withValues(alpha: 0.1), size: 300),
         ),
       ],
     );
@@ -645,8 +689,12 @@ class _GlowNode extends StatelessWidget {
           colors: [color, Colors.transparent],
         ),
       ),
-    ).animate(onPlay: (c) => c.repeat(reverse: true))
-     .scale(begin: const Offset(1, 1), end: const Offset(1.3, 1.3), duration: 4.seconds)
-     .blur(begin: const Offset(10, 10), end: const Offset(30, 30));
+    )
+        .animate(onPlay: (c) => c.repeat(reverse: true))
+        .scale(
+            begin: const Offset(1, 1),
+            end: const Offset(1.3, 1.3),
+            duration: 4.seconds)
+        .blur(begin: const Offset(10, 10), end: const Offset(30, 30));
   }
 }

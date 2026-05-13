@@ -28,16 +28,18 @@ class _SumiMascotState extends State<SumiMascot> {
   bool _isInitializing = false;
 
   final Map<SumiState, String> _assetMap = {
-    SumiState.idle: 'assets/mascot/animations/Happy.webm',
-    SumiState.focused: 'assets/mascot/animations/Locked In  Studying.webm',
-    SumiState.thinking: 'assets/mascot/animations/Thinking.webm',
-    SumiState.correct: 'assets/mascot/animations/Celebrating Success.webm',
-    SumiState.celebrating: 'assets/mascot/animations/Celebrating Success.webm',
-    SumiState.incorrect: 'assets/mascot/animations/Sad  Disappointed.webm',
-    SumiState.confused: 'assets/mascot/animations/Confused.webm',
-    SumiState.tired: 'assets/mascot/animations/Sleepy  Burned Out.webm',
-    SumiState.streakBoost: 'assets/mascot/animations/Motivating User.webm',
+    SumiState.idle: 'assets/mascot/animations/Happy.gif',
+    SumiState.focused: 'assets/mascot/animations/Locked In Studying.gif',
+    SumiState.thinking: 'assets/mascot/animations/Thinking.gif',
+    SumiState.correct: 'assets/mascot/animations/Celebrating Success.gif',
+    SumiState.celebrating: 'assets/mascot/animations/Celebrating Success.gif',
+    SumiState.incorrect: 'assets/mascot/animations/Sad Disappointed.gif',
+    SumiState.confused: 'assets/mascot/animations/Confused.gif',
+    SumiState.tired: 'assets/mascot/animations/Sleepy Burned Out.gif',
+    SumiState.streakBoost: 'assets/mascot/animations/Motivating User.gif',
     SumiState.analytical: 'assets/mascot/animations/AI Super Mode.gif',
+    SumiState.speaking: 'assets/mascot/animations/Happy.gif',
+    SumiState.shocked: 'assets/mascot/animations/Shocked.gif',
   };
 
   @override
