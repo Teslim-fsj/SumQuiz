@@ -6,6 +6,7 @@ class HandwritingCanvas extends StatefulWidget {
   final Function(LocalDrawingStroke) onStrokeComplete;
   final Duration? currentAudioTime;
   final Function(Duration)? onStrokeTap;
+  final bool isEraserMode;
 
   const HandwritingCanvas({
     super.key,
@@ -13,6 +14,7 @@ class HandwritingCanvas extends StatefulWidget {
     required this.onStrokeComplete,
     this.currentAudioTime,
     this.onStrokeTap,
+    this.isEraserMode = false,
   });
 
   @override
@@ -38,8 +40,8 @@ class _HandwritingCanvasState extends State<HandwritingCanvas> {
     if (_currentPoints.isNotEmpty) {
       final stroke = LocalDrawingStroke(
         points: List.from(_currentPoints),
-        colorValue: Colors.black.toARGB32(),
-        strokeWidth: 3.0,
+        colorValue: widget.isEraserMode ? Colors.transparent.toARGB32() : Colors.white.toARGB32(),
+        strokeWidth: widget.isEraserMode ? 20.0 : 3.0,
         timestamp: DateTime.now(),
         audioTimestamp: widget.currentAudioTime,
       );
@@ -95,17 +97,28 @@ class StrokePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.black
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 3.0;
 
     // Draw existing strokes
     for (final stroke in strokes) {
+      if (stroke.colorValue == Colors.transparent.toARGB32()) {
+        paint.color = Colors.black; // Background color for clearing
+        paint.blendMode = BlendMode.clear;
+        paint.strokeWidth = stroke.strokeWidth;
+      } else {
+        paint.color = Color(stroke.colorValue);
+        paint.blendMode = BlendMode.srcOver;
+        paint.strokeWidth = stroke.strokeWidth;
+      }
       _drawPoints(canvas, stroke.points, paint);
     }
 
     // Draw current stroke
     if (currentPoints.isNotEmpty) {
+      paint.color = Colors.white;
+      paint.blendMode = BlendMode.srcOver;
+      paint.strokeWidth = 3.0;
       _drawPoints(canvas, currentPoints, paint);
     }
   }
@@ -117,5 +130,8 @@ class StrokePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant StrokePainter oldDelegate) {
+    return oldDelegate.strokes.length != strokes.length || 
+           oldDelegate.currentPoints.length != currentPoints.length;
+  }
 }

@@ -299,7 +299,7 @@ class _QuizViewState extends State<QuizView> {
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
               value: progress,
-              backgroundColor: theme.disabledColor.withOpacity(0.2),
+              backgroundColor: theme.disabledColor.withValues(alpha: 0.2),
               valueColor:
                   AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
               minHeight: 8,
@@ -390,7 +390,7 @@ class _QuizViewState extends State<QuizView> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withValues(alpha: 0.03),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -407,7 +407,7 @@ class _QuizViewState extends State<QuizView> {
             decoration: InputDecoration(
               hintText: 'Type your detailed answer here...',
               hintStyle: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.35),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
               ),
               filled: false,
               border: InputBorder.none,
@@ -467,9 +467,9 @@ class _QuizViewState extends State<QuizView> {
       duration: 400.ms,
       padding: EdgeInsets.all(isMobile ? 12 : 20),
       decoration: BoxDecoration(
-        color: accentColor.withOpacity(0.08),
+        color: accentColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: accentColor.withOpacity(0.4), width: 1.5),
+        border: Border.all(color: accentColor.withValues(alpha: 0.4), width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -492,7 +492,7 @@ class _QuizViewState extends State<QuizView> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.15),
+                  color: accentColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -510,7 +510,7 @@ class _QuizViewState extends State<QuizView> {
           Text(
             feedback,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.85),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
               height: 1.4,
               fontSize: isMobile ? 12 : 14,
             ),
@@ -524,7 +524,7 @@ class _QuizViewState extends State<QuizView> {
     return Container(
       padding: EdgeInsets.all(isMobile ? 10 : 16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: theme.dividerColor),
       ),
@@ -535,7 +535,7 @@ class _QuizViewState extends State<QuizView> {
             '📚 Reference Answer',
             style: theme.textTheme.labelSmall?.copyWith(
               fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               fontSize: isMobile ? 10 : 11,
             ),
           ),
@@ -543,7 +543,7 @@ class _QuizViewState extends State<QuizView> {
           Text(
             _currentQuestion.correctAnswer,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.8),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
               height: 1.4,
               fontSize: isMobile ? 12 : 14,
             ),
@@ -557,9 +557,9 @@ class _QuizViewState extends State<QuizView> {
     return Container(
       padding: EdgeInsets.all(isMobile ? 10 : 16),
       decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.06),
+        color: Colors.blue.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.withOpacity(0.2)),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -583,7 +583,7 @@ class _QuizViewState extends State<QuizView> {
                 Text(
                   _currentQuestion.explanation!,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.8),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                     height: 1.4,
                     fontSize: isMobile ? 12 : 13,
                   ),
@@ -617,7 +617,7 @@ class _QuizViewState extends State<QuizView> {
                 child: OutlinedButton(
                   onPressed: _handlePreviousQuestion,
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: WebColors.primary.withOpacity(0.3)),
+                    side: BorderSide(color: WebColors.primary.withValues(alpha: 0.3)),
                     padding:
                         EdgeInsets.symmetric(horizontal: isMobile ? 12 : 20),
                     shape: RoundedRectangleBorder(

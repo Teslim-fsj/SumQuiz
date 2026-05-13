@@ -71,9 +71,9 @@ class AnalyticsView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: WebColors.purplePrimary.withOpacity(0.1),
+        color: WebColors.purplePrimary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: WebColors.purplePrimary.withOpacity(0.2)),
+        border: Border.all(color: WebColors.purplePrimary.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -257,7 +257,7 @@ class AnalyticsView extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: WebColors.border.withOpacity(0.5)),
+        border: Border.all(color: WebColors.border.withValues(alpha: 0.5)),
         boxShadow: WebColors.cardShadow,
       ),
       child: isMobile
@@ -403,8 +403,8 @@ class _TrendPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            WebColors.purplePrimary.withOpacity(0.2),
-            WebColors.purplePrimary.withOpacity(0.0)
+            WebColors.purplePrimary.withValues(alpha: 0.2),
+            WebColors.purplePrimary.withValues(alpha: 0.0)
           ]).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     final path = Path();

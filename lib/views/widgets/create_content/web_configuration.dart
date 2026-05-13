@@ -165,7 +165,7 @@ class WebConfiguration extends StatelessWidget {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF3300FF).withOpacity(0.3),
+                          color: const Color(0xFF3300FF).withValues(alpha: 0.3),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -393,7 +393,7 @@ class _DifficultyCard extends StatelessWidget {
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                        color: const Color(0xFF3300FF).withOpacity(0.2),
+                        color: const Color(0xFF3300FF).withValues(alpha: 0.2),
                         blurRadius: 16,
                         offset: const Offset(0, 8))
                   ]
@@ -558,7 +558,7 @@ class _ArchetypeCard extends StatelessWidget {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                      color: const Color(0xFF3300FF).withOpacity(0.1),
+                      color: const Color(0xFF3300FF).withValues(alpha: 0.1),
                       blurRadius: 20,
                       offset: const Offset(0, 10))
                 ]
@@ -644,7 +644,7 @@ class _PreviewItem extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)
+                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)
               ],
             ),
             child: Icon(icon, color: const Color(0xFF3300FF), size: 20),

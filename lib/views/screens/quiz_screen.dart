@@ -479,12 +479,12 @@ class _QuizScreenState extends State<QuizScreen> {
                     children: [
                       Icon(Icons.person_outline_rounded,
                           size: 16,
-                          color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
                       const SizedBox(width: 6),
                       Text(
                         'Created by ${widget.quiz!.creatorName}',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -538,7 +538,7 @@ class _QuizScreenState extends State<QuizScreen> {
           Text(
             "Crafting challenging questions...",
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -569,7 +569,7 @@ class _QuizScreenState extends State<QuizScreen> {
               _errorMessage,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 32),
@@ -616,7 +616,7 @@ class _QuizScreenState extends State<QuizScreen> {
               Text(
                 'Generate a quiz from your study materials',
                 style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ).animate().fadeIn(delay: 100.ms).slideY(begin: -0.2),
               const SizedBox(height: 48),
@@ -636,7 +636,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 decoration: InputDecoration(
                   hintText: 'e.g., Biology Chapter 5 Quiz',
                   hintStyle: TextStyle(
-                    color: theme.colorScheme.onSurface.withOpacity(0.3),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                   ),
                   filled: true,
                   fillColor: theme.cardColor,
@@ -677,7 +677,7 @@ class _QuizScreenState extends State<QuizScreen> {
                   hintText:
                       'Paste your notes, article, or study material here...',
                   hintStyle: TextStyle(
-                    color: theme.colorScheme.onSurface.withOpacity(0.3),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                   ),
                   filled: true,
                   fillColor: theme.cardColor,
@@ -785,19 +785,20 @@ class _QuizScreenState extends State<QuizScreen> {
 
                   if (quiz != null && !isCorrect) {
                     final tutor = context.read<SumiTutorService>();
-                    final hint = tutor.getSocraticHint(
+                    tutor.getSocraticHint(
                       topicName: quiz.topicNames.isNotEmpty
                           ? quiz.topicNames.first
                           : 'this topic',
                       question: question.question,
                       wrongAnswer: '',
                       sourceName: quiz.sourceName,
-                    );
-                    sumi.showTutorMessage(hint, state: SumiState.confused);
+                    ).then((hint) {
+                      sumi.showTutorMessage(hint, state: SumiState.confused);
 
-                    // Auto-clear hint after 5 seconds
-                    Future.delayed(const Duration(seconds: 5), () {
-                      if (mounted) sumi.clearDialogue();
+                      // Auto-clear hint after 5 seconds
+                      Future.delayed(const Duration(seconds: 5), () {
+                        if (mounted) sumi.clearDialogue();
+                      });
                     });
                   } else {
                     sumi.clearDialogue();
@@ -874,7 +875,7 @@ class _QuizScreenState extends State<QuizScreen> {
               Container(
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
-                  color: performanceColor.withOpacity(0.1),
+                  color: performanceColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -925,7 +926,7 @@ class _QuizScreenState extends State<QuizScreen> {
                     Text(
                       '$_score out of ${_questions.length} correct',
                       style: theme.textTheme.titleLarge?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                   ],

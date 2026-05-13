@@ -177,7 +177,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
                   Text(
                     'Turn your teaching materials into an editable test paper.',
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -213,7 +213,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
                                   'Upgrade to Pro for unlimited generation.',
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: theme.colorScheme.onPrimaryContainer
-                                        .withOpacity(0.8),
+                                        .withValues(alpha: 0.8),
                                   ),
                                 ),
                               ],
@@ -683,7 +683,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
                     'Editable before export.',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -1849,7 +1849,7 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
                 Text(
                   'Professional structure for printable exams.',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
                 const SizedBox(height: 24),

@@ -423,7 +423,9 @@ class ContentExtractionService {
               if (geminiResult is Ok<ExtractionResult>) {
                 developer.log('Native Gemini PDF extraction succeeded',
                     name: 'ContentExtractionService');
-                return geminiResult.value;
+                rawText = geminiResult.value.text;
+                suggestedTitle = geminiResult.value.suggestedTitle;
+                break;
               }
               developer.log('Native Gemini PDF sparse, falling to Syncfusion',
                   name: 'ContentExtractionService');
@@ -594,7 +596,9 @@ class ContentExtractionService {
               cancelToken: cancelToken,
             );
             if (mediaResult is Ok<ExtractionResult>) {
-              return mediaResult.value;
+              rawText = mediaResult.value.text;
+              suggestedTitle = mediaResult.value.suggestedTitle;
+              break;
             } else if (mediaResult is ResultError<ExtractionResult>) {
               final err = mediaResult.error;
               throw Exception(err is EnhancedAIServiceException
@@ -626,9 +630,7 @@ class ContentExtractionService {
                 'Video file is empty. Please try with a valid video file.');
           }
 
-          // Video is now handled by the multimodal block above (fall-through logic)
-          // To ensure fall-through works in Dart 3, I'll just copy the logic or combine the cases.
-          // Let's combine audio and video cases.
+          // Fall-through to audio case for multimodal media logic
           return await _extractContentInternal(
             type: 'audio', // Reuse common media logic
             input: input,

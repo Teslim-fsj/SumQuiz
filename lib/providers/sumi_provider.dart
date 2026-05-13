@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import '../models/sumi_emotion.dart';
-import 'package:audioplayers/audioplayers.dart';
 import '../services/ai/ai_config.dart';
 import '../models/sumi_message.dart';
 import '../services/ai/generator_ai_service.dart';
@@ -10,6 +9,7 @@ import '../services/local_database_service.dart';
 import '../services/recording_service.dart';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter_tts/flutter_tts.dart';
 import '../services/usage_service.dart';
 import '../services/auth_service.dart';
 
@@ -22,6 +22,7 @@ class SumiProvider extends ChangeNotifier {
 
   final UsageService? _usageService;
   final AuthService _authService;
+  final FlutterTts _tts = FlutterTts();
 
   SumiProvider({
     required GeneratorAIService aiService,
@@ -33,6 +34,25 @@ class SumiProvider extends ChangeNotifier {
         _usageService = usageService,
         _authService = authService {
     _initChatHistory();
+    _initTts();
+  }
+
+  void _initTts() async {
+    await _tts.setLanguage("en-US");
+    await _tts.setSpeechRate(0.5);
+    await _tts.setVolume(1.0);
+    await _tts.setPitch(1.0);
+    
+    _tts.setCompletionHandler(() {
+      _isSumiSpeaking = false;
+      notifyListeners();
+    });
+    
+    _tts.setErrorHandler((msg) {
+      developer.log("TTS Error: $msg");
+      _isSumiSpeaking = false;
+      notifyListeners();
+    });
   }
 
   bool _isVoiceRecording = false;
@@ -132,9 +152,14 @@ class SumiProvider extends ChangeNotifier {
     try {
       String fullResponse = '';
       
+      // Build context from last 5 messages for continuity
+      final history = _messages.reversed.take(5).toList().reversed
+          .map((m) => "${m.role == MessageRole.user ? 'Student' : 'Sumi'}: ${m.text}")
+          .join("\n");
+
       final stream = _aiService.getTutorResponseStream(
         prompt: prompt,
-        context: context,
+        context: history + (context != null ? "\nFILE CONTEXT: $context" : ""),
         userName: userName,
       );
 
@@ -162,9 +187,11 @@ class SumiProvider extends ChangeNotifier {
       notifyListeners();
       
     } catch (e) {
-      _isStreaming = false;
       _currentState = SumiState.tired;
       _dialogue = "Oops, my neural circuits got a bit tangled! Let's try that again?";
+      notifyListeners();
+    } finally {
+      _isStreaming = false;
       notifyListeners();
     }
   }
@@ -227,22 +254,46 @@ class SumiProvider extends ChangeNotifier {
   }
 
   Future<void> _processVoiceInput(Uint8List audioBytes, {String? context}) async {
-    await addMessage("[Voice Input]", MessageRole.user);
+    // Phase 5: Build context from last 5 messages
+    final history = _messages.reversed.take(5).toList().reversed
+        .map((m) => "${m.role == MessageRole.user ? 'Student' : 'Sumi'}: ${m.text}")
+        .join("\n");
 
     try {
       _isStreaming = true;
-      _streamingMessage = "";
+      _streamingMessage = "...";
+      notifyListeners();
       
-      final prompt = "You are in a LIVE CONVERSATION. Be extremely concise (1-2 sentences). Respond as Sumi.";
-      final response = await _aiService.generateWithData(
-        prompt, 
-        audioBytes, 
-        "audio/m4a", 
-        isPro: true,
+      final prompt = """
+      Analyze the student's audio input. 
+      1. Provide a verbatim transcription.
+      2. Provide your concise tutor response (1-2 sentences).
+      
+      FORMAT:
+      TRANSCRIPTION: [text]
+      RESPONSE: [text]
+      """;
+
+      final rawResponse = await _aiService.getConversationalResponseWithAudio(
+        prompt: prompt, 
+        audioBytes: audioBytes, 
+        context: history + (context != null ? "\nFILE CONTEXT: $context" : ""),
+        userName: _authService.currentUser?.displayName,
       );
 
+      String transcription = "[Voice Input]";
+      String response = rawResponse;
+
+      if (rawResponse.contains("TRANSCRIPTION:") && rawResponse.contains("RESPONSE:")) {
+        final parts = rawResponse.split("RESPONSE:");
+        transcription = parts[0].replaceAll("TRANSCRIPTION:", "").trim();
+        response = parts[1].trim();
+      }
+      
       _isStreaming = false;
+      await addMessage(transcription, MessageRole.user);
       await addMessage(response, MessageRole.sumi);
+      
       _dialogue = response;
       _currentState = SumiState.analytical;
       notifyListeners();
@@ -259,38 +310,24 @@ class SumiProvider extends ChangeNotifier {
 
   Future<void> _speakResponse(String text) async {
     _isSumiSpeaking = true;
-    _currentState = SumiState.idle;
+    _currentState = SumiState.speaking; // OrbState.speaking
     notifyListeners();
 
     try {
-      final cleanText = Uri.encodeComponent(text.replaceAll(RegExp(r'[*_#]'), ''));
-      const String lang = "en";
-      final ttsUrl = "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=$lang&q=$cleanText";
+      final cleanText = text.replaceAll(RegExp(r'[*_#]'), '');
+      await _tts.speak(cleanText);
       
-      // We use a completer to wait for actual playback completion
-      final completer = Completer<void>();
-      StreamSubscription? stateSub;
-      
-      stateSub = _recordingService.playerStateStream.listen((state) {
-        if (state == PlayerState.completed || 
-            state == PlayerState.stopped) {
-          if (!completer.isCompleted) completer.complete();
-        }
-      });
-
-      await _recordingService.playUrl(ttsUrl);
-      
-      // Safety timeout in case playback state never hits 'completed'
-      final estimatedMs = (text.length * 80).clamp(2000, 15000);
-      await completer.future.timeout(Duration(milliseconds: estimatedMs), onTimeout: () {
-        if (!completer.isCompleted) completer.complete();
-      });
-      
-      await stateSub.cancel();
+      // Wait for completion via handler, or timeout
+      int waitCount = 0;
+      while (_isSumiSpeaking && waitCount < 100) { // 10s max
+        await Future.delayed(const Duration(milliseconds: 100));
+        waitCount++;
+      }
     } catch (e) {
       developer.log("TTS Error: $e");
     } finally {
       _isSumiSpeaking = false;
+      _currentState = SumiState.idle;
       notifyListeners();
     }
   }
@@ -330,7 +367,7 @@ class SumiProvider extends ChangeNotifier {
 
   Future<void> _runLiveLoop({String? context}) async {
     while (_isLiveSession) {
-      if (_isSumiSpeaking) {
+      if (_isSumiSpeaking || _isProcessingVoice) {
         await Future.delayed(const Duration(milliseconds: 500));
         continue;
       }
@@ -345,24 +382,31 @@ class SumiProvider extends ChangeNotifier {
           await Future.delayed(const Duration(milliseconds: 100));
           
           final amp = await _recordingService.getAmplitude();
+          // Normalize amplitude threshold check
           if (amp.current > amplitudeThreshold) {
             peakCount++;
-            if (peakCount > 2) { // Debounce noise
+            if (peakCount > 1) { // Faster trigger
               _silenceCount = 0;
               _hasSpeaked = true;
             }
           } else {
             peakCount = 0;
-            _silenceCount++;
+            if (_hasSpeaked) _silenceCount++;
           }
 
-          if ((_hasSpeaked && _silenceCount >= silenceThreshold) || _recordingDuration.inSeconds > 25) {
+          if ((_hasSpeaked && _silenceCount >= silenceThreshold) || _recordingDuration.inSeconds > 20) {
             break;
           }
         }
 
         if (_isLiveSession && _hasSpeaked) {
           await stopVoiceRecording(context: context);
+          // Wait for Sumi to finish speaking before next loop
+          while (_isSumiSpeaking && _isLiveSession) {
+            await Future.delayed(const Duration(milliseconds: 500));
+          }
+          // Turn-taking grace period
+          await Future.delayed(const Duration(milliseconds: 800));
         } else if (_isLiveSession) {
           await _recordingService.stopRecording();
           _isVoiceRecording = false;

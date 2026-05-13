@@ -23,7 +23,7 @@ class InteractivePreviewCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: WebColors.purplePrimary.withOpacity(0.3),
+          color: WebColors.purplePrimary.withValues(alpha: 0.3),
           width: 1.5,
         ),
         boxShadow: WebColors.subtleShadow,
@@ -41,7 +41,7 @@ class InteractivePreviewCard extends StatelessWidget {
                   color: WebColors.purpleUltraLight,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                      color: WebColors.purplePrimary.withOpacity(0.2)),
+                      color: WebColors.purplePrimary.withValues(alpha: 0.2)),
                 ),
                 child: Text(
                   'INSTANT FLASHCARD',

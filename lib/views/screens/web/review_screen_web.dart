@@ -379,7 +379,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
             const SizedBox(height: 8),
             Text('Time: ${_formatDuration(_stopwatch.elapsed)}',
                 style: GoogleFonts.outfit(
-                    color: theme.colorScheme.onSurface.withOpacity(0.7))),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7))),
           ],
         ),
         actions: [
@@ -448,7 +448,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
               'Complete the curated quiz sets for today to earn extra XP and maintain your streak.',
               style: GoogleFonts.outfit(
                 fontSize: 16,
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                 height: 1.5,
               ),
             ),
@@ -678,7 +678,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                   color: WebColors.purpleUltraLight,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                      color: WebColors.purplePrimary.withOpacity(0.3)),
+                      color: WebColors.purplePrimary.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -775,7 +775,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                                   fontSize: 12,
                                   fontWeight: FontWeight.w800,
                                   color: theme.colorScheme.onSurface
-                                      .withOpacity(0.5),
+                                      .withValues(alpha: 0.5),
                                   letterSpacing: 1.5,
                                 ),
                               ),
@@ -809,13 +809,13 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 24, vertical: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                            color: theme.colorScheme.outline.withOpacity(0.1)),
+                            color: theme.colorScheme.outline.withValues(alpha: 0.1)),
                         boxShadow: [
                           BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 10)
                         ],
                       ),
@@ -907,12 +907,12 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(32),
                 border: Border.all(
-                    color: theme.colorScheme.outline.withOpacity(0.5)),
+                    color: theme.colorScheme.outline.withValues(alpha: 0.5)),
                 boxShadow: isBack
                     ? [
                         BoxShadow(
                           color: theme.colorScheme.tertiaryContainer
-                              .withOpacity(0.1),
+                              .withValues(alpha: 0.1),
                           blurRadius: 40,
                           offset: const Offset(0, 20),
                         ),
@@ -1030,7 +1030,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6B5CE7).withOpacity(0.3),
+            color: const Color(0xFF6B5CE7).withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -1041,7 +1041,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16),
             ),
             child:
@@ -1069,7 +1069,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                       : 'Your next scheduled review is $timeText.',
                   style: GoogleFonts.outfit(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.85),
+                    color: Colors.white.withValues(alpha: 0.85),
                     height: 1.4,
                   ),
                 ),

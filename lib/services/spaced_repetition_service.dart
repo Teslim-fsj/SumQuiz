@@ -10,6 +10,9 @@ class SpacedRepetitionService {
   final Box<SpacedRepetitionItem> _box;
   static const int freeSrsCardsMax = 50;
 
+  // Pro Cache: UserId -> (IsPro, Expiry)
+  final Map<String, (bool, DateTime)> _proCache = {};
+
   SpacedRepetitionService(this._box);
 
   Future<void> scheduleReview(String flashcardId, String userId) async {
@@ -53,48 +56,69 @@ class SpacedRepetitionService {
     }
   }
 
-  /// Check if user has Pro access
+  /// Check if user has Pro access (with 15-minute caching)
   Future<bool> _isUserPro(String userId) async {
+    final now = DateTime.now();
+    if (_proCache.containsKey(userId)) {
+      final (isPro, expiry) = _proCache[userId]!;
+      if (now.isBefore(expiry)) return isPro;
+    }
+
     try {
       final doc = await FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
           .get();
-      if (!doc.exists) return false;
-
-      final data = doc.data();
-      if (data == null) return false;
-
-      // Check for 'subscriptionExpiry' field
-      if (data.containsKey('subscriptionExpiry')) {
-        // Lifetime access is handled by a null expiry date
-        if (data['subscriptionExpiry'] == null) return true;
-
-        final expiryDate = (data['subscriptionExpiry'] as Timestamp).toDate();
-        return expiryDate.isAfter(DateTime.now());
+      
+      bool isPro = false;
+      if (doc.exists) {
+        final data = doc.data();
+        if (data != null && data.containsKey('subscriptionExpiry')) {
+          if (data['subscriptionExpiry'] == null) {
+            isPro = true;
+          } else {
+            final expiryDate = (data['subscriptionExpiry'] as Timestamp).toDate();
+            isPro = expiryDate.isAfter(now);
+          }
+        }
       }
-      return false;
+      
+      _proCache[userId] = (isPro, now.add(const Duration(minutes: 15)));
+      return isPro;
     } catch (e) {
       return false;
     }
   }
 
-  /// Get current SRS card count for user
-  Future<int> _getCurrentSrsCardCount(String userId) async {
-    try {
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .get();
-      if (!doc.exists) return 0;
+  /// Remove tracking for a specific item (e.g. when a flashcard is deleted)
+  Future<void> removeTrackedItem(String flashcardId) async {
+    await _box.delete(flashcardId);
+  }
 
-      final data = doc.data();
-      if (data == null) return 0;
-
-      return data['srsCardCount'] as int? ?? 0;
-    } catch (e) {
-      return 0;
+  /// Prune items that no longer have valid flashcard IDs
+  Future<void> pruneOrphanedItems(String userId, List<String> validIds) async {
+    final setValidIds = validIds.toSet();
+    final toDelete = _box.values
+        .where((item) => item.userId == userId && !setValidIds.contains(item.id))
+        .map((item) => item.id)
+        .toList();
+    
+    for (final id in toDelete) {
+      await _box.delete(id);
     }
+    if (toDelete.isNotEmpty) {
+      developer.log('Pruned ${toDelete.length} orphaned SRS items', name: 'SpacedRepetitionService');
+    }
+  }
+
+  /// Get SRS metadata for an item
+  SpacedRepetitionItem? getItemDetails(String flashcardId) {
+    return _box.get(flashcardId);
+  }
+
+  /// Internal: Get current count from local box
+  Future<int> _getCurrentSrsCardCount(String userId) async {
+    return _box.values.where((item) => item.userId == userId).length;
   }
 
   /// Updates the SRS item using the SM-2 algorithm.

@@ -403,7 +403,7 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
                   'Manually link a student to your content using its share code.',
                   style: GoogleFonts.outfit(
                       fontSize: 13,
-                      color: theme.colorScheme.onSurface.withOpacity(0.6))),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
               const SizedBox(height: 20),
               TextField(
                 controller: emailController,
@@ -523,7 +523,7 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
           borderRadius: BorderRadius.circular(32),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 20,
                 offset: const Offset(0, 4))
           ],
@@ -534,7 +534,7 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.1),
+                color: theme.colorScheme.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.school_rounded,
@@ -549,7 +549,7 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
             Text(
               'Get access to the full 5-module teacher dashboard: create exams, track students, view analytics, and AI-powered feedback.',
               style: GoogleFonts.outfit(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   fontSize: 13,
                   height: 1.5),
               textAlign: TextAlign.center,

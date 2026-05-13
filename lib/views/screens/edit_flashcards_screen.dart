@@ -161,7 +161,7 @@ class _EditFlashcardsScreenState extends State<EditFlashcardsScreen> {
                             style: theme.textTheme.labelMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: theme.colorScheme.onSurface
-                                    .withOpacity(0.7))),
+                                    .withValues(alpha: 0.7))),
                         const SizedBox(height: 8),
                         TextField(
                           controller: _titleController,
@@ -169,7 +169,7 @@ class _EditFlashcardsScreenState extends State<EditFlashcardsScreen> {
                               ?.copyWith(fontWeight: FontWeight.bold),
                           decoration: InputDecoration(
                             filled: true,
-                            fillColor: theme.cardColor.withOpacity(0.5),
+                            fillColor: theme.cardColor.withValues(alpha: 0.5),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
@@ -212,7 +212,7 @@ class _EditFlashcardsScreenState extends State<EditFlashcardsScreen> {
         children: [
           Text('${_flashcards.length} cards',
               style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.7))),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7))),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
@@ -243,13 +243,13 @@ class _EditFlashcardsScreenState extends State<EditFlashcardsScreen> {
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            color: theme.cardColor.withOpacity(0.4),
+            color: theme.cardColor.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-                color: theme.dividerColor.withOpacity(0.1), width: 1),
+                color: theme.dividerColor.withValues(alpha: 0.1), width: 1),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withValues(alpha: 0.03),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -261,10 +261,10 @@ class _EditFlashcardsScreenState extends State<EditFlashcardsScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: theme.cardColor.withOpacity(0.3),
+                  color: theme.cardColor.withValues(alpha: 0.3),
                   border: Border(
                       bottom: BorderSide(
-                          color: theme.dividerColor.withOpacity(0.1))),
+                          color: theme.dividerColor.withValues(alpha: 0.1))),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -278,7 +278,7 @@ class _EditFlashcardsScreenState extends State<EditFlashcardsScreen> {
                                 fontWeight: FontWeight.bold)),
                         IconButton(
                           icon: Icon(Icons.delete_outline,
-                              color: theme.colorScheme.error.withOpacity(0.8),
+                              color: theme.colorScheme.error.withValues(alpha: 0.8),
                               size: 20),
                           onPressed: () => _deleteFlashcard(index),
                           padding: EdgeInsets.zero,
@@ -294,7 +294,7 @@ class _EditFlashcardsScreenState extends State<EditFlashcardsScreen> {
                         hintText: 'Enter question',
                         hintStyle: TextStyle(
                             color:
-                                theme.colorScheme.onSurface.withOpacity(0.4)),
+                                theme.colorScheme.onSurface.withValues(alpha: 0.4)),
                         contentPadding: const EdgeInsets.symmetric(vertical: 8),
                       ),
                       onChanged: (val) =>
@@ -322,7 +322,7 @@ class _EditFlashcardsScreenState extends State<EditFlashcardsScreen> {
                         hintText: 'Enter answer',
                         hintStyle: TextStyle(
                             color:
-                                theme.colorScheme.onSurface.withOpacity(0.4)),
+                                theme.colorScheme.onSurface.withValues(alpha: 0.4)),
                         contentPadding: const EdgeInsets.symmetric(vertical: 8),
                       ),
                       onChanged: (val) =>
@@ -347,13 +347,13 @@ class _EditFlashcardsScreenState extends State<EditFlashcardsScreen> {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: theme.cardColor.withOpacity(0.4),
+            color: theme.cardColor.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-                color: theme.dividerColor.withOpacity(0.1), width: 1),
+                color: theme.dividerColor.withValues(alpha: 0.1), width: 1),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),

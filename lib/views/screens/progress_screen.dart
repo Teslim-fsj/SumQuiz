@@ -4,6 +4,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../theme/cyber_neural_theme.dart';
 
 import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/services/local_database_service.dart';
@@ -97,418 +99,346 @@ class _ProgressScreenState extends State<ProgressScreen> {
   Widget build(BuildContext context) {
     final user = Provider.of<UserModel?>(context);
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     if (user == null) {
-      return Scaffold(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        body: Center(
-            child: Text('Please log in to view your progress.',
-                style: theme.textTheme.bodyMedium)),
-      );
+      return const Scaffold(body: Center(child: Text('Unauthorized access. Link neural profile.')));
     }
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: Text('Your Progress',
-            style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600, color: theme.colorScheme.primary)),
-        centerTitle: false,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: Stack(
-        children: [
-          // Animated Background
-          Animate(
-            onPlay: (controller) => controller.repeat(reverse: true),
-            effects: [
-              CustomEffect(
-                duration: 6.seconds,
-                builder: (context, value, child) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: isDark
-                            ? [
-                                theme.colorScheme.surface,
-                                Color.lerp(theme.colorScheme.surface,
-                                    theme.colorScheme.primaryContainer, value)!,
-                              ]
-                            : [
-                                const Color(0xFFF3F4F6),
-                                Color.lerp(const Color(0xFFE8EAF6),
-                                    const Color(0xFFC5CAE9), value)!,
-                              ],
-                      ),
-                    ),
-                    child: child,
-                  );
-                },
-              )
-            ],
-            child: Container(),
-          ),
+      backgroundColor: const Color(0xFF020617),
+      body: SafeArea(
+        child: FutureBuilder<Map<String, dynamic>>(
+          future: _statsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator(color: Color(0xFF22D3EE)));
+            }
 
-          SafeArea(
-            child: FutureBuilder<Map<String, dynamic>>(
-              future: _statsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+            final stats = snapshot.data ?? {};
 
-                // Always show data, even if empty
-                final stats = snapshot.data ??
-                    {
-                      'summariesCount': 0,
-                      'quizzesCount': 0,
-                      'flashcardsCount': 0,
-                      'averageAccuracy': 0.0,
-                      'totalTimeSpent': 0,
-                      'dueForReviewCount': 0,
-                      'upcomingReviews': <MapEntry<DateTime, int>>[],
-                    };
-
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    setState(() {
-                      _statsFuture = _loadStats(user.uid);
-                    });
-                  },
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildHeroSection(theme, stats),
-                        const SizedBox(height: 32),
-                        _buildSectionTitle(context, 'Retention Hotspots',
-                            Icons.auto_awesome_rounded, theme),
-                        const SizedBox(height: 16),
-                        _buildPriorityTopics(theme),
-                        const SizedBox(height: 32),
-                        _buildSectionTitle(context, 'Study Momentum',
-                            Icons.trending_up_rounded, theme),
-                        const SizedBox(height: 16),
-                        _buildMomentumAndStreak(user, theme),
-                        const SizedBox(height: 32),
-                        _buildSectionTitle(context, 'Historical Retention',
-                            Icons.history_edu_rounded, theme),
-                        const SizedBox(height: 16),
-                        _buildGlassContainer(
-                          theme,
-                          padding: const EdgeInsets.all(16),
-                          child: SizedBox(
-                              height: 200,
-                              child: ActivityChart(
-                                  activityData: stats['upcomingReviews']
-                                          as List<MapEntry<DateTime, int>>? ??
-                                      [])),
-                        ).animate().fadeIn(delay: 300.ms),
-                        const SizedBox(height: 32),
-                        _buildOverallStats(stats, theme)
-                            .animate()
-                            .fadeIn(delay: 200.ms),
-                        const SizedBox(height: 40),
-                      ],
-                    ),
-                  ),
-                );
+            return RefreshIndicator(
+              onRefresh: () async {
+                setState(() {
+                  _statsFuture = _loadStats(user.uid);
+                });
               },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeroSection(ThemeData theme, Map<String, dynamic> stats) {
-    return Consumer<MasteryViewModel>(
-      builder: (context, masteryVm, _) {
-        final retentionScore = masteryVm.overallMastery;
-        return _buildGlassContainer(
-          theme,
-          padding: const EdgeInsets.all(24),
-          child: Row(
-            children: [
-              Expanded(
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(20.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Retention Health',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${(retentionScore * 100).toStringAsFixed(1)}%',
-                      style: theme.textTheme.displayMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                        letterSpacing: -1,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _getRetentionStatus(retentionScore),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: _getMasteryColor(retentionScore),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: 100,
-                    height: 100,
-                    child: CircularProgressIndicator(
-                      value: retentionScore,
-                      strokeWidth: 12,
-                      backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
-                      valueColor: AlwaysStoppedAnimation<Color>(_getMasteryColor(retentionScore)),
-                      strokeCap: StrokeCap.round,
-                    ),
-                  ),
-                  const SumiMascot(state: SumiState.celebrating, size: 60),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  String _getRetentionStatus(double score) {
-    if (score > 0.8) return 'Elite Stability';
-    if (score > 0.6) return 'Growth Phase';
-    if (score > 0.4) return 'Consolidating';
-    return 'Action Required';
-  }
-
-  Widget _buildPriorityTopics(ThemeData theme) {
-    return Consumer<MasteryViewModel>(
-      builder: (context, masteryVm, _) {
-        final priorityTopics = masteryVm.highRiskTopics.take(3).toList();
-        if (priorityTopics.isEmpty) {
-          return const Center(child: Text('All topics stable!'));
-        }
-
-        return Column(
-          children: priorityTopics.map((topic) {
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              child: _buildGlassContainer(
-                theme,
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 4,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.redAccent,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            topic.name,
-                            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            'Forgetting Risk: ${(topic.forgettingRisk * 100).toStringAsFixed(0)}%',
-                            style: theme.textTheme.bodySmall?.copyWith(color: Colors.redAccent),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton.filledTonal(
-                      onPressed: () {
-                        // Navigate to specific topic review
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const SpacedRepetitionScreen()));
-                      },
-                      icon: const Icon(Icons.play_arrow_rounded),
-                    ),
+                    _buildTerminalHeader(),
+                    const SizedBox(height: 24),
+                    _buildModuleAlert(theme),
+                    const SizedBox(height: 32),
+                    _buildStabilityModule(theme),
+                    const SizedBox(height: 32),
+                    _buildKnowledgeMatrix(theme),
+                    const SizedBox(height: 32),
+                    _buildTelemetryPanel(theme, stats),
+                    const SizedBox(height: 40),
                   ],
                 ),
               ),
             );
-          }).toList(),
-        );
-      },
-    );
-  }
-
-  Widget _buildGlassContainer(ThemeData theme,
-      {required Widget child, EdgeInsetsGeometry? padding}) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: padding ?? const EdgeInsets.all(0),
-          decoration: BoxDecoration(
-            color: theme.cardColor.withValues(alpha: 0.65),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.dividerColor.withValues(alpha: 0.4)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 15,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: child,
+          },
         ),
       ),
     );
   }
 
-
-  Widget _buildSectionTitle(
-      BuildContext context, String title, IconData icon, ThemeData theme) {
+  Widget _buildTerminalHeader() {
     return Row(
-      children: [
-        Icon(icon, color: theme.colorScheme.primary, size: 24),
-        const SizedBox(width: 10),
-        Text(title,
-            style: theme.textTheme.titleMedium?.copyWith(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface)),
-      ],
-    );
-  }
-
-  Widget _buildMomentumAndStreak(UserModel user, ThemeData theme) {
-    return Row(
-      children: [
-        Expanded(
-            child: _buildStatCard(
-                'Momentum',
-                user.currentMomentum.toStringAsFixed(0),
-                Icons.local_fire_department_rounded,
-                Colors.orangeAccent,
-                theme)),
-        const SizedBox(width: 16),
-        Expanded(
-            child: _buildStatCard(
-                'Study Streak',
-                '${user.missionCompletionStreak} days',
-                Icons.whatshot_rounded,
-                Colors.redAccent,
-                theme)),
-      ],
-    ).animate().fadeIn().slideX();
-  }
-
-  Widget _buildOverallStats(Map<String, dynamic> stats, ThemeData theme) {
-    final avgAccuracy =
-        (stats['averageAccuracy'] as double? ?? 0.0).toStringAsFixed(1);
-    final timeSpent = _formatTimeSpent(stats['totalTimeSpent'] as int? ?? 0);
-    final summaries = (stats['summariesCount'] as int? ?? 0).toString();
-    final quizzes = (stats['quizzesCount'] as int? ?? 0).toString();
-
-    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
           children: [
-            Expanded(
-                child: _buildStatCard('Avg. Accuracy', '$avgAccuracy%',
-                    Icons.check_circle_outline_rounded, Colors.green, theme)),
-            const SizedBox(width: 16),
-            Expanded(
-                child: _buildStatCard('Time Spent', timeSpent,
-                    Icons.timer_rounded, Colors.blue, theme)),
+            const Icon(Icons.terminal_rounded, color: Color(0xFF22D3EE), size: 24),
+            const SizedBox(width: 12),
+            Text(
+              "SYS_ALPS_v2.4",
+              style: GoogleFonts.jetBrainsMono(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 20,
+                letterSpacing: -0.5,
+              ),
+            ),
           ],
         ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-                child: _buildStatCard('Summaries', summaries,
-                    Icons.article_rounded, Colors.purple, theme)),
-            const SizedBox(width: 16),
-            Expanded(
-                child: _buildStatCard('Quizzes', quizzes, Icons.quiz_rounded,
-                    Colors.teal, theme)),
-          ],
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            border: Border.all(color: const Color(0xFF22D3EE).withValues(alpha: 0.3)),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.settings_input_component_rounded, size: 14, color: Color(0xFF22D3EE)),
+              const SizedBox(width: 8),
+              Text(
+                "CYCLES: 12",
+                style: GoogleFonts.jetBrainsMono(
+                  color: const Color(0xFF22D3EE),
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildStatCard(
-      String label, String value, IconData icon, Color color, ThemeData theme) {
-    return _buildGlassContainer(
-      theme,
-      padding: const EdgeInsets.all(16),
+  Widget _buildModuleAlert(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        border: Border.all(color: Colors.redAccent.withValues(alpha: 0.2)),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
+              ).animate(onPlay: (c) => c.repeat()).fadeIn(duration: 500.ms).fadeOut(delay: 500.ms),
+              const SizedBox(width: 12),
+              Text(
+                "ALERT: KNOWLEDGE DECAY DETECTED",
+                style: GoogleFonts.jetBrainsMono(
+                  color: Colors.redAccent,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
                 ),
-                child: Icon(icon, color: color, size: 20),
               ),
-              // Optional trend indicator
+              const Spacer(),
+              Text("T-MINUS 05:00", style: GoogleFonts.jetBrainsMono(color: Colors.white38, fontSize: 10)),
             ],
           ),
+          const SizedBox(height: 16),
+          Text(
+            "MODULE: QUANTUM_PHYSICS.SYS",
+            style: GoogleFonts.jetBrainsMono(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
           const SizedBox(height: 12),
-          Text(value,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface)),
-          Text(label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                  fontSize: 13,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  fontWeight: FontWeight.w500)),
+          _buildTerminalLine("Scanning comprehension nodes..."),
+          _buildTerminalLine("Risk assessed: 40% structural fading."),
+          _buildTerminalLine("Recommendation: Immediate shielding protocol."),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              _buildTerminalButton("Rapid Shielding", isPrimary: true),
+              const SizedBox(width: 12),
+              _buildTerminalButton("Deep Reinforcement", isPrimary: false),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  String _formatTimeSpent(int seconds) {
-    final duration = Duration(seconds: seconds);
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    if (hours > 0) return '${hours}h ${minutes}m';
-    return '${minutes}m';
+  Widget _buildTerminalLine(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Text(
+        "> $text",
+        style: GoogleFonts.jetBrainsMono(color: Colors.white54, fontSize: 11),
+      ),
+    );
   }
 
+  Widget _buildTerminalButton(String label, {required bool isPrimary}) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: isPrimary ? const Color(0xFF1E293B) : Colors.transparent,
+          border: Border.all(color: Colors.white12),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: GoogleFonts.jetBrainsMono(
+              color: isPrimary ? Colors.white : Colors.white38,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStabilityModule(ThemeData theme) {
+    return Consumer<MasteryViewModel>(
+      builder: (context, masteryVm, _) {
+        final score = masteryVm.overallMastery;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("STABILITY_IDX", style: GoogleFonts.jetBrainsMono(color: Colors.white38, fontSize: 12)),
+                Text("OK", style: GoogleFonts.jetBrainsMono(color: const Color(0xFF22D3EE), fontSize: 12, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(score.toStringAsFixed(3), style: GoogleFonts.jetBrainsMono(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900)),
+                const SizedBox(width: 12),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6.0),
+                  child: Text("+0.042", style: GoogleFonts.jetBrainsMono(color: const Color(0xFF22D3EE), fontSize: 14, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              height: 10,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B),
+                borderRadius: BorderRadius.circular(2),
+              ),
+              child: FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: score,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(colors: [Color(0xFF22D3EE), Color(0xFFA855F7)]),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildKnowledgeMatrix(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text("KNOWLEDGE MATRIX", style: GoogleFonts.jetBrainsMono(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1)),
+            Text("SECTORS: 6x4", style: GoogleFonts.jetBrainsMono(color: const Color(0xFF22D3EE), fontSize: 10, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        const SizedBox(height: 20),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 6,
+            mainAxisSpacing: 4,
+            crossAxisSpacing: 4,
+          ),
+          itemCount: 24,
+          itemBuilder: (context, index) {
+            // Simulated stability colors
+            final colors = [
+              const Color(0xFF22D3EE),
+              const Color(0xFF0F172A),
+              const Color(0xFF1E293B),
+              const Color(0xFF7F1D1D),
+              const Color(0xFF334155),
+              const Color(0xFFA855F7).withValues(alpha: 0.5),
+            ];
+            final color = colors[index % colors.length];
+            return Container(
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(2),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+              ),
+            ).animate(onPlay: (c) => c.repeat(reverse: true))
+             .shimmer(delay: (index * 100).ms, duration: 2.seconds, color: Colors.white12);
+          },
+        ),
+        const SizedBox(height: 16),
+        Text(
+          ">> SYS.ANALYSIS: Retention velocity +15% pre-1000HRS. Prioritize Sector 4,2.",
+          style: GoogleFonts.jetBrainsMono(color: Colors.orangeAccent.withValues(alpha: 0.8), fontSize: 10),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTelemetryPanel(ThemeData theme, Map<String, dynamic> stats) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text("TELEMETRY", style: GoogleFonts.jetBrainsMono(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+            const Spacer(),
+            const Icon(Icons.circle, size: 8, color: Color(0xFF22D3EE)),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _buildTelemetryRow("SYNC_RATE", "94.2%"),
+        _buildTelemetryRow("NODE_LATENCY", "12ms", color: const Color(0xFF22D3EE)),
+        _buildTelemetryRow("DECAY_VOL", "1.4μ", color: Colors.redAccent.withValues(alpha: 0.8)),
+        const SizedBox(height: 24),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.white12),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Center(
+            child: Text(
+              "VIEW FULL LOGS",
+              style: GoogleFonts.jetBrainsMono(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTelemetryRow(String label, String value, {Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: GoogleFonts.jetBrainsMono(color: Colors.white38, fontSize: 12)),
+          Text(value, style: GoogleFonts.jetBrainsMono(color: color ?? Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
 
   Color _getMasteryColor(double score) {
     if (score < 0.3) return Colors.redAccent;
     if (score < 0.7) return Colors.orangeAccent;
-    return Colors.greenAccent;
+    return const Color(0xFF22D3EE);
   }
-
-
 }
+
 

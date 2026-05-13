@@ -10,6 +10,7 @@ import 'package:sumquiz/providers/create_content_provider.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:developer' as developer;
+import 'ai_config.dart';
 
 class GeneratorAIService extends AIBaseService {
   Future<LocalSummary> generateSummary(String text,
@@ -148,23 +149,13 @@ Text: $text''';
       if (questionsData is List) {
         for (final q in questionsData) {
           if (q is Map) {
-            final List<String> options = [];
-            final rawOptions = q['options'];
-            if (rawOptions is List) {
-              for (final o in rawOptions) {
-                options.add(o.toString());
-              }
-            }
-
-            questions.add(LocalQuizQuestion(
-              question: q['question']?.toString() ?? 'Unknown Question',
-              options: options,
-              correctAnswer: q['correctAnswer']?.toString() ?? '',
-              explanation: q['explanation']?.toString(),
-              questionType: q['questionType']?.toString() ?? 'Multiple Choice',
-            ));
+            questions.add(parseQuizQuestion(q));
           }
         }
+      }
+
+      if (questions.isEmpty) {
+        throw AIServiceException('AI generated an empty quiz. Neural pathways might be fluctuating.', code: 'EMPTY_QUIZ');
       }
 
       return LocalQuiz(
@@ -291,6 +282,7 @@ Text: $text''';
     int quizCount = 10,
     int cardCount = 15,
     List<String>? questionTypes,
+    bool isPro = false,
     CancellationToken? cancelToken,
   }) async {
     developer.log(
@@ -342,7 +334,7 @@ Text: $text''';
 
     try {
       final response = await generateWithRetry(prompt,
-          customModel: educatorModel, cancelToken: cancelToken);
+          customModel: educatorModel, isPro: isPro, cancelToken: cancelToken);
       final jsonStr = extractJson(response);
       var data = safeJsonDecode(jsonStr);
 
@@ -360,6 +352,10 @@ Text: $text''';
       }
 
       if (data.containsKey('title')) {
+        // Validation: Ensure we have at least some content
+        if (data['quiz'] is! List || (data['quiz'] as List).isEmpty) {
+          developer.log('Topic generation returned empty quiz', name: 'GeneratorAIService', level: 900);
+        }
         return data;
       }
 
@@ -643,7 +639,95 @@ Text: $text''';
     return generateStream(
       fullPrompt,
       customModel: educatorModel,
+      generationConfig: AIConfig.conversationalGenerationConfig,
       cancelToken: cancelToken,
+    );
+  }
+
+  Future<String> getConversationalResponse({
+    required String prompt,
+    String? context,
+    String? userName,
+    CancellationToken? cancelToken,
+  }) async {
+    final systemPrompt = '''You are Sumi, a brilliant and empathetic AI tutor for SumQuiz.
+    Your goal is to help ${userName ?? 'the student'} master their subjects through active recall and Socratic questioning.
+    
+    CURRENT CONTEXT: ${context ?? 'General study session.'}
+    
+    GUIDELINES:
+    - Ground your answers in the provided context if available.
+    - Be extremely concise (1-3 sentences).
+    - Use Markdown for structure.
+    - If you don't know something based on the context, say so and suggest related study topics.
+    ''';
+
+    final fullPrompt = '$systemPrompt\n\nStudent: $prompt\nSumi:';
+
+    return generateConversational(
+      fullPrompt,
+      customModel: educatorModel,
+      cancelToken: cancelToken,
+    );
+  }
+
+  Future<String> getConversationalResponseWithAudio({
+    required String prompt,
+    required Uint8List audioBytes,
+    String mimeType = 'audio/m4a',
+    String? context,
+    String? userName,
+    CancellationToken? cancelToken,
+  }) async {
+    final systemPrompt = '''You are Sumi, a brilliant and empathetic AI tutor for SumQuiz.
+    Your goal is to help ${userName ?? 'the student'} master their subjects through active recall and Socratic questioning.
+    
+    CURRENT CONTEXT: ${context ?? 'General study session.'}
+    
+    GUIDELINES:
+    - Ground your answers in the provided context if available.
+    - Be extremely concise (1-3 sentences).
+    - Use Markdown for structure.
+    - If you don't know something based on the context, say so and suggest related study topics.
+    ''';
+
+    final fullPrompt = '$systemPrompt\n\nStudent: $prompt\nSumi:';
+
+    return generateConversationalWithData(
+      fullPrompt,
+      audioBytes,
+      mimeType,
+      customModel: educatorModel,
+      cancelToken: cancelToken,
+    );
+  }
+
+  LocalQuizQuestion parseQuizQuestion(Map q) {
+    final List<String> options = [];
+    final rawOptions = q['options'];
+    if (rawOptions is List) {
+      for (final o in rawOptions) {
+        options.add(o.toString());
+      }
+    }
+
+    // Normalization: Extract correct answer by text or index
+    String correctAnswer = q['correctAnswer']?.toString() ?? '';
+    final dynamic correctIndex = q['correctIndex'];
+
+    if (correctAnswer.isEmpty && correctIndex != null) {
+      final idx = int.tryParse(correctIndex.toString());
+      if (idx != null && idx >= 0 && idx < options.length) {
+        correctAnswer = options[idx];
+      }
+    }
+
+    return LocalQuizQuestion(
+      question: q['question']?.toString() ?? 'Unknown Question',
+      options: options,
+      correctAnswer: correctAnswer,
+      explanation: q['explanation']?.toString() ?? 'No explanation provided.',
+      questionType: q['questionType']?.toString() ?? 'Multiple Choice',
     );
   }
 }

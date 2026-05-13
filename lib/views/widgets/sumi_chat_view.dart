@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:provider/provider.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
+import 'package:file_picker/file_picker.dart';
+import '../../theme/cyber_neural_theme.dart';
 import '../../providers/sumi_provider.dart';
 import '../../models/sumi_message.dart';
-import '../../widgets/sumi_mascot.dart';
-import '../../models/sumi_emotion.dart';
 
 class SumiChatView extends StatefulWidget {
   final String? groundingContext;
@@ -71,15 +71,15 @@ class _SumiChatViewState extends State<SumiChatView> {
   Widget _buildSpeakingIndicator(ThemeData theme) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      color: theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
+      color: CyberNeuralColors.cyan.withValues(alpha: 0.05),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.volume_up_rounded, size: 16, color: Colors.blue),
+          const Icon(Icons.volume_up_rounded, size: 16, color: CyberNeuralColors.cyan),
           const SizedBox(width: 8),
           Text(
-            'Sumi is speaking...',
-            style: theme.textTheme.labelSmall?.copyWith(color: Colors.blue, fontWeight: FontWeight.bold),
+            'NEURAL LINK ACTIVE...',
+            style: GoogleFonts.jetBrainsMono(color: CyberNeuralColors.cyan, fontWeight: FontWeight.bold, fontSize: 10),
           ),
         ],
       ).animate(onPlay: (c) => c.repeat()).shimmer(duration: 2.seconds),
@@ -95,27 +95,30 @@ class _SumiChatViewState extends State<SumiChatView> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+              color: CyberNeuralColors.surface,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
                 bottomLeft: Radius.circular(4),
                 bottomRight: Radius.circular(20),
               ),
+              border: Border.all(color: CyberNeuralColors.cyan.withValues(alpha: 0.1)),
             ),
             child: text.isEmpty 
               ? _buildTypingIndicator(theme)
               : Text(
                   text,
-                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.5, color: Colors.white),
                 ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
-            "Sumi",
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+            "SUMI AI",
+            style: GoogleFonts.jetBrainsMono(
+              color: CyberNeuralColors.cyan,
               fontSize: 10,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1,
             ),
           ),
         ],
@@ -131,8 +134,8 @@ class _SumiChatViewState extends State<SumiChatView> {
           width: 8,
           height: 8,
           margin: const EdgeInsets.symmetric(horizontal: 2),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withValues(alpha: 0.5),
+          decoration: const BoxDecoration(
+            color: CyberNeuralColors.cyan,
             shape: BoxShape.circle,
           ),
         ).animate(onPlay: (c) => c.repeat()).scale(
@@ -169,31 +172,25 @@ class _SumiChatViewState extends State<SumiChatView> {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: isUser
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.4),
+                        ? CyberNeuralColors.surfaceAlt
+                        : CyberNeuralColors.surface,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(20),
                       topRight: const Radius.circular(20),
                       bottomLeft: Radius.circular(isUser ? 20 : 4),
                       bottomRight: Radius.circular(isUser ? 4 : 20),
                     ),
-                    boxShadow: [
-                      if (isUser)
-                        BoxShadow(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.2),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                    ],
+                    border: Border.all(
+                      color: isUser 
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : CyberNeuralColors.cyan.withValues(alpha: 0.1),
+                    ),
                   ),
                   child: Text(
                     message.text,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       height: 1.5,
-                      color: isUser
-                          ? theme.colorScheme.onPrimary
-                          : theme.colorScheme.onSurface,
+                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -202,12 +199,14 @@ class _SumiChatViewState extends State<SumiChatView> {
           ),
           Padding(
             padding: EdgeInsets.only(
-                top: 4, left: isUser ? 0 : 4, right: isUser ? 4 : 0),
+                top: 8, left: isUser ? 0 : 4, right: isUser ? 4 : 0),
             child: Text(
-              isUser ? "You" : "Sumi",
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+              isUser ? "USER" : "SUMI AI",
+              style: GoogleFonts.jetBrainsMono(
+                color: isUser ? Colors.white38 : CyberNeuralColors.cyan,
                 fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1,
               ),
             ),
           ),
@@ -222,38 +221,38 @@ class _SumiChatViewState extends State<SumiChatView> {
   Widget _buildInputArea(ThemeData theme, SumiProvider sumi) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+      decoration: const BoxDecoration(
+        color: CyberNeuralColors.background,
         border: Border(
-            top: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.1))),
+            top: BorderSide(color: Colors.white10)),
       ),
       child: Row(
         children: [
           Expanded(
             child: TextField(
               controller: _controller,
+              style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                hintText: "Ask Sumi anything...",
-                hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                hintText: "NEURAL COMMAND...",
+                hintStyle: GoogleFonts.jetBrainsMono(
+                    color: Colors.white24, fontSize: 12),
                 prefixIcon: IconButton(
                   icon: const Icon(Icons.add_circle_outline_rounded),
-                  color: theme.colorScheme.primary,
+                  color: CyberNeuralColors.cyan,
                   onPressed: _pickFiles,
                   tooltip: 'Upload resources',
                 ),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.mic_none_rounded),
-                  color: theme.colorScheme.primary,
+                  color: CyberNeuralColors.cyan,
                   onPressed: () => _startVoiceTutoring(sumi),
                   tooltip: 'Live voice tutoring',
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
-                fillColor:
-                    theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
+                fillColor: CyberNeuralColors.surface,
                 filled: true,
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -268,8 +267,9 @@ class _SumiChatViewState extends State<SumiChatView> {
               ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
               : const Icon(Icons.send_rounded),
             style: IconButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
-              foregroundColor: theme.colorScheme.onPrimary,
+              backgroundColor: CyberNeuralColors.cyan,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ],
@@ -287,115 +287,20 @@ class _SumiChatViewState extends State<SumiChatView> {
     if (result != null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${result.files.length} files attached for study grounding')),
+          SnackBar(
+            backgroundColor: CyberNeuralColors.surface,
+            content: Text(
+              '${result.files.length} FILES LINKED TO NEURAL CORE',
+              style: GoogleFonts.jetBrainsMono(color: CyberNeuralColors.cyan, fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+          ),
         );
       }
     }
   }
 
   void _startVoiceTutoring(SumiProvider sumi) {
-    if (mounted) {
-      showModalBottomSheet(
-        context: context,
-        backgroundColor: Colors.transparent,
-        isDismissible: false,
-        enableDrag: false,
-        builder: (context) => Consumer<SumiProvider>(
-          builder: (context, sumi, _) => Container(
-            height: 350,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (sumi.isProcessingVoice || sumi.isSumiSpeaking)
-                  const SumiMascot(state: SumiState.thinking, size: 100)
-                else
-                  const SumiMascot(state: SumiState.idle, size: 100).animate(onPlay: (c) => c.repeat(reverse: true)).scale(begin: const Offset(1, 1), end: const Offset(1.1, 1.1), duration: 1.seconds),
-                const SizedBox(height: 24),
-                Text(
-                  sumi.isSumiSpeaking ? 'Sumi is speaking' : (sumi.isProcessingVoice ? 'Sumi is thinking' : (sumi.isVoiceRecording ? 'Sumi is listening' : 'Ready to talk?')),
-                  style: GoogleFonts.outfit(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                if (sumi.isVoiceRecording)
-                  Text(
-                    _formatDuration(sumi.recordingDuration),
-                    style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.bold, color: Colors.red),
-                  )
-                else if (sumi.isLiveSession)
-                  const Text('Live Session Active', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold))
-                else
-                  const Text('Speak clearly for the best help'),
-                const SizedBox(height: 32),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (!sumi.isLiveSession && !sumi.isProcessingVoice)
-                      Column(
-                        children: [
-                            IconButton.filled(
-                              onPressed: () => sumi.startVoiceRecording(),
-                              icon: const Icon(Icons.mic, size: 32),
-                              padding: const EdgeInsets.all(20),
-                              style: IconButton.styleFrom(
-                                backgroundColor: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                          const SizedBox(height: 8),
-                          TextButton.icon(
-                            onPressed: () => sumi.startLiveSession(context: widget.groundingContext),
-                            icon: const Icon(Icons.auto_awesome),
-                            label: const Text('Start Live Session'),
-                          ),
-                        ],
-                      )
-                    else if (sumi.isLiveSession || sumi.isVoiceRecording)
-                      IconButton.filled(
-                        onPressed: () async {
-                          if (sumi.isLiveSession) {
-                            await sumi.stopLiveSession();
-                          } else {
-                            await sumi.stopVoiceRecording(context: widget.groundingContext);
-                          }
-                          if (!mounted) return;
-                          if (!sumi.isLiveSession) Navigator.pop(context);
-                        },
-                        icon: Icon(sumi.isLiveSession ? Icons.stop_circle : Icons.stop, size: 32),
-                        padding: const EdgeInsets.all(20),
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.redAccent,
-                        ),
-                      ),
-                    const SizedBox(width: 20),
-                    if (!sumi.isProcessingVoice && !sumi.isSumiSpeaking)
-                      TextButton(
-                        onPressed: () {
-                          if (sumi.isLiveSession) sumi.stopLiveSession();
-                          if (sumi.isVoiceRecording) sumi.stopVoiceRecording();
-                          Navigator.pop(context);
-                        },
-                        child: const Text('Close'),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-  }
-
-  String _formatDuration(Duration d) {
-    String twoDigits(int n) => n.toString().padLeft(2, "0");
-    return "${twoDigits(d.inMinutes.remainder(60))}:${twoDigits(d.inSeconds.remainder(60))}";
+    context.push('/sumi-live?source=${widget.groundingContext ?? "Neural Core"}');
   }
 
   void _sendMessage(SumiProvider sumi) {

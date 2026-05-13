@@ -159,7 +159,7 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            theme.colorScheme.primary.withOpacity(0.03),
+            theme.colorScheme.primary.withValues(alpha: 0.03),
             theme.scaffoldBackgroundColor,
           ],
         ),
@@ -566,7 +566,7 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20)),
               elevation: 4,
-              shadowColor: colorScheme.primary.withOpacity(0.3),
+              shadowColor: colorScheme.primary.withValues(alpha: 0.3),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -644,16 +644,16 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: colorScheme.primary.withOpacity(0.08),
+        color: colorScheme.primary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colorScheme.primary.withOpacity(0.2)),
+        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: colorScheme.primary.withOpacity(0.1),
+              color: colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(icon, color: colorScheme.primary),

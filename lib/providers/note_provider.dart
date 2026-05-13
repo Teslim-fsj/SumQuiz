@@ -11,6 +11,7 @@ import '../services/recording_service.dart';
 import '../services/speech_service.dart';
 import '../services/usage_service.dart';
 import '../services/auth_service.dart';
+import '../services/transcript_recovery_service.dart';
 
 enum NoteProcessingState { idle, recording, transcribing, generating, error }
 
@@ -22,8 +23,12 @@ class NoteProvider with ChangeNotifier {
 
   StreamSubscription? _speechSub;
   StreamSubscription? _partialSub;
+  StreamSubscription? _speechErrorSub;
   final _transcriptChunkController = StreamController<String>.broadcast();
   Stream<String> get transcriptChunkStream => _transcriptChunkController.stream;
+
+  /// Debounce timer for auto-saving content changes.
+  Timer? _saveDebounce;
 
   final UsageService? _usageService;
   final AuthService _authService;
@@ -42,6 +47,7 @@ class NoteProvider with ChangeNotifier {
         _usageService = usageService,
         _authService = authService {
     _initRecordingStreams();
+    _initSpeechErrorStream();
   }
 
   // --- STATE ---
@@ -68,9 +74,23 @@ class NoteProvider with ChangeNotifier {
   List<LocalNote> _allNotes = [];
   List<LocalNote> get allNotes => _allNotes;
 
+  /// Whether STT is currently auto-restarting after a platform timeout.
+  bool get isAutoRestarting => _speechService.isActive && _state == NoteProcessingState.recording;
+
+  /// Real-time amplitude stream (0.0 – 1.0) for waveform visualization.
+  Stream<double> get amplitudeStream => _recordingService.amplitudeStream;
+
   void _initRecordingStreams() {
     _durationSub = _recordingService.durationStream.listen((duration) {
       _recordingDuration = duration;
+      notifyListeners();
+    });
+  }
+
+  void _initSpeechErrorStream() {
+    _speechErrorSub = _speechService.errorStream.listen((error) {
+      developer.log('Speech error: $error', name: 'NoteProvider');
+      _errorMessage = error;
       notifyListeners();
     });
   }
@@ -141,7 +161,15 @@ class NoteProvider with ChangeNotifier {
     if (_currentNote == null) return;
     _currentNote =
         _currentNote!.copyWith(content: content, updatedAt: DateTime.now());
-    await _localDb.saveNote(_currentNote!);
+
+    // Debounce saves to avoid thrashing disk on every keystroke.
+    _saveDebounce?.cancel();
+    _saveDebounce = Timer(const Duration(seconds: 2), () async {
+      if (_currentNote != null) {
+        await _localDb.saveNote(_currentNote!);
+        developer.log('Auto-saved note content', name: 'NoteProvider');
+      }
+    });
     notifyListeners();
   }
 
@@ -166,6 +194,14 @@ class NoteProvider with ChangeNotifier {
     );
     
     // We save to DB after each stroke for maximum data safety in production
+    await _localDb.saveNote(_currentNote!);
+    notifyListeners();
+  }
+
+  Future<void> undoLastStroke() async {
+    if (_currentNote == null || _currentNote!.strokes.isEmpty) return;
+    final updatedStrokes = List<LocalDrawingStroke>.from(_currentNote!.strokes)..removeLast();
+    _currentNote = _currentNote!.copyWith(strokes: updatedStrokes, updatedAt: DateTime.now());
     await _localDb.saveNote(_currentNote!);
     notifyListeners();
   }
@@ -213,6 +249,15 @@ class NoteProvider with ChangeNotifier {
         _liveInsights.add(text);
         _transcriptChunkController.add(text);
         _livePartialTranscript = ''; // Clear partial when committed
+        
+        // Save for recovery
+        if (_currentNote != null) {
+          TranscriptRecoveryService().savePendingTranscript(
+            _currentNote!.id, 
+            _liveInsights.join(" ")
+          );
+        }
+        
         notifyListeners();
       });
 
@@ -256,6 +301,9 @@ class NoteProvider with ChangeNotifier {
           createdAt: DateTime.now(),
         );
         await _localDb.saveRecording(recording);
+        
+        // Clear recovery data on success
+        await TranscriptRecoveryService().clearRecovery(_currentNote!.id);
         
         // Record usage after successful capture
         if (_currentNote != null && _usageService != null) {
@@ -330,8 +378,31 @@ class NoteProvider with ChangeNotifier {
 
 
   // --- AUDIO ACTIONS ---
-  void seekAudio(Duration time) {
-    // Integration with an audio player would go here
+
+  /// Seek to a specific position during recording playback.
+  Future<void> seekAudio(Duration time) async {
+    await _recordingService.seek(time);
+    notifyListeners();
+  }
+
+  /// Play a specific recording file.
+  Future<void> playRecording(LocalRecording recording) async {
+    await _recordingService.play(recording.filePath);
+  }
+
+  /// Stop playback.
+  Future<void> stopPlayback() async {
+    await _recordingService.stopPlayer();
+  }
+
+  /// Delete a recording and its file from disk.
+  Future<void> deleteRecording(String recordingId) async {
+    final recording = _currentNoteRecordings.firstWhere(
+      (r) => r.id == recordingId,
+      orElse: () => throw Exception('Recording not found'),
+    );
+    await _recordingService.deleteRecordingFile(recording.filePath);
+    await _localDb.deleteRecording(recordingId);
     notifyListeners();
   }
 
@@ -348,13 +419,27 @@ class NoteProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// Force-save any pending debounced content.
+  Future<void> flushPendingSave() async {
+    _saveDebounce?.cancel();
+    if (_currentNote != null) {
+      await _localDb.saveNote(_currentNote!);
+    }
+  }
+
   @override
   void dispose() {
+    // Safety: stop any active recording to prevent orphaned files.
+    if (_state == NoteProcessingState.recording) {
+      stopRecording();
+    }
+    _saveDebounce?.cancel();
     _durationSub?.cancel();
     _notesSub?.cancel();
     _recordingsSub?.cancel();
     _speechSub?.cancel();
     _partialSub?.cancel();
+    _speechErrorSub?.cancel();
     _transcriptChunkController.close();
     super.dispose();
   }

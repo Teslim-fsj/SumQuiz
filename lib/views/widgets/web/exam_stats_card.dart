@@ -40,7 +40,7 @@ class _ExamStatsCardState extends State<ExamStatsCard> {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: widget.gradient.colors.first.withOpacity(0.3),
+                color: widget.gradient.colors.first.withValues(alpha: 0.3),
                 blurRadius: _isHovered ? 30 : 20,
                 offset: Offset(0, _isHovered ? 12 : 8),
               ),
@@ -53,7 +53,7 @@ class _ExamStatsCardState extends State<ExamStatsCard> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -78,7 +78,7 @@ class _ExamStatsCardState extends State<ExamStatsCard> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   letterSpacing: 0.5,
                 ),
               ),

@@ -26,16 +26,16 @@ class ExtractionProgressDialog extends StatelessWidget {
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
           color: isDark
-              ? Colors.black.withOpacity(0.6)
-              : Colors.white.withOpacity(0.8),
+              ? Colors.black.withValues(alpha: 0.6)
+              : Colors.white.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(32),
           border: Border.all(
-            color: (isDark ? Colors.white : Colors.black).withOpacity(0.1),
+            color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1),
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withValues(alpha: 0.2),
               blurRadius: 40,
               offset: const Offset(0, 20),
             ),
@@ -78,7 +78,7 @@ class ExtractionProgressDialog extends StatelessWidget {
                       style: GoogleFonts.outfit(
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ).animate(key: ValueKey(message)).fadeIn(duration: 300.ms);
                   },
@@ -94,7 +94,7 @@ class ExtractionProgressDialog extends StatelessWidget {
                     height: 6,
                     child: LinearProgressIndicator(
                       backgroundColor:
-                          theme.colorScheme.primary.withOpacity(0.1),
+                          theme.colorScheme.primary.withValues(alpha: 0.1),
                       valueColor: AlwaysStoppedAnimation<Color>(
                           theme.colorScheme.primary),
                     ),
@@ -109,7 +109,7 @@ class ExtractionProgressDialog extends StatelessWidget {
                       foregroundColor: Colors.redAccent,
                       padding: const EdgeInsets.symmetric(
                           horizontal: 24, vertical: 12),
-                      backgroundColor: Colors.redAccent.withOpacity(0.05),
+                      backgroundColor: Colors.redAccent.withValues(alpha: 0.05),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(100)),
                     ),

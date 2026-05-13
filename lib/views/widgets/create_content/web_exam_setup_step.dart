@@ -85,7 +85,7 @@ class WebExamSetupStep extends StatelessWidget {
                     borderRadius: BorderRadius.circular(32),
                   ),
                   elevation: 8,
-                  shadowColor: const Color(0xFF4F46E5).withOpacity(0.4),
+                  shadowColor: const Color(0xFF4F46E5).withValues(alpha: 0.4),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -132,7 +132,7 @@ class WebExamSetupStep extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 20,
             offset: const Offset(0, 4),
           )
@@ -365,7 +365,7 @@ class WebExamSetupStep extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 )
@@ -435,7 +435,7 @@ class WebExamSetupStep extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.02),
+                color: Colors.black.withValues(alpha: 0.02),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               )

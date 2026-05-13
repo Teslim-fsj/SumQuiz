@@ -2,16 +2,15 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hive/hive.dart';
 import 'package:confetti/confetti.dart';
 import '../../services/local_database_service.dart';
 import '../../services/spaced_repetition_service.dart';
 import '../../models/local_flashcard.dart';
-import '../../models/spaced_repetition.dart';
 import 'package:flip_card/flip_card.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../widgets/sumi_mascot.dart';
 import '../../models/sumi_emotion.dart';
+import '../../services/mastery_service.dart';
 
 class SpacedRepetitionScreen extends StatefulWidget {
   const SpacedRepetitionScreen({super.key});
@@ -22,9 +21,13 @@ class SpacedRepetitionScreen extends StatefulWidget {
 
 class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
   late SpacedRepetitionService _spacedRepetitionService;
+  late MasteryService _masteryService;
   late LocalDatabaseService _dbService;
   late ConfettiController _confettiController;
+  
   List<LocalFlashcard> _dueFlashcards = [];
+  final Map<String, List<String>> _flashcardToTopicIds = {};
+  
   int _currentIndex = 0;
   bool _isLoading = true;
   bool _isFlipping = false;
@@ -54,10 +57,9 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
   }
 
   Future<void> _initializeAndLoad() async {
-    final box = Hive.box<SpacedRepetitionItem>('spaced_repetition');
-    _spacedRepetitionService = SpacedRepetitionService(box);
-    _dbService = LocalDatabaseService();
-    await _dbService.init();
+    _spacedRepetitionService = Provider.of<SpacedRepetitionService>(context, listen: false);
+    _masteryService = Provider.of<MasteryService>(context, listen: false);
+    _dbService = Provider.of<LocalDatabaseService>(context, listen: false);
     await _loadDueFlashcards();
   }
 
@@ -72,10 +74,20 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
       final user = Provider.of<User?>(context, listen: false);
       if (user != null) {
         final allFlashcardSets = await _dbService.getAllFlashcardSets(user.uid);
-        final allLocalFlashcards =
-            allFlashcardSets.expand((set) => set.flashcards).toList();
+        
+        // Build topic mapping
+        _flashcardToTopicIds.clear();
+        final List<LocalFlashcard> allLocalFlashcards = [];
+        for (var set in allFlashcardSets) {
+          for (var card in set.flashcards) {
+            allLocalFlashcards.add(card);
+            _flashcardToTopicIds[card.id] = set.topicIds;
+          }
+        }
+
         final flashcards = await _spacedRepetitionService.getDueFlashcards(
             user.uid, allLocalFlashcards);
+            
         if (!mounted) return;
 
         setState(() {
@@ -116,8 +128,22 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
 
     final flashcard = _dueFlashcards[_currentIndex];
     try {
+      // 1. Update SRS Data
       await _spacedRepetitionService.updateReview(
           flashcard.id, quality >= 3, quality: quality);
+
+      // 2. Emit Mastery Signals (Neural Link)
+      if (!mounted) return;
+      final user = Provider.of<User?>(context, listen: false);
+      final topicIds = _flashcardToTopicIds[flashcard.id] ?? [];
+      for (final topicId in topicIds) {
+        await _masteryService.processSignal(LearningSignal(
+          topicId: topicId,
+          type: quality >= 3 ? SignalType.flashcardSuccess : SignalType.flashcardFailure,
+          magnitude: quality / 5.0,
+          timestamp: DateTime.now(),
+        ));
+      }
 
       _showStabilityGain(quality);
 

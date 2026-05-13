@@ -103,6 +103,7 @@ class CreateContentProvider with ChangeNotifier {
 
   bool _isCancelled = false;
   CancellationToken? _cancelToken;
+  bool _cuDeducted = false;
 
   String? _preSelectedFolderId;
   String? get preSelectedFolderId => _preSelectedFolderId;
@@ -217,6 +218,7 @@ class CreateContentProvider with ChangeNotifier {
     _errorMessage = '';
     _generatedFolderId = '';
     _isCancelled = false;
+    _cuDeducted = false;
     _selectedQuestionTypes = ['Multiple Choice'];
     _selectedArchetype = StudyArchetype.architect;
     _extractionResult = null;
@@ -259,18 +261,20 @@ class CreateContentProvider with ChangeNotifier {
     final cancelToken = _cancelToken!;
 
     try {
-      // 1. Compute Orchestration (Invisible Economy)
       final ComputeManager computeManager = ComputeManager();
-      final bool canProceed = await computeManager.orchestrateAction(
-        userId, 
-        _selectedSourceType == 'exam' ? 'exam' : 'standard',
-        isHeavy: _fileBytes != null,
-        isYoutube: _selectedSourceType == 'youtube',
-        isMultimodal: _selectedSourceType == 'pdf' || _selectedSourceType == 'image',
-      );
 
-      if (!canProceed) {
-        throw Exception('CAPACITY_STABILIZING');
+      // Helper for gated deduction
+      Future<void> ensureCUDeducted() async {
+        if (_cuDeducted) return;
+        final bool canProceed = await computeManager.orchestrateAction(
+          userId,
+          _selectedSourceType == 'exam' ? 'exam' : 'standard',
+          isHeavy: _fileBytes != null,
+          isYoutube: _selectedSourceType == 'youtube',
+          isMultimodal: _selectedSourceType == 'pdf' || _selectedSourceType == 'image',
+        );
+        if (!canProceed) throw Exception('CAPACITY_STABILIZING');
+        _cuDeducted = true;
       }
 
       ExtractionResult? extractionResult;
@@ -281,6 +285,7 @@ class CreateContentProvider with ChangeNotifier {
 
       // Handle YouTube Transcript via Extraction Service
       if (_selectedSourceType == 'youtube') {
+        await ensureCUDeducted();
         _progressMessage = 'Analyzing YouTube video...';
         notifyListeners();
         try {
@@ -310,6 +315,7 @@ class CreateContentProvider with ChangeNotifier {
             !_textContent.contains('\n') &&
             _selectedSourceType == 'topic') {
           // Topic generation (Fast track)
+          await ensureCUDeducted();
           _progressMessage = 'Generating full study set from topic...';
           _generatedFolderId = await _aiService.generateFromTopic(
             topic: _textContent,
@@ -326,7 +332,6 @@ class CreateContentProvider with ChangeNotifier {
             cancelToken: cancelToken,
           );
           _phase = CreationPhase.success;
-          // Credits orchestrated at start
           notifyListeners();
           return;
         } else {
@@ -335,6 +340,10 @@ class CreateContentProvider with ChangeNotifier {
               text: _textContent, suggestedTitle: 'Pasted Content');
         }
       } else if (_fileBytes != null) {
+        // According to USER: image ocr is free, but PDF/etc cost CU
+        if (_selectedSourceType != 'image') {
+          await ensureCUDeducted();
+        }
         _progressMessage = 'Extracting content from your file...';
         notifyListeners();
         extractionResult = await _extractionService.extractContent(
@@ -352,6 +361,7 @@ class CreateContentProvider with ChangeNotifier {
           },
         );
       } else if (_selectedSourceType == 'link') {
+        await ensureCUDeducted();
         _progressMessage = 'Analyzing webpage content...';
         notifyListeners();
         extractionResult = await _extractionService.extractContent(
@@ -386,6 +396,7 @@ class CreateContentProvider with ChangeNotifier {
       // 3. (Credits already orchestrated via computeManager above)
 
       // 4. Generate Final Materials
+      await ensureCUDeducted();
       _progressMessage = 'Generating study materials...';
       notifyListeners();
 

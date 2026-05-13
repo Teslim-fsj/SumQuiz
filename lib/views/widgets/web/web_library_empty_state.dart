@@ -18,7 +18,7 @@ class WebLibraryEmptyState extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 80),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.5),
+          color: Colors.white.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(32),
           border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
@@ -38,7 +38,7 @@ class WebLibraryEmptyState extends StatelessWidget {
                   ),
                 ).animate().scale(duration: 600.ms, curve: Curves.easeOutBack),
                 Icon(Icons.folder_open_rounded,
-                    size: 80, color: const Color(0xFF6366F1).withOpacity(0.2)),
+                    size: 80, color: const Color(0xFF6366F1).withValues(alpha: 0.2)),
                 Positioned(
                   right: 20,
                   top: 20,
@@ -48,7 +48,7 @@ class WebLibraryEmptyState extends StatelessWidget {
                       color: Colors.white,
                       boxShadow: [
                         BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 10)
                       ],
                       borderRadius: BorderRadius.circular(12),
@@ -69,7 +69,7 @@ class WebLibraryEmptyState extends StatelessWidget {
                       color: Colors.white,
                       boxShadow: [
                         BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 10)
                       ],
                       borderRadius: BorderRadius.circular(12),
@@ -119,7 +119,7 @@ class WebLibraryEmptyState extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(24)),
                     elevation: 10,
-                    shadowColor: const Color(0xFF6366F1).withOpacity(0.4),
+                    shadowColor: const Color(0xFF6366F1).withValues(alpha: 0.4),
                   ),
                   child: Text('Build Study Pack',
                       style: GoogleFonts.outfit(
@@ -129,7 +129,7 @@ class WebLibraryEmptyState extends StatelessWidget {
                 ElevatedButton(
                   onPressed: onCreateNew,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE0E7FF).withOpacity(0.5),
+                    backgroundColor: const Color(0xFFE0E7FF).withValues(alpha: 0.5),
                     foregroundColor: const Color(0xFF4338CA),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 40, vertical: 20),

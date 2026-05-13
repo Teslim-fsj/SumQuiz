@@ -87,14 +87,14 @@ class WebColors {
     bool showBorder = true,
   }) {
     return BoxDecoration(
-      color: color.withOpacity(opacity),
+      color: color.withValues(alpha: opacity),
       borderRadius: BorderRadius.circular(borderRadius),
       border: showBorder
-          ? Border.all(color: color.withOpacity(0.2), width: 1.5)
+          ? Border.all(color: color.withValues(alpha: 0.2), width: 1.5)
           : null,
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.05),
+          color: Colors.black.withValues(alpha: 0.05),
           blurRadius: 20,
           offset: const Offset(0, 10),
         ),
@@ -105,7 +105,7 @@ class WebColors {
   // Shadows
   static List<BoxShadow> get cardShadow => [
         BoxShadow(
-          color: const Color(0xFF0F172A).withOpacity(0.08),
+          color: const Color(0xFF0F172A).withValues(alpha: 0.08),
           blurRadius: 30,
           offset: const Offset(0, 12),
         ),
@@ -113,7 +113,7 @@ class WebColors {
 
   static List<BoxShadow> get hoverShadow => [
         BoxShadow(
-          color: const Color(0xFF3B82F6).withOpacity(0.2),
+          color: const Color(0xFF3B82F6).withValues(alpha: 0.2),
           blurRadius: 40,
           offset: const Offset(0, 15),
         ),
@@ -121,7 +121,7 @@ class WebColors {
 
   static List<BoxShadow> get subtleShadow => [
         BoxShadow(
-          color: const Color(0xFF0F172A).withOpacity(0.03),
+          color: const Color(0xFF0F172A).withValues(alpha: 0.03),
           blurRadius: 10,
           offset: const Offset(0, 4),
         ),

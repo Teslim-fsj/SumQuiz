@@ -76,14 +76,14 @@ class _NeonButtonState extends State<NeonButton>
                 ? [
                     BoxShadow(
                       color: (widget.glowColor ?? WebColors.primary)
-                          .withOpacity(0.5),
+                          .withValues(alpha: 0.5),
                       blurRadius: 30,
                       spreadRadius: 2,
                     ),
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -141,7 +141,7 @@ class _NeonButtonState extends State<NeonButton>
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withOpacity(0.3),
+          color: Colors.white.withValues(alpha: 0.3),
           width: 2,
         ),
       ),

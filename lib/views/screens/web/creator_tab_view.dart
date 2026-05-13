@@ -59,7 +59,7 @@ class _CreatorTabViewState extends State<CreatorTabView> {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                    color: WebColors.purplePrimary.withOpacity(0.3),
+                    color: WebColors.purplePrimary.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 4))
               ],
@@ -232,7 +232,7 @@ class _CreatorTabViewState extends State<CreatorTabView> {
             border: Border.all(color: Colors.grey[200]!, width: 4),
             boxShadow: [
               BoxShadow(
-                  color: WebColors.purplePrimary.withOpacity(0.05),
+                  color: WebColors.purplePrimary.withValues(alpha: 0.05),
                   blurRadius: 40,
                   offset: const Offset(0, 20))
             ],
@@ -255,7 +255,7 @@ class _CreatorTabViewState extends State<CreatorTabView> {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 20,
                     offset: const Offset(0, 10))
               ],
@@ -432,7 +432,7 @@ class _CreatorTabViewState extends State<CreatorTabView> {
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 20,
               offset: const Offset(0, 10))
         ],
@@ -550,7 +550,7 @@ class _CreatorTabViewState extends State<CreatorTabView> {
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 20,
               offset: const Offset(0, 10))
         ],
@@ -660,7 +660,7 @@ class _CreatorTabViewState extends State<CreatorTabView> {
                     : MainAxisAlignment.start,
                 children: [
                   CircleAvatar(
-                    backgroundColor: WebColors.purplePrimary.withOpacity(0.2),
+                    backgroundColor: WebColors.purplePrimary.withValues(alpha: 0.2),
                     radius: 24,
                     child: const Icon(Icons.person,
                         color: WebColors.purplePrimary),
@@ -697,7 +697,7 @@ class _CreatorTabViewState extends State<CreatorTabView> {
               end: Alignment.bottomCenter),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 40,
                 offset: const Offset(0, 20))
           ],
@@ -705,7 +705,7 @@ class _CreatorTabViewState extends State<CreatorTabView> {
         child: Center(
           child: Icon(Icons.query_stats,
               size: isMobile ? 100 : 160,
-              color: Colors.cyanAccent.withOpacity(0.3)),
+              color: Colors.cyanAccent.withValues(alpha: 0.3)),
         ));
   }
 
@@ -760,7 +760,7 @@ class _CreatorTabViewState extends State<CreatorTabView> {
             borderRadius: BorderRadius.circular(40),
             boxShadow: [
               BoxShadow(
-                  color: const Color(0xFF2E1A47).withOpacity(0.3),
+                  color: const Color(0xFF2E1A47).withValues(alpha: 0.3),
                   blurRadius: 40,
                   offset: const Offset(0, 20))
             ],
@@ -833,7 +833,7 @@ class _CreatorTabViewState extends State<CreatorTabView> {
       onPressed: () {},
       style: OutlinedButton.styleFrom(
         foregroundColor: Colors.white,
-        side: BorderSide(color: Colors.white.withOpacity(0.3)),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
         padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
       ),

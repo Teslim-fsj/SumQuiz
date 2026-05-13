@@ -87,7 +87,7 @@ class _FlashcardsViewState extends State<FlashcardsView> {
                     child: Text(
                       'Created by ${widget.creatorName}',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onPrimary.withOpacity(0.7),
+                        color: theme.colorScheme.onPrimary.withValues(alpha: 0.7),
                         fontStyle: FontStyle.italic,
                       ),
                     ),
@@ -101,7 +101,7 @@ class _FlashcardsViewState extends State<FlashcardsView> {
                         child: LinearProgressIndicator(
                           value: progress,
                           backgroundColor:
-                              theme.colorScheme.onPrimary.withOpacity(0.2),
+                              theme.colorScheme.onPrimary.withValues(alpha: 0.2),
                           valueColor: AlwaysStoppedAnimation<Color>(
                               theme.colorScheme.secondary),
                           minHeight: 6,
@@ -112,7 +112,7 @@ class _FlashcardsViewState extends State<FlashcardsView> {
                     Text(
                       '${_currentIndex + 1}/${widget.flashcards.length}',
                       style: theme.textTheme.titleSmall?.copyWith(
-                          color: theme.colorScheme.onPrimary.withOpacity(0.8),
+                          color: theme.colorScheme.onPrimary.withValues(alpha: 0.8),
                           fontWeight: FontWeight.w500),
                     ),
                   ],
@@ -165,8 +165,8 @@ class _FlashcardsViewState extends State<FlashcardsView> {
               isFront ? "QUESTION" : "ANSWER",
               style: theme.textTheme.labelMedium?.copyWith(
                 color: isFront
-                    ? theme.colorScheme.primary.withOpacity(0.8)
-                    : theme.colorScheme.tertiary.withOpacity(0.8),
+                    ? theme.colorScheme.primary.withValues(alpha: 0.8)
+                    : theme.colorScheme.tertiary.withValues(alpha: 0.8),
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.5,
@@ -241,14 +241,14 @@ class _FlashcardsViewState extends State<FlashcardsView> {
                 children: [
                   Icon(Icons.touch_app_outlined,
                       size: 20,
-                      color: theme.colorScheme.onSurface.withOpacity(0.4)),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
                   const SizedBox(width: 8),
                   Text(
                     "Tap to Flip",
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontSize: 14,
                       fontStyle: FontStyle.italic,
-                      color: theme.colorScheme.onSurface.withOpacity(0.4),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                     ),
                   ),
                 ],
@@ -270,13 +270,13 @@ class _FlashcardsViewState extends State<FlashcardsView> {
         borderRadius: BorderRadius.circular(32),
         border: Border.all(
           color: isDark
-              ? theme.colorScheme.outline.withOpacity(0.3)
+              ? theme.colorScheme.outline.withValues(alpha: 0.3)
               : WebColors.border,
         ),
         boxShadow: isDark
             ? [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -299,9 +299,9 @@ class _FlashcardsViewState extends State<FlashcardsView> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [

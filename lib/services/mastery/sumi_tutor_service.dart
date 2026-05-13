@@ -1,3 +1,4 @@
+import '../ai/generator_ai_service.dart';
 import '../mastery/recommendation_service.dart';
 import '../mastery_service.dart';
 import '../notification_service.dart';
@@ -6,9 +7,10 @@ class SumiTutorService {
   final MasteryService _masteryService;
   final RecommendationService _recommendationService;
   final NotificationService? _notificationService;
+  final GeneratorAIService _generatorService;
 
   SumiTutorService(this._masteryService, this._recommendationService,
-      [this._notificationService]);
+      this._generatorService, [this._notificationService]);
 
   /// Analyzes the current brain state and schedules a retention alert if needed.
   Future<void> checkAndScheduleRetentionAlert(String userId) async {
@@ -46,22 +48,37 @@ class SumiTutorService {
 
   /// Provides a Socratic hint when a user gets an answer wrong.
   /// If [sourceName] is provided, Sumi will ground the hint in that specific material.
-  String getSocraticHint({
+  Future<String> getSocraticHint({
     required String topicName,
     required String question,
     required String wrongAnswer,
     String? sourceName,
     int? sourcePage,
-  }) {
-    final baseHint =
-        "Think about how this relates to $topicName. Are you considering the impact of the core principle?";
+  }) async {
+    final aiService = _generatorService;
+    
+    final prompt = '''You are Sumi, a Socratic tutor. 
+Topic: $topicName
+Question: $question
+User's Incorrect Answer: $wrongAnswer
+${sourceName != null ? "Context: This question is from '$sourceName'." : ""}
 
-    if (sourceName != null) {
-      final pageInfo = sourcePage != null ? " on page $sourcePage" : "";
-      return "Sumi Tip: Your material from '$sourceName'$pageInfo has a great explanation for this. $baseHint";
+Task: Provide a short (max 40 words), encouraging Socratic hint. 
+Do NOT give the answer. Guide them with a question or a "think about..." prompt.
+Stay friendly, neural-themed, and concise.''';
+
+    try {
+      final hint = await aiService.refineContent(prompt);
+      
+      if (sourceName != null) {
+        final pageInfo = sourcePage != null ? " on page $sourcePage" : "";
+        return "Sumi Tip: Your material from '$sourceName'$pageInfo has a clue. $hint";
+      }
+      return hint;
+    } catch (e) {
+      // Fallback
+      return "Think about how this relates to $topicName. Are you considering the impact of the core principle?";
     }
-
-    return baseHint;
   }
 
   /// Detects potential burnout based on accuracy and session behavior.

@@ -44,6 +44,8 @@ import 'package:sumquiz/views/screens/public_deck_screen.dart';
 import 'package:sumquiz/views/screens/notes_screen.dart';
 import 'package:sumquiz/views/screens/note_editor_screen.dart';
 import 'package:sumquiz/views/screens/post_study_results_screen.dart';
+import 'package:sumquiz/views/screens/sumi_live_screen.dart';
+import 'package:sumquiz/views/screens/debug/neural_debug_screen.dart';
 
 // Role-Aware view helper
 class RoleAwareView extends StatelessWidget {
@@ -409,6 +411,9 @@ GoRouter createRouter(AuthService authService) {
                   GoRoute(
                       path: 'referral',
                       builder: (context, state) => const ReferralScreen()),
+                  GoRoute(
+                      path: 'neural-debug',
+                      builder: (context, state) => const NeuralDebugScreen()),
                 ],
               ),
             ],
@@ -450,6 +455,13 @@ GoRouter createRouter(AuthService authService) {
       GoRoute(
         path: '/creator_dashboard',
         builder: (context, state) => const TeacherDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/sumi-live',
+        builder: (context, state) {
+          final source = state.uri.queryParameters['source'];
+          return SumiLiveScreen(groundingSource: source);
+        },
       ),
       GoRoute(
         path: '/post-study-results',

@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'dart:async';
@@ -291,6 +292,23 @@ class LocalDatabaseService {
   Future<void> saveMasteryHistory(MasteryHistory history) async {
     await init();
     await _historyBox.add(history);
+  }
+
+  Future<void> pruneHistory(String userId, int keepDays) async {
+    await init();
+    final threshold = DateTime.now().subtract(Duration(days: keepDays));
+    
+    final keysToDelete = _historyBox.keys.where((key) {
+      final item = _historyBox.get(key);
+      return item != null && item.userId == userId && item.timestamp.isBefore(threshold);
+    }).toList();
+
+    for (final key in keysToDelete) {
+      await _historyBox.delete(key);
+    }
+    if (keysToDelete.isNotEmpty) {
+      debugPrint('Pruned ${keysToDelete.length} history entries');
+    }
   }
 
   Future<void> updateSummarySyncStatus(String id, bool isSynced) async {

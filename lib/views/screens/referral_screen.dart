@@ -137,7 +137,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                               'Share your unique code. When friends sign up, they get 7 free Pro days. You earn 7 days for every 3 friends who join!',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                   color: theme.colorScheme.onSurface
-                                      .withOpacity(0.7)),
+                                      .withValues(alpha: 0.7)),
                               textAlign: TextAlign.center,
                             ).animate().fadeIn(delay: 300.ms),
                           ],
@@ -211,12 +211,12 @@ class _ReferralScreenState extends State<ReferralScreen> {
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: theme.cardColor.withOpacity(0.8),
+            color: theme.cardColor.withValues(alpha: 0.8),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
+            border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -269,10 +269,10 @@ class _ReferralScreenState extends State<ReferralScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.1),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                        color: theme.colorScheme.primary.withOpacity(0.2),
+                        color: theme.colorScheme.primary.withValues(alpha: 0.2),
                         width: 1.5),
                   ),
                   child: Row(
@@ -328,11 +328,11 @@ class _ReferralScreenState extends State<ReferralScreen> {
           // Regenerate Code Button
           TextButton.icon(
             icon: Icon(Icons.refresh,
-                size: 18, color: theme.colorScheme.primary.withOpacity(0.7)),
+                size: 18, color: theme.colorScheme.primary.withValues(alpha: 0.7)),
             label: Text(
               'Regenerate Code',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.primary.withOpacity(0.7),
+                color: theme.colorScheme.primary.withValues(alpha: 0.7),
               ),
             ),
             onPressed: () async {
@@ -403,12 +403,12 @@ class _ReferralScreenState extends State<ReferralScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: theme.cardColor.withOpacity(0.8),
+        color: theme.cardColor.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.4)),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.4)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 2)),
         ],
@@ -543,13 +543,13 @@ class _ReferralScreenState extends State<ReferralScreen> {
                   'Share Your Code',
                   'Send your unique code to friends via text, email, or social media.',
                   theme),
-              Divider(color: theme.dividerColor.withOpacity(0.2)),
+              Divider(color: theme.dividerColor.withValues(alpha: 0.2)),
               _buildStep(
                   Icons.looks_two_rounded,
                   'Friend Signs Up',
                   'Your friend enters your code during signup and instantly receives 7 Pro days.',
                   theme),
-              Divider(color: theme.dividerColor.withOpacity(0.2)),
+              Divider(color: theme.dividerColor.withValues(alpha: 0.2)),
               _buildStep(
                   Icons.looks_3_rounded,
                   'You Get Rewarded',
@@ -582,7 +582,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                 const SizedBox(height: 4),
                 Text(description,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.7))),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7))),
               ],
             ),
           ),

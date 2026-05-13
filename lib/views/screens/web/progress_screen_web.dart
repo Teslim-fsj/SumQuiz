@@ -228,7 +228,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -366,7 +366,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -509,7 +509,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
             style: GoogleFonts.outfit(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface.withOpacity(0.4),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
             ),
           ),
           const SizedBox(height: 8),
@@ -518,7 +518,7 @@ class _ProgressScreenWebState extends State<ProgressScreenWeb> {
             style: GoogleFonts.outfit(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: theme.colorScheme.onSurface.withOpacity(0.4),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
               letterSpacing: 0.2,
             ),
           ),

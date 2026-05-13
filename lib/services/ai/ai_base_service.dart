@@ -263,6 +263,29 @@ abstract class AIBaseService {
     );
   }
 
+  Future<String> generateConversational(String prompt,
+      {GenerativeModel? customModel, bool isPro = false, CancellationToken? cancelToken}) async {
+    return generateMultimodal([TextPart(prompt)],
+        customModel: customModel,
+        generationConfig: AIConfig.conversationalGenerationConfig,
+        isPro: isPro,
+        cancelToken: cancelToken);
+  }
+
+  Future<String> generateConversationalWithData(String prompt, Uint8List data, String mimeType,
+      {GenerativeModel? customModel, bool isPro = false, CancellationToken? cancelToken}) async {
+    return generateMultimodal(
+      [
+        TextPart(_sanitizeInput(prompt)),
+        DataPart(mimeType, data),
+      ],
+      customModel: customModel,
+      generationConfig: AIConfig.conversationalGenerationConfig,
+      isPro: isPro,
+      cancelToken: cancelToken,
+    );
+  }
+
   Future<String> generateMultimodal(List<Part> parts,
       {GenerativeModel? customModel,
       GenerationConfig? generationConfig,
@@ -581,12 +604,17 @@ abstract class AIBaseService {
       if (decoded is Map) {
         return Map<String, dynamic>.from(decoded);
       }
-      print(
-          'JSON decoded but unexpected type: ${decoded.runtimeType}. First 200 chars: ${jsonStr.length > 200 ? jsonStr.substring(0, 200) : jsonStr}');
+      developer.log(
+          'JSON decoded but unexpected type: ${decoded.runtimeType}. First 200 chars: ${jsonStr.length > 200 ? jsonStr.substring(0, 200) : jsonStr}',
+          name: 'AIBaseService',
+          level: 900);
       return fallback;
     } catch (e) {
-      print(
-          'JSON decode FAILED: $e\nRaw input (first 500 chars): ${jsonStr.length > 500 ? jsonStr.substring(0, 500) : jsonStr}');
+      developer.log(
+          'JSON decode FAILED: $e\nRaw input (first 500 chars): ${jsonStr.length > 500 ? jsonStr.substring(0, 500) : jsonStr}',
+          name: 'AIBaseService',
+          level: 1000,
+          error: e);
       return fallback;
     }
   }

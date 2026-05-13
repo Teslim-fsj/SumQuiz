@@ -39,13 +39,15 @@ class EnhancedAIService {
   final WebAIService _webService = WebAIService();
   final GeneratorAIService _generatorService = GeneratorAIService();
   late final MasteryService _masteryService;
+  late final SyncService _syncService;
   
   GeneratorAIService get generatorService => _generatorService;
 
   EnhancedAIService(
       {required IAPService iapService, required LocalDatabaseService localDb}) {
     _masteryService = MasteryService(
-        localDb.getTopicsBox(), localDb.getSpacedRepetitionBox());
+        localDb.getTopicsBox(), localDb.getSpacedRepetitionBox(), localDb);
+    _syncService = SyncService(localDb);
     // Initialize services immediately
     _initializeServices();
   }
@@ -101,7 +103,6 @@ class EnhancedAIService {
 
   Future<Result<ExtractionResult>> analyzeYouTubeVideo(String videoUrl,
       {required String userId, CancellationToken? cancelToken}) async {
-    await _checkUsageLimits(userId);
     final userDoc =
         await FirebaseFirestore.instance.collection('users').doc(userId).get();
     final isPro = userDoc.exists && (userDoc.data()?['isPro'] ?? false);
@@ -113,7 +114,6 @@ class EnhancedAIService {
       {required String url,
       required String userId,
       CancellationToken? cancelToken}) async {
-    await _checkUsageLimits(userId);
     return _webService.extractWebpage(url, cancelToken: cancelToken);
   }
 
@@ -198,7 +198,6 @@ class EnhancedAIService {
     void Function(String)? onProgress,
     CancellationToken? cancelToken,
   }) async {
-    // 1. Check Usage Limits
     final userDoc =
         await FirebaseFirestore.instance.collection('users').doc(userId).get();
     if (userDoc.exists) {
@@ -214,7 +213,6 @@ class EnhancedAIService {
       }
     }
 
-    await _checkUsageLimits(userId);
     onProgress?.call('Generating formal exam paper...');
 
     final result = await _generatorService.generateExam(
@@ -478,6 +476,10 @@ class EnhancedAIService {
     final srsService =
         SpacedRepetitionService(localDb.getSpacedRepetitionBox());
 
+    // Optimize: Fetch user state once
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    final isPro = userDoc.exists && (userDoc.data()?['isPro'] ?? false);
+
     int completed = 0;
     final total = requestedOutputs.length;
     final failures = <String>[];
@@ -506,6 +508,7 @@ class EnhancedAIService {
                   userId: userId,
                   difficulty: difficulty,
                   archetype: archetype,
+                  isPro: isPro,
                   cancelToken: cancelToken);
               if (summary.id.isEmpty) {
                 summary.id = const Uuid().v4();
@@ -529,6 +532,7 @@ class EnhancedAIService {
                   questionCount: questionCount,
                   difficulty: difficulty,
                   questionTypes: questionTypes,
+                  isPro: isPro,
                   cancelToken: cancelToken);
               if (quiz.id.isEmpty) {
                 quiz.id = const Uuid().v4();
@@ -549,7 +553,9 @@ class EnhancedAIService {
             case 'flashcards':
               final set = await _generatorService.generateFlashcards(text,
                   userId: userId,
+                  cardCount: cardCount,
                   difficulty: difficulty,
+                  isPro: isPro,
                   cancelToken: cancelToken);
               if (set.id.isEmpty) {
                 set.id = const Uuid().v4();
@@ -601,7 +607,7 @@ class EnhancedAIService {
 
       // Trigger sync in background (non-fatal)
       try {
-        SyncService(localDb).syncAllData();
+        _syncService.syncAllData();
       } catch (syncError) {
         developer.log('Background sync failed (non-fatal): $syncError',
             name: 'EnhancedAIService');
@@ -636,10 +642,11 @@ class EnhancedAIService {
     CancellationToken? cancelToken,
     String? existingFolderId,
   }) async {
-    await _checkUsageLimits(userId);
-    onProgress?.call('Generating comprehensive study materials...');
-
     String? folderId;
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    final isPro = userDoc.exists && (userDoc.data()?['isPro'] ?? false);
+
+    onProgress?.call('Generating comprehensive study materials...');
 
     try {
       cancelToken?.throwIfCancelled();
@@ -650,6 +657,7 @@ class EnhancedAIService {
         quizCount: quizCount,
         cardCount: cardCount,
         questionTypes: questionTypes,
+        isPro: isPro,
         cancelToken: cancelToken,
       );
 
@@ -712,27 +720,7 @@ class EnhancedAIService {
       if (quizData is List) {
         for (final q in quizData) {
           if (q is Map) {
-            final rawOptions = q['options'];
-            final List<String> options = [];
-            if (rawOptions is List) {
-              for (final o in rawOptions) {
-                options.add(o.toString());
-              }
-            }
-
-            final correctIndex =
-                int.tryParse(q['correctIndex']?.toString() ?? '0') ?? 0;
-            final correctAnswer =
-                (correctIndex >= 0 && correctIndex < options.length)
-                    ? options[correctIndex]
-                    : (options.isNotEmpty ? options[0] : '');
-
-            questions.add(LocalQuizQuestion(
-              question: q['question']?.toString() ?? '...',
-              options: options,
-              correctAnswer: correctAnswer,
-              explanation: q['explanation']?.toString(),
-            ));
+            questions.add(_generatorService.parseQuizQuestion(q));
           }
         }
       }
@@ -791,7 +779,7 @@ class EnhancedAIService {
 
       // Sync in background (non-fatal)
       try {
-        SyncService(localDb).syncAllData();
+        _syncService.syncAllData();
       } catch (syncError) {
         developer.log('Background sync failed (non-fatal): $syncError',
             name: 'EnhancedAIService');

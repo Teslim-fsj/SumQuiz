@@ -65,9 +65,9 @@ class PostStudyResultsScreen extends StatelessWidget {
             colors: isDark
                 ? [
                     theme.colorScheme.surface,
-                    theme.colorScheme.surface.withOpacity(0.8)
+                    theme.colorScheme.surface.withValues(alpha: 0.8)
                   ]
-                : [theme.colorScheme.primary.withOpacity(0.05), Colors.white],
+                : [theme.colorScheme.primary.withValues(alpha: 0.05), Colors.white],
           ),
         ),
         child: SafeArea(
@@ -185,10 +185,10 @@ class PostStudyResultsScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.05),
+              color: color.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -208,7 +208,7 @@ class PostStudyResultsScreen extends StatelessWidget {
             Text(
               label,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.5),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
           ],

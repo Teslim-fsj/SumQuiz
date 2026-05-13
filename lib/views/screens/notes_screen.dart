@@ -107,9 +107,9 @@ class _NotesScreenState extends State<NotesScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Container(
         decoration: BoxDecoration(
-          color: theme.cardColor.withOpacity(0.7),
+          color: theme.cardColor.withValues(alpha: 0.7),
           borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
         ),
         child: TextField(
           controller: _searchController,
@@ -135,7 +135,7 @@ class _NotesScreenState extends State<NotesScreen> {
         padding: const EdgeInsets.only(right: 20),
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: Colors.redAccent.withOpacity(0.8),
+          color: Colors.redAccent.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(16),
         ),
         child: const Icon(Icons.delete, color: Colors.white),
@@ -143,9 +143,9 @@ class _NotesScreenState extends State<NotesScreen> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: theme.cardColor.withOpacity(0.6),
+          color: theme.cardColor.withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
@@ -168,20 +168,20 @@ class _NotesScreenState extends State<NotesScreen> {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                         color: theme.textTheme.bodyMedium?.color
-                            ?.withOpacity(0.7)),
+                            ?.withValues(alpha: 0.7)),
                   ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
                       Icon(Icons.access_time,
                           size: 14,
-                          color: theme.colorScheme.primary.withOpacity(0.6)),
+                          color: theme.colorScheme.primary.withValues(alpha: 0.6)),
                       const SizedBox(width: 4),
                       Text(
                         DateFormat('MMM d, h:mm a').format(note.updatedAt),
                         style: TextStyle(
                             fontSize: 12,
-                            color: theme.colorScheme.primary.withOpacity(0.6)),
+                            color: theme.colorScheme.primary.withValues(alpha: 0.6)),
                       ),
                       const Spacer(),
                       if (note.tags.isNotEmpty)
@@ -189,7 +189,7 @@ class _NotesScreenState extends State<NotesScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.primary.withOpacity(0.1),
+                            color: theme.colorScheme.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
@@ -218,18 +218,18 @@ class _NotesScreenState extends State<NotesScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.note_alt_outlined,
-              size: 80, color: theme.colorScheme.primary.withOpacity(0.2)),
+              size: 80, color: theme.colorScheme.primary.withValues(alpha: 0.2)),
           const SizedBox(height: 16),
           Text(
             'No notes found',
             style: TextStyle(
                 fontSize: 18,
-                color: theme.colorScheme.primary.withOpacity(0.5)),
+                color: theme.colorScheme.primary.withValues(alpha: 0.5)),
           ),
           const SizedBox(height: 8),
           Text(
             'Tap + to create your first note',
-            style: TextStyle(color: theme.colorScheme.primary.withOpacity(0.4)),
+            style: TextStyle(color: theme.colorScheme.primary.withValues(alpha: 0.4)),
           ),
         ],
       ),

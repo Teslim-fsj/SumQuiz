@@ -38,6 +38,7 @@ import 'package:sumquiz/services/time_sync_service.dart';
 import 'package:sumquiz/services/notification_integration.dart';
 import 'package:sumquiz/widgets/notification_navigator.dart';
 import 'package:sumquiz/theme/web_theme.dart';
+import 'package:sumquiz/theme/cyber_neural_theme.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:sumquiz/services/deep_link_service.dart';
@@ -265,6 +266,7 @@ class _MyAppState extends State<MyApp> {
           create: (context) => MasteryService(
             context.read<LocalDatabaseService>().getTopicsBox(),
             context.read<LocalDatabaseService>().getSpacedRepetitionBox(),
+            context.read<LocalDatabaseService>(),
           ),
         ),
         ProxyProvider<AuthService, IAPService?>(
@@ -388,10 +390,10 @@ class _MyAppState extends State<MyApp> {
           update: (context, masteryService, previous) =>
               RecommendationService(masteryService),
         ),
-        ProxyProvider3<MasteryService, RecommendationService, NotificationService,
-            SumiTutorService>(
-          update: (context, mastery, recs, notifications, previous) =>
-              SumiTutorService(mastery, recs, notifications),
+        ProxyProvider4<MasteryService, RecommendationService, NotificationService,
+            EnhancedAIService, SumiTutorService>(
+          update: (context, mastery, recs, notifications, ai, previous) =>
+              SumiTutorService(mastery, recs, ai.generatorService, notifications),
         ),
         ChangeNotifierProxyProvider6<LocalDatabaseService, EnhancedAIService,
             RecordingService, SpeechService, UsageService?, AuthService, NoteProvider>(
@@ -448,21 +450,9 @@ class _MyAppState extends State<MyApp> {
               return NotificationNavigator(
                 child: MaterialApp.router(
                   title: 'SumQuiz',
-                  theme: kIsWeb
-                      ? (themeProvider.themeMode == ThemeMode.dark
-                          ? WebTheme.darkTheme
-                          : WebTheme.lightTheme)
-                      : themeProvider.getTheme(),
-                  darkTheme: kIsWeb
-                      ? (themeProvider.themeMode == ThemeMode.dark
-                          ? WebTheme.darkTheme
-                          : WebTheme.lightTheme)
-                      : themeProvider.getTheme(),
-                  themeMode: kIsWeb
-                      ? (themeProvider.themeMode == ThemeMode.dark
-                          ? ThemeMode.dark
-                          : ThemeMode.light)
-                      : themeProvider.themeMode,
+                  theme: CyberNeuralTheme.theme,
+                  darkTheme: CyberNeuralTheme.theme,
+                  themeMode: ThemeMode.dark,
                   routerConfig: _router,
                   debugShowCheckedModeBanner: false,
                   localizationsDelegates: const [

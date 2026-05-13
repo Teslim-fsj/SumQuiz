@@ -60,6 +60,12 @@ class AIConfig {
         responseMimeType: 'application/json',
       );
 
+  static GenerationConfig get conversationalGenerationConfig => GenerationConfig(
+        temperature: creativeTemperature,
+        maxOutputTokens: 2048,
+        responseMimeType: 'text/plain',
+      );
+
   static GenerationConfig get thinkingGenerationConfig => GenerationConfig(
         temperature: 0.7, // Higher temp for broader reasoning
         maxOutputTokens: 16384,

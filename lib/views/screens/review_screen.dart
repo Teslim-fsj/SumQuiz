@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:developer' as developer;
 import 'dart:ui';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../services/auth_service.dart';
 import '../../providers/sync_provider.dart';
@@ -33,6 +34,8 @@ import '../../models/local_flashcard_set.dart';
 import 'package:sumquiz/view_models/mastery_view_model.dart';
 import 'package:sumquiz/views/widgets/knowledge_graph_view.dart';
 import 'quiz_screen.dart';
+import '../widgets/neural_alert_banner.dart';
+import '../../theme/cyber_neural_theme.dart';
 
 class ReviewScreen extends StatefulWidget {
   final bool autoStartMission;
@@ -342,6 +345,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   Widget _buildNeuralDashboard(UserModel? user, MasteryViewModel masteryVm, ThemeData theme) {
     final isMobile = MediaQuery.of(context).size.width < 600;
+    final highRisk = masteryVm.highRiskTopics;
     
     return RefreshIndicator(
       onRefresh: () async {
@@ -355,26 +359,35 @@ class _ReviewScreenState extends State<ReviewScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildNeuralHeader(user, theme),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+
+            if (highRisk.isNotEmpty)
+              NeuralAlertBanner(
+                title: "DEGRADATION DETECTED",
+                description: "${highRisk.first.name} nodes reaching ${(highRisk.first.forgettingRisk * 100).toStringAsFixed(0)}% forgetting threshold.",
+                onAction: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SpacedRepetitionScreen())),
+                onIgnore: () {},
+              ),
             
-            _buildSumiProactiveSection(theme),
             const SizedBox(height: 24),
-
-            _buildLiveSandboxLink(theme),
-            const SizedBox(height: 24),
-
             _buildRetentionHealthCard(masteryVm, theme),
+            
             const SizedBox(height: 24),
+            _buildSumiProactiveSection(theme),
+            
+            const SizedBox(height: 24),
+            _buildLiveSandboxLink(theme),
 
+            const SizedBox(height: 24),
             _buildNeuralHotspots(masteryVm, theme),
-            const SizedBox(height: 24),
 
+            const SizedBox(height: 24),
             _buildNeuralHistory(user, theme),
-            const SizedBox(height: 24),
 
+            const SizedBox(height: 24),
             _buildDailyMissionSection(theme),
-            const SizedBox(height: 24),
 
+            const SizedBox(height: 24),
             _buildLearningMomentum(user, theme),
             const SizedBox(height: 32),
           ],
@@ -391,17 +404,21 @@ class _ReviewScreenState extends State<ReviewScreen> {
           children: [
             Text(
               'NEURAL HUB',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: theme.colorScheme.primary,
-                fontWeight: FontWeight.bold,
+              style: GoogleFonts.jetBrainsMono(
+                color: CyberNeuralColors.cyan,
+                fontWeight: FontWeight.w900,
+                fontSize: 12,
                 letterSpacing: 2,
               ),
             ),
+            const SizedBox(height: 4),
             Text(
               user?.displayName?.toUpperCase() ?? 'LEARNER',
-              style: theme.textTheme.headlineMedium?.copyWith(
+              style: GoogleFonts.outfit(
+                fontSize: 28,
                 fontWeight: FontWeight.w900,
-                letterSpacing: -0.5,
+                letterSpacing: -1,
+                color: Colors.white,
               ),
             ),
           ],
@@ -409,7 +426,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
         const Spacer(),
         _buildStreakBadge(user, theme),
       ],
-    ).animate().fadeIn().slideX(begin: -0.2);
+    ).animate().fadeIn().slideY(begin: -0.2);
   }
 
   Widget _buildStreakBadge(UserModel? user, ThemeData theme) {
@@ -469,50 +486,96 @@ class _ReviewScreenState extends State<ReviewScreen> {
     final score = masteryVm.overallMastery;
     return GestureDetector(
       onTap: () => context.push('/progress'),
-      child: _buildGlassCard(
-        theme: theme,
+      child: Container(
         padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: CyberNeuralColors.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: CyberNeuralColors.cyan.withValues(alpha: 0.1)),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('RETENTION HEALTH', 
-                  style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold, letterSpacing: 1.5)),
-                const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                Text('NEURAL STATUS HUB', 
+                  style: GoogleFonts.jetBrainsMono(
+                    fontWeight: FontWeight.bold, 
+                    letterSpacing: 1.5,
+                    fontSize: 12,
+                    color: CyberNeuralColors.textSecondary,
+                  )),
+                const Icon(Icons.tune_rounded, size: 18, color: CyberNeuralColors.cyan),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('${(score * 100).toStringAsFixed(1)}%',
-                        style: theme.textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w900, color: theme.colorScheme.primary)),
-                      const SizedBox(height: 4),
-                      Text('System Stability: Optimal', style: theme.textTheme.bodySmall),
-                    ],
-                  ),
+                Text('${(score * 100).toStringAsFixed(0)}',
+                  style: GoogleFonts.outfit(
+                    fontSize: 56, 
+                    fontWeight: FontWeight.w900, 
+                    color: Colors.white,
+                    height: 1,
+                  )),
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 8.0, left: 4),
+                  child: Text('%', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: CyberNeuralColors.cyan)),
                 ),
-                SizedBox(
-                  width: 60,
-                  height: 60,
-                  child: CircularProgressIndicator(
-                    value: score,
-                    strokeWidth: 8,
-                    strokeCap: StrokeCap.round,
-                    backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
-                  ),
+                const Spacer(),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('+4.2% Stability', style: GoogleFonts.jetBrainsMono(color: CyberNeuralColors.cyan, fontSize: 12, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    Container(
+                      height: 4,
+                      width: 100,
+                      decoration: BoxDecoration(
+                        color: CyberNeuralColors.cyan.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                      child: FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: score,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: CyberNeuralColors.neuralGradient,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+              ],
+            ),
+            const SizedBox(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildMiniStat("Active Nodes", "1,042"),
+                _buildMiniStat("At Risk", "14", isAlert: true),
+                _buildMiniStat("Sync Rate", "94%"),
               ],
             ),
           ],
         ),
       ),
     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1);
+  }
+
+  Widget _buildMiniStat(String label, String value, {bool isAlert = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: GoogleFonts.jetBrainsMono(fontSize: 10, color: CyberNeuralColors.textSecondary)),
+        const SizedBox(height: 4),
+        Text(value, style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: isAlert ? CyberNeuralColors.alert : Colors.white)),
+      ],
+    );
   }
 
   Widget _buildNeuralHotspots(MasteryViewModel masteryVm, ThemeData theme) {
@@ -1510,7 +1573,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: theme.colorScheme.primary.withOpacity(0.3),
+                      color: theme.colorScheme.primary.withValues(alpha: 0.3),
                       blurRadius: 15,
                       offset: const Offset(0, 8),
                     ),
@@ -1521,7 +1584,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.mic_none_rounded,
@@ -1542,7 +1605,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                           Text(
                             "Instant voice tutoring from any resource",
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.white.withValues(alpha: 0.8),
                             ),
                           ),
                         ],
@@ -1595,7 +1658,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                             rec.description,
                             style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.onSurface
-                                    .withOpacity(0.7)),
+                                    .withValues(alpha: 0.7)),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -1611,7 +1674,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8)),
                                 backgroundColor:
-                                    theme.colorScheme.primary.withOpacity(0.1),
+                                    theme.colorScheme.primary.withValues(alpha: 0.1),
                                 foregroundColor: theme.colorScheme.primary,
                                 elevation: 0,
                               ),
@@ -1660,7 +1723,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         shape: BoxShape.circle,
       ),
       child: Icon(icon, color: color, size: 16),

@@ -138,7 +138,7 @@ class AiToolsScreen extends StatelessWidget {
       required VoidCallback onTap}) {
     return Card(
       clipBehavior: Clip.antiAlias,
-      color: theme.colorScheme.tertiary.withOpacity(0.2),
+      color: theme.colorScheme.tertiary.withValues(alpha: 0.2),
       child: InkWell(
         onTap: onTap,
         child: Padding(

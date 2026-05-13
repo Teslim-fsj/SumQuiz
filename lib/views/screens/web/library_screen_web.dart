@@ -123,7 +123,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
               ),
               if (_isNavigating)
                 Container(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   child: Center(
                     child: Container(
                       padding: const EdgeInsets.all(32),
@@ -162,7 +162,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.lock_person,
-              size: 60, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+              size: 60, color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
           const SizedBox(height: 20),
           Text("Please Log In to View Library",
               style: TextStyle(
@@ -192,7 +192,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: WebColors.purplePrimary.withOpacity(0.1),
+            color: WebColors.purplePrimary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -277,7 +277,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                              color: WebColors.purplePrimary.withOpacity(0.1),
+                              color: WebColors.purplePrimary.withValues(alpha: 0.1),
                               blurRadius: 10,
                               offset: const Offset(0, 4))
                         ]
@@ -364,7 +364,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
       switch (item.type) {
         case LibraryItemType.summary:
           icon = Icons.description_outlined;
-          bgColor = WebColors.secondary.withOpacity(0.1);
+          bgColor = WebColors.secondary.withValues(alpha: 0.1);
           textColor = WebColors.secondary;
           typeName = 'SUMMARY';
           badge = item.itemCount != null
@@ -373,7 +373,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
           break;
         case LibraryItemType.quiz:
           icon = Icons.quiz_outlined;
-          bgColor = WebColors.accentOrange.withOpacity(0.1);
+          bgColor = WebColors.accentOrange.withValues(alpha: 0.1);
           textColor = WebColors.accentOrange;
           typeName = 'QUIZ';
           badge = item.score != null
@@ -382,14 +382,14 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
           break;
         case LibraryItemType.flashcards:
           icon = Icons.style_outlined;
-          bgColor = WebColors.pinkAccent.withOpacity(0.1);
+          bgColor = WebColors.pinkAccent.withValues(alpha: 0.1);
           textColor = WebColors.pinkAccent;
           typeName = 'FLASHCARDS';
           badge = '${item.itemCount ?? 0} Cards';
           break;
         case LibraryItemType.exam:
           icon = Icons.assignment_outlined;
-          bgColor = WebColors.purplePrimary.withOpacity(0.1);
+          bgColor = WebColors.purplePrimary.withValues(alpha: 0.1);
           textColor = WebColors.purplePrimary;
           typeName = 'EXAM';
           badge = item.score != null
@@ -398,7 +398,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
           break;
         case LibraryItemType.note:
           icon = Icons.note_alt_outlined;
-          bgColor = WebColors.secondary.withOpacity(0.1);
+          bgColor = WebColors.secondary.withValues(alpha: 0.1);
           textColor = WebColors.secondary;
           typeName = 'NOTE';
           badge = 'Smart Note';
@@ -501,8 +501,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
             color: Colors.transparent,
             child: InkWell(
               onTap: card.onTap,
-              hoverColor: card.textColor.withOpacity(0.05),
-              splashColor: card.textColor.withOpacity(0.1),
+              hoverColor: card.textColor.withValues(alpha: 0.05),
+              splashColor: card.textColor.withValues(alpha: 0.1),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -514,7 +514,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: card.textColor.withOpacity(0.1),
+                            color: card.textColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child:
@@ -525,7 +525,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
-                              color: card.textColor.withOpacity(0.1),
+                              color: card.textColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -586,7 +586,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
                         ),
                         const Spacer(),
                         Icon(Icons.arrow_forward,
-                            size: 16, color: card.textColor.withOpacity(0.5)),
+                            size: 16, color: card.textColor.withValues(alpha: 0.5)),
                       ],
                     ),
                   ],

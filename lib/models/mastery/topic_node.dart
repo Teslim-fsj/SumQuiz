@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:hive/hive.dart';
 
 part 'topic_node.g.dart';
@@ -58,24 +59,27 @@ class TopicNode extends HiveObject {
     this.contentTypes = const {},
   });
 
-  /// Calculate Forgetting Risk (0.0 to 1.0)
+  /// Calculate Forgetting Risk (0.0 to 1.0) using Ebbinghaus exponential decay
   /// Higher values mean the user is likely to forget this topic soon.
   double get forgettingRisk {
     if (stabilityScore == 0) return 1.0;
-    final daysSinceLastInteraction =
-        DateTime.now().difference(lastInteraction).inSeconds / (24 * 3600);
+    
+    final now = DateTime.now();
+    final diff = now.difference(lastInteraction);
+    final daysSince = diff.inSeconds / (24 * 3600);
 
-    // Simple exponential decay model for risk calculation
-    // risk = 1 - e^(-days / stability)
-    // We adjust stability to be in a day-relative scale for calculation
-    final adjustedStability =
-        stabilityScore * 30; // Scale 1.0 stability to ~30 days
-    if (adjustedStability == 0) return 1.0;
-
-    return 1.0 -
-        (stabilityScore *
-            (1.0 / (1.0 + (daysSinceLastInteraction / adjustedStability))));
+    // Exponential decay model: R = e^(-t / S)
+    // S (stability) is scaled so 1.0 stability ~ 30 days of retention
+    final adjustedStability = (stabilityScore * 30.0).clamp(0.1, 1000.0);
+    
+    // Risk = 1.0 - Retrievability
+    final retrievability = math.exp(-daysSince / adjustedStability);
+    
+    return (1.0 - retrievability).clamp(0.0, 1.0);
   }
+
+  /// Complement of forgetting risk
+  double get retentionEstimate => 1.0 - forgettingRisk;
 
   TopicNode copyWith({
     String? id,

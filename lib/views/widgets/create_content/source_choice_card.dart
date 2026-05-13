@@ -32,7 +32,7 @@ class SourceChoiceCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(isDark ? 0.15 : 0.1),
+            color: color.withValues(alpha: isDark ? 0.15 : 0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -50,20 +50,20 @@ class SourceChoiceCard extends StatelessWidget {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? theme.cardColor.withOpacity(0.7)
-                      : Colors.white.withOpacity(0.9),
+                      ? theme.cardColor.withValues(alpha: 0.7)
+                      : Colors.white.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                     color: isDark
-                        ? Colors.white.withOpacity(0.08)
-                        : color.withOpacity(0.15),
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : color.withValues(alpha: 0.15),
                     width: 1.5,
                   ),
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      color.withOpacity(0.05),
+                      color.withValues(alpha: 0.05),
                       Colors.transparent,
                     ],
                   ),
@@ -77,10 +77,10 @@ class SourceChoiceCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: color.withOpacity(0.12),
+                            color: color.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(18),
                             border: Border.all(
-                              color: color.withOpacity(0.2),
+                              color: color.withValues(alpha: 0.2),
                               width: 1,
                             ),
                           ),
@@ -95,11 +95,11 @@ class SourceChoiceCard extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFFD700).withOpacity(0.15),
+                              color: const Color(0xFFFFD700).withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
                                   color:
-                                      const Color(0xFFFFD700).withOpacity(0.3)),
+                                      const Color(0xFFFFD700).withValues(alpha: 0.3)),
                             ),
                             child: Text(
                               'PRO',
@@ -116,10 +116,10 @@ class SourceChoiceCard extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.15),
+                              color: Colors.blue.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                  color: Colors.blue.withOpacity(0.3)),
+                                  color: Colors.blue.withValues(alpha: 0.3)),
                             ),
                             child: Text(
                               'NEW',
@@ -152,7 +152,7 @@ class SourceChoiceCard extends StatelessWidget {
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                         color:
-                            theme.colorScheme.onSurfaceVariant.withOpacity(0.8),
+                            theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                         height: 1.3,
                       ),
                     ),

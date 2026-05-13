@@ -165,7 +165,7 @@ class FeedbackInsights extends StatelessWidget {
                 color: const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(16),
                 border:
-                    Border.all(color: WebColors.purplePrimary.withOpacity(0.1)),
+                    Border.all(color: WebColors.purplePrimary.withValues(alpha: 0.1)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,7 +234,7 @@ class FeedbackInsights extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border:
-                    Border.all(color: Colors.white.withOpacity(0.2), width: 12),
+                    Border.all(color: Colors.white.withValues(alpha: 0.2), width: 12),
               ),
               child: Center(
                 child: Column(

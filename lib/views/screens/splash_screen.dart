@@ -88,7 +88,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withValues(alpha: 0.1),
                       blurRadius: 30,
                       spreadRadius: 5,
                     ),
@@ -112,7 +112,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   .then() // Connecting animation
                   .shimmer(
                       duration: 2.seconds,
-                      color: Colors.white.withOpacity(0.5)),
+                      color: Colors.white.withValues(alpha: 0.5)),
 
               const SizedBox(height: 48),
 

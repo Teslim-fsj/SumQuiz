@@ -10,6 +10,7 @@ enum SumiState {
   streakBoost,
   tired,
   analytical,
+  speaking,
 }
 
 enum SumiEvent {

@@ -141,7 +141,7 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
                       style: GoogleFonts.outfit(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
-                        color: WebColors.primary.withOpacity(0.6),
+                        color: WebColors.primary.withValues(alpha: 0.6),
                         letterSpacing: 2,
                       ),
                     ),
@@ -164,7 +164,7 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
                     width: 200,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: WebColors.border.withOpacity(0.5),
+                      color: WebColors.border.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(2),
                     ),
                     alignment: Alignment.centerLeft,
@@ -265,7 +265,7 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(40),
-        border: Border.all(color: WebColors.border.withOpacity(0.5)),
+        border: Border.all(color: WebColors.border.withValues(alpha: 0.5)),
         boxShadow: WebColors.cardShadow,
       ),
       padding: const EdgeInsets.all(32),
@@ -279,7 +279,7 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
               style: GoogleFonts.outfit(
                 fontSize: 200,
                 fontWeight: FontWeight.w900,
-                color: WebColors.border.withOpacity(0.2),
+                color: WebColors.border.withValues(alpha: 0.2),
                 height: 1,
               ),
             ),
@@ -293,7 +293,7 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
                   style: GoogleFonts.outfit(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
-                    color: WebColors.primary.withOpacity(0.6),
+                    color: WebColors.primary.withValues(alpha: 0.6),
                     letterSpacing: 3,
                   ),
                 ),
@@ -339,9 +339,9 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
     return Container(
       height: 48,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Material(
         color: Colors.transparent,
@@ -383,7 +383,7 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: WebColors.border.withOpacity(0.5)),
+        border: Border.all(color: WebColors.border.withValues(alpha: 0.5)),
         boxShadow: WebColors.subtleShadow,
       ),
       child: Row(
@@ -391,7 +391,7 @@ class _WebFlashcardsViewState extends State<WebFlashcardsView> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 20),

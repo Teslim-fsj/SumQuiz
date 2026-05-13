@@ -60,7 +60,7 @@ class ConfigSelector extends StatelessWidget {
       style: GoogleFonts.outfit(
         fontSize: 11,
         fontWeight: FontWeight.w900,
-        color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
         letterSpacing: 1.2,
       ),
     );
@@ -91,13 +91,13 @@ class ConfigSelector extends StatelessWidget {
                 border: Border.all(
                   color: isSelected
                       ? colorScheme.primary
-                      : colorScheme.onSurface.withOpacity(0.1),
+                      : colorScheme.onSurface.withValues(alpha: 0.1),
                   width: 1.5,
                 ),
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                            color: colorScheme.primary.withOpacity(0.2),
+                            color: colorScheme.primary.withValues(alpha: 0.2),
                             blurRadius: 8,
                             offset: const Offset(0, 4))
                       ]
@@ -300,7 +300,7 @@ class ConfigSelector extends StatelessWidget {
               border: Border.all(
                   color: isSelected
                       ? colorScheme.secondary
-                      : colorScheme.onSurface.withOpacity(0.1)),
+                      : colorScheme.onSurface.withValues(alpha: 0.1)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -351,7 +351,7 @@ class _ArchetypeMobileCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color:
-              isSelected ? colorScheme.primary.withOpacity(0.05) : Colors.white,
+              isSelected ? colorScheme.primary.withValues(alpha: 0.05) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
               color: isSelected ? colorScheme.primary : const Color(0xFFE5E7EB),

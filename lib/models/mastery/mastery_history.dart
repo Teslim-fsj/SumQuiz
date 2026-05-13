@@ -13,9 +13,17 @@ class MasteryHistory extends HiveObject {
   @HiveField(2)
   final DateTime timestamp;
 
+  @HiveField(3)
+  final String? topicId; // Null for global average
+
+  @HiveField(4)
+  final String? topicName;
+
   MasteryHistory({
     required this.userId,
     required this.averageMastery,
     required this.timestamp,
+    this.topicId,
+    this.topicName,
   });
 }
