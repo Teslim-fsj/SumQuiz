@@ -18,7 +18,7 @@ class SumiLiveSandboxOverlay extends StatefulWidget {
 }
 
 class _SumiLiveSandboxOverlayState extends State<SumiLiveSandboxOverlay> {
-  bool _isListening = false;
+  final bool _isListening = false;
   bool _isProcessing = false;
   String? _currentFileName;
 
@@ -65,7 +65,6 @@ class _SumiLiveSandboxOverlayState extends State<SumiLiveSandboxOverlay> {
     );
   }
 
-
   Widget _buildUploadPrompt(ThemeData theme) {
     return Column(
       children: [
@@ -98,7 +97,8 @@ class _SumiLiveSandboxOverlayState extends State<SumiLiveSandboxOverlay> {
             ),
             child: Column(
               children: [
-                Icon(Icons.upload_file, size: 48, color: theme.colorScheme.primary),
+                Icon(Icons.upload_file,
+                    size: 48, color: theme.colorScheme.primary),
                 const SizedBox(height: 16),
                 Text(
                   "Upload External Resource",
@@ -159,14 +159,13 @@ class _SumiLiveSandboxOverlayState extends State<SumiLiveSandboxOverlay> {
             ],
           ),
         ),
-        
+
         const Divider(height: 1),
 
         // ChatGPT-Style Chat View
         Expanded(
           child: SumiChatView(groundingContext: _currentFileName),
         ),
-
       ],
     );
   }

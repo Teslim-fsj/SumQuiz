@@ -8,10 +8,11 @@ import '../services/ai/generator_ai_service.dart';
 import '../services/local_database_service.dart';
 import '../services/recording_service.dart';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../services/usage_service.dart';
 import '../services/auth_service.dart';
+import 'package:audio_session/audio_session.dart';
+import 'package:flutter/services.dart';
 
 class SumiProvider extends ChangeNotifier {
   final GeneratorAIService _aiService;
@@ -35,6 +36,28 @@ class SumiProvider extends ChangeNotifier {
         _authService = authService {
     _initChatHistory();
     _initTts();
+    _configureAudioSession();
+  }
+
+  Future<void> _configureAudioSession() async {
+    final session = await AudioSession.instance;
+    await session.configure(AudioSessionConfiguration(
+      avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+      avAudioSessionCategoryOptions:
+          AVAudioSessionCategoryOptions.allowBluetooth |
+          AVAudioSessionCategoryOptions.defaultToSpeaker,
+      avAudioSessionMode: AVAudioSessionMode.spokenAudio,
+      avAudioSessionRouteSharingPolicy:
+          AVAudioSessionRouteSharingPolicy.defaultPolicy,
+      avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.none,
+      androidAudioAttributes: AndroidAudioAttributes(
+        contentType: AndroidAudioContentType.speech,
+        flags: AndroidAudioFlags.none,
+        usage: AndroidAudioUsage.voiceCommunication,
+      ),
+      androidAudioFocusGainType: AndroidAudioFocusGainType.gainTransient,
+      androidWillPauseWhenDucked: true,
+    ));
   }
 
   void _initTts() async {
@@ -95,7 +118,7 @@ class SumiProvider extends ChangeNotifier {
     lastInteraction: DateTime.now(),
   );
 
-  String? _dialogue = "I am Sumi. How can I help you today?";
+  String? _dialogue;
   String? get dialogue => _dialogue;
 
   EmotionContext get currentContext => _context;
@@ -163,11 +186,35 @@ class SumiProvider extends ChangeNotifier {
         userName: userName,
       );
 
+      String lastSpokenSentence = "";
       await for (final chunk in stream) {
         fullResponse += chunk;
         _streamingMessage = fullResponse;
         _dialogue = fullResponse;
         notifyListeners();
+
+        // Trigger TTS for completed sentences if in Live Session
+        if (_isLiveSession) {
+          final sentences = fullResponse.split(RegExp(r'(?<=[.!?])\s+'));
+          if (sentences.length > 1) {
+            for (int i = 0; i < sentences.length - 1; i++) {
+              final sentence = sentences[i].trim();
+              if (sentence.isNotEmpty && !lastSpokenSentence.contains(sentence)) {
+                _speakSentence(sentence);
+                lastSpokenSentence += " $sentence";
+              }
+            }
+          }
+        }
+      }
+
+      // Final speak for any remaining text
+      if (_isLiveSession) {
+        final sentences = fullResponse.split(RegExp(r'(?<=[.!?])\s+'));
+        final last = sentences.last.trim();
+        if (last.isNotEmpty && !lastSpokenSentence.contains(last)) {
+          await _speakResponse(last);
+        }
       }
 
       // 4. Save full response to DB
@@ -213,6 +260,7 @@ class SumiProvider extends ChangeNotifier {
       notifyListeners();
 
       await _recordingService.startRecording("sumi_voice");
+      HapticFeedback.lightImpact();
       
       _recordingSub = _recordingService.durationStream.listen((duration) {
         _recordingDuration = duration;
@@ -284,10 +332,15 @@ class SumiProvider extends ChangeNotifier {
       String transcription = "[Voice Input]";
       String response = rawResponse;
 
-      if (rawResponse.contains("TRANSCRIPTION:") && rawResponse.contains("RESPONSE:")) {
-        final parts = rawResponse.split("RESPONSE:");
-        transcription = parts[0].replaceAll("TRANSCRIPTION:", "").trim();
-        response = parts[1].trim();
+      // Robust parsing for TRANSCRIPTION and RESPONSE
+      final transcriptionIndex = rawResponse.toUpperCase().indexOf("TRANSCRIPTION:");
+      final responseIndex = rawResponse.toUpperCase().indexOf("RESPONSE:");
+
+      if (transcriptionIndex != -1 && responseIndex != -1) {
+        transcription = rawResponse.substring(transcriptionIndex + 14, responseIndex).trim();
+        response = rawResponse.substring(responseIndex + 9).trim();
+      } else if (responseIndex != -1) {
+        response = rawResponse.substring(responseIndex + 9).trim();
       }
       
       _isStreaming = false;
@@ -308,12 +361,23 @@ class SumiProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> _speakSentence(String text) async {
+    // Non-blocking TTS for streaming chunks
+    try {
+      final cleanText = text.replaceAll(RegExp(r'[*_#]'), '');
+      await _tts.speak(cleanText);
+    } catch (e) {
+      developer.log("Streaming TTS Error: $e");
+    }
+  }
+
   Future<void> _speakResponse(String text) async {
     _isSumiSpeaking = true;
-    _currentState = SumiState.speaking; // OrbState.speaking
+    _currentState = SumiState.speaking;
     notifyListeners();
 
     try {
+      HapticFeedback.mediumImpact();
       final cleanText = text.replaceAll(RegExp(r'[*_#]'), '');
       await _tts.speak(cleanText);
       
@@ -378,14 +442,15 @@ class SumiProvider extends ChangeNotifier {
         _hasSpeaked = false;
 
         int peakCount = 0;
+        int gracePeriod = 0;
         while (_isVoiceRecording && _isLiveSession) {
           await Future.delayed(const Duration(milliseconds: 100));
+          gracePeriod++;
           
           final amp = await _recordingService.getAmplitude();
-          // Normalize amplitude threshold check
           if (amp.current > amplitudeThreshold) {
             peakCount++;
-            if (peakCount > 1) { // Faster trigger
+            if (peakCount > 1) { 
               _silenceCount = 0;
               _hasSpeaked = true;
             }
@@ -394,7 +459,10 @@ class SumiProvider extends ChangeNotifier {
             if (_hasSpeaked) _silenceCount++;
           }
 
-          if ((_hasSpeaked && _silenceCount >= silenceThreshold) || _recordingDuration.inSeconds > 20) {
+          // Force stop if too long or silence threshold reached after speaking
+          if ((_hasSpeaked && _silenceCount >= silenceThreshold) || 
+              _recordingDuration.inSeconds > 30 || 
+              (gracePeriod > 100 && !_hasSpeaked)) { // Stop after 10s of silence if no speech
             break;
           }
         }
@@ -450,6 +518,11 @@ class SumiProvider extends ChangeNotifier {
 
   void clearDialogue() {
     _dialogue = null;
+    notifyListeners();
+  }
+
+  void clearError() {
+    _errorMessage = null;
     notifyListeners();
   }
 

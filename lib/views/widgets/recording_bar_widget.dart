@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../providers/note_provider.dart';
 import '../../models/user_model.dart';
 import '../../widgets/pro_gate.dart';
@@ -15,11 +16,20 @@ class RecordingBarWidget extends StatelessWidget {
     final user = Provider.of<UserModel?>(context);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
-        color: theme.cardColor.withValues(alpha: 0.9),
-        border:
-            Border(top: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1))),
+        color: theme.cardColor.withOpacity(0.95),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, -5),
+          ),
+        ],
+        border: Border(
+          top: BorderSide(color: theme.dividerColor.withOpacity(0.1)),
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -37,55 +47,83 @@ class RecordingBarWidget extends StatelessWidget {
   Widget _buildProRecordingUI(BuildContext context, ThemeData theme,
       NoteProvider provider, UserModel? user) {
     final isRecording = provider.state == NoteProcessingState.recording;
+    final colorScheme = theme.colorScheme;
 
     return Row(
       children: [
         if (isRecording) ...[
           _buildPulsingDot(theme),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                _formatDuration(provider.recordingDuration),
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, fontFamily: 'monospace', color: Colors.red),
-              ),
-              const Text('Lecture in progress...', style: TextStyle(fontSize: 10, color: Colors.grey)),
-            ],
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _formatDuration(provider.recordingDuration),
+                  style: GoogleFonts.jetBrainsMono(
+                    fontWeight: FontWeight.bold, 
+                    fontSize: 16,
+                    color: Colors.redAccent
+                  ),
+                ),
+                Text(
+                  'Capturing lecture audio...', 
+                  style: GoogleFonts.inter(fontSize: 11, color: theme.hintColor, fontWeight: FontWeight.w500)
+                ),
+              ],
+            ),
           ),
-          const Spacer(),
           IconButton.filled(
-            icon: const Icon(Icons.stop_rounded),
+            icon: const Icon(Icons.stop_rounded, size: 28),
             onPressed: () => provider.stopRecording(),
-            style: IconButton.styleFrom(backgroundColor: Colors.red),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              padding: const EdgeInsets.all(12),
+            ),
           ),
         ] else ...[
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.blue.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(Icons.mic_rounded, color: Colors.blue, size: 20),
+            child: Icon(Icons.mic_rounded, color: colorScheme.primary, size: 24),
           ),
-          const SizedBox(width: 12),
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Live Lecture Recording', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              Text('Tap to start capturing audio', style: TextStyle(fontSize: 11, color: Colors.grey)),
-            ],
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Live Lecture Recording', 
+                  style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14)
+                ),
+                Text(
+                  'Ready to capture insights', 
+                  style: GoogleFonts.inter(fontSize: 12, color: theme.hintColor)
+                ),
+              ],
+            ),
           ),
-          const Spacer(),
-          ElevatedButton.icon(
+          ElevatedButton(
             onPressed: () => provider.startRecording(user?.uid ?? ''),
-            icon: const Icon(Icons.play_arrow_rounded),
-            label: const Text('Start'),
             style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.play_arrow_rounded, size: 20),
+                const SizedBox(width: 8),
+                Text('Start', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+              ],
             ),
           ),
         ],
@@ -96,16 +134,18 @@ class RecordingBarWidget extends StatelessWidget {
   Widget _buildFreeRecordingUI(BuildContext context, ThemeData theme) {
     return Row(
       children: [
-        Icon(Icons.mic_off_rounded, color: theme.hintColor),
-        const SizedBox(width: 8),
-        Text('Recording is a Pro feature',
-            style: TextStyle(color: theme.hintColor)),
+        Icon(Icons.lock_outline_rounded, color: theme.hintColor, size: 20),
+        const SizedBox(width: 12),
+        Text(
+          'Recording is a Pro feature',
+          style: GoogleFonts.inter(color: theme.hintColor, fontWeight: FontWeight.w500)
+        ),
         const Spacer(),
         TextButton(
           onPressed: () {
-            // Navigator or something to upgrade
+            // Trigger upgrade flow
           },
-          child: const Text('Upgrade'),
+          child: Text('Upgrade', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
         ),
       ],
     );
@@ -116,7 +156,7 @@ class RecordingBarWidget extends StatelessWidget {
       width: 12,
       height: 12,
       decoration: const BoxDecoration(
-        color: Colors.red,
+        color: Colors.redAccent,
         shape: BoxShape.circle,
       ),
     )
@@ -124,12 +164,13 @@ class RecordingBarWidget extends StatelessWidget {
         .scale(
             begin: const Offset(0.8, 0.8),
             end: const Offset(1.2, 1.2),
-            duration: 500.ms)
+            duration: 600.ms,
+            curve: Curves.easeInOut)
         .then()
         .animate(onPlay: (controller) => controller.repeat(reverse: true))
         .boxShadow(
-            begin: BoxShadow(color: Colors.red.withValues(alpha: 0), blurRadius: 0),
-            end: BoxShadow(color: Colors.red.withValues(alpha: 0.5), blurRadius: 10));
+            begin: const BoxShadow(color: Colors.transparent, blurRadius: 0),
+            end: BoxShadow(color: Colors.redAccent.withOpacity(0.4), blurRadius: 10));
   }
 
   String _formatDuration(Duration duration) {

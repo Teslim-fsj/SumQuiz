@@ -206,8 +206,11 @@ class ContentExtractionService {
         name: 'ContentExtractionService');
 
     // ── Pre-process: Truncate text inputs immediately for memory safety ──
-    if (type == 'text' && input is String && input.length > AIConfig.maxInputLength) {
-      developer.log('Pre-truncating text input from ${input.length} to ${AIConfig.maxInputLength}',
+    if (type == 'text' &&
+        input is String &&
+        input.length > AIConfig.maxInputLength) {
+      developer.log(
+          'Pre-truncating text input from ${input.length} to ${AIConfig.maxInputLength}',
           name: 'ContentExtractionService');
       input = input.substring(0, AIConfig.maxInputLength);
     }
@@ -520,9 +523,10 @@ class ContentExtractionService {
 
                 if (visionResult is Ok<ExtractionResult>) {
                   extractedTexts.add(visionResult.value.text);
-                  if (i == 0)
+                  if (i == 0) {
                     finalTitle =
                         visionResult.value.suggestedTitle ?? finalTitle;
+                  }
                 }
               }
 

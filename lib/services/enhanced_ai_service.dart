@@ -30,6 +30,7 @@ import 'package:sumquiz/models/local_quiz_question.dart';
 import 'package:sumquiz/models/local_flashcard.dart';
 import 'package:sumquiz/providers/create_content_provider.dart';
 import 'package:sumquiz/services/mastery_service.dart';
+import 'package:sumquiz/services/compute_manager.dart';
 export 'ai/ai_types.dart';
 
 // --- EXCEPTIONS moved to ai_types.dart ---
@@ -78,27 +79,31 @@ class EnhancedAIService {
     return await _generatorService.isServiceHealthy();
   }
 
-  Future<void> _checkUsageLimits(String userId) async {
-    developer.log('_checkUsageLimits called with userId: $userId',
-        name: 'EnhancedAIService');
+  Future<void> _orchestrateCompute(String userId, {bool isHeavy = true}) async {
+    developer.log('_orchestrateCompute called with userId: $userId', name: 'EnhancedAIService');
     try {
-      // Unify with dashboard usage logic
-      final usageService = usage.UsageService();
-      final canProceed = await usageService.canGenerateDeck(userId);
+      final computeManager = ComputeManager();
+      
+      // Attempt to orchestrate the action
+      final canProceed = await computeManager.orchestrateAction(
+        userId, 
+        'standard', // Generic type for heavy generation
+        isHeavy: isHeavy,
+      );
 
       if (!canProceed) {
-        developer.log('Usage limit reached for user: $userId',
-            name: 'EnhancedAIService');
+        developer.log('Compute orchestration BLOCKED for user: $userId', name: 'EnhancedAIService');
         throw EnhancedAIServiceException(
-            'Daily generation limit reached. Upgrade to Pro for unlimited access.',
-            code: 'USAGE_LIMIT_REACHED');
+          'Your neural momentum is currently stabilizing! Sumi suggests a quick break to integrate what you\'ve learned.',
+          code: 'CAPACITY_STABILIZING'
+        );
       }
-      developer.log('Usage limits check passed for user: $userId',
-          name: 'EnhancedAIService');
+      
+      developer.log('Compute orchestration SUCCESS for user: $userId', name: 'EnhancedAIService');
     } catch (e, stack) {
-      developer.log('Error checking usage limits',
-          name: 'EnhancedAIService', error: e, stackTrace: stack);
-      throw EnhancedAIServiceException('Error checking usage limits: $e');
+      if (e is EnhancedAIServiceException) rethrow;
+      developer.log('Error in compute orchestration', name: 'EnhancedAIService', error: e, stackTrace: stack);
+      throw EnhancedAIServiceException('Neural pathway initialization failed: $e', code: 'COMPUTE_ERROR');
     }
   }
 
@@ -456,7 +461,10 @@ class EnhancedAIService {
     developer.log('Text length: ${text.length} chars',
         name: 'EnhancedAIService');
 
-    // Ensure all services are initialized
+    // 1. Orchestrate compute before starting
+    await _orchestrateCompute(userId, isHeavy: true);
+
+    // 2. Ensure all services are initialized
     await initialize();
 
     onProgress('Creating folder...');
@@ -645,6 +653,16 @@ class EnhancedAIService {
     CancellationToken? cancelToken,
     String? existingFolderId,
   }) async {
+    developer.log(
+        'EnhancedAIService.generateFromTopic called with topic: $topic, userId: $userId, depth: $depth',
+        name: 'EnhancedAIService');
+
+    // 1. Orchestrate compute before starting
+    await _orchestrateCompute(userId, isHeavy: true);
+
+    // 2. Ensure initialized
+    await initialize();
+
     String? folderId;
     final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
     final isPro = userDoc.exists && (userDoc.data()?['isPro'] ?? false);

@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:sumquiz/services/auth_service.dart';
 import 'package:provider/provider.dart';
@@ -44,7 +43,8 @@ class _AuthScreenState extends State<AuthScreen> {
 
   void _switchAuthMode() {
     setState(() {
-      _authMode = _authMode == AuthMode.login ? AuthMode.signUp : AuthMode.login;
+      _authMode =
+          _authMode == AuthMode.login ? AuthMode.signUp : AuthMode.login;
     });
   }
 
@@ -105,7 +105,8 @@ class _AuthScreenState extends State<AuthScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('intended_role', _signUpRole.name);
 
-      await authService.signInWithGoogle(context, referralCode: _referralCodeController.text.trim());
+      await authService.signInWithGoogle(context,
+          referralCode: _referralCodeController.text.trim());
 
       if (!mounted) return;
       if (widget.redirectPath != null && widget.redirectPath!.isNotEmpty) {
@@ -126,7 +127,9 @@ class _AuthScreenState extends State<AuthScreen> {
     if (!mounted || message.isEmpty) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onError)),
+        content: Text(message,
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(color: theme.colorScheme.onError)),
         backgroundColor: theme.colorScheme.error,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -150,11 +153,8 @@ class _AuthScreenState extends State<AuthScreen> {
 
           Row(
             children: [
-              if (!isMobile) 
-                Expanded(
-                  flex: 5, 
-                  child: _buildBrandingPanel(theme)
-                ),
+              if (!isMobile)
+                Expanded(flex: 5, child: _buildBrandingPanel(theme)),
               Expanded(
                 flex: 6,
                 child: Center(
@@ -181,20 +181,22 @@ class _AuthScreenState extends State<AuthScreen> {
         children: [
           // Mascot interaction
           SumiMascot(
-            state: _authMode == AuthMode.login ? SumiState.idle : SumiState.celebrating,
+            state: _authMode == AuthMode.login
+                ? SumiState.idle
+                : SumiState.celebrating,
             size: 320,
             showBubble: true,
-            dialogue: _authMode == AuthMode.login 
-              ? "Welcome back! Ready to dive back in?" 
-              : "New adventure? Let's get you set up!",
+            dialogue: _authMode == AuthMode.login
+                ? "Welcome back! Ready to dive back in?"
+                : "New adventure? Let's get you set up!",
           ).animate().scale(duration: 600.ms, curve: Curves.easeOutBack),
-          
+
           const SizedBox(height: 48),
-          
+
           Text(
-            _authMode == AuthMode.login 
-              ? 'Your neural pathways\nare waiting.' 
-              : 'Begin your journey\nto complete mastery.',
+            _authMode == AuthMode.login
+                ? 'Your neural pathways\nare waiting.'
+                : 'Begin your journey\nto complete mastery.',
             style: GoogleFonts.outfit(
               fontSize: 48,
               fontWeight: FontWeight.w900,
@@ -203,9 +205,9 @@ class _AuthScreenState extends State<AuthScreen> {
               letterSpacing: -1.5,
             ),
           ).animate().fadeIn(duration: 800.ms).slideX(begin: -0.1),
-          
+
           const SizedBox(height: 24),
-          
+
           Text(
             'SumQuiz leverages advanced AI to transform any content into a personalized learning experience.',
             style: GoogleFonts.outfit(
@@ -221,7 +223,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Widget _buildAuthPanel(ThemeData theme, {required bool isMobile}) {
     final cs = theme.colorScheme;
-    
+
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 480),
       child: Column(
@@ -231,15 +233,19 @@ class _AuthScreenState extends State<AuthScreen> {
           if (isMobile) ...[
             Center(
               child: SumiMascot(
-                state: _authMode == AuthMode.login ? SumiState.idle : SumiState.celebrating,
+                state: _authMode == AuthMode.login
+                    ? SumiState.idle
+                    : SumiState.celebrating,
                 size: 160,
                 showBubble: true,
-                dialogue: _authMode == AuthMode.login ? "Welcome back!" : "Let's join!",
+                dialogue: _authMode == AuthMode.login
+                    ? "Welcome back!"
+                    : "Let's join!",
               ),
             ),
             const SizedBox(height: 40),
           ],
-          
+
           // Auth Card
           Container(
             padding: const EdgeInsets.all(32),
@@ -285,7 +291,8 @@ class _AuthScreenState extends State<AuthScreen> {
           const SizedBox(height: 8),
           Text(
             'Enter your credentials to continue your study.',
-            style: GoogleFonts.outfit(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+            style: GoogleFonts.outfit(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
           ),
           const SizedBox(height: 32),
           _buildTextField(
@@ -310,7 +317,8 @@ class _AuthScreenState extends State<AuthScreen> {
           const SizedBox(height: 24),
           _buildGoogleButton(theme),
           const SizedBox(height: 32),
-          _buildSwitchMode('Don\'t have an account?', 'Create one', _switchAuthMode, theme),
+          _buildSwitchMode(
+              'Don\'t have an account?', 'Create one', _switchAuthMode, theme),
         ],
       ),
     );
@@ -363,7 +371,8 @@ class _AuthScreenState extends State<AuthScreen> {
           const SizedBox(height: 24),
           _buildGoogleButton(theme),
           const SizedBox(height: 32),
-          _buildSwitchMode('Already a member?', 'Log in', _switchAuthMode, theme),
+          _buildSwitchMode(
+              'Already a member?', 'Log in', _switchAuthMode, theme),
         ],
       ),
     );
@@ -411,7 +420,8 @@ class _AuthScreenState extends State<AuthScreen> {
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide(color: cs.primary, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
         ),
       ],
@@ -450,7 +460,8 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  Widget _buildAuthButton(String text, VoidCallback onPressed, ThemeData theme) {
+  Widget _buildAuthButton(
+      String text, VoidCallback onPressed, ThemeData theme) {
     return SizedBox(
       height: 60,
       child: ElevatedButton(
@@ -458,12 +469,19 @@ class _AuthScreenState extends State<AuthScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: theme.colorScheme.primary,
           foregroundColor: theme.colorScheme.onPrimary,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 0,
         ),
         child: _isLoading
-            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-            : Text(text, style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold)),
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white))
+            : Text(text,
+                style: GoogleFonts.outfit(
+                    fontSize: 16, fontWeight: FontWeight.bold)),
       ),
     ).animate(target: _isLoading ? 0 : 1).shimmer(duration: 2.seconds);
   }
@@ -474,10 +492,15 @@ class _AuthScreenState extends State<AuthScreen> {
       child: OutlinedButton.icon(
         onPressed: _isLoading ? null : _googleSignIn,
         icon: SvgPicture.asset('assets/icons/google_logo.svg', height: 24),
-        label: Text('Continue with Google', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+        label: Text('Continue with Google',
+            style: GoogleFonts.outfit(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onSurface)),
         style: OutlinedButton.styleFrom(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          side: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          side: BorderSide(
+              color: theme.colorScheme.outline.withValues(alpha: 0.1)),
         ),
       ),
     );
@@ -486,24 +509,38 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget _buildSocialDivider(ThemeData theme) {
     return Row(
       children: [
-        Expanded(child: Divider(color: theme.colorScheme.outline.withValues(alpha: 0.1))),
+        Expanded(
+            child: Divider(
+                color: theme.colorScheme.outline.withValues(alpha: 0.1))),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text('OR', style: GoogleFonts.jetBrainsMono(fontSize: 12, color: theme.colorScheme.onSurface.withValues(alpha: 0.3), fontWeight: FontWeight.bold)),
+          child: Text('OR',
+              style: GoogleFonts.jetBrainsMono(
+                  fontSize: 12,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                  fontWeight: FontWeight.bold)),
         ),
-        Expanded(child: Divider(color: theme.colorScheme.outline.withValues(alpha: 0.1))),
+        Expanded(
+            child: Divider(
+                color: theme.colorScheme.outline.withValues(alpha: 0.1))),
       ],
     );
   }
 
-  Widget _buildSwitchMode(String text, String action, VoidCallback onTap, ThemeData theme) {
+  Widget _buildSwitchMode(
+      String text, String action, VoidCallback onTap, ThemeData theme) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(text, style: GoogleFonts.outfit(color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+        Text(text,
+            style: GoogleFonts.outfit(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
         TextButton(
           onPressed: onTap,
-          child: Text(action, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+          child: Text(action,
+              style: GoogleFonts.outfit(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary)),
         ),
       ],
     );
@@ -516,7 +553,11 @@ class _RolePill extends StatelessWidget {
   final VoidCallback onTap;
   final ColorScheme colorScheme;
 
-  const _RolePill({required this.label, required this.isSelected, required this.onTap, required this.colorScheme});
+  const _RolePill(
+      {required this.label,
+      required this.isSelected,
+      required this.onTap,
+      required this.colorScheme});
 
   @override
   Widget build(BuildContext context) {
@@ -534,7 +575,9 @@ class _RolePill extends StatelessWidget {
           label,
           style: GoogleFonts.outfit(
             fontWeight: FontWeight.bold,
-            color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface.withValues(alpha: 0.5),
+            color: isSelected
+                ? colorScheme.onPrimary
+                : colorScheme.onSurface.withValues(alpha: 0.5),
           ),
         ),
       ),
@@ -560,7 +603,10 @@ class _AuthBackground extends StatelessWidget {
               shape: BoxShape.circle,
               color: colorScheme.primary.withValues(alpha: 0.03),
             ),
-          ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), duration: 6.seconds),
+          ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(
+              begin: const Offset(1, 1),
+              end: const Offset(1.2, 1.2),
+              duration: 6.seconds),
         ),
         Positioned(
           bottom: -100,
@@ -572,7 +618,10 @@ class _AuthBackground extends StatelessWidget {
               shape: BoxShape.circle,
               color: colorScheme.tertiary.withValues(alpha: 0.03),
             ),
-          ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(begin: const Offset(1, 1), end: const Offset(1.1, 1.1), duration: 8.seconds),
+          ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(
+              begin: const Offset(1, 1),
+              end: const Offset(1.1, 1.1),
+              duration: 8.seconds),
         ),
       ],
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:sumquiz/services/local_database_service.dart';
 
@@ -48,7 +49,7 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
     if (_summary != null) return _summary!.title;
     if (_quiz != null) return _quiz!.title;
     if (_flashcardSet != null) return _flashcardSet!.title;
-    return 'Untitled Result';
+    return 'Knowledge Synthesis';
   }
 
   @override
@@ -60,10 +61,6 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
   Future<void> _loadData() async {
     try {
       final db = context.read<LocalDatabaseService>();
-
-      // Load folder
-      final folder = await db.getFolder(widget.folderId);
-
       final contents = await db.getFolderContents(widget.folderId);
 
       for (var content in contents) {
@@ -78,7 +75,7 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
 
       _updateAvailableTabs();
     } catch (e) {
-      _errorMessage = 'Failed to load results: $e';
+      _errorMessage = 'Failed to synchronize results: $e';
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -88,8 +85,8 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
 
   void _updateAvailableTabs() {
     _availableTabs.clear();
-    if (_summary != null) _availableTabs.add('Summary');
-    if (_quiz != null) _availableTabs.add('Quizzes');
+    if (_summary != null) _availableTabs.add('Synthesis');
+    if (_quiz != null) _availableTabs.add('Practice');
     if (_flashcardSet != null) _availableTabs.add('Flashcards');
 
     if (_selectedTab >= _availableTabs.length) {
@@ -102,18 +99,10 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
     final user = context.read<UserModel?>();
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please log in to share decks')),
+        const SnackBar(content: Text('Please log in to share synthesis')),
       );
       return;
     }
-
-    if (_summary == null || _quiz == null || _flashcardSet == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Wait for content to finish loading.')));
-      return;
-    }
-
-    // Removed Pro check to allow viral growth
 
     try {
       final shareCode = ShareCodeGenerator.generate();
@@ -126,17 +115,16 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
         title: _currentTitle,
         description: "Generated from $_currentTitle",
         shareCode: shareCode,
-        summaryData: {
+        summaryData: _summary != null ? {
           'content': _summary!.content,
           'tags': _summary!.tags,
-        },
-        quizData: {
+        } : {},
+        quizData: _quiz != null ? {
           'questions': _quiz!.questions.map((q) => q.toMap()).toList(),
-        },
-        flashcardData: {
-          'flashcards':
-              _flashcardSet!.flashcards.map((f) => f.toMap()).toList(),
-        },
+        } : {},
+        flashcardData: _flashcardSet != null ? {
+          'flashcards': _flashcardSet!.flashcards.map((f) => f.toMap()).toList(),
+        } : {},
         noteData: {},
         publishedAt: DateTime.now(),
       );
@@ -146,25 +134,21 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
       if (!mounted) return;
 
       final origin = kIsWeb ? Uri.base.origin : 'https://sumquiz.xyz';
-      final shareLink =
-          (publishedDeck.slug != null && publishedDeck.slug!.isNotEmpty)
-              ? '$origin/s/${publishedDeck.slug}'
-              : '$origin/deck?code=$shareCode';
+      final shareLink = (publishedDeck.slug != null && publishedDeck.slug!.isNotEmpty)
+          ? '$origin/s/${publishedDeck.slug}'
+          : '$origin/deck?code=$shareCode';
 
-      final String message = user.role == UserRole.student
-          ? '🔥 I challenge you! I just finished "$_currentTitle" on SumQuiz. Can you beat my knowledge score? Try it here: $shareLink #SumQuiz #StudyHard'
-          : 'Check out this study pack I created on SumQuiz: "$_currentTitle". It will save you hours of reading! Access it here: $shareLink';
+      final String message = 'Check out this synthesis I created on SumQuiz: "$_currentTitle". $shareLink';
 
       await SharePlus.instance.share(
         ShareParams(
           text: message,
-          subject: 'SumQuiz: $_currentTitle',
+          subject: 'SumQuiz Synthesis: $_currentTitle',
         ),
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error publishing: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error sharing: $e')));
       }
     }
   }
@@ -172,119 +156,99 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        centerTitle: true,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: theme.colorScheme.onSurface),
-          onPressed: () => context.go('/'),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          onPressed: () => context.go('/library'),
         ),
         title: Text(
-          'Results',
-          style: theme.textTheme.headlineSmall?.copyWith(
+          'Study Hub',
+          style: GoogleFonts.outfit(
             fontWeight: FontWeight.bold,
+            color: theme.colorScheme.primary,
           ),
         ),
-        centerTitle: true,
         actions: [
-          Consumer<UserModel?>(builder: (context, user, _) {
-            if (user != null) {
-              return TextButton.icon(
-                onPressed: _publishDeck,
-                icon: const Icon(Icons.share_rounded, size: 20),
-                label: const Text('SHARE',
-                    style: TextStyle(fontWeight: FontWeight.w800)),
-                style: TextButton.styleFrom(
-                  foregroundColor: theme.colorScheme.primary,
-                ),
-              );
-            }
-            return const SizedBox.shrink();
-          }),
+          IconButton(
+            icon: const Icon(Icons.share_rounded, size: 20),
+            onPressed: _publishDeck,
+          ),
         ],
       ),
-      body: Stack(
+      body: _isLoading
+          ? _buildLoadingState(theme)
+          : _errorMessage != null
+              ? _buildErrorState(theme)
+              : _buildMainContent(theme),
+    );
+  }
+
+  Widget _buildLoadingState(ThemeData theme) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Animated Background
-          Animate(
-            onPlay: (controller) => controller.repeat(reverse: true),
-            effects: [
-              CustomEffect(
-                duration: 10.seconds,
-                builder: (context, value, child) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: isDark
-                            ? [
-                                theme.colorScheme.surface,
-                                Color.lerp(theme.colorScheme.surface,
-                                    theme.colorScheme.primaryContainer, value)!,
-                              ]
-                            : [
-                                const Color(0xFFE0F7FA),
-                                Color.lerp(const Color(0xFFE0F7FA),
-                                    const Color(0xFFB2EBF2), value)!,
-                              ],
-                      ),
-                    ),
-                    child: child,
-                  );
-                },
-              )
-            ],
-            child: Container(),
-          ),
-          SafeArea(
-            child: _isLoading
-                ? Center(
-                    child: CircularProgressIndicator(
-                        color: theme.colorScheme.primary))
-                : _errorMessage != null
-                    ? Center(
-                        child: Text(_errorMessage!,
-                            style: theme.textTheme.bodyLarge
-                                ?.copyWith(color: theme.colorScheme.error)))
-                    : Column(
-                        children: [
-                          _buildOutputSelector(theme)
-                              .animate()
-                              .fadeIn()
-                              .slideY(begin: -0.2),
-                          Expanded(
-                              child: _buildSelectedTabView(theme)
-                                  .animate()
-                                  .fadeIn(delay: 200.ms)),
-                        ],
-                      ),
-          ),
+          const CircularProgressIndicator(strokeWidth: 3, valueColor: AlwaysStoppedAnimation(Color(0xFF0D9488))),
+          const SizedBox(height: 24),
+          Text('Synchronizing Knowledge...', style: GoogleFonts.inter(color: theme.hintColor)),
         ],
+      ).animate().fadeIn(),
+    );
+  }
+
+  Widget _buildErrorState(ThemeData theme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 48),
+            const SizedBox(height: 16),
+            Text(_errorMessage!, textAlign: TextAlign.center, style: GoogleFonts.inter(color: theme.hintColor)),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => setState(() { _isLoading = true; _loadData(); }),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildOutputSelector(ThemeData theme) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      height: 48,
-      decoration: BoxDecoration(
-        color: theme.cardColor.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+  Widget _buildMainContent(ThemeData theme) {
+    return Column(
+      children: [
+        _buildTabSelector(theme),
+        Expanded(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: KeyedSubtree(
+              key: ValueKey(_selectedTab),
+              child: _buildSelectedTabView(theme),
+            ),
           ),
-        ],
-      ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTabSelector(ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 8, 20, 16),
       padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
+      ),
       child: Row(
         children: List.generate(_availableTabs.length, (index) {
           final isSelected = _selectedTab == index;
@@ -292,22 +256,19 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
             child: GestureDetector(
               onTap: () => setState(() => _selectedTab = index),
               child: AnimatedContainer(
-                duration: 200.ms,
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? theme.colorScheme.primary
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(24),
+                  color: isSelected ? theme.colorScheme.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
                   child: Text(
                     _availableTabs[index],
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: isSelected
-                          ? theme.colorScheme.onPrimary
-                          : theme.colorScheme.onSurface,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? Colors.white : theme.hintColor,
                     ),
                   ),
                 ),
@@ -316,7 +277,7 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
           );
         }),
       ),
-    );
+    ).animate().fadeIn().slideY(begin: -0.1, end: 0);
   }
 
   Widget _buildSelectedTabView(ThemeData theme) {
@@ -325,26 +286,22 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
     final selectedTabName = _availableTabs[_selectedTab];
 
     switch (selectedTabName) {
-      case 'Summary':
+      case 'Synthesis':
         return _buildSummaryTab(theme);
-      case 'Quizzes':
+      case 'Practice':
         return _buildQuizzesTab(theme);
       case 'Flashcards':
         return _buildFlashcardsTab(theme);
       default:
-        return Container();
+        return const SizedBox.shrink();
     }
   }
 
   Widget _buildSummaryTab(ThemeData theme) {
-    if (_summary == null) {
-      return Center(
-          child:
-              Text('No summary available.', style: theme.textTheme.bodyMedium));
-    }
+    if (_summary == null) return const SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: SummaryView(
         title: _summary!.title,
         content: _summary!.content,
@@ -352,49 +309,38 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
         showActions: true,
         onCopy: () {
           Clipboard.setData(ClipboardData(text: _summary!.content));
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Summary copied to clipboard')),
-            );
-          }
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Synthesis copied!')));
         },
+        onGenerateQuiz: _quiz == null ? () {
+          // If quiz doesn't exist, navigate to creation
+          context.push('/create-content', extra: {
+            'initialText': _summary!.content,
+            'initialTitle': _summary!.title,
+            'mode': 'quiz'
+          });
+        } : () => setState(() => _selectedTab = _availableTabs.indexOf('Practice')),
       ),
     );
   }
 
   Widget _buildQuizzesTab(ThemeData theme) {
-    if (_quiz == null) {
-      return Center(
-          child: Text('No quiz available.', style: theme.textTheme.bodyMedium));
-    }
+    if (_quiz == null) return const SizedBox.shrink();
 
     return QuizView(
       title: _quiz!.title,
       questions: _quiz!.questions,
       onAnswer: (bool isCorrect, LocalQuizQuestion question) {},
       onFinish: () {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Quiz practice finished!')),
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Practice complete!')));
       },
     );
   }
 
   Widget _buildFlashcardsTab(ThemeData theme) {
-    if (_flashcardSet == null || _flashcardSet!.flashcards.isEmpty) {
-      return Center(
-          child: Text('No flashcards available.',
-              style: theme.textTheme.bodyMedium));
-    }
+    if (_flashcardSet == null || _flashcardSet!.flashcards.isEmpty) return const SizedBox.shrink();
 
     final flashcards = _flashcardSet!.flashcards
-        .map((f) => Flashcard(
-              id: f.id,
-              question: f.question,
-              answer: f.answer,
-            ))
+        .map((f) => Flashcard(id: f.id, question: f.question, answer: f.answer))
         .toList();
 
     return FlashcardsView(
@@ -402,11 +348,7 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
       flashcards: flashcards,
       onReview: (int index, bool knewIt, {int? quality}) {},
       onFinish: () {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Flashcard review finished!')),
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Review complete!')));
       },
     );
   }

@@ -654,44 +654,43 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
   }
 
   Widget _buildHeader(UserModel? user) {
+    final theme = Theme.of(context);
     final streak = user?.missionCompletionStreak ?? 0;
     final accuracyPct = (_accuracy * 100).toInt();
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             Text(
-              '${_getGreeting()}, ${user?.displayName.split(' ').first ?? 'Scholar'}!',
+              '${_getGreeting()}, ${user?.displayName.split(' ').first ?? 'Scholar'}',
               style: GoogleFonts.outfit(
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                color: WebColors.textPrimary,
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: theme.textTheme.displayLarge?.color,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 24),
             if (streak > 0)
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: WebColors.purpleUltraLight,
+                  color: const Color(0xFFF59E0B).withOpacity(0.08),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                      color: WebColors.purplePrimary.withValues(alpha: 0.3)),
+                  border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.2)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.local_fire_department_rounded,
-                        color: WebColors.purplePrimary, size: 18),
-                    const SizedBox(width: 6),
+                    const Icon(Icons.local_fire_department_rounded, color: Color(0xFFF59E0B), size: 18),
+                    const SizedBox(width: 8),
                     Text(
-                      '$streak-Day Streak',
-                      style: GoogleFonts.outfit(
+                      '$streak Day Streak',
+                      style: GoogleFonts.inter(
                         fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: WebColors.purplePrimary,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFFF59E0B),
                       ),
                     ),
                   ],
@@ -699,26 +698,23 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
               ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         Text.rich(
           TextSpan(
-            style: GoogleFonts.outfit(
-              fontSize: 14,
-              color: WebColors.textSecondary,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              color: theme.hintColor,
             ),
             children: [
-              const TextSpan(
-                  text:
-                      'Ready to master your knowledge today? You\'re performing at '),
+              const TextSpan(text: 'Your current precision is '),
               TextSpan(
                 text: '$accuracyPct%',
-                style: GoogleFonts.outfit(
-                  fontWeight: FontWeight.w700,
-                  color: WebColors.textPrimary,
-                  decoration: TextDecoration.underline,
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
                 ),
               ),
-              const TextSpan(text: ' accuracy this week.'),
+              const TextSpan(text: '. Ready for today\'s mastery mission?'),
             ],
           ),
         ),

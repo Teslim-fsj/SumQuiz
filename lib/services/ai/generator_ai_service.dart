@@ -55,7 +55,10 @@ Text: $text''';
 
     try {
       final response = await generateWithRetry(prompt,
-          customModel: educatorModel, isPro: isPro, cancelToken: cancelToken);
+          customModel: educatorModel,
+          generationConfig: AIConfig.defaultGenerationConfig,
+          isPro: isPro,
+          cancelToken: cancelToken);
       developer.log('AI Response received for summary',
           name: 'GeneratorAIService');
       final jsonStr = extractJson(response);
@@ -135,7 +138,10 @@ Text: $text''';
 
     try {
       final response = await generateWithRetry(prompt,
-          customModel: educatorModel, isPro: isPro, cancelToken: cancelToken);
+          customModel: educatorModel,
+          generationConfig: AIConfig.defaultGenerationConfig,
+          isPro: isPro,
+          cancelToken: cancelToken);
       developer.log('AI Response received for quiz',
           name: 'GeneratorAIService');
       final jsonStr = extractJson(response);
@@ -207,7 +213,9 @@ Text: $text''';
 
     try {
       final response = await generateWithRetry(prompt,
-          customModel: educatorModel, cancelToken: cancelToken);
+          customModel: educatorModel,
+          generationConfig: AIConfig.defaultGenerationConfig,
+          cancelToken: cancelToken);
       developer.log('AI Response received for flashcards',
           name: 'GeneratorAIService');
       final jsonStr = extractJson(response);
@@ -681,21 +689,24 @@ Text: $text''';
     CancellationToken? cancelToken,
   }) async {
     final systemPrompt = '''You are Sumi, a brilliant and empathetic AI tutor for SumQuiz.
-    Your goal is to help ${userName ?? 'the student'} master their subjects through active recall and Socratic questioning.
     
+    STUDENT NAME: ${userName ?? 'Student'}
     CURRENT CONTEXT: ${context ?? 'General study session.'}
     
-    GUIDELINES:
-    - Ground your answers in the provided context if available.
-    - Be extremely concise (1-3 sentences).
-    - Use Markdown for structure.
-    - If you don't know something based on the context, say so and suggest related study topics.
+    VOICE INTERACTION RULES:
+    1. Listen to the audio and provide a verbatim TRANSCRIPTION.
+    2. Provide a concise, helpful RESPONSE (1-2 sentences).
+    3. DO NOT use complex Markdown (like tables or headers) in the response, as it will be read aloud.
+    4. Maintain the "Sumi" personality: helpful, encouraging, and Socratic.
+    5. If context is provided, ground your answer strictly in that context.
+
+    OUTPUT FORMAT:
+    TRANSCRIPTION: [Exactly what the student said]
+    RESPONSE: [Your spoken response]
     ''';
 
-    final fullPrompt = '$systemPrompt\n\nStudent: $prompt\nSumi:';
-
     return generateConversationalWithData(
-      fullPrompt,
+      systemPrompt,
       audioBytes,
       mimeType,
       customModel: educatorModel,

@@ -10,7 +10,6 @@ import 'package:sumquiz/models/local_summary.dart';
 import 'package:sumquiz/services/auth_service.dart';
 import 'package:sumquiz/views/screens/auth_screen.dart';
 import 'package:sumquiz/views/screens/library_screen.dart';
-import 'package:sumquiz/views/screens/progress_screen.dart';
 import 'package:sumquiz/views/screens/settings_screen.dart';
 import 'package:sumquiz/views/screens/review_screen.dart';
 import 'package:sumquiz/views/screens/summary_screen.dart';
@@ -31,7 +30,6 @@ import 'package:sumquiz/views/widgets/scaffold_with_nav_bar.dart';
 import 'package:sumquiz/views/widgets/responsive_view.dart';
 import 'package:sumquiz/views/screens/web/library_screen_web.dart';
 import 'package:sumquiz/views/screens/web/create_content_screen_web.dart';
-import 'package:sumquiz/views/screens/web/progress_screen_web.dart';
 import 'package:sumquiz/views/screens/web/results_view_screen_web.dart';
 import 'package:sumquiz/views/screens/web/teacher_dashboard_web.dart';
 import 'package:sumquiz/views/screens/web/public_scaffold_web.dart';
@@ -93,8 +91,6 @@ final _reviewShellNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'ReviewShell');
 final _createShellNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'CreateShell');
-final _progressShellNavigatorKey =
-    GlobalKey<NavigatorState>(debugLabel: 'ProgressShell');
 final _profileShellNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'ProfileShell');
 final _settingsShellNavigatorKey =
@@ -331,24 +327,6 @@ GoRouter createRouter(AuthService authService) {
                     ),
                   ),
                 ],
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            navigatorKey: _progressShellNavigatorKey,
-            routes: <RouteBase>[
-              GoRoute(
-                path: '/progress',
-                builder: (context, state) => RoleAwareView(
-                  studentView: const ResponsiveView(
-                    mobile: ProgressScreen(),
-                    desktop: ProgressScreenWeb(),
-                  ),
-                  creatorView: TeacherDashboardWeb(
-                    module: 'analytics',
-                    studentId: state.uri.queryParameters['studentId'],
-                  ),
-                ),
               ),
             ],
           ),

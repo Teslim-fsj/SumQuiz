@@ -7,12 +7,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../theme/cyber_neural_theme.dart';
 import '../../providers/sumi_provider.dart';
 import '../../models/sumi_emotion.dart';
 import '../../models/sumi_message.dart';
 import '../../services/recording_service.dart';
-import '../widgets/neural_orb.dart';
+import '../widgets/aura_orb.dart';
+import '../widgets/aura_alert_banner.dart';
 
 class SumiLiveScreen extends StatefulWidget {
   final String? groundingSource;
@@ -74,20 +74,35 @@ class _SumiLiveScreenState extends State<SumiLiveScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final sumi = context.watch<SumiProvider>();
     
     return Scaffold(
-      backgroundColor: CyberNeuralColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // Ambient Background System
-          _buildAmbientBackground(sumi),
+          // Ambient Background Aura
+          _buildAmbientBackground(theme, sumi),
 
           // Main Content
           SafeArea(
-            child: _isGroundedMode 
-              ? _buildSplitScreenLayout(sumi)
-              : _buildVoiceCentricLayout(sumi),
+            child: Column(
+              children: [
+                if (sumi.errorMessage != null)
+                  AuraAlertBanner(
+                    title: "Neural Disruption",
+                    description: sumi.errorMessage!,
+                    onIgnore: () => sumi.clearError(),
+                    actionLabel: "RETRY",
+                    onAction: () => sumi.startLiveSession(context: widget.groundingSource),
+                  ),
+                Expanded(
+                  child: _isGroundedMode 
+                    ? _buildSplitScreenLayout(theme, sumi)
+                    : _buildVoiceCentricLayout(theme, sumi),
+                ),
+              ],
+            ),
           ),
 
           // Top Floating Navigation Bar
@@ -95,27 +110,27 @@ class _SumiLiveScreenState extends State<SumiLiveScreen> {
             top: 20,
             left: 20,
             right: 20,
-            child: _buildTopBar(sumi),
+            child: _buildTopBar(theme, sumi),
           ),
 
           // Exit Button
           Positioned(
-            top: 20,
-            right: 20,
-            child: _buildExitButton(),
+            top: 24,
+            right: 24,
+            child: _buildExitButton(theme),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildAmbientBackground(SumiProvider sumi) {
+  Widget _buildAmbientBackground(ThemeData theme, SumiProvider sumi) {
     Color moodColor;
     switch (sumi.currentState) {
-      case SumiState.tired: moodColor = CyberNeuralColors.amber; break;
-      case SumiState.thinking: moodColor = CyberNeuralColors.purple; break;
-      case SumiState.analytical: moodColor = CyberNeuralColors.gold; break;
-      default: moodColor = CyberNeuralColors.cyan;
+      case SumiState.tired: moodColor = Colors.orange; break;
+      case SumiState.thinking: moodColor = Colors.deepPurple; break;
+      case SumiState.analytical: moodColor = Colors.amber; break;
+      default: moodColor = theme.colorScheme.primary;
     }
 
     return AnimatedContainer(
@@ -125,50 +140,45 @@ class _SumiLiveScreenState extends State<SumiLiveScreen> {
           center: Alignment.center,
           radius: 1.2,
           colors: [
-            moodColor.withValues(alpha: 0.05),
-            Colors.transparent,
+            moodColor.withOpacity(0.04),
+            theme.scaffoldBackgroundColor,
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTopBar(SumiProvider sumi) {
+  Widget _buildTopBar(ThemeData theme, SumiProvider sumi) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          height: 52,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           decoration: BoxDecoration(
-            color: CyberNeuralColors.surface.withValues(alpha: 0.5),
+            color: theme.cardColor.withOpacity(0.7),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+            border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildSessionTimer(),
-              const SizedBox(width: 16),
-              const VerticalDivider(color: Colors.white10, indent: 12, endIndent: 12),
-              const SizedBox(width: 16),
-              _buildGroundedIndicator(),
+              _buildSessionTimer(theme),
+              const SizedBox(width: 20),
+              const VerticalDivider(width: 1, indent: 16, endIndent: 16),
+              const SizedBox(width: 20),
+              _buildGroundedIndicator(theme),
               const Spacer(),
-              _buildNeuralHealth(),
-              const SizedBox(width: 16),
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.settings_outlined, size: 16, color: Colors.white38),
-              ),
+              _buildStatusBadge(theme),
             ],
           ),
         ),
       ),
-    );
+    ).animate().fadeIn().slideY(begin: -0.2, end: 0);
   }
 
-  Widget _buildSessionTimer() {
+  Widget _buildSessionTimer(ThemeData theme) {
     final duration = DateTime.now().difference(_sessionStart ?? DateTime.now());
     final minutes = duration.inMinutes.toString().padLeft(2, '0');
     final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
@@ -176,236 +186,306 @@ class _SumiLiveScreenState extends State<SumiLiveScreen> {
     return Row(
       children: [
         Container(
-          width: 6,
-          height: 6,
-          decoration: const BoxDecoration(color: CyberNeuralColors.cyan, shape: BoxShape.circle),
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: theme.colorScheme.primary, shape: BoxShape.circle),
         ).animate(onPlay: (c) => c.repeat()).fadeIn().fadeOut(),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         Text(
           "$minutes:$seconds",
-          style: GoogleFonts.jetBrainsMono(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white70),
+          style: GoogleFonts.jetBrainsMono(fontSize: 13, fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color),
         ),
       ],
     );
   }
 
-  Widget _buildGroundedIndicator() {
+  Widget _buildGroundedIndicator(ThemeData theme) {
     return Row(
       children: [
-        const Icon(Icons.description_outlined, size: 14, color: CyberNeuralColors.textTertiary),
-        const SizedBox(width: 8),
+        Icon(Icons.auto_awesome_outlined, size: 16, color: theme.hintColor),
+        const SizedBox(width: 10),
         Text(
-          "Grounded in ${widget.groundingSource ?? 'Neural Core'}",
-          style: GoogleFonts.inter(fontSize: 11, color: CyberNeuralColors.textTertiary),
+          "${widget.groundingSource ?? 'Global'}",
+          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: theme.hintColor),
         ),
       ],
     );
   }
 
-  Widget _buildNeuralHealth() {
+  Widget _buildStatusBadge(ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: CyberNeuralColors.success.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+        color: const Color(0xFF22C55E).withOpacity(0.08),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         children: [
-          const Icon(Icons.bolt, size: 10, color: CyberNeuralColors.success),
-          const SizedBox(width: 4),
+          const Icon(Icons.bolt_rounded, size: 12, color: Color(0xFF22C55E)),
+          const SizedBox(width: 6),
           Text(
-            "STABLE",
-            style: GoogleFonts.jetBrainsMono(fontSize: 9, fontWeight: FontWeight.bold, color: CyberNeuralColors.success),
+            "LIVE LINK",
+            style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFF22C55E)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildExitButton() {
+  Widget _buildExitButton(ThemeData theme) {
     return IconButton(
       onPressed: () => context.pop(),
-      icon: const Icon(Icons.close_rounded, color: Colors.white54),
+      icon: Icon(Icons.close_rounded, color: theme.hintColor),
       style: IconButton.styleFrom(
-        backgroundColor: Colors.white.withValues(alpha: 0.05),
+        backgroundColor: theme.cardColor,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
 
-  Widget _buildVoiceCentricLayout(SumiProvider sumi) {
+  Widget _buildVoiceCentricLayout(ThemeData theme, SumiProvider sumi) {
     return Column(
       children: [
-        const Spacer(),
+        const Spacer(flex: 2),
         
-        // Centerpiece — The Neural Orb
-        NeuralOrb(
-          state: _getOrbState(sumi),
-          amplitude: _voiceAmplitude,
+        // Centerpiece — The Aura Orb
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            AuraOrb(
+              state: _getOrbState(sumi),
+              amplitude: _voiceAmplitude,
+              size: 200,
+            ).animate().scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack),
+            if (widget.groundingSource != null)
+              Positioned(
+                bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    widget.groundingSource!.toUpperCase(),
+                    style: GoogleFonts.inter(
+                      fontSize: 8,
+                      fontWeight: FontWeight.w900,
+                      color: theme.colorScheme.primary,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ).animate().fadeIn(delay: 600.ms),
+              ),
+          ],
         ),
         
         const Spacer(),
 
-        // Predictive AI Prompts
-        _buildPredictivePrompts(sumi),
+        // Predictive Prompts
+        _buildPredictivePrompts(theme, sumi),
         
-        const SizedBox(height: 24),
+        const SizedBox(height: 32),
 
-        // Voice Subtitle System
-        _buildVoiceSubtitles(sumi),
+        // Subtitles / Dialogue
+        _buildVoiceSubtitles(theme, sumi),
         
-        const Spacer(),
+        const Spacer(flex: 2),
 
-        // Text Input Overlay
-        _buildLiveTextInput(sumi),
+        // Bottom Actions
+        _buildBottomActions(theme, sumi),
         
-        const SizedBox(height: 20),
+        const SizedBox(height: 32),
       ],
     );
   }
 
-  Widget _buildLiveTextInput(SumiProvider sumi) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 40),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      height: 48,
-      decoration: BoxDecoration(
-        color: CyberNeuralColors.surface.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-      ),
+  Widget _buildBottomActions(ThemeData theme, SumiProvider sumi) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Row(
         children: [
           Expanded(
-            child: TextField(
-              controller: _liveTextController,
-              style: GoogleFonts.inter(fontSize: 13, color: Colors.white),
-              decoration: InputDecoration(
-                hintText: "TYPE YOUR QUERY...",
-                hintStyle: GoogleFonts.jetBrainsMono(fontSize: 10, color: Colors.white24),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.only(bottom: 4),
+            child: Container(
+              height: 56,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+                ],
               ),
-              onSubmitted: (text) {
-                if (text.trim().isNotEmpty) {
-                  sumi.askSumi(text, context: widget.groundingSource);
-                  _liveTextController.clear();
-                }
-              },
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _liveTextController,
+                      style: GoogleFonts.inter(fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: "Type a message...",
+                        hintStyle: GoogleFonts.inter(fontSize: 14, color: theme.hintColor.withOpacity(0.5)),
+                        border: InputBorder.none,
+                      ),
+                      onSubmitted: (text) {
+                        if (text.trim().isNotEmpty) {
+                          HapticFeedback.lightImpact();
+                          sumi.askSumi(text, context: widget.groundingSource);
+                          _liveTextController.clear();
+                        }
+                      },
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      final text = _liveTextController.text;
+                      if (text.trim().isNotEmpty) {
+                        HapticFeedback.lightImpact();
+                        sumi.askSumi(text, context: widget.groundingSource);
+                        _liveTextController.clear();
+                      }
+                    },
+                    icon: Icon(Icons.arrow_upward_rounded, color: theme.colorScheme.primary),
+                  ),
+                ],
+              ),
             ),
           ),
-          IconButton(
-            onPressed: () {
-              final text = _liveTextController.text;
-              if (text.trim().isNotEmpty) {
-                sumi.askSumi(text, context: widget.groundingSource);
-                _liveTextController.clear();
-              }
-            },
-            icon: const Icon(Icons.arrow_upward_rounded, size: 18, color: CyberNeuralColors.cyan),
+          const SizedBox(width: 16),
+          _buildFloatingAction(
+            _isGroundedMode ? Icons.close_fullscreen_rounded : Icons.open_in_full_rounded,
+            () => setState(() => _isGroundedMode = !_isGroundedMode),
+            theme
           ),
         ],
+      ),
+    ).animate().fadeIn(delay: 400.ms);
+  }
+
+  Widget _buildFloatingAction(IconData icon, VoidCallback onTap, ThemeData theme) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(28),
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          shape: BoxShape.circle,
+          border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+          ],
+        ),
+        child: Icon(icon, color: theme.hintColor, size: 22),
       ),
     );
   }
 
-  Widget _buildPredictivePrompts(SumiProvider sumi) {
-    final prompts = ["Explain the diagram", "Test my memory", "Simplify this topic", "What am I forgetting?"];
+  Widget _buildPredictivePrompts(ThemeData theme, SumiProvider sumi) {
+    final prompts = ["Summarize this", "Test my knowledge", "Give an analogy", "Next steps?"];
     
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
-        children: prompts.map((p) => _buildPromptChip(p, sumi)).toList(),
+        children: prompts.map((p) => _buildPromptChip(theme, p, sumi)).toList(),
       ),
-    );
+    ).animate().fadeIn(delay: 200.ms);
   }
 
-  Widget _buildPromptChip(String text, SumiProvider sumi) {
+  Widget _buildPromptChip(ThemeData theme, String text, SumiProvider sumi) {
     return Container(
       margin: const EdgeInsets.only(right: 12),
       child: ActionChip(
         label: Text(text),
         onPressed: () => sumi.askSumi(text, context: widget.groundingSource),
-        backgroundColor: CyberNeuralColors.surface.withValues(alpha: 0.3),
-        labelStyle: GoogleFonts.inter(fontSize: 12, color: Colors.white70),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: Colors.white.withValues(alpha: 0.05))),
+        backgroundColor: theme.cardColor,
+        labelStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: theme.textTheme.bodyMedium?.color),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20), 
+          side: BorderSide(color: theme.dividerColor.withOpacity(0.1))
+        ),
+        elevation: 0,
+        pressElevation: 0,
       ),
     );
   }
 
-  Widget _buildVoiceSubtitles(SumiProvider sumi) {
-    final text = sumi.isStreaming ? (sumi.streamingMessage ?? "Thinking...") : (sumi.dialogue ?? "Listening...");
+  Widget _buildVoiceSubtitles(ThemeData theme, SumiProvider sumi) {
+    final text = sumi.isStreaming ? (sumi.streamingMessage ?? "Synthesizing...") : (sumi.dialogue ?? "Listening...");
     
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
+      padding: const EdgeInsets.symmetric(horizontal: 48),
       child: Text(
         text,
         textAlign: TextAlign.center,
         style: GoogleFonts.inter(
-          fontSize: 16,
-          color: Colors.white.withValues(alpha: 0.8),
+          fontSize: 18,
+          fontWeight: FontWeight.w500,
+          color: theme.textTheme.bodyLarge?.color?.withOpacity(0.8),
           height: 1.5,
-          letterSpacing: 0.2,
+          letterSpacing: -0.2,
         ),
-      ).animate(key: ValueKey(text)).fadeIn(duration: 600.ms).slideY(begin: 0.1, end: 0),
+      ).animate(key: ValueKey(text)).fadeIn(duration: 400.ms).slideY(begin: 0.05, end: 0),
     );
   }
 
-  Widget _buildSplitScreenLayout(SumiProvider sumi) {
+  Widget _buildSplitScreenLayout(ThemeData theme, SumiProvider sumi) {
     return Row(
       children: [
-        // Left Side — Document Viewer (65%)
+        // Content Area (60%)
         Expanded(
-          flex: 65,
+          flex: 60,
           child: Container(
-            margin: const EdgeInsets.all(12),
+            margin: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: CyberNeuralColors.surface.withValues(alpha: 0.2),
+              color: theme.cardColor.withOpacity(0.5),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+              border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
             ),
-            child: const Center(
-              child: Icon(Icons.picture_as_pdf, size: 48, color: Colors.white10),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.auto_awesome_rounded, size: 48, color: theme.colorScheme.primary.withOpacity(0.1)),
+                  const SizedBox(height: 16),
+                  Text(
+                    'CONTEXTUAL VIEW',
+                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: theme.hintColor.withOpacity(0.5)),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
 
-        // Right Side — AI Interface (35%)
+        // AI Panel (40%)
         Expanded(
-          flex: 35,
+          flex: 40,
           child: Column(
             children: [
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(24),
                   itemCount: sumi.messages.length,
                   itemBuilder: (context, index) {
                     final msg = sumi.messages[index];
-                    if (msg.role == MessageRole.user) {
-                      return _buildAIResponseBubble(msg.text);
-                    } else {
-                      return _buildSumiResponse(msg.text);
-                    }
+                    return _buildCompactMessage(theme, msg);
                   },
                 ),
               ),
               if (sumi.isStreaming)
                 Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: _buildSumiResponse(sumi.streamingMessage ?? "..."),
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: _buildCompactStreaming(theme, sumi.streamingMessage ?? "..."),
                 ),
               
-              // Neural Status Indicator
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Text(
-                  _getTurnIndicator(sumi),
-                  style: GoogleFonts.jetBrainsMono(fontSize: 9, color: CyberNeuralColors.cyan, letterSpacing: 1),
-                ).animate(onPlay: (c) => c.repeat()).shimmer(duration: 2.seconds),
-              ),
-
-              _buildNeuralOrbSmall(sumi),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
+              AuraOrb(state: _getOrbState(sumi), amplitude: _voiceAmplitude, size: 100),
+              const SizedBox(height: 32),
             ],
           ),
         ),
@@ -413,70 +493,41 @@ class _SumiLiveScreenState extends State<SumiLiveScreen> {
     );
   }
 
-  String _getTurnIndicator(SumiProvider sumi) {
-    if (sumi.isSumiSpeaking) return "NEURAL BROADCAST ACTIVE";
-    if (sumi.isProcessingVoice) return "SYNAPSES FIRING...";
-    if (sumi.isVoiceRecording) return "AWAITING NEURAL INPUT";
-    return "LINK STABLE - READY";
-  }
-
-  Widget _buildAIResponseBubble(String text) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.only(bottom: 24),
-      decoration: BoxDecoration(
-        color: CyberNeuralColors.surfaceAlt.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(text, style: GoogleFonts.inter(fontSize: 13, color: Colors.white70)),
-    );
-  }
-
-  Widget _buildSumiResponse(String text) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "SUMI ANALYSIS",
-          style: GoogleFonts.jetBrainsMono(fontSize: 9, fontWeight: FontWeight.bold, color: CyberNeuralColors.cyan, letterSpacing: 1.5),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          text,
-          style: GoogleFonts.inter(fontSize: 13, color: Colors.white, height: 1.5),
-        ),
-        const SizedBox(height: 16),
-        // Dynamic knowledge chips could be added here in the future
-      ],
-    );
-  }
-
-  Widget _buildKnowledgeChip(String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: CyberNeuralColors.cyan.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: CyberNeuralColors.cyan.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+  Widget _buildCompactMessage(ThemeData theme, SumiMessage msg) {
+    final isUser = msg.role == MessageRole.user;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Column(
+        crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.psychology_outlined, size: 12, color: CyberNeuralColors.cyan),
-          const SizedBox(width: 8),
-          Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: CyberNeuralColors.cyan)),
+          Text(
+            isUser ? "YOU" : "SUMI",
+            style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold, color: isUser ? theme.hintColor : theme.colorScheme.primary, letterSpacing: 1),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            msg.text,
+            style: GoogleFonts.inter(fontSize: 14, color: theme.textTheme.bodyLarge?.color, height: 1.5),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildNeuralOrbSmall(SumiProvider sumi) {
-    return GestureDetector(
-      onTap: () => setState(() => _isGroundedMode = !_isGroundedMode),
-      child: NeuralOrb(
-        state: _getOrbState(sumi),
-        amplitude: _voiceAmplitude,
-      ),
+  Widget _buildCompactStreaming(ThemeData theme, String text) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "SUMI",
+          style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold, color: theme.colorScheme.primary, letterSpacing: 1),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          text,
+          style: GoogleFonts.inter(fontSize: 14, color: theme.textTheme.bodyLarge?.color, height: 1.5),
+        ),
+      ],
     );
   }
 }

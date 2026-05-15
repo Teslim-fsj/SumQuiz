@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:sumquiz/theme/web_theme.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 class DailyGoalCard extends StatelessWidget {
@@ -15,63 +14,70 @@ class DailyGoalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final progress = goalMinutes > 0
         ? (timeSpentMinutes / goalMinutes).clamp(0.0, 1.0)
         : 0.0;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: WebColors.border),
-        boxShadow: WebColors.subtleShadow,
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Row(
         children: [
           SizedBox(
-            width: 70,
-            height: 70,
+            width: 80,
+            height: 80,
             child: Stack(
               alignment: Alignment.center,
               children: [
                 SizedBox(
-                  width: 70,
-                  height: 70,
+                  width: 80,
+                  height: 80,
                   child: CircularProgressIndicator(
                     value: 1.0,
-                    strokeWidth: 6,
-                    color: WebColors.purpleUltraLight,
+                    strokeWidth: 8,
+                    color: theme.colorScheme.primary.withOpacity(0.05),
                   ),
                 ),
                 SizedBox(
-                  width: 70,
-                  height: 70,
+                  width: 80,
+                  height: 80,
                   child: CircularProgressIndicator(
                     value: progress,
-                    strokeWidth: 6,
-                    color: WebColors.purplePrimary,
+                    strokeWidth: 8,
+                    color: theme.colorScheme.primary,
                     strokeCap: StrokeCap.round,
                   ),
-                ),
+                ).animate().scale(begin: const Offset(0.9, 0.9), duration: 1.seconds, curve: Curves.easeOutBack),
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       '$timeSpentMinutes',
                       style: GoogleFonts.outfit(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: WebColors.textPrimary,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        color: theme.textTheme.displayLarge?.color,
                         height: 1.0,
                       ),
                     ),
                     Text(
-                      'MINS',
-                      style: GoogleFonts.outfit(
+                      'MIN',
+                      style: GoogleFonts.inter(
                         fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: WebColors.textSecondary,
+                        fontWeight: FontWeight.w900,
+                        color: theme.hintColor,
                         letterSpacing: 1.0,
                       ),
                     ),
@@ -80,34 +86,34 @@ class DailyGoalCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 24),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Study Goal',
+                  'Daily Commitment',
                   style: GoogleFonts.outfit(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: WebColors.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: theme.textTheme.displayLarge?.color,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'You have studied for $timeSpentMinutes out of $goalMinutes minutes today.',
-                  style: GoogleFonts.outfit(
+                  'You\'ve achieved $timeSpentMinutes out of $goalMinutes minutes today.',
+                  style: GoogleFonts.inter(
                     fontSize: 13,
-                    color: WebColors.textSecondary,
-                    height: 1.4,
+                    color: theme.hintColor,
+                    height: 1.5,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 Row(
                   children: [
-                    _buildTag('Focus:', 'Deep'),
+                    _buildBadge(theme, 'INTENSE', const Color(0xFFF59E0B)),
                     const SizedBox(width: 12),
-                    _buildTag('Level:', 'High'),
+                    _buildBadge(theme, 'FOCUSED', const Color(0xFF0D9488)),
                   ],
                 ),
               ],
@@ -115,33 +121,24 @@ class DailyGoalCard extends StatelessWidget {
           ),
         ],
       ),
-    )
-        .animate()
-        .fadeIn(duration: 400.ms, delay: 200.ms)
-        .slideY(begin: 0.05, curve: Curves.easeOut);
+    ).animate().fadeIn(duration: 400.ms, delay: 200.ms).slideY(begin: 0.05, end: 0);
   }
 
-  Widget _buildTag(String label, String value) {
+  Widget _buildBadge(ThemeData theme, String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: WebColors.backgroundAlt,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: WebColors.border),
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(10),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(label,
-              style: GoogleFonts.outfit(
-                  fontSize: 12, color: WebColors.textSecondary)),
-          const SizedBox(width: 4),
-          Text(value,
-              style: GoogleFonts.outfit(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: WebColors.purplePrimary)),
-        ],
+      child: Text(
+        label,
+        style: GoogleFonts.inter(
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+          color: color,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 class SummaryView extends StatelessWidget {
@@ -25,19 +26,22 @@ class SummaryView extends StatelessWidget {
     final theme = Theme.of(context);
 
     return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Title
-          SelectableText(
+          Text(
             title,
-            style: theme.textTheme.displaySmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onSurface,
+            style: GoogleFonts.outfit(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: theme.textTheme.displayLarge?.color,
+              height: 1.2,
             ),
-          ).animate().fadeIn().slideY(begin: -0.2),
+          ).animate().fadeIn().slideY(begin: 0.1, end: 0),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
           // Tags
           if (tags.isNotEmpty)
@@ -45,41 +49,37 @@ class SummaryView extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: tags.map((tag) {
+                final cleanTag = tag.startsWith('#') ? tag : '#$tag';
                 return Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
+                    color: const Color(0xFF0D9488).withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
-                    tag.startsWith('#') ? tag : '#$tag',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w500,
+                    cleanTag,
+                    style: GoogleFonts.inter(
+                      color: const Color(0xFF0D9488),
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 );
               }).toList(),
             ).animate().fadeIn(delay: 100.ms),
 
-          if (tags.isNotEmpty) const SizedBox(height: 32),
+          const SizedBox(height: 32),
 
-          // Action Buttons (if showing actions)
+          // Action Row
           if (showActions) ...[
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: onCopy,
-                    icon: const Icon(Icons.copy_rounded, size: 18),
-                    label: const Text('Copy'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: BorderSide(color: theme.dividerColor),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
+                  child: _buildActionButton(
+                    icon: Icons.copy_rounded,
+                    label: 'Copy',
+                    onTap: onCopy,
+                    theme: theme,
                   ),
                 ),
                 if (onGenerateQuiz != null) ...[
@@ -89,14 +89,13 @@ class SummaryView extends StatelessWidget {
                     child: ElevatedButton.icon(
                       onPressed: onGenerateQuiz,
                       icon: const Icon(Icons.quiz_rounded, size: 18),
-                      label: const Text('Generate Quiz'),
+                      label: Text('Practice Quiz', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.colorScheme.primary,
-                        foregroundColor: theme.colorScheme.onPrimary,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        backgroundColor: const Color(0xFFF59E0B),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         elevation: 0,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
                   ),
@@ -104,26 +103,48 @@ class SummaryView extends StatelessWidget {
               ],
             ).animate().fadeIn(delay: 200.ms),
             const SizedBox(height: 32),
-            Divider(color: theme.dividerColor),
+            Divider(color: theme.dividerColor.withOpacity(0.1)),
             const SizedBox(height: 32),
           ],
 
-          // Summary Content - Markdown Rendering
+          // Content
           MarkdownBody(
             data: content,
             selectable: true,
-            styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
-              p: theme.textTheme.bodyLarge?.copyWith(
-                height: 1.8,
-                color: theme.textTheme.bodyLarge?.color,
-                fontSize: 18,
-              ),
-              listBullet: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.primary,
-              ),
+            styleSheet: MarkdownStyleSheet(
+              p: GoogleFonts.inter(fontSize: 16, height: 1.7, color: theme.textTheme.bodyMedium?.color?.withOpacity(0.8)),
+              h1: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold, height: 2),
+              h2: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, height: 1.8),
+              h3: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, height: 1.6),
+              listBullet: GoogleFonts.inter(fontSize: 16, color: const Color(0xFF0D9488)),
             ),
           ).animate().fadeIn(delay: showActions ? 300.ms : 200.ms),
+          
+          const SizedBox(height: 48),
         ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({required IconData icon, required String label, required VoidCallback? onTap, required ThemeData theme}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: theme.hintColor),
+            const SizedBox(width: 8),
+            Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: theme.hintColor)),
+          ],
+        ),
       ),
     );
   }

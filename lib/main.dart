@@ -48,6 +48,8 @@ import 'package:sumquiz/services/mastery_service.dart';
 import 'package:sumquiz/services/mastery/recommendation_service.dart';
 import 'package:sumquiz/services/mastery/sumi_tutor_service.dart';
 import 'package:sumquiz/view_models/mastery_view_model.dart';
+import 'package:sumquiz/services/version_update_service.dart';
+import 'package:sumquiz/widgets/update_blocker_screen.dart';
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
@@ -245,6 +247,7 @@ class _MyAppState extends State<MyApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()..init()),
+        ChangeNotifierProvider(create: (_) => VersionUpdateService()..checkForUpdates()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
         Provider<AuthService>.value(value: widget.authService),
         Provider<NotificationService>.value(value: widget.notificationService),
@@ -452,24 +455,39 @@ class _MyAppState extends State<MyApp> {
                 _scheduleNotificationsOnLaunch(context);
               });
 
-              return NotificationNavigator(
-                child: MaterialApp.router(
-                  title: 'SumQuiz',
-                  theme: themeProvider.getTheme(),
-                  darkTheme: themeProvider.getTheme(),
-                  themeMode: themeProvider.themeMode,
-                  routerConfig: _router,
-                  debugShowCheckedModeBanner: false,
-                  localizationsDelegates: const [
-                    GlobalMaterialLocalizations.delegate,
-                    GlobalCupertinoLocalizations.delegate,
-                    GlobalWidgetsLocalizations.delegate,
-                    FlutterQuillLocalizations.delegate,
-                  ],
-                  supportedLocales: const [
-                    Locale('en', ''),
-                  ],
-                ),
+              return Consumer<VersionUpdateService>(
+                builder: (context, updateService, child) {
+                  if (updateService.updateState == UpdateState.mandatory) {
+                    return MaterialApp(
+                      title: 'SumQuiz',
+                      theme: themeProvider.getTheme(),
+                      darkTheme: themeProvider.getTheme(),
+                      themeMode: themeProvider.themeMode,
+                      debugShowCheckedModeBanner: false,
+                      home: const UpdateBlockerScreen(),
+                    );
+                  }
+
+                  return NotificationNavigator(
+                    child: MaterialApp.router(
+                      title: 'SumQuiz',
+                      theme: themeProvider.getTheme(),
+                      darkTheme: themeProvider.getTheme(),
+                      themeMode: themeProvider.themeMode,
+                      routerConfig: _router,
+                      debugShowCheckedModeBanner: false,
+                      localizationsDelegates: const [
+                        GlobalMaterialLocalizations.delegate,
+                        GlobalCupertinoLocalizations.delegate,
+                        GlobalWidgetsLocalizations.delegate,
+                        FlutterQuillLocalizations.delegate,
+                      ],
+                      supportedLocales: const [
+                        Locale('en', ''),
+                      ],
+                    ),
+                  );
+                },
               );
             },
           );

@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -24,10 +23,10 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
   late MasteryService _masteryService;
   late LocalDatabaseService _dbService;
   late ConfettiController _confettiController;
-  
+
   List<LocalFlashcard> _dueFlashcards = [];
   final Map<String, List<String>> _flashcardToTopicIds = {};
-  
+
   int _currentIndex = 0;
   bool _isLoading = true;
   bool _isFlipping = false;
@@ -57,7 +56,8 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
   }
 
   Future<void> _initializeAndLoad() async {
-    _spacedRepetitionService = Provider.of<SpacedRepetitionService>(context, listen: false);
+    _spacedRepetitionService =
+        Provider.of<SpacedRepetitionService>(context, listen: false);
     _masteryService = Provider.of<MasteryService>(context, listen: false);
     _dbService = Provider.of<LocalDatabaseService>(context, listen: false);
     await _loadDueFlashcards();
@@ -74,7 +74,7 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
       final user = Provider.of<User?>(context, listen: false);
       if (user != null) {
         final allFlashcardSets = await _dbService.getAllFlashcardSets(user.uid);
-        
+
         // Build topic mapping
         _flashcardToTopicIds.clear();
         final List<LocalFlashcard> allLocalFlashcards = [];
@@ -87,7 +87,7 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
 
         final flashcards = await _spacedRepetitionService.getDueFlashcards(
             user.uid, allLocalFlashcards);
-            
+
         if (!mounted) return;
 
         setState(() {
@@ -129,8 +129,8 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
     final flashcard = _dueFlashcards[_currentIndex];
     try {
       // 1. Update SRS Data
-      await _spacedRepetitionService.updateReview(
-          flashcard.id, quality >= 3, quality: quality);
+      await _spacedRepetitionService.updateReview(flashcard.id, quality >= 3,
+          quality: quality);
 
       // 2. Emit Mastery Signals (Neural Link)
       if (!mounted) return;
@@ -139,7 +139,9 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
       for (final topicId in topicIds) {
         await _masteryService.processSignal(LearningSignal(
           topicId: topicId,
-          type: quality >= 3 ? SignalType.flashcardSuccess : SignalType.flashcardFailure,
+          type: quality >= 3
+              ? SignalType.flashcardSuccess
+              : SignalType.flashcardFailure,
           magnitude: quality / 5.0,
           timestamp: DateTime.now(),
         ));
@@ -159,7 +161,7 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
         });
       } else {
         setState(() {
-          _message = 'Neural pathways strengthened. Session complete!';
+          _message = 'Great job! Session complete!';
           _dueFlashcards.clear();
           _confettiController.play();
         });
@@ -173,13 +175,16 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
   }
 
   void _showStabilityGain(int quality) {
-    String gainText = quality >= 4 ? '+15% Stability' : (quality >= 3 ? '+5% Stability' : '-20% Stability');
+    String gainText = quality >= 4
+        ? '+15% Stability'
+        : (quality >= 3 ? '+5% Stability' : '-20% Stability');
     Color gainColor = quality >= 3 ? Colors.greenAccent : Colors.redAccent;
 
     // This would ideally be a floating animation over the card
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(gainText, style: TextStyle(color: gainColor, fontWeight: FontWeight.bold)),
+        content: Text(gainText,
+            style: TextStyle(color: gainColor, fontWeight: FontWeight.bold)),
         duration: 500.ms,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -195,22 +200,21 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text('Neural Review',
+        title: Text('Review Session',
             style: theme.textTheme.titleLarge
                 ?.copyWith(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: theme.colorScheme.onSurface),
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              color: theme.colorScheme.onSurface),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: Stack(
         children: [
-          // Dynamic Gradient Background
-          _buildAnimatedBackground(theme, isDark),
-          
+          Container(color: theme.scaffoldBackgroundColor),
           SafeArea(
             child: _isLoading
                 ? Center(
@@ -220,7 +224,6 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
                     ? _buildCompletionOrMessageView(theme)
                     : _buildFlashcardReview(theme),
           ),
-          
           Align(
             alignment: Alignment.topCenter,
             child: ConfettiWidget(
@@ -235,58 +238,23 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
     );
   }
 
-  Widget _buildAnimatedBackground(ThemeData theme, bool isDark) {
-    return Animate(
-      onPlay: (controller) => controller.repeat(reverse: true),
-      effects: [
-        CustomEffect(
-          duration: 8.seconds,
-          builder: (context, value, child) {
-            return Container(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(value * 0.5 - 0.25, value * 0.5 - 0.25),
-                  radius: 1.5,
-                  colors: isDark
-                      ? [
-                          theme.colorScheme.primaryContainer.withValues(alpha: 0.15),
-                          theme.colorScheme.surface,
-                        ]
-                      : [
-                          theme.colorScheme.primary.withValues(alpha: 0.05),
-                          const Color(0xFFF8FAFC),
-                        ],
-                ),
-              ),
-            );
-          },
-        )
-      ],
-      child: Container(),
-    );
-  }
-
-  Widget _buildGlassCard(ThemeData theme, {required Widget child, Color? borderColor}) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(32),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          decoration: BoxDecoration(
-            color: theme.cardColor.withValues(alpha: 0.4),
-            borderRadius: BorderRadius.circular(32),
-            border: Border.all(color: borderColor ?? theme.dividerColor.withValues(alpha: 0.1)),
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.primary.withValues(alpha: 0.05),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
+  Widget _buildMaterialCard(ThemeData theme,
+      {required Widget child, Color? borderColor}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+            color: borderColor ?? theme.dividerColor.withValues(alpha: 0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
-          child: child,
-        ),
+        ],
       ),
+      child: child,
     );
   }
 
@@ -317,10 +285,11 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
                   backgroundColor: theme.colorScheme.primary,
                   foregroundColor: theme.colorScheme.onPrimary,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20)),
+                      borderRadius: BorderRadius.circular(16)),
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 48, vertical: 18)),
-              child: const Text('Return to Core', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const EdgeInsets.symmetric(horizontal: 48, vertical: 16)),
+              child: const Text('Return Home',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ).animate().fadeIn(delay: 400.ms),
           ],
         ),
@@ -345,7 +314,8 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
             child: FlipCard(
               key: _flipCardKey,
               flipOnTouch: false,
-              front: _buildCardSide('QUESTION', flashcard.question, true, theme),
+              front:
+                  _buildCardSide('QUESTION', flashcard.question, true, theme),
               back: _buildCardSide('REVEALED', flashcard.answer, false, theme),
             ),
           ),
@@ -380,11 +350,14 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
                 ],
                 child: Container(
                   height: 12,
-                  width: MediaQuery.of(context).size.width * 
-                         ((_currentIndex + 1) / _dueFlashcards.length),
+                  width: MediaQuery.of(context).size.width *
+                      ((_currentIndex + 1) / _dueFlashcards.length),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
+                      colors: [
+                        theme.colorScheme.primary,
+                        theme.colorScheme.secondary
+                      ],
                     ),
                     borderRadius: BorderRadius.circular(6),
                     boxShadow: [
@@ -402,8 +375,7 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
         const SizedBox(width: 16),
         Text('${_currentIndex + 1}/${_dueFlashcards.length}',
             style: theme.textTheme.labelLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.primary)),
+                fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
       ],
     );
   }
@@ -412,21 +384,17 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
     return SizedBox(
       height: 140,
       child: _isFlipping
-          ? _buildQualitySelector(theme)
-              .animate()
-              .fadeIn()
-              .slideY(begin: 0.2)
-          : _buildShowAnswerButton(theme)
-              .animate()
-              .fadeIn()
-              .scale(),
+          ? _buildQualitySelector(theme).animate().fadeIn().slideY(begin: 0.2)
+          : _buildShowAnswerButton(theme).animate().fadeIn().scale(),
     );
   }
 
-  Widget _buildCardSide(String label, String content, bool isQuestion, ThemeData theme) {
-    return _buildGlassCard(
+  Widget _buildCardSide(
+      String label, String content, bool isQuestion, ThemeData theme) {
+    return _buildMaterialCard(
       theme,
-      borderColor: isQuestion ? null : theme.colorScheme.primary.withValues(alpha: 0.3),
+      borderColor:
+          isQuestion ? null : theme.colorScheme.primary.withValues(alpha: 0.3),
       child: Container(
         width: double.infinity,
         height: double.infinity,
@@ -441,17 +409,16 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
                         color: theme.colorScheme.primary,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 2)),
-                Icon(isQuestion ? Icons.help_outline : Icons.auto_awesome, 
-                     color: theme.colorScheme.primary.withValues(alpha: 0.5)),
+                Icon(isQuestion ? Icons.help_outline : Icons.auto_awesome,
+                    color: theme.colorScheme.primary.withValues(alpha: 0.5)),
               ],
             ),
             const Spacer(),
             SingleChildScrollView(
               child: Text(content,
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                      height: 1.4,
-                      fontWeight: FontWeight.w600)),
+                  style: theme.textTheme.headlineSmall
+                      ?.copyWith(height: 1.4, fontWeight: FontWeight.w600)),
             ),
             const Spacer(),
             if (isQuestion)
@@ -469,7 +436,7 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
     return Center(
       child: GestureDetector(
         onTap: _flipCard,
-        child: _buildGlassCard(
+        child: _buildMaterialCard(
           theme,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 20),
@@ -478,8 +445,9 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
               children: [
                 const Icon(Icons.visibility_rounded),
                 const SizedBox(width: 12),
-                Text('REVEAL ANSWER', 
-                     style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                Text('REVEAL ANSWER',
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -491,8 +459,9 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
   Widget _buildQualitySelector(ThemeData theme) {
     return Column(
       children: [
-        Text('How well did you know this?', 
-             style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold)),
+        Text('How well did you know this?',
+            style: theme.textTheme.bodySmall
+                ?.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -531,4 +500,3 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
     return Icons.sentiment_very_satisfied;
   }
 }
-

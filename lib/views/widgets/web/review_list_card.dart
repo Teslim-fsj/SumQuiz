@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:sumquiz/theme/web_theme.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sumquiz/models/local_flashcard_set.dart';
 
@@ -18,29 +17,15 @@ class ReviewListCard extends StatelessWidget {
     required this.onReviewItem,
   });
 
-  static const List<IconData> _subjectIcons = [
-    Icons.biotech_rounded,
-    Icons.calculate_rounded,
-    Icons.language_rounded,
-    Icons.science_rounded,
-    Icons.history_edu_rounded,
-  ];
-
-  static const List<Color> _iconColors = [
-    WebColors.purplePrimary,
-    Color(0xFF3B82F6),
-    Color(0xFF10B981),
-    Color(0xFFF59E0B),
-    Color(0xFFEC4899),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     if (dueItems.isEmpty) {
-      return _buildEmptyState();
+      return _buildEmptyState(theme);
     }
 
-    final displayItems = dueItems.take(3).toList();
+    final displayItems = dueItems.take(4).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,18 +36,18 @@ class ReviewListCard extends StatelessWidget {
             Text(
               'Active Curriculums',
               style: GoogleFonts.outfit(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: WebColors.textPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: theme.textTheme.displayLarge?.color,
               ),
             ),
             TextButton(
               onPressed: onReviewAll,
               child: Text(
-                'View All Library',
-                style: GoogleFonts.outfit(
-                  fontWeight: FontWeight.w600,
-                  color: WebColors.textSecondary,
+                'View Library',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
                   fontSize: 14,
                 ),
               ),
@@ -73,30 +58,34 @@ class ReviewListCard extends StatelessWidget {
         ...displayItems.asMap().entries.map((entry) {
           final index = entry.key;
           final item = entry.value;
-          final icon = _subjectIcons[index % _subjectIcons.length];
-          final iconColor = _iconColors[index % _iconColors.length];
           final cardsDue = item.flashcards.length;
 
           return Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: WebColors.border),
-              boxShadow: WebColors.subtleShadow,
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 15,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(14),
+                    color: theme.colorScheme.primary.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(icon, color: iconColor, size: 20),
+                  child: Icon(Icons.school_rounded, color: theme.colorScheme.primary, size: 20),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 20),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,99 +93,94 @@ class ReviewListCard extends StatelessWidget {
                       Text(
                         item.title,
                         style: GoogleFonts.outfit(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: WebColors.textPrimary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: theme.textTheme.displayLarge?.color,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       Text(
-                        '${item.flashcards.length} cards available',
-                        style: GoogleFonts.outfit(
+                        '$cardsDue units ready for review',
+                        style: GoogleFonts.inter(
                           fontSize: 13,
-                          color: WebColors.textSecondary,
+                          color: theme.hintColor,
                         ),
                       ),
                     ],
                   ),
                 ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: cardsDue > 0
-                        ? WebColors.purpleUltraLight
-                        : WebColors.backgroundAlt,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '$cardsDue ITEMS DUE',
-                    style: GoogleFonts.outfit(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: cardsDue > 0
-                          ? WebColors.purplePrimary
-                          : WebColors.textSecondary,
-                    ),
-                  ),
-                ),
                 const SizedBox(width: 16),
+                _buildPriorityBadge(theme, cardsDue),
+                const SizedBox(width: 20),
                 ElevatedButton(
                   onPressed: () => onReviewItem(item),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: WebColors.backgroundAlt,
-                    foregroundColor: WebColors.textPrimary,
+                    backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+                    foregroundColor: theme.colorScheme.primary,
                     elevation: 0,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: Text(
-                    'Start',
-                    style: GoogleFonts.outfit(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
+                    'Review',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ),
               ],
             ),
-          ).animate().fadeIn(delay: (150 * index).ms).slideX(begin: -0.05);
+          ).animate().fadeIn(delay: (100 * index).ms).slideX(begin: -0.05, end: 0);
         }),
       ],
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildPriorityBadge(ThemeData theme, int count) {
+    final isHigh = count > 10;
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: WebColors.border),
+        color: isHigh ? const Color(0xFFEF4444).withOpacity(0.08) : theme.dividerColor.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        isHigh ? 'HIGH PRIORITY' : 'ROUTINE',
+        style: GoogleFonts.inter(
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+          color: isHigh ? const Color(0xFFEF4444) : theme.hintColor,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(48),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
       ),
       child: Center(
         child: Column(
           children: [
-            const Icon(Icons.library_books_rounded,
-                size: 48, color: WebColors.textTertiary),
-            const SizedBox(height: 12),
+            Icon(Icons.auto_awesome_motion_rounded,
+                size: 48, color: theme.hintColor.withOpacity(0.2)),
+            const SizedBox(height: 24),
             Text(
-              'No study sets yet',
+              'Library Synchronized',
               style: GoogleFonts.outfit(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: WebColors.textSecondary),
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: theme.textTheme.displayLarge?.color),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             Text(
-              'Create flashcard sets to see them here',
-              style: GoogleFonts.outfit(
-                  fontSize: 14, color: WebColors.textTertiary),
+              'All your curriculums are up to date.',
+              style: GoogleFonts.inter(fontSize: 14, color: theme.hintColor),
             ),
           ],
         ),

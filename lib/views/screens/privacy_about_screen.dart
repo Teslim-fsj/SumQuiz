@@ -161,7 +161,7 @@ class _PrivacyAboutScreenState extends State<PrivacyAboutScreen> {
             ],
           ),
           child: Image.asset(
-            'assets/images/sumquiz_logo.jpg',
+            'assets/images/sumquiz_logo.png',
             width: 80,
             height: 80,
             errorBuilder: (_, __, ___) => Icon(Icons.info_outline,

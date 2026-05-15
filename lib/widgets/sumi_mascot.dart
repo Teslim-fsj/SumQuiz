@@ -1,5 +1,6 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../models/sumi_emotion.dart';
 
@@ -21,96 +22,60 @@ class SumiMascot extends StatefulWidget {
   State<SumiMascot> createState() => _SumiMascotState();
 }
 
-class _SumiMascotState extends State<SumiMascot> {
-  VideoPlayerController? _controller;
-  String? _currentAsset;
-  bool _hasError = false;
-  bool _isInitializing = false;
-
-  final Map<SumiState, String> _assetMap = {
-    SumiState.idle: 'assets/mascot/animations/Happy.gif',
-    SumiState.focused: 'assets/mascot/animations/Locked In Studying.gif',
-    SumiState.thinking: 'assets/mascot/animations/Thinking.gif',
-    SumiState.correct: 'assets/mascot/animations/Celebrating Success.gif',
-    SumiState.celebrating: 'assets/mascot/animations/Celebrating Success.gif',
-    SumiState.incorrect: 'assets/mascot/animations/Sad Disappointed.gif',
-    SumiState.confused: 'assets/mascot/animations/Confused.gif',
-    SumiState.tired: 'assets/mascot/animations/Sleepy Burned Out.gif',
-    SumiState.streakBoost: 'assets/mascot/animations/Motivating User.gif',
-    SumiState.analytical: 'assets/mascot/animations/AI Super Mode.gif',
-    SumiState.speaking: 'assets/mascot/animations/Happy.gif',
-    SumiState.shocked: 'assets/mascot/animations/Shocked.gif',
-  };
+class _SumiMascotState extends State<SumiMascot> with TickerProviderStateMixin {
+  late AnimationController _blinkController;
+  late AnimationController _breatheController;
+  
+  bool _isBlinking = false;
 
   @override
   void initState() {
     super.initState();
-    _initializePlayer();
+    
+    _breatheController = AnimationController(
+      vsync: this, 
+      duration: const Duration(milliseconds: 3000) // Slower, deeper breathing
+    )..repeat(reverse: true);
+
+    _blinkController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+    _scheduleNextBlink();
   }
 
-  @override
-  void didUpdateWidget(covariant SumiMascot oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.state != widget.state) {
-      _initializePlayer();
-    }
-  }
-
-  Future<void> _initializePlayer() async {
-    final asset = _assetMap[widget.state] ?? _assetMap[SumiState.idle]!;
+  void _scheduleNextBlink() async {
+    if (!mounted) return;
     
-    if (asset == _currentAsset && !_hasError) return;
-    if (_isInitializing && asset == _currentAsset) return;
-    
-    _currentAsset = asset;
-    _isInitializing = true;
-    _hasError = false;
+    // Random interval, sometimes double-blinks
+    int nextDelay = 2000 + Random().nextInt(4000);
+    if (Random().nextDouble() > 0.8) nextDelay = 300; // Double blink chance
 
-    // Handle GIF separately
-    if (asset.endsWith('.gif')) {
-      if (_controller != null) {
-        await _controller!.dispose();
-        _controller = null;
-      }
-      _isInitializing = false;
-      if (mounted) setState(() {});
-      return;
-    }
-
-    // Dispose old controller
-    final oldController = _controller;
-    _controller = VideoPlayerController.asset(asset);
+    await Future.delayed(Duration(milliseconds: nextDelay));
     
-    try {
-      // Add a 4-second timeout to prevent endless loading
-      await _controller!.initialize().timeout(const Duration(seconds: 4));
-      
-      if (mounted && _currentAsset == asset) {
-        await _controller!.setLooping(true);
-        await _controller!.play();
-        _hasError = false;
-      }
-      
-      if (oldController != null) {
-        await oldController.dispose();
-      }
-    } catch (e) {
-      debugPrint('Error initializing Sumi video ($asset): $e');
-      _hasError = true;
-      if (_controller != null) {
-        await _controller!.dispose();
-        _controller = null;
-      }
-    } finally {
-      _isInitializing = false;
-      if (mounted) setState(() {});
-    }
+    if (!mounted) return;
+    
+    setState(() => _isBlinking = true);
+    await _blinkController.forward(from: 0.0);
+    setState(() => _isBlinking = false);
+    
+    _scheduleNextBlink();
   }
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _blinkController.dispose();
+    _breatheController.dispose();
     super.dispose();
+  }
+
+  Widget _buildPart(String name) {
+    return SvgPicture.asset(
+      'assets/mascot/sumi/$name.svg',
+      width: widget.size,
+      height: widget.size,
+      fit: BoxFit.contain,
+    );
   }
 
   @override
@@ -122,49 +87,185 @@ class _SumiMascotState extends State<SumiMascot> {
       clipBehavior: Clip.none,
       children: [
         _buildDialogueBubble(theme),
-        _buildMascotBody(),
+        _buildAnimatedMascot(),
       ],
     );
   }
 
-  Widget _buildMascotBody() {
-    final asset = _assetMap[widget.state] ?? _assetMap[SumiState.idle]!;
+  Widget _buildAnimatedMascot() {
+    bool eyesClosed = _isBlinking || 
+        widget.state == SumiState.tired || 
+        widget.state == SumiState.incorrect;
+        
+    String leftEye = eyesClosed ? 'left_eye_closed' : 'left_eye_open';
+    String rightEye = eyesClosed ? 'right_eye_closed' : 'right_eye_open';
+    
+    String mouth = 'mouth_smile';
+    if (widget.state == SumiState.incorrect || widget.state == SumiState.tired || widget.state == SumiState.confused) {
+      mouth = 'mouth_sad';
+    } else if (widget.state == SumiState.shocked || widget.state == SumiState.speaking || widget.state == SumiState.analytical) {
+      mouth = 'mouth_open';
+    } else if (widget.state == SumiState.thinking) {
+      mouth = 'mouth_sad'; 
+    }
 
+    Widget shadow = _buildPart('shadow');
+    Widget body = _buildPart('body');
+    Widget leftTentacle1 = _buildPart('left_tentacle_1');
+    Widget leftTentacle2 = _buildPart('left_tentacle_2');
+    Widget rightTentacle1 = _buildPart('right_tentacle_1');
+    Widget rightTentacle2 = _buildPart('right_tentacle_2');
+    Widget head = _buildPart('head');
+    Widget eyeL = _buildPart(leftEye);
+    Widget eyeR = _buildPart(rightEye);
+    Widget mouthPart = _buildPart(mouth);
+    
+    Widget? accessory;
+    if (widget.state == SumiState.analytical || widget.state == SumiState.reviewing) {
+      accessory = _buildPart('glasses');
+    } else if (widget.state == SumiState.celebrating || widget.state == SumiState.streakBoost) {
+      accessory = _buildPart('graduation_hat');
+    } else if (widget.state == SumiState.focused) {
+      accessory = _buildPart('pencil_arm');
+    } else if (widget.state == SumiState.correct) {
+      accessory = Stack(
+        children: [_buildPart('blush_left'), _buildPart('blush_right')],
+      );
+    }
+
+    // Base physics values
+    double breatheOffset = sin(_breatheController.value * pi) * 3.0;
+    double headTranslateY = breatheOffset;
+    
+    // Core animation parts
+    Widget assembledBody = Stack(
+      alignment: Alignment.center,
+      children: [
+        // Back tentacles with slight delay and wider sway
+        leftTentacle2.animate(key: ValueKey('lt2_${widget.state}'), onPlay: (c) => c.repeat(reverse: true))
+          .rotate(begin: -0.05, end: 0.1, duration: 2500.ms, curve: Curves.easeInOutSine),
+        rightTentacle2.animate(key: ValueKey('rt2_${widget.state}'), onPlay: (c) => c.repeat(reverse: true))
+          .rotate(begin: 0.05, end: -0.1, duration: 2600.ms, curve: Curves.easeInOutSine),
+
+        body,
+
+        // Front tentacles
+        leftTentacle1.animate(key: ValueKey('lt1_${widget.state}'), onPlay: (c) => c.repeat(reverse: true))
+          .rotate(begin: -0.02, end: 0.08, duration: 2200.ms, curve: Curves.easeInOutSine),
+        rightTentacle1.animate(key: ValueKey('rt1_${widget.state}'), onPlay: (c) => c.repeat(reverse: true))
+          .rotate(begin: 0.02, end: -0.08, duration: 2300.ms, curve: Curves.easeInOutSine),
+          
+        // Head Assembly
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            head,
+            
+            // Eyes with independent darting logic if thinking
+            Stack(
+              alignment: Alignment.center,
+              children: [eyeL, eyeR],
+            ).animate(
+               key: ValueKey('eyes_${widget.state}'),
+               onPlay: widget.state == SumiState.thinking ? (c) => c.repeat() : null
+             )
+             .then(delay: 500.ms)
+             .moveX(end: 8, duration: 150.ms, curve: Curves.easeOutCubic)
+             .moveY(end: -4, duration: 150.ms)
+             .then(delay: 1500.ms)
+             .moveX(end: -8, duration: 200.ms, curve: Curves.easeOutCubic)
+             .moveY(end: -2, duration: 200.ms)
+             .then(delay: 1000.ms)
+             .moveX(end: 0, duration: 150.ms)
+             .moveY(end: 0, duration: 150.ms),
+
+            // Mouth with speaking oscillation
+            mouthPart.animate(
+              key: ValueKey('mouth_${widget.state}'),
+              onPlay: widget.state == SumiState.speaking ? (c) => c.repeat(reverse: true) : null
+            ).scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.4), duration: 150.ms),
+
+            if (accessory != null) accessory,
+          ],
+        ).animate(key: ValueKey('head_base_${widget.state}'))
+         .moveY(end: headTranslateY, duration: 500.ms)
+      ],
+    );
+
+    // Apply state-specific complex modifiers to the entire assembly
     return SizedBox(
       width: widget.size,
       height: widget.size,
-      child: Center(
-        child: _hasError 
-          ? _buildFallbackImage()
-          : (asset.endsWith('.gif')
-            ? Image.asset(
-                asset,
-                width: widget.size,
-                height: widget.size,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => _buildFallbackImage(),
-              )
-            : (_controller != null && _controller!.value.isInitialized
-                ? FittedBox(
-                    fit: BoxFit.contain,
-                    child: SizedBox(
-                      width: _controller!.value.size.width,
-                      height: _controller!.value.size.height,
-                      child: VideoPlayer(_controller!),
-                    ),
-                  )
-                : const CircularProgressIndicator(strokeWidth: 2))),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Shadow
+          shadow.animate(key: ValueKey('shadow_${widget.state}'))
+                .scale(
+                  end: widget.state == SumiState.correct || widget.state == SumiState.celebrating || widget.state == SumiState.streakBoost
+                    ? const Offset(0.5, 0.5) 
+                    : const Offset(1.0, 1.0), 
+                  duration: 400.ms, 
+                  curve: Curves.easeOut
+                ),
+          
+          // Full Body Assembly Modifier
+          _applyStateModifiers(assembledBody),
+        ],
       ),
     );
   }
 
-  Widget _buildFallbackImage() {
-    return Image.asset(
-      'assets/images/sumi.png',
-      width: widget.size,
-      height: widget.size,
-      fit: BoxFit.contain,
-    ).animate().fadeIn();
+  Widget _applyStateModifiers(Widget child) {
+    // We chain flutter_animate calls based on the state to give unique "personalities"
+    
+    if (widget.state == SumiState.correct || widget.state == SumiState.celebrating || widget.state == SumiState.streakBoost) {
+      // Joyful Jump with Squash and Stretch
+      return child.animate(key: ValueKey('correct_jump'))
+        .scale(begin: const Offset(1.2, 0.8), end: const Offset(0.9, 1.1), duration: 200.ms, curve: Curves.easeOut) // Squash then stretch
+        .moveY(end: -30, duration: 300.ms, curve: Curves.easeOutCirc) // Jump up
+        .then()
+        .moveY(end: 0, duration: 300.ms, curve: Curves.easeInCirc) // Fall down
+        .scale(begin: const Offset(0.9, 1.1), end: const Offset(1.1, 0.9), duration: 150.ms) // Squash on impact
+        .then()
+        .scale(begin: const Offset(1.1, 0.9), end: const Offset(1.0, 1.0), duration: 200.ms, curve: Curves.elasticOut); // Settle
+    } 
+    else if (widget.state == SumiState.incorrect || widget.state == SumiState.tired) {
+      // Defeated Droop
+      return child.animate(key: ValueKey('sad_droop'))
+        .scale(begin: const Offset(1.0, 1.0), end: const Offset(1.05, 0.85), duration: 800.ms, curve: Curves.bounceOut) // Flatten out
+        .moveY(end: 15, duration: 800.ms, curve: Curves.easeOut) // Sink down
+        .rotate(end: 0.05, duration: 1000.ms); // Slight tilt of defeat
+    }
+    else if (widget.state == SumiState.thinking) {
+      // Pondering tilt
+      return child.animate(key: ValueKey('thinking_tilt'))
+        .rotate(end: -0.05, duration: 600.ms, curve: Curves.easeInOut) // Tilt head left
+        .moveY(end: -5, duration: 600.ms)
+        .then()
+        .rotate(end: 0.02, duration: 1200.ms, curve: Curves.easeInOut); // Slowly sway right
+    }
+    else if (widget.state == SumiState.confused) {
+      // Confused back and forth tilt
+      return child.animate(key: ValueKey('confused_tilt'), onPlay: (c) => c.repeat(reverse: true))
+        .rotate(begin: -0.08, end: 0.08, duration: 800.ms, curve: Curves.easeInOutSine);
+    }
+    else if (widget.state == SumiState.shocked || widget.state == SumiState.analytical) {
+      // Wide awake, slight vibration
+      return child.animate(key: ValueKey('shocked_vibes'), onPlay: (c) => c.repeat(reverse: true))
+        .moveY(end: -10, duration: 200.ms, curve: Curves.easeOut)
+        .scale(end: const Offset(1.05, 1.05), duration: 200.ms)
+        .shake(hz: 8, offset: const Offset(1, 1), duration: 1.seconds);
+    }
+
+    // Default continuous breathing scale (Squash & Stretch breathing)
+    return child.animate(key: const ValueKey('idle_breathe'), onPlay: (c) => c.repeat(reverse: true))
+      .scale(
+        begin: const Offset(1.0, 1.0),
+        end: const Offset(1.03, 0.98), // Body gets slightly wider and shorter
+        duration: 3000.ms,
+        curve: Curves.easeInOutSine,
+      );
   }
 
   Widget _buildDialogueBubble(ThemeData theme) {
@@ -173,7 +274,7 @@ class _SumiMascotState extends State<SumiMascot> {
     }
 
     return Positioned(
-      top: -10,
+      top: -20,
       child: Material(
         color: Colors.transparent,
         child: Container(
@@ -212,5 +313,4 @@ class _SumiMascotState extends State<SumiMascot> {
       ),
     );
   }
-
 }

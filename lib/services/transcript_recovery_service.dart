@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'dart:developer' as developer;
 
@@ -8,7 +7,8 @@ class TranscriptRecoveryService {
   late Box<String> _recoveryBox;
   bool _isInitialized = false;
 
-  static final TranscriptRecoveryService _instance = TranscriptRecoveryService._internal();
+  static final TranscriptRecoveryService _instance =
+      TranscriptRecoveryService._internal();
   factory TranscriptRecoveryService() => _instance;
   TranscriptRecoveryService._internal();
 
@@ -23,7 +23,8 @@ class TranscriptRecoveryService {
   Future<void> savePendingTranscript(String noteId, String content) async {
     if (!_isInitialized) await init();
     await _recoveryBox.put(noteId, content);
-    await _recoveryBox.put('${noteId}_timestamp', DateTime.now().toIso8601String());
+    await _recoveryBox.put(
+        '${noteId}_timestamp', DateTime.now().toIso8601String());
   }
 
   /// Retrieve a recovered transcript for a note.
@@ -60,7 +61,8 @@ class TranscriptRecoveryService {
 
     if (keysToDelete.isNotEmpty) {
       await _recoveryBox.deleteAll(keysToDelete);
-      developer.log('Cleaned up ${keysToDelete.length ~/ 2} stale recoveries', name: 'TranscriptRecoveryService');
+      developer.log('Cleaned up ${keysToDelete.length ~/ 2} stale recoveries',
+          name: 'TranscriptRecoveryService');
     }
   }
 }

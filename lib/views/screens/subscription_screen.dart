@@ -18,95 +18,75 @@ class SubscriptionScreen extends StatefulWidget {
 }
 
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
-  bool _isCreatorMode = false;
   bool _isYearly = true;
   final PageController _pageController =
       PageController(viewportFraction: 0.85, initialPage: 1);
   int _currentPage = 1;
 
-  final List<Map<String, dynamic>> _boostPacks = [
-    {
-      'id': 'boost_standard',
-      'title': 'Cognitive Surge',
-      'credits': '50',
-      'price': r'$4.99',
-      'icon': Icons.auto_awesome,
-      'color': Colors.cyan,
-    },
-    {
-      'id': 'boost_macro',
-      'title': 'Synaptic Overload',
-      'credits': '120',
-      'price': r'$9.99',
-      'icon': Icons.rocket_launch,
-      'color': Colors.deepPurple,
-    },
-  ];
-
-  final List<Map<String, dynamic>> _studentTiers = [
+  final List<Map<String, dynamic>> _allTiers = [
     {
       'id': 'free_hub',
       'title': 'Free Neural Hub',
       'price': r'$0',
-      'sessions': '20',
       'label': 'LEARNER',
       'color': Colors.grey,
       'description': 'Essential tools for every learner.',
       'features': [
-        '20 Lifetime Neural Credits',
-        'Basic AI Summaries',
-        'Local Flashcards',
-        'Neural Hub Access'
+        '1 Heavy AI Action / day',
+        '5 AI-Light Transformations / day',
+        'Manual Note Editor',
+        'Sumi Text Hints',
+        'Limited Quiz Previews',
+        'Streak Tracking'
       ]
     },
     {
       'id': 'sumquiz_pro_monthly',
-      'title': 'High-Performer Pro',
-      'price': r'$14.99',
-      'yearlyPrice': r'$139.99',
-      'sessions': '160',
+      'title': 'Student Pro',
+      'price': r'$15',
+      'yearlyPrice': r'$149.99',
       'label': 'MOST CHOSEN',
       'color': WebColors.purplePrimary,
       'description': 'Become a consistent top-performing student.',
       'features': [
-        '160 Study Sessions / mo',
-        'Full YouTube Lecture Analysis',
-        'Interactive Quizzes',
-        'Priority Neural Processing'
+        '10 Heavy AI Actions / day',
+        '100 AI-Light Transformations / day',
+        'Full Sumi Tutoring (Voice + Text)',
+        'ALPS Intelligence Insights',
+        'Lecture → Summary/Quiz',
+        'PDF & Text Uploads'
       ]
     },
     {
       'id': 'sumquiz_pro_elite',
-      'title': 'Dean\'s List Elite',
-      'price': r'$29.99',
-      'yearlyPrice': r'$279.99',
-      'sessions': '400',
+      'title': 'Power Pro',
+      'price': r'$30',
+      'yearlyPrice': r'$299.99',
       'label': 'ELITE STUDENT',
       'color': Colors.orange,
       'description': 'Unlock 100% of your revision potential.',
       'features': [
-        '400 Study Sessions / mo',
-        'Official Exam Paper Generation',
-        'Advanced Retention Flashcards',
-        'Unrestricted Growth Tools',
-        'Dedicated Academic Support'
+        '30 Heavy AI Actions / day',
+        '500 AI-Light Transformations / day',
+        'Unlimited Voice Tutoring',
+        'Multimodal Ingestion',
+        'ALPS Adaptive Missions',
+        'Bulk Session Scheduling'
       ]
     },
-  ];
-
-  final List<Map<String, dynamic>> _creatorTiers = [
     {
       'id': 'sumquiz_pro_creator',
-      'title': 'Master Educator',
-      'price': r'$49.99',
-      'sessions': '1,000+',
-      'label': 'FOR CREATORS',
+      'title': 'Academic Creator',
+      'price': r'$50',
+      'label': 'FOR EDUCATORS',
       'color': const Color(0xFF6366F1),
       'description': 'Scale your teaching impact globally.',
       'features': [
-        '1,000+ Generations / mo',
-        'Commercial Distribution Rights',
-        'Student Engagement Analytics',
+        '50 Heavy AI Actions / day',
+        '1,000 AI-Light Transformations / day',
+        'Teacher/Creator Analytics',
+        'Full Class Automation',
+        'Custom Exam Generation',
         'Verified Educator Badge'
       ]
     },
@@ -201,7 +181,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: (_isCreatorMode ? _creatorTiers : _studentTiers)
+              children: _allTiers
                   .asMap()
                   .entries
                   .map((entry) {
@@ -215,7 +195,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             ),
           ),
           const SizedBox(height: 100),
-          _buildBoostSection(isWeb: true),
+          _buildSatisfactionSection(),
           const SizedBox(height: 80),
           _buildSatisfactionSection(),
           const SizedBox(height: 60),
@@ -225,7 +205,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Widget _buildMobileLayout() {
-    final tiers = _isCreatorMode ? _creatorTiers : _studentTiers;
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -266,26 +245,67 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             height: 520,
             child: PageView.builder(
               controller: _pageController,
-              itemCount: tiers.length,
+              itemCount: _allTiers.length,
               onPageChanged: (index) => setState(() => _currentPage = index),
               itemBuilder: (context, index) {
                 return AnimatedScale(
                   scale: _currentPage == index ? 1.0 : 0.9,
                   duration: const Duration(milliseconds: 300),
-                  child: _buildTierCard(tiers[index], index, isWeb: false),
+                  child: _buildTierCard(_allTiers[index], index, isWeb: false),
                 );
               },
             ),
           ),
           const SizedBox(height: 20),
-          _buildPageIndicator(tiers.length),
+          _buildPageIndicator(_allTiers.length),
           const SizedBox(height: 60),
-          _buildBoostSection(isWeb: false),
-          const SizedBox(height: 60),
-          const SizedBox(height: 40),
           _buildSecurePaymentSection(),
+          const SizedBox(height: 20),
+          _buildRegionalPricingSection(),
           const SizedBox(height: 40),
         ],
+      ),
+    );
+  }
+
+  Widget _buildRegionalPricingSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Theme.of(context).dividerColor),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.public, color: Colors.blue, size: 20),
+                const SizedBox(width: 12),
+                Text(
+                  'Regional Pricing Available',
+                  style: GoogleFonts.outfit(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Prices are adjusted for local purchasing power in specific regions. '
+              'Nigeria: Student Pro starting at ₦6,500. India: starting at ₹550. '
+              'Regional rates are applied automatically at checkout.',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: Theme.of(context).textTheme.bodySmall?.color,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -293,39 +313,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   Widget _buildToggles() {
     return Column(
       children: [
-        _buildRoleToggle(),
-        const SizedBox(height: 16),
         _buildBillingToggle(),
       ],
     );
   }
 
-  Widget _buildRoleToggle() {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _toggleButton(
-              'Student',
-              !_isCreatorMode,
-              () => setState(() {
-                    _isCreatorMode = false;
-                  })),
-          _toggleButton(
-              'Creator',
-              _isCreatorMode,
-              () => setState(() {
-                    _isCreatorMode = true;
-                  })),
-        ],
-      ),
-    );
-  }
 
   Widget _buildBillingToggle() {
     return Row(
@@ -378,35 +370,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-  Widget _toggleButton(String text, bool active, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-        decoration: BoxDecoration(
-          color: active ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: active
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(12),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  )
-                ]
-              : [],
-        ),
-        child: Text(
-          text,
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.bold,
-            color: active ? Theme.of(context).colorScheme.primary : Theme.of(context).textTheme.bodySmall?.color,
-            fontSize: 14,
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildTierCard(Map<String, dynamic> tier, int index,
       {required bool isWeb}) {
@@ -791,115 +754,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-  Widget _buildBoostSection({required bool isWeb}) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            children: [
-              Text(
-                'Neural Energy Boosters',
-                style: GoogleFonts.outfit(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).textTheme.displayLarge?.color,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Low on energy? Refill your neural capacity instantly.',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  color: Theme.of(context).textTheme.bodySmall?.color,
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 32),
-        Container(
-          height: 180,
-          padding: EdgeInsets.symmetric(horizontal: isWeb ? 40 : 12),
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: _boostPacks.length,
-            shrinkWrap: true,
-            physics: const BouncingScrollPhysics(),
-            itemBuilder: (context, index) {
-              final pack = _boostPacks[index];
-              return Container(
-                width: isWeb ? 300 : 260,
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Theme.of(context).dividerColor),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(5),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    )
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: pack['color'].withAlpha(25),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(pack['icon'], color: pack['color'], size: 32),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            pack['title'],
-                            style: GoogleFonts.outfit(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                          ),
-                          Text(
-                            '+${pack['credits']} Credits',
-                            style: GoogleFonts.inter(
-                              color: const Color(0xFF10B981),
-                              fontWeight: FontWeight.w800,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          ElevatedButton(
-                            onPressed: () {},
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFF1F5F9),
-                              foregroundColor: const Color(0xFF0F172A),
-                              elevation: 0,
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                            child: Text('Buy ${pack['price']}'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildMobileBottomNav() {
     return Container(

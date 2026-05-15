@@ -21,26 +21,25 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
 
   int _branchToIndex(int branch, bool isTeacher) {
     if (isTeacher) {
-      final List<int> teacherMobileBranches = [0, 1, 4, 5, 6];
+      final List<int> teacherMobileBranches = [0, 1, 3, 4, 5];
       final idx = teacherMobileBranches.indexOf(branch);
       return idx;
     }
-    // Student mapping: Home(0), Library(1), Progress(3), Profile(6)
+    // Student mapping: Home(0), Library(1), Profile(5)
     if (branch == 0) return 0;
     if (branch == 1) return 1;
-    if (branch == 3) return 2;
-    if (branch == 6) return 3;
+    if (branch == 5) return 2;
     return -1;
   }
 
   void _onTap(int index, bool isTeacher) {
     int targetBranch;
     if (isTeacher) {
-      final List<int> teacherMobileBranches = [0, 1, 4, 5, 6];
+      final List<int> teacherMobileBranches = [0, 1, 3, 4, 5];
       targetBranch = teacherMobileBranches[index];
     } else {
-      // Student mapping: index 0 -> branch 0, 1 -> 1, 2 -> 3, 3 -> 6
-      final studentBranches = [0, 1, 3, 6];
+      // Student mapping: index 0 -> branch 0, 1 -> 1, 2 -> 5
+      final studentBranches = [0, 1, 5];
       targetBranch = studentBranches[index];
     }
     widget.navigationShell.goBranch(
@@ -155,18 +154,11 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                   ),
                   const SizedBox(width: 40), // Space for FAB
                   _buildMobileNavItem(
-                    icon: Icons.insights_outlined,
-                    activeIcon: Icons.insights,
-                    label: 'Stats',
-                    isActive: currentIdx == 2,
-                    onTap: () => _onTap(2, isTeacher),
-                  ),
-                  _buildMobileNavItem(
                     icon: Icons.person_outline,
                     activeIcon: Icons.person,
                     label: 'Profile',
-                    isActive: currentIdx == 3,
-                    onTap: () => _onTap(3, isTeacher),
+                    isActive: currentIdx == 2,
+                    onTap: () => _onTap(2, isTeacher),
                   ),
                 ],
               ),
@@ -204,7 +196,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                           children: [
                             if (_isExpanded) ...[
                               Image.asset(
-                                'assets/images/sumquiz_logo.jpg',
+                                'assets/images/sumquiz_logo.png',
                                 width: 28,
                                 height: 28,
                                 errorBuilder: (context, error, stackTrace) =>
@@ -233,7 +225,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 16),
                                 child: Image.asset(
-                                  'assets/images/sumquiz_logo.jpg',
+                                  'assets/images/sumquiz_logo.png',
                                   width: 28,
                                   height: 28,
                                   errorBuilder: (context, error, stackTrace) =>
@@ -367,8 +359,8 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                 activeIcon: Icons.people_rounded,
                                 label: 'Student Roster',
                                 isActive:
-                                    widget.navigationShell.currentIndex == 4,
-                                onTap: () => _goToBranch(4),
+                                    widget.navigationShell.currentIndex == 3,
+                                onTap: () => _goToBranch(3),
                                 isExpanded: _isExpanded,
                                 isDark: isDark,
                               ),
@@ -377,8 +369,8 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                 activeIcon: Icons.analytics_rounded,
                                 label: 'Analytics',
                                 isActive:
-                                    widget.navigationShell.currentIndex == 3,
-                                onTap: () => _goToBranch(3),
+                                    widget.navigationShell.currentIndex == 4,
+                                onTap: () => _goToBranch(4),
                                 isExpanded: _isExpanded,
                                 isDark: isDark,
                               ),
@@ -418,18 +410,8 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                 activeIcon: Icons.edit_note_rounded,
                                 label: 'Notes',
                                 isActive:
-                                    widget.navigationShell.currentIndex == 8,
-                                onTap: () => _goToBranch(8),
-                                isExpanded: _isExpanded,
-                                isDark: isDark,
-                              ),
-                              _buildSidebarTab(
-                                icon: Icons.insights_outlined,
-                                activeIcon: Icons.insights_rounded,
-                                label: 'Progress',
-                                isActive:
-                                    widget.navigationShell.currentIndex == 3,
-                                onTap: () => _goToBranch(3),
+                                    widget.navigationShell.currentIndex == 7,
+                                onTap: () => _goToBranch(7),
                                 isExpanded: _isExpanded,
                                 isDark: isDark,
                               ),
@@ -451,8 +433,8 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               activeIcon: Icons.person_rounded,
                               label: 'Profile',
                               isActive:
-                                  widget.navigationShell.currentIndex == 6,
-                              onTap: () => _goToBranch(6),
+                                  widget.navigationShell.currentIndex == 5,
+                              onTap: () => _goToBranch(5),
                               isExpanded: _isExpanded,
                               isDark: isDark,
                             ),
@@ -461,8 +443,8 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               activeIcon: Icons.settings_rounded,
                               label: 'Settings',
                               isActive:
-                                  widget.navigationShell.currentIndex == 7,
-                              onTap: () => _goToBranch(7),
+                                  widget.navigationShell.currentIndex == 6,
+                              onTap: () => _goToBranch(6),
                               isExpanded: _isExpanded,
                               isDark: isDark,
                             ),

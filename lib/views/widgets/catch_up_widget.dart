@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../theme/cyber_neural_theme.dart';
 
 class CatchUpWidget extends StatelessWidget {
   final List<String> missedConcepts;
@@ -14,19 +13,20 @@ class CatchUpWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (missedConcepts.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
 
     return Container(
-      width: 220,
-      padding: const EdgeInsets.all(12),
+      width: 240,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: CyberNeuralColors.surface.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white10),
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -36,42 +36,42 @@ class CatchUpWidget extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.history_toggle_off, size: 14, color: CyberNeuralColors.amber),
+              Icon(Icons.history_rounded, size: 16, color: theme.colorScheme.primary),
               const SizedBox(width: 8),
               Text(
                 'RAPID RECAP',
-                style: GoogleFonts.jetBrainsMono(
-                  fontSize: 10,
+                style: GoogleFonts.outfit(
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
-                  color: CyberNeuralColors.amber,
+                  color: theme.colorScheme.primary,
                   letterSpacing: 1,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
           ...missedConcepts.take(3).map((concept) => Padding(
-            padding: const EdgeInsets.only(bottom: 6),
+            padding: const EdgeInsets.only(bottom: 10),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
                   margin: const EdgeInsets.only(top: 6),
-                  width: 4,
-                  height: 4,
-                  decoration: const BoxDecoration(
-                    color: CyberNeuralColors.amber,
+                  width: 5,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withOpacity(0.4),
                     shape: BoxShape.circle,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     concept,
                     style: GoogleFonts.inter(
-                      fontSize: 11,
-                      color: CyberNeuralColors.textSecondary,
-                      height: 1.3,
+                      fontSize: 12,
+                      color: theme.textTheme.bodyMedium?.color,
+                      height: 1.4,
                     ),
                   ),
                 ),
@@ -79,16 +79,18 @@ class CatchUpWidget extends StatelessWidget {
             ),
           )),
           const SizedBox(height: 8),
+          Divider(color: theme.dividerColor.withOpacity(0.05)),
+          const SizedBox(height: 8),
           Text(
-            '30s rolling summary active',
+            'Live insights updating...',
             style: GoogleFonts.inter(
-              fontSize: 9,
+              fontSize: 10,
               fontStyle: FontStyle.italic,
-              color: CyberNeuralColors.textTertiary,
+              color: theme.hintColor,
             ),
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 400.ms).slideX(begin: 0.1, end: 0);
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0);
   }
 }

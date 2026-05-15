@@ -9,6 +9,8 @@ import 'package:sumquiz/services/iap_service.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 import '../../models/user_model.dart';
 import '../../services/local_database_service.dart';
@@ -66,7 +68,6 @@ class SummaryScreenState extends State<SummaryScreen> {
       _summaryTags = widget.summary!.tags;
       _state = ScreenState.success;
 
-      // Send Signal
       final user = Provider.of<UserModel?>(context, listen: false);
       if (user != null && widget.summary!.topicIds.isNotEmpty) {
         final mastery = Provider.of<MasteryService>(context, listen: false);
@@ -86,10 +87,7 @@ class SummaryScreenState extends State<SummaryScreen> {
       });
 
       try {
-        // Try local first
         LocalSummary? summary = await _localDbService.getSummary(widget.id!);
-
-        // If not found in local, check Firestore if on Web
         if (summary == null && mounted) {
           final user = Provider.of<UserModel?>(context, listen: false);
           if (user != null) {
@@ -103,7 +101,6 @@ class SummaryScreenState extends State<SummaryScreen> {
                 timestamp: fsDoc.timestamp.toDate(),
                 userId: user.uid,
               );
-              // Cache it locally
               await _localDbService.saveSummary(summary);
             }
           }
@@ -118,7 +115,6 @@ class SummaryScreenState extends State<SummaryScreen> {
             _state = ScreenState.success;
           });
 
-          // Send Signal
           final user = Provider.of<UserModel?>(context, listen: false);
           if (user != null && s.topicIds.isNotEmpty) {
             final mastery = Provider.of<MasteryService>(context, listen: false);
@@ -224,7 +220,6 @@ class SummaryScreenState extends State<SummaryScreen> {
         await NotificationIntegration.onContentGenerated(
             context, userModel.uid, _summaryTitle);
         if (!mounted) return;
-        // Navigate to the results screen
         context.go('/library/results-view/$folderId');
       } else {
         throw Exception('Failed to retrieve the generated summary.');
@@ -298,30 +293,31 @@ class SummaryScreenState extends State<SummaryScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Publish Deck'),
+        title: Text('Publish Deck', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Title: $_summaryTitle'),
-            const SizedBox(height: 8),
-            const Text('Includes:'),
-            Text('• Summary (Current)'),
-            Text('• Quiz: ${relatedQuiz != null ? "Found" : "Not Found"}'),
-            Text(
-                '• Flashcards: ${relatedFlashcards != null ? "Found" : "Not Found"}'),
+            Text('Title: $_summaryTitle', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            Text('Includes:', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 4),
+            _buildIncludedItem('Summary', true),
+            _buildIncludedItem('Quiz', relatedQuiz != null),
+            _buildIncludedItem('Flashcards', relatedFlashcards != null),
             const SizedBox(height: 16),
-            const Text('This will make the deck public and shareable.',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            Text('This will make the deck public and shareable.',
+                style: GoogleFonts.inter(fontSize: 12, color: Colors.grey)),
           ],
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+              child: Text('Cancel', style: GoogleFonts.inter(color: Colors.grey))),
           ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Publish')),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
+              child: Text('Publish', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold))),
         ],
       ),
     );
@@ -389,28 +385,32 @@ class SummaryScreenState extends State<SummaryScreen> {
       showDialog(
           context: context,
           builder: (context) => AlertDialog(
-                title: const Text('Published Successfully!'),
+                title: Text('Published Successfully!', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.check_circle,
-                        color: Colors.green, size: 48),
+                    const Icon(Icons.check_circle_rounded, color: Color(0xFF0D9488), size: 64),
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                      ),
+                      child: SelectableText(shareUrl,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF0D9488), fontWeight: FontWeight.bold)),
+                    ),
                     const SizedBox(height: 16),
-                    SelectableText(shareUrl,
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    const Text('Share this link with your students.'),
-                    const SizedBox(height: 16),
-                    Text('Or share this Code',
-                        style: Theme.of(context).textTheme.titleMedium),
+                    Text('Share Code', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+                    const SizedBox(height: 4),
                     SelectableText(shareCode,
-                        style: Theme.of(context)
-                            .textTheme
-                            .displaySmall
-                            ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 2,
-                                color: Theme.of(context).colorScheme.primary)),
+                        style: GoogleFonts.outfit(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 4,
+                            color: const Color(0xFF0D9488))),
                   ],
                 ),
                 actions: [
@@ -421,10 +421,10 @@ class SummaryScreenState extends State<SummaryScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Details Copied!')));
                       },
-                      child: const Text('Copy All')),
+                      child: Text('Copy Details', style: GoogleFonts.inter())),
                   TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Close')),
+                      child: Text('Close', style: GoogleFonts.inter(fontWeight: FontWeight.bold))),
                 ],
               ));
     } catch (e) {
@@ -433,6 +433,18 @@ class SummaryScreenState extends State<SummaryScreen> {
             .showSnackBar(SnackBar(content: Text('Error publishing: $e')));
       }
     }
+  }
+
+  Widget _buildIncludedItem(String label, bool isIncluded) {
+    return Row(
+      children: [
+        Icon(isIncluded ? Icons.check_circle_rounded : Icons.cancel_rounded, 
+             size: 14, 
+             color: isIncluded ? const Color(0xFF0D9488) : Colors.grey),
+        const SizedBox(width: 8),
+        Text(label, style: GoogleFonts.inter(fontSize: 13, color: isIncluded ? Colors.black : Colors.grey)),
+      ],
+    );
   }
 
   Future<void> _generateQuiz() async {
@@ -446,10 +458,7 @@ class SummaryScreenState extends State<SummaryScreen> {
         }
         return;
       }
-
       if (!mounted) return;
-
-      // Navigate to quiz creation with summary content
       context.push('/create-content', extra: {
         'initialText': _summaryContent,
         'initialTitle': _summaryTitle,
@@ -472,19 +481,23 @@ class SummaryScreenState extends State<SummaryScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text(widget.summary == null ? 'Generate Summary' : 'Summary',
-            style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600, color: const Color(0xFF0D9488))),
-        backgroundColor: theme.scaffoldBackgroundColor,
+        title: Text(widget.summary == null ? 'New Synthesis' : 'Summary',
+            style: GoogleFonts.outfit(
+                fontWeight: FontWeight.bold, color: const Color(0xFF0D9488))),
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: BackButton(color: theme.colorScheme.onSurface),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          onPressed: () => context.pop(),
+        ),
         actions: [
           Consumer<UserModel?>(
             builder: (context, user, _) {
               if (user != null && _state == ScreenState.success) {
                 final isStudent = user.role == UserRole.student;
                 return IconButton(
-                  icon: Icon(isStudent ? Icons.share_rounded : Icons.public),
+                  icon: Icon(isStudent ? Icons.share_rounded : Icons.public_rounded),
                   tooltip: isStudent ? 'Share with Friends' : 'Publish Deck',
                   onPressed: _publishDeck,
                 );
@@ -516,19 +529,18 @@ class SummaryScreenState extends State<SummaryScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 64,
-            height: 64,
+          const SizedBox(
+            width: 48,
+            height: 48,
             child: CircularProgressIndicator(
-              strokeWidth: 4,
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(const Color(0xFF0D9488)),
+              strokeWidth: 3,
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0D9488)),
             ),
           ),
           const SizedBox(height: 24),
           Text(_loadingMessage,
-              style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7))),
+              style: GoogleFonts.inter(
+                  color: theme.hintColor, fontWeight: FontWeight.w500)),
         ],
       ).animate().fadeIn(),
     );
@@ -540,109 +552,113 @@ class SummaryScreenState extends State<SummaryScreen> {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 800),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32.0),
+          padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Create Summary',
-                style: theme.textTheme.displaySmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.onSurface),
-              ).animate().fadeIn().slideY(begin: -0.2),
-              const SizedBox(height: 12),
+                'Knowledge Synthesis',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.outfit(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary),
+              ).animate().fadeIn().slideY(begin: -0.1),
+              const SizedBox(height: 8),
               Text(
-                'Paste your content or upload a PDF to generate a comprehensive summary',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
-              ).animate().fadeIn(delay: 100.ms).slideY(begin: -0.2),
-              const SizedBox(height: 48),
-              TextField(
-                controller: _textController,
-                maxLines: 20,
-                style: theme.textTheme.bodyLarge?.copyWith(height: 1.6),
-                decoration: InputDecoration(
-                  hintText: 'Paste your text here...',
-                  hintStyle: TextStyle(
-                      color:
-                          theme.colorScheme.onSurface.withValues(alpha: 0.3)),
-                  filled: true,
-                  fillColor: theme.cardColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: theme.dividerColor),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: theme.dividerColor),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: Color(0xFF0D9488), width: 2),
-                  ),
-                  contentPadding: const EdgeInsets.all(24),
+                'Transform your source material into a concise summary.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(color: theme.hintColor),
+              ).animate().fadeIn(delay: 100.ms).slideY(begin: -0.1),
+              const SizedBox(height: 40),
+              Container(
+                decoration: BoxDecoration(
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+                  ],
                 ),
-                onChanged: (text) => setState(() {}),
-              ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2),
-              const SizedBox(height: 24),
+                child: TextField(
+                  controller: _textController,
+                  maxLines: 12,
+                  style: GoogleFonts.inter(fontSize: 15, height: 1.6),
+                  decoration: InputDecoration(
+                    hintText: 'Paste your insights or research notes here...',
+                    hintStyle: GoogleFonts.inter(color: theme.hintColor.withOpacity(0.5)),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.all(24),
+                  ),
+                  onChanged: (text) => setState(() {}),
+                ),
+              ).animate().fadeIn(delay: 200.ms),
+              const SizedBox(height: 20),
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton.icon(
-                      icon: Icon(
-                        Icons.upload_file_rounded,
-                        color: _pdfFileName != null
-                            ? const Color(0xFF0D9488)
-                            : theme.colorScheme.onSurface
-                                .withValues(alpha: 0.6),
+                    child: InkWell(
+                      onTap: _pickPdf,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          color: _pdfFileName != null ? const Color(0xFF0D9488).withOpacity(0.05) : theme.cardColor,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: _pdfFileName != null ? const Color(0xFF0D9488) : theme.dividerColor.withOpacity(0.1),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.description_rounded, size: 20, color: _pdfFileName != null ? const Color(0xFF0D9488) : theme.hintColor),
+                            const SizedBox(width: 12),
+                            Flexible(
+                              child: Text(
+                                _pdfFileName ?? 'Upload PDF Source',
+                                style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                  color: _pdfFileName != null ? const Color(0xFF0D9488) : theme.hintColor,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      label: Text(
-                        _pdfFileName ?? 'Upload PDF',
-                        style: TextStyle(
-                            color: _pdfFileName != null
-                                ? const Color(0xFF0D9488)
-                                : theme.colorScheme.onSurface),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 20),
-                        side: BorderSide(
-                            color: _pdfFileName != null
-                                ? const Color(0xFF0D9488)
-                                : theme.dividerColor,
-                            width: _pdfFileName != null ? 2 : 1),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      onPressed: _pickPdf,
                     ),
                   ),
                   if (_pdfFileName != null) ...[
                     const SizedBox(width: 12),
-                    IconButton(
+                    IconButton.filledTonal(
                         onPressed: () => setState(() => _pdfFileName = null),
-                        icon: Icon(Icons.close_rounded,
-                            color: theme.colorScheme.error))
+                        icon: const Icon(Icons.close_rounded, size: 18),
+                        style: IconButton.styleFrom(backgroundColor: Colors.redAccent.withOpacity(0.1), foregroundColor: Colors.redAccent),
+                    )
                   ]
                 ],
               ).animate().fadeIn(delay: 300.ms),
               const SizedBox(height: 32),
               SizedBox(
                 height: 56,
-                child: ElevatedButton.icon(
+                child: ElevatedButton(
                   onPressed: canGenerate ? _generateSummary : null,
-                  icon: const Icon(Icons.auto_awesome_rounded),
-                  label: const Text('Generate Summary',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0D9488),
                     foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     elevation: 0,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    disabledBackgroundColor: theme.disabledColor,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.auto_awesome_rounded, size: 20),
+                      const SizedBox(width: 12),
+                      Text('Synthesize Knowledge', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ],
                   ),
                 ),
               ).animate().fadeIn(delay: 400.ms).scale(),
@@ -660,245 +676,174 @@ class SummaryScreenState extends State<SummaryScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline_rounded,
-                color: theme.colorScheme.error, size: 64),
+            const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 64),
             const SizedBox(height: 24),
-            Text('Something went wrong',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface),
+            Text('Synthesis Interrupted',
+                style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center),
             const SizedBox(height: 12),
             Text(_errorMessage,
                 textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7))),
+                style: GoogleFonts.inter(color: theme.hintColor)),
             const SizedBox(height: 32),
-            ElevatedButton.icon(
+            ElevatedButton(
               onPressed: _retry,
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Try Again'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
+              child: Text('Try Again', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
-      ).animate().fadeIn(),
-    );
+      ),
+    ).animate().fadeIn();
   }
 
   Widget _buildSuccessState(ThemeData theme) {
     if (_summaryTitle.isEmpty && _summaryContent.isEmpty) {
       return Center(
-          child: Text('No summary available',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6))));
+          child: Text('No synthesis available',
+              style: GoogleFonts.inter(color: theme.hintColor)));
     }
 
     final isViewingSaved = widget.summary != null;
 
     return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 900),
-          child: Padding(
-            padding: const EdgeInsets.all(32.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title
-                Text(
-                  _summaryTitle,
-                  style: theme.textTheme.displaySmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.onSurface,
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _summaryTitle,
+                style: GoogleFonts.outfit(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: theme.textTheme.displayLarge?.color,
+                ),
+              ).animate().fadeIn().slideY(begin: -0.1),
+              const SizedBox(height: 16),
+              if (_summaryTags.isNotEmpty)
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _summaryTags.map((tag) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0D9488).withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '#$tag',
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFF0D9488),
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ).animate().fadeIn(delay: 100.ms),
+              const SizedBox(height: 32),
+              
+              // Content Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+                  ],
+                ),
+                child: MarkdownBody(
+                  data: _summaryContent,
+                  styleSheet: MarkdownStyleSheet(
+                    p: GoogleFonts.inter(fontSize: 15, height: 1.7, color: theme.textTheme.bodyMedium?.color?.withOpacity(0.8)),
+                    h1: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold, height: 2),
+                    h2: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, height: 1.8),
+                    h3: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, height: 1.6),
+                    listBullet: GoogleFonts.inter(fontSize: 15, color: const Color(0xFF0D9488)),
                   ),
-                ).animate().fadeIn().slideY(begin: -0.2),
-
-                const SizedBox(height: 24),
-
-                // Tags
-                if (_summaryTags.isNotEmpty)
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _summaryTags.map((tag) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color:
-                              theme.colorScheme.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          tag,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ).animate().fadeIn(delay: 100.ms),
-
-                if (_summaryTags.isNotEmpty) const SizedBox(height: 32),
-
-                // Action Buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _copySummary,
-                        icon: const Icon(Icons.copy_rounded, size: 18),
-                        label: const Text('Copy'),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: BorderSide(color: theme.dividerColor),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                      ),
+                ),
+              ).animate().fadeIn(delay: 200.ms),
+              
+              const SizedBox(height: 32),
+              
+              // Action Row
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildActionButton(
+                      icon: Icons.copy_rounded,
+                      label: 'Copy',
+                      onTap: _copySummary,
+                      theme: theme,
                     ),
-                    if (!isViewingSaved) ...[
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _saveToLibrary,
-                          icon:
-                              const Icon(Icons.bookmark_add_rounded, size: 18),
-                          label: const Text('Save'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            side: BorderSide(color: theme.dividerColor),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                        ),
-                      ),
-                    ],
+                  ),
+                  if (!isViewingSaved) ...[
                     const SizedBox(width: 12),
                     Expanded(
-                      flex: 2,
-                      child: ElevatedButton.icon(
-                        onPressed: _isGeneratingQuiz ? null : _generateQuiz,
-                        icon: _isGeneratingQuiz
-                            ? SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: theme.colorScheme.onPrimary,
-                                ),
-                              )
-                            : const Icon(Icons.quiz_rounded, size: 18),
-                        label: const Text('Generate Quiz'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0D9488),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          final user = context.read<UserModel?>();
-                          if (user != null && !user.isPro) {
-                            showDialog(
-                              context: context,
-                              builder: (context) => const UpgradeDialog(
-                                  featureName: 'PDF Export'),
-                            );
-                            return;
-                          }
-
-                          final summaryToExport = LocalSummary(
-                            id: widget.summary?.id ?? 'temp',
-                            userId: user?.uid ?? '',
-                            title: _summaryTitle,
-                            content: _summaryContent,
-                            tags: _summaryTags,
-                            timestamp: DateTime.now(),
-                            isSynced: false,
-                          );
-
-                          ExportService()
-                              .exportPdf(context, summary: summaryToExport);
-                        },
-                        icon: const Icon(Icons.picture_as_pdf, size: 18),
-                        label: const Text('Export'),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: BorderSide(color: theme.dividerColor),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
+                      child: _buildActionButton(
+                        icon: Icons.bookmark_add_rounded,
+                        label: 'Save',
+                        onTap: _saveToLibrary,
+                        theme: theme,
                       ),
                     ),
                   ],
-                ).animate().fadeIn(delay: 200.ms),
-
-                const SizedBox(height: 32),
-
-                Divider(color: theme.dividerColor),
-
-                const SizedBox(height: 32),
-
-                // Summary Content - Markdown Rendering
-                MarkdownBody(
-                  data: _summaryContent,
-                  selectable: true,
-                  styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
-                    p: theme.textTheme.bodyLarge?.copyWith(
-                      height: 1.8,
-                      color: theme.colorScheme.onSurface,
-                      fontSize: 16,
-                    ),
-                    listBullet: theme.textTheme.bodyLarge?.copyWith(
-                      color: const Color(0xFF0D9488),
-                    ),
-                  ),
-                ).animate().fadeIn(delay: 300.ms),
-
-                const SizedBox(height: 48),
-
-                // Share/Publish Button
-                Consumer<UserModel?>(builder: (context, user, _) {
-                  final isCreator =
-                      user != null && user.role == UserRole.creator;
-                  return SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: _publishDeck,
-                      icon: Icon(isCreator
-                          ? Icons.public_rounded
-                          : Icons.share_rounded),
-                      label: Text(isCreator
-                          ? 'Publish as Public Deck'
-                          : 'Share with Friends'),
-                      style: OutlinedButton.styleFrom(
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton.icon(
+                      onPressed: _isGeneratingQuiz ? null : _generateQuiz,
+                      icon: _isGeneratingQuiz
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.quiz_rounded, size: 18),
+                      label: Text('Practice Quiz', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF59E0B),
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: BorderSide(color: theme.colorScheme.primary),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
                       ),
                     ),
-                  ).animate().fadeIn(delay: 400.ms);
-                }),
-              ],
-            ),
+                  ),
+                ],
+              ).animate().fadeIn(delay: 300.ms),
+            ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton({required IconData icon, required String label, required VoidCallback onTap, required ThemeData theme}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: theme.hintColor),
+            const SizedBox(width: 8),
+            Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: theme.hintColor)),
+          ],
         ),
       ),
     );

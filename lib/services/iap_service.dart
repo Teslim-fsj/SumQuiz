@@ -171,9 +171,20 @@ class IAPService {
         _ => 0,
       };
 
+      // Map productId to Tier for quota logic
+      final String tier = switch (productId) {
+        _proStarterId => 'standard_pro',
+        _proMonthlyId => 'standard_pro',
+        _proEliteId => 'power_pro',
+        _proCreatorId => 'creator',
+        _proTrialId => 'standard_pro',
+        _ => 'free',
+      };
+
       final Map<String, dynamic> update = {
         'subscriptionExpiry': Timestamp.fromDate(expiryDate),
         'isTrial': isTrial,
+        'tier': tier,
         'currentProduct': productId,
         'lastVerified': FieldValue.serverTimestamp(),
         'purchaseToken':

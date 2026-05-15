@@ -59,11 +59,15 @@ class UserModel {
   final String? computeSessionId;
   final String? tier; // free, starter_pro, standard_pro, power_pro, creator
 
+  final int dailyHeavyActions;
+  final int dailyLightActions;
+
   final Map<String, dynamic> creatorProfile;
   final bool isEmailVerified;
   final bool isTrialActive;
   final DateTime? trialStartDate;
   final DateTime? lastCreditRefillDate;
+
 
   UserModel({
     required this.uid,
@@ -106,6 +110,8 @@ class UserModel {
     this.computeUnits = 20.0, // Default for 🆓 FREE TIER (Neural Capacity)
     this.maxComputeCapacity = 20.0,
     this.computeSessionId,
+    this.dailyHeavyActions = 0,
+    this.dailyLightActions = 0,
     this.isTrialActive = false,
     this.trialStartDate,
     this.lastCreditRefillDate,
@@ -192,6 +198,8 @@ class UserModel {
       folderCount: data['folderCount'] ?? 0,
       srsCardCount: data['srsCardCount'] ?? 0,
       dailyDecksGenerated: data['dailyDecksGenerated'] ?? 0,
+      dailyHeavyActions: data['dailyHeavyActions'] ?? 0,
+      dailyLightActions: data['dailyLightActions'] ?? 0,
       totalDecksGenerated: data['totalDecksGenerated'] ?? 0,
       totalUploads: data['totalUploads'] ?? 0,
       examsGenerated: data['examsGenerated'] ?? 0,
@@ -247,6 +255,8 @@ class UserModel {
       'folderCount': folderCount,
       'srsCardCount': srsCardCount,
       'dailyDecksGenerated': dailyDecksGenerated,
+      'dailyHeavyActions': dailyHeavyActions,
+      'dailyLightActions': dailyLightActions,
       'totalDecksGenerated': totalDecksGenerated,
       'totalUploads': totalUploads,
       'examsGenerated': examsGenerated,
@@ -300,6 +310,8 @@ class UserModel {
     int? folderCount,
     int? srsCardCount,
     int? dailyDecksGenerated,
+    int? dailyHeavyActions,
+    int? dailyLightActions,
     int? totalDecksGenerated,
     int? totalUploads,
     int? examsGenerated,
@@ -348,6 +360,8 @@ class UserModel {
       folderCount: folderCount ?? this.folderCount,
       srsCardCount: srsCardCount ?? this.srsCardCount,
       dailyDecksGenerated: dailyDecksGenerated ?? this.dailyDecksGenerated,
+      dailyHeavyActions: dailyHeavyActions ?? this.dailyHeavyActions,
+      dailyLightActions: dailyLightActions ?? this.dailyLightActions,
       totalDecksGenerated: totalDecksGenerated ?? this.totalDecksGenerated,
       totalUploads: totalUploads ?? this.totalUploads,
       examsGenerated: examsGenerated ?? this.examsGenerated,

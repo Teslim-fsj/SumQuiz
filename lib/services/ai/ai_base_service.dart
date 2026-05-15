@@ -332,17 +332,18 @@ abstract class AIBaseService {
       modelChain.add(customModel);
     }
 
+    // Determine the baseline config for degradation
+    final baseConfig = generationConfig ?? AIConfig.defaultGenerationConfig;
+
     // Adaptive Selection based on Neural State
     if (AIConfig.currentNeuralState == NeuralState.highEnergy) {
       if (isPro) {
-        // High Energy Pro: Pro -> Primary -> Secondary
         modelChain.addAll([
           _proModel,
           _model,
           _secondaryModel,
         ].whereType<GenerativeModel>());
       } else {
-        // High Energy Standard: Primary -> Secondary -> Tertiary
         modelChain.addAll([
           _model,
           _secondaryModel,
@@ -357,11 +358,11 @@ abstract class AIBaseService {
         _fallbackModel,
       ].whereType<GenerativeModel>());
       
-      // Reduce max output to save compute
+      // Reduce max output but preserve MIME and Temperature
       generationConfig = GenerationConfig(
           maxOutputTokens: 2048,
-          temperature: generationConfig?.temperature,
-          responseMimeType: generationConfig?.responseMimeType);
+          temperature: baseConfig?.temperature,
+          responseMimeType: baseConfig?.responseMimeType);
     } else {
       // Exhausted: Survival Mode (Fallback Lite only)
       modelChain.addAll([
@@ -369,11 +370,11 @@ abstract class AIBaseService {
         _fallbackModel,
       ].whereType<GenerativeModel>());
       
-      // Strict truncation
+      // Strict truncation but preserve MIME and Temperature
       generationConfig = GenerationConfig(
           maxOutputTokens: 512,
-          temperature: generationConfig?.temperature,
-          responseMimeType: generationConfig?.responseMimeType);
+          temperature: baseConfig?.temperature,
+          responseMimeType: baseConfig?.responseMimeType);
     }
 
     if (modelChain.isEmpty) {
@@ -597,6 +598,8 @@ abstract class AIBaseService {
   /// Safely decode JSON with optional key validation.
   Map<String, dynamic> safeJsonDecode(String jsonStr,
       {List<String>? requiredKeys, Map<String, dynamic> fallback = const {}}) {
+    if (jsonStr.isEmpty) return fallback;
+    
     try {
       final decoded = json.decode(jsonStr);
       Map<String, dynamic> data;
@@ -605,6 +608,9 @@ abstract class AIBaseService {
         data = decoded;
       } else if (decoded is Map) {
         data = Map<String, dynamic>.from(decoded);
+      } else if (decoded is List && decoded.isNotEmpty && decoded.first is Map) {
+        // Handle cases where the model returns a list containing the object
+        data = Map<String, dynamic>.from(decoded.first);
       } else {
         developer.log(
             'JSON decoded but unexpected type: ${decoded.runtimeType}. First 200 chars: ${jsonStr.length > 200 ? jsonStr.substring(0, 200) : jsonStr}',
@@ -620,9 +626,29 @@ abstract class AIBaseService {
         if (missingKeys.isNotEmpty) {
           developer.log('Missing required JSON keys: $missingKeys',
               name: 'AIBaseService', level: 1000);
-          throw AIServiceException(
-              'Malformed AI response: missing keys $missingKeys',
-              code: 'MALFORMED_JSON');
+          
+          // Attempt to find keys in nested structures if they are missing at top level
+          bool foundAllInNested = true;
+          for (final key in missingKeys) {
+            bool found = false;
+            for (final value in data.values) {
+              if (value is Map && value.containsKey(key)) {
+                data[key] = value[key];
+                found = true;
+                break;
+              }
+            }
+            if (!found) {
+              foundAllInNested = false;
+              break;
+            }
+          }
+
+          if (!foundAllInNested) {
+            throw AIServiceException(
+                'Malformed AI response: missing keys $missingKeys',
+                code: 'MALFORMED_JSON');
+          }
         }
       }
 

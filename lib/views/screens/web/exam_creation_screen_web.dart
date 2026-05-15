@@ -653,13 +653,15 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                         hardCount: (_numberOfQuestions * _hardRatio).round(),
                         onEasyChanged: (v) => setState(() {
                           _easyRatio = v;
-                          if (_easyRatio + _hardRatio > 1.0)
+                          if (_easyRatio + _hardRatio > 1.0) {
                             _hardRatio = 1.0 - _easyRatio;
+                          }
                         }),
                         onHardChanged: (v) => setState(() {
                           _hardRatio = v;
-                          if (_easyRatio + _hardRatio > 1.0)
+                          if (_easyRatio + _hardRatio > 1.0) {
                             _easyRatio = 1.0 - _hardRatio;
+                          }
                         }),
                         includeMultipleChoice: _includeMultipleChoice,
                         includeTrueFalse: _includeTrueFalse,

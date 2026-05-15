@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:sumquiz/theme/web_theme.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 class InteractivePreviewCard extends StatelessWidget {
@@ -17,16 +16,24 @@ class InteractivePreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(32),
         border: Border.all(
-          color: WebColors.purplePrimary.withValues(alpha: 0.3),
-          width: 1.5,
+          color: theme.colorScheme.primary.withOpacity(0.2),
+          width: 1,
         ),
-        boxShadow: WebColors.subtleShadow,
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withOpacity(0.04),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -35,74 +42,60 @@ class InteractivePreviewCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: WebColors.purpleUltraLight,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                      color: WebColors.purplePrimary.withValues(alpha: 0.2)),
+                  color: theme.colorScheme.primary.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  'INSTANT FLASHCARD',
-                  style: GoogleFonts.outfit(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: WebColors.purplePrimary,
+                  'INSTANT RECALL',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    color: theme.colorScheme.primary,
                     letterSpacing: 1.0,
                   ),
                 ),
               ),
-              InkWell(
-                onTap: onClipPressed,
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: WebColors.backgroundAlt,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.content_copy_rounded,
-                      size: 18, color: WebColors.textSecondary),
-                ),
+              IconButton(
+                onPressed: onClipPressed,
+                icon: Icon(Icons.content_copy_rounded, size: 18, color: theme.hintColor.withOpacity(0.5)),
+                visualDensity: VisualDensity.compact,
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
           Text(
             '"$question"',
             style: GoogleFonts.outfit(
-              fontSize: 15,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
               fontStyle: FontStyle.italic,
-              color: WebColors.textPrimary,
+              color: theme.textTheme.displayLarge?.color,
               height: 1.5,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 32),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: onStartSession,
               style: ElevatedButton.styleFrom(
-                backgroundColor: WebColors.purplePrimary,
+                backgroundColor: theme.colorScheme.primary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                elevation: 4,
+                shadowColor: theme.colorScheme.primary.withOpacity(0.3),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
               child: Text(
-                'Instant Start',
-                style: GoogleFonts.outfit(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                ),
+                'Instant Practice',
+                style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15),
               ),
             ),
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.05);
+    ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.05, end: 0);
   }
 }

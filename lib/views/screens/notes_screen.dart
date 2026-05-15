@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../models/user_model.dart';
 import '../../models/local_note.dart';
 import '../../providers/note_provider.dart';
@@ -44,11 +45,23 @@ class _NotesScreenState extends State<NotesScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final noteProvider = context.watch<NoteProvider>();
     final user = Provider.of<UserModel?>(context);
 
     if (user == null) {
-      return const Scaffold(body: Center(child: Text('Please log in')));
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.lock_outline_rounded, size: 64, color: theme.hintColor),
+              const SizedBox(height: 16),
+              Text('Please log in to view notes', style: GoogleFonts.inter(color: theme.hintColor)),
+            ],
+          ),
+        ),
+      );
     }
 
     final filteredNotes = noteProvider.allNotes.where((note) {
@@ -57,158 +70,219 @@ class _NotesScreenState extends State<NotesScreen> {
     }).toList();
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text('My Notes',
-            style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
-        centerTitle: true,
-      ),
-      body: Stack(
-        children: [
-          // Background decorations could go here
-          SafeArea(
-            child: Column(
-              children: [
-                _buildSearchBar(theme),
-                Expanded(
-                  child: filteredNotes.isEmpty
-                      ? _buildEmptyState(theme)
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: filteredNotes.length,
-                          itemBuilder: (context, index) {
-                            final note = filteredNotes[index];
-                            return _buildNoteCard(note, theme, noteProvider);
-                          },
-                        ),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 120,
+            floating: true,
+            pinned: true,
+            elevation: 0,
+            backgroundColor: theme.scaffoldBackgroundColor,
+            flexibleSpace: FlexibleSpaceBar(
+              titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+              title: Text(
+                'My Notes',
+                style: GoogleFonts.outfit(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.primary,
+                  fontSize: 24,
                 ),
-              ],
+              ),
+              centerTitle: false,
             ),
           ),
+          SliverToBoxAdapter(
+            child: _buildSearchBar(theme),
+          ),
+          if (filteredNotes.isEmpty)
+            SliverFillRemaining(
+              child: _buildEmptyState(theme),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.all(20),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final note = filteredNotes[index];
+                    return _buildNoteCard(note, theme, noteProvider)
+                        .animate(delay: (index * 50).ms)
+                        .fadeIn()
+                        .slideY(begin: 0.1, end: 0);
+                  },
+                  childCount: filteredNotes.length,
+                ),
+              ),
+            ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final newNote = await noteProvider.createNewNote(user.uid);
           if (mounted) {
             context.push('/notes/${newNote.id}');
           }
         },
-        child: const Icon(Icons.add_comment_rounded),
-      ),
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        icon: const Icon(Icons.add_rounded),
+        label: Text('New Note', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+      ).animate().scale(delay: 400.ms),
     );
   }
 
   Widget _buildSearchBar(ThemeData theme) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
       child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: theme.cardColor.withValues(alpha: 0.7),
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: TextField(
           controller: _searchController,
+          style: GoogleFonts.inter(fontSize: 14),
           decoration: InputDecoration(
-            hintText: 'Search notes...',
-            prefixIcon: const Icon(Icons.search),
+            hintText: 'Search through your insights...',
+            hintStyle: GoogleFonts.inter(color: theme.hintColor, fontSize: 14),
+            prefixIcon: Icon(Icons.search_rounded, color: theme.hintColor, size: 20),
             border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(vertical: 14),
           ),
         ),
       ),
-    ).animate().fadeIn().slideY(begin: -0.2);
+    ).animate().fadeIn().slideY(begin: -0.1);
   }
 
-  Widget _buildNoteCard(
-      LocalNote note, ThemeData theme, NoteProvider provider) {
-    return Dismissible(
-      key: Key(note.id),
-      direction: DismissDirection.endToStart,
-      onDismissed: (_) => provider.deleteNote(note.id),
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: Colors.redAccent.withValues(alpha: 0.8),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: const Icon(Icons.delete, color: Colors.white),
+  Widget _buildNoteCard(LocalNote note, ThemeData theme, NoteProvider provider) {
+    final colorScheme = theme.colorScheme;
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: theme.cardColor.withValues(alpha: 0.6),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-            child: ListTile(
-              contentPadding: const EdgeInsets.all(16),
-              title: Text(
-                note.title.isEmpty ? 'Untitled Note' : note.title,
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 8),
-                  Text(
-                    note.content.isEmpty ? 'No content' : note.content,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        color: theme.textTheme.bodyMedium?.color
-                            ?.withValues(alpha: 0.7)),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Icon(Icons.access_time,
-                          size: 14,
-                          color: theme.colorScheme.primary.withValues(alpha: 0.6)),
-                      const SizedBox(width: 4),
-                      Text(
-                        DateFormat('MMM d, h:mm a').format(note.updatedAt),
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: theme.colorScheme.primary.withValues(alpha: 0.6)),
+          onTap: () => context.push('/notes/${note.id}'),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        note.title.isEmpty ? 'Untitled Perspective' : note.title,
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.bold, 
+                          fontSize: 16,
+                          color: theme.textTheme.displayLarge?.color,
+                        ),
                       ),
-                      const Spacer(),
-                      if (note.tags.isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '#${note.tags.first}',
-                            style: TextStyle(
-                                fontSize: 10, color: theme.colorScheme.primary),
+                    ),
+                    Icon(Icons.chevron_right_rounded, size: 20, color: theme.hintColor),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  note.content.isEmpty ? 'Start capturing your thoughts...' : note.content,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    height: 1.5,
+                    color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Icon(Icons.schedule_rounded, size: 14, color: colorScheme.primary.withOpacity(0.5)),
+                    const SizedBox(width: 6),
+                    Text(
+                      DateFormat('MMM d, yyyy').format(note.updatedAt),
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: colorScheme.primary.withOpacity(0.6),
+                      ),
+                    ),
+                    const Spacer(),
+                    if (note.tags.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '#${note.tags.first}',
+                          style: GoogleFonts.inter(
+                            fontSize: 10, 
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.primary
                           ),
                         ),
-                    ],
-                  ),
-                ],
-              ),
-              onTap: () {
-                context.push('/notes/${note.id}');
-              },
+                      ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                      onPressed: () => _confirmDelete(context, note, provider),
+                      visualDensity: VisualDensity.compact,
+                      color: Colors.redAccent.withOpacity(0.7),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
-      ).animate().fadeIn().slideX(begin: 0.1),
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, LocalNote note, NoteProvider provider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Delete Note?', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        content: Text('This action cannot be undone.', style: GoogleFonts.inter()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: GoogleFonts.inter(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () {
+              provider.deleteNote(note.id);
+              Navigator.pop(context);
+            },
+            child: Text('Delete', style: GoogleFonts.inter(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -217,22 +291,23 @@ class _NotesScreenState extends State<NotesScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.note_alt_outlined,
-              size: 80, color: theme.colorScheme.primary.withValues(alpha: 0.2)),
-          const SizedBox(height: 16),
+          Icon(Icons.edit_note_rounded, size: 100, color: theme.dividerColor.withOpacity(0.1)),
+          const SizedBox(height: 24),
           Text(
-            'No notes found',
-            style: TextStyle(
-                fontSize: 18,
-                color: theme.colorScheme.primary.withValues(alpha: 0.5)),
+            'Your digital brain is empty',
+            style: GoogleFonts.outfit(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: theme.textTheme.displayLarge?.color?.withOpacity(0.5),
+            ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Tap + to create your first note',
-            style: TextStyle(color: theme.colorScheme.primary.withValues(alpha: 0.4)),
+            'Create a note to start organized learning.',
+            style: GoogleFonts.inter(color: theme.hintColor),
           ),
         ],
       ),
-    ).animate().fadeIn();
+    );
   }
 }

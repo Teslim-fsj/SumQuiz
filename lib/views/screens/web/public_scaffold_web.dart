@@ -52,7 +52,7 @@ class PublicScaffoldWeb extends StatelessWidget {
                 },
                 child: Row(
                   children: [
-                    Image.asset('assets/images/sumquiz_logo.jpg',
+                    Image.asset('assets/images/sumquiz_logo.png',
                         width: 32,
                         height: 32,
                         errorBuilder: (_, __, ___) => const Icon(Icons.school,

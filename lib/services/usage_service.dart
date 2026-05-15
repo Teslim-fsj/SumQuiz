@@ -2,10 +2,32 @@ import 'dart:developer' as developer;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/services/time_sync_service.dart';
-import 'package:sumquiz/services/referral_service.dart';
 
 class UsageConfig {
-  // Compute Unit (CU) Weights (Internal Economics)
+  // --- TIER PRICING (2026 GLOBAL) ---
+  static final Map<String, Map<String, String>> pricing = {
+    'free': {'global': '\$0', 'ngn': '₦0', 'inr': '₹0'},
+    'standard_pro': {'global': '\$15', 'ngn': '₦6,500', 'inr': '₹550'},
+    'power_pro': {'global': '\$30', 'ngn': '₦13,500', 'inr': '₹1,100'},
+    'creator': {'global': '\$50', 'ngn': '₦27,500', 'inr': '₹2,250'},
+  };
+
+  // --- DAILY QUOTAS (Actions vs Transformations) ---
+  static final Map<String, int> heavyQuota = {
+    'free': 1,
+    'standard_pro': 10,
+    'power_pro': 30,
+    'creator': 50,
+  };
+
+  static final Map<String, int> lightQuota = {
+    'free': 5,
+    'standard_pro': 100,
+    'power_pro': 500,
+    'creator': 1000,
+  };
+
+  // Compute Unit (CU) Weights (Internal Economics - Margin Safety)
   static const double cuNano = 0.5;      // Mascot state, tiny nudges
   static const double cuMicro = 1.5;     // Summaries, Title generation
   static const double cuStandard = 6.0;  // Quizzes (10q), Flashcards (20c)
@@ -19,42 +41,76 @@ class UsageConfig {
   static const double multiPdfImage = 1.3;
   static const double multiHeavy = 1.8;
 
-  // Tier-Based Neural Capacity (CU)
-  static const double capFree = 20.0;    // Lifetime for free tier
-  static const double capStandardPro = 180.0; // Monthly Refill
-  static const double capPowerPro = 450.0;   // Monthly Refill
-  static const double capCreator = 1200.0;   // Monthly Refill
+  // Tier-Based Neural Capacity (CU) - Hidden Buffer
+  static const double capFree = 50.0;    
+  static const double capStandardPro = 500.0; 
+  static const double capPowerPro = 2000.0;   
+  static const double capCreator = 5000.0;   
 }
 
 class UsageService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  /// Check if user can proceed with a study session (Invisibly checks CU)
-  Future<bool> canStartStudySession(String uid, String actionType) async {
+  /// Check if user can proceed with a study session (Checks Quota + CU)
+  Future<bool> canStartStudySession(String uid, String actionType, {
+    bool isHeavy = false,
+    bool isYoutube = false,
+    bool isMultimodal = false,
+  }) async {
     try {
       final userDoc = await _db.collection('users').doc(uid).get();
       if (!userDoc.exists) return false;
       final user = UserModel.fromFirestore(userDoc);
 
-      // 1. Invisible Cost Calculation
-      double approximateCost = _calculateInternalCost(actionType);
+      // Safety: If user is Pro but tier is unknown or 'free', treat as 'standard_pro'
+      String tier = user.tier ?? 'free';
+      if (user.isPro && !UsageConfig.heavyQuota.containsKey(tier)) {
+        tier = 'standard_pro';
+        developer.log('UsageService: Auto-promoting active Pro user to standard_pro for quota check (tier: ${user.tier}).', name: 'UsageService');
+      }
 
-      // 2. High Tier Bypass (Creators/Power Pros have large buffers)
-      if (user.tier == 'creator' || user.tier == 'power_pro') {
-        return true;
+      final now = TimeSyncService.now;
+      final lastAction = user.lastDeckGenerationDate;
+
+      // Daily Reset Logic (Client-side trigger)
+      bool isNewDay = lastAction == null || 
+          now.day != lastAction.day || 
+          now.month != lastAction.month || 
+          now.year != lastAction.year;
+
+      int currentHeavy = isNewDay ? 0 : user.dailyHeavyActions;
+      int currentLight = isNewDay ? 0 : user.dailyLightActions;
+
+      // Determine if this is a "Heavy Action" or "Light Transformation"
+      final bool effectivelyHeavy = isHeavy || isYoutube || isMultimodal || 
+          ['lecture', 'tutor_session', 'exam'].contains(actionType);
+
+      // 1. Quota Check (Visible Limits)
+      if (effectivelyHeavy) {
+        final int limit = UsageConfig.heavyQuota[tier] ?? 1;
+        if (currentHeavy >= limit) {
+          developer.log('Heavy quota exceeded for $tier user: $uid', name: 'UsageService');
+          return false;
+        }
+      } else {
+        final int limit = UsageConfig.lightQuota[tier] ?? 5;
+        if (currentLight >= limit) {
+          developer.log('Light quota exceeded for $tier user: $uid', name: 'UsageService');
+          return false;
+        }
+      }
+
+      // 2. Hidden Compute Check (Margin Safety)
+      double approximateCost = _calculateInternalCost(actionType, 
+          isHeavy: effectivelyHeavy, isYoutube: isYoutube, isMultimodal: isMultimodal);
+
+      if (user.computeUnits < approximateCost) {
+        developer.log('Neural capacity depleted (Hidden CU) for user: $uid', name: 'UsageService');
+        return false;
       }
 
       // 3. Burst Control (Abuse protection)
       if (await _isBursting(uid, user)) {
-        developer.log('Burst control triggered for user: $uid',
-            name: 'UsageService');
-        return false;
-      }
-
-      // 4. Capacity Check (Neural Energy)
-      if (user.computeUnits < approximateCost) {
-        developer.log('Capacity depleted (Invisibly blocked) for user: $uid',
-            name: 'UsageService');
         return false;
       }
 
@@ -69,61 +125,59 @@ class UsageService {
   Future<bool> _isBursting(String uid, UserModel user) async {
     final now = TimeSyncService.now;
     final lastAction = user.lastDeckGenerationDate;
-
     if (lastAction == null) return false;
 
     final diff = now.difference(lastAction);
-
-    // Free users: 2 mins between heavy actions
-    if (user.tier == 'free' && diff.inSeconds < 120) return true;
-
-    // Pros: 15 seconds between actions (prevents bot-like behavior)
-    if (user.isPro && diff.inSeconds < 15) return true;
+    
+    // Safety thresholds
+    if (user.tier == 'free' && diff.inSeconds < 60) return true;
+    if (user.isPro && diff.inSeconds < 5) return true;
 
     return false;
   }
 
-  /// Record a Study Session (Deduct CU invisibly)
+  /// Record a Study Session (Deduct Quota + CU invisibly)
   Future<void> recordStudySession(String uid, String actionType,
       {bool isHeavy = false, bool isYoutube = false, bool isMultimodal = false}) async {
     try {
+      final bool effectivelyHeavy = isHeavy || isYoutube || isMultimodal || 
+          ['lecture', 'tutor_session', 'exam'].contains(actionType);
+          
       double cost = _calculateInternalCost(actionType, 
-          isHeavy: isHeavy, isYoutube: isYoutube, isMultimodal: isMultimodal);
+          isHeavy: effectivelyHeavy, isYoutube: isYoutube, isMultimodal: isMultimodal);
 
-      UserModel? userBeforeTx;
       await _db.runTransaction((transaction) async {
         final userRef = _db.collection('users').doc(uid);
         final userDoc = await transaction.get(userRef);
         if (!userDoc.exists) return;
 
-        userBeforeTx = UserModel.fromFirestore(userDoc);
-        final newCompute = userBeforeTx!.computeUnits - cost;
+        final user = UserModel.fromFirestore(userDoc);
+        final now = TimeSyncService.now;
+        final lastAction = user.lastDeckGenerationDate;
 
+        // Reset if new day
+        bool isNewDay = lastAction == null || 
+            now.day != lastAction.day || 
+            now.month != lastAction.month || 
+            now.year != lastAction.year;
+
+        int newHeavy = isNewDay ? 0 : user.dailyHeavyActions;
+        int newLight = isNewDay ? 0 : user.dailyLightActions;
+        
         transaction.update(userRef, {
-          'computeUnits': newCompute < 0 ? 0.0 : newCompute,
-          'totalDecksGenerated': userBeforeTx!.totalDecksGenerated + 1,
+          'computeUnits': (user.computeUnits - cost).clamp(0.0, 10000.0),
+          if (effectivelyHeavy) 'dailyHeavyActions': newHeavy + 1
+          else 'dailyLightActions': newLight + 1,
+          'totalDecksGenerated': user.totalDecksGenerated + 1,
           'lastDeckGenerationDate': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         });
       });
 
-      developer.log('Recorded compute burn: $actionType (CU: $cost)',
+      developer.log('Recorded action: $actionType (Heavy: $effectivelyHeavy, CU: $cost)',
           name: 'UsageService');
-
-      // Referral Reward Logic
-      if (userBeforeTx != null &&
-          userBeforeTx!.totalDecksGenerated == 0 &&
-          userBeforeTx!.referredBy != null &&
-          userBeforeTx!.referredBy!.isNotEmpty) {
-        try {
-          final ReferralService referralService = ReferralService();
-          await referralService.grantReferrerReward(userBeforeTx!.referredBy!);
-        } catch (e) {
-          developer.log('Referral reward failed', name: 'UsageService', error: e);
-        }
-      }
     } catch (e) {
-      developer.log('Error recording compute', name: 'UsageService', error: e);
+      developer.log('Error recording usage', name: 'UsageService', error: e);
     }
   }
 

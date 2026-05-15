@@ -13,7 +13,6 @@ import '../../providers/note_provider.dart';
 import '../../providers/sumi_provider.dart';
 import '../../models/user_model.dart';
 import '../../services/mastery_service.dart';
-import '../../theme/cyber_neural_theme.dart';
 import '../widgets/handwriting_canvas.dart';
 import '../widgets/aura_waveform.dart';
 import '../widgets/sumi_lens.dart';
@@ -114,7 +113,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
       _controller.formatText(
         insertionIndex, 
         textToInsert.length, 
-        quill.Attribute.clone(quill.Attribute.color, CyberNeuralColors.gold.toARGB32().toRadixString(16))
+        quill.Attribute.clone(quill.Attribute.color, Colors.orangeAccent.value.toRadixString(16))
       );
     }
     
@@ -189,7 +188,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
               },
             ),
             duration: const Duration(seconds: 10),
-            backgroundColor: CyberNeuralColors.purple,
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       }
@@ -221,22 +220,23 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final noteProvider = context.watch<NoteProvider>();
     final user = Provider.of<UserModel?>(context);
     final isRecording = noteProvider.state == NoteProcessingState.recording;
 
     if (!_isInitialized) {
-      return const Scaffold(
-        backgroundColor: CyberNeuralColors.background, 
-        body: Center(child: CircularProgressIndicator(color: CyberNeuralColors.cyan))
+      return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor, 
+        body: Center(child: CircularProgressIndicator(color: colorScheme.primary))
       );
     }
 
     return Scaffold(
-      backgroundColor: CyberNeuralColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
-          _buildAtmosphericLayer(),
           Row(
             children: [
               Expanded(
@@ -244,20 +244,20 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                   children: [
                     const SizedBox(height: 80),
                     Expanded(
-                      child: _buildEditorArea(noteProvider),
+                      child: _buildEditorArea(noteProvider, theme),
                     ),
                   ],
                 ),
               ),
               if (_showSidebar)
-                _buildRightSidebar(noteProvider),
+                _buildRightSidebar(noteProvider, theme),
             ],
           ),
           Positioned(
             top: 20,
             left: 20,
             right: 20,
-            child: _buildTopBar(noteProvider, isRecording, user),
+            child: _buildTopBar(noteProvider, isRecording, user, theme),
           ),
           if (isRecording)
             Positioned(
@@ -309,7 +309,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
             left: 0,
             right: 0,
             child: Center(
-              child: _buildRecordingButton(noteProvider, user, isRecording),
+              child: _buildRecordingButton(noteProvider, user, isRecording, theme),
             ),
           ),
         ],
@@ -317,78 +317,85 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     );
   }
 
-  Widget _buildAtmosphericLayer() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: RadialGradient(
-          center: Alignment.topRight,
-          radius: 1.5,
-          colors: [
-            CyberNeuralColors.purple.withValues(alpha: 0.02),
-            Colors.transparent,
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopBar(NoteProvider provider, bool isRecording, UserModel? user) {
+  Widget _buildTopBar(NoteProvider noteProvider, bool isRecording, UserModel? user, ThemeData theme) {
+    final colorScheme = theme.colorScheme;
+    
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
-          height: 56,
+          height: 64,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: CyberNeuralColors.surface.withValues(alpha: 0.7),
+            color: theme.cardColor.withValues(alpha: 0.8),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+            border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Row(
             children: [
               IconButton(
                 onPressed: () => context.pop(),
-                icon: const Icon(Icons.arrow_back_ios_new, size: 16, color: CyberNeuralColors.textSecondary),
+                icon: Icon(Icons.arrow_back_ios_new, size: 18, color: theme.textTheme.bodyLarge?.color),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: TextField(
                   controller: _titleController,
                   style: GoogleFonts.outfit(
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.w600,
+                    color: theme.textTheme.displayLarge?.color,
                   ),
-                  decoration: const InputDecoration(
-                    hintText: 'Neural Workspace',
+                  decoration: InputDecoration(
+                    hintText: 'Note Title',
                     border: InputBorder.none,
+                    hintStyle: TextStyle(color: theme.hintColor),
                   ),
                 ),
               ),
               if (isRecording)
-                _buildCaptureBadge(),
+                _buildCaptureBadge(theme),
               const SizedBox(width: 12),
-              _buildMemoryBadge(),
+              _buildMemoryBadge(theme),
               const SizedBox(width: 12),
-              _buildTopAction(Icons.search, null, () {
-                // Implement search logic or show search bar
-              }),
-              const SizedBox(width: 4),
-              _buildTopAction(Icons.auto_awesome, 'Synthesize', () async {
-                if (user != null) {
-                  await provider.generateStudyMaterials(user.uid);
-                }
-              }),
+              _buildTopAction(Icons.draw_outlined, 'Sketch', () {
+                setState(() => _isDrawingMode = !_isDrawingMode);
+              }, theme, isActive: _isDrawingMode),
               const SizedBox(width: 8),
-              _buildTopAction(Icons.grid_view_rounded, null, () {
+              _buildTopAction(
+                noteProvider.state == NoteProcessingState.generating 
+                  ? Icons.hourglass_empty_rounded 
+                  : Icons.auto_awesome_rounded, 
+                noteProvider.state == NoteProcessingState.generating ? 'Processing...' : 'Synthesize', 
+                () async {
+                  if (user != null && noteProvider.state != NoteProcessingState.generating) {
+                    final folderId = await noteProvider.generateStudyMaterials(user.uid);
+                    if (folderId != null && mounted) {
+                      context.pushNamed('results-view', pathParameters: {'folderId': folderId});
+                    }
+                  }
+                }, 
+                theme,
+                isActive: noteProvider.state == NoteProcessingState.generating
+              ),
+              const SizedBox(width: 8),
+              _buildTopAction(Icons.view_sidebar_rounded, null, () {
                 setState(() => _showSidebar = !_showSidebar);
-              }),
-              const SizedBox(width: 8),
+              }, theme),
+              const SizedBox(width: 12),
               CircleAvatar(
-                radius: 14,
-                backgroundColor: CyberNeuralColors.surfaceAlt,
+                radius: 16,
+                backgroundColor: colorScheme.primaryContainer,
                 backgroundImage: user?.photoUrl != null ? NetworkImage(user!.photoUrl!) : null,
-                child: user?.photoUrl == null ? const Icon(Icons.person, size: 16, color: Colors.white30) : null,
+                child: user?.photoUrl == null ? Icon(Icons.person, size: 18, color: colorScheme.onPrimaryContainer) : null,
               ),
             ],
           ),
@@ -397,32 +404,32 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     );
   }
 
-  Widget _buildCaptureBadge() {
+  Widget _buildCaptureBadge(ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: CyberNeuralColors.alert.withValues(alpha: 0.1),
+        color: Colors.red.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: CyberNeuralColors.alert.withValues(alpha: 0.3)),
+        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           Container(
-            width: 6,
-            height: 6,
-            decoration: const BoxDecoration(color: CyberNeuralColors.alert, shape: BoxShape.circle),
+            width: 8,
+            height: 8,
+            decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
           ).animate(onPlay: (c) => c.repeat()).fadeIn().fadeOut(),
           const SizedBox(width: 8),
           Text(
-            'LIVE CAPTURE',
-            style: GoogleFonts.jetBrainsMono(fontSize: 9, fontWeight: FontWeight.bold, color: CyberNeuralColors.alert),
+            'LIVE',
+            style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.red),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMemoryBadge() {
+  Widget _buildMemoryBadge(ThemeData theme) {
     final mastery = context.watch<MasteryService>();
     final note = context.read<NoteProvider>().currentNote;
     
@@ -436,45 +443,52 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     }
 
     final isStable = averageMastery > 0.7;
-    final color = isStable ? CyberNeuralColors.success : CyberNeuralColors.cyan;
+    final color = isStable ? Colors.green : theme.colorScheme.primary;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.05),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          Icon(isStable ? Icons.verified_user : Icons.psychology, size: 12, color: color),
+          Icon(isStable ? Icons.check_circle_outline : Icons.trending_up_rounded, size: 14, color: color),
           const SizedBox(width: 6),
           Text(
-            isStable ? 'STABLE' : 'EVOLVING',
-            style: GoogleFonts.jetBrainsMono(fontSize: 9, fontWeight: FontWeight.bold, color: color),
+            isStable ? 'STABLE' : 'GROWING',
+            style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.bold, color: color),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTopAction(IconData icon, String? label, VoidCallback onTap) {
+  Widget _buildTopAction(IconData icon, String? label, VoidCallback onTap, ThemeData theme, {bool isActive = false}) {
+    final colorScheme = theme.colorScheme;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: label != null ? CyberNeuralColors.cyan.withValues(alpha: 0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
+          color: isActive ? colorScheme.primary.withValues(alpha: 0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: label != null ? CyberNeuralColors.cyan : CyberNeuralColors.textSecondary),
+            Icon(icon, size: 20, color: isActive ? colorScheme.primary : theme.iconTheme.color?.withValues(alpha: 0.7)),
             if (label != null) ...[
               const SizedBox(width: 8),
               Text(
                 label,
-                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: CyberNeuralColors.cyan),
+                style: GoogleFonts.inter(
+                  fontSize: 13, 
+                  fontWeight: FontWeight.w600, 
+                  color: isActive ? colorScheme.primary : theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.7)
+                ),
               ),
             ],
           ],
@@ -483,9 +497,9 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     );
   }
 
-  Widget _buildEditorArea(NoteProvider provider) {
+  Widget _buildEditorArea(NoteProvider provider, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 60),
+      padding: const EdgeInsets.symmetric(horizontal: 40),
       child: _isDrawingMode
           ? HandwritingCanvas(
               strokes: provider.drawingStrokes,
@@ -500,11 +514,15 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                   scrollController: _scrollController,
                   config: quill.QuillEditorConfig(
                     autoFocus: true,
-                    padding: const EdgeInsets.only(bottom: 200),
-                    placeholder: 'Enter the cognitive flow...',
+                    padding: const EdgeInsets.only(bottom: 200, top: 20),
+                    placeholder: 'Capture your thoughts...',
                     customStyles: quill.DefaultStyles(
                       paragraph: quill.DefaultListBlockStyle(
-                        GoogleFonts.inter(fontSize: 16, height: 1.8, color: CyberNeuralColors.textPrimary),
+                        GoogleFonts.inter(
+                          fontSize: 16, 
+                          height: 1.6, 
+                          color: theme.textTheme.bodyLarge?.color
+                        ),
                         const quill.HorizontalSpacing(0, 0),
                         const quill.VerticalSpacing(0, 0),
                         const quill.VerticalSpacing(0, 0),
@@ -515,76 +533,94 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                   ),
                 ),
                 Positioned(
-                  top: 200,
+                  top: 20,
                   right: 0,
-                  child: GhostLinkIndicator(label: 'Cognitive Architecture', onTap: () {}),
+                  child: GhostLinkIndicator(label: 'Related Concepts', onTap: () {}),
                 ),
               ],
             ),
     );
   }
 
-  Widget _buildRightSidebar(NoteProvider provider) {
+  Widget _buildRightSidebar(NoteProvider provider, ThemeData theme) {
     final sumi = context.watch<SumiProvider>();
     final note = provider.currentNote;
     
     return Container(
-      width: 320,
+      width: 340,
       decoration: BoxDecoration(
-        border: Border(left: BorderSide(color: Colors.white.withValues(alpha: 0.05))),
-        color: CyberNeuralColors.surface.withValues(alpha: 0.2),
+        border: Border(left: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1))),
+        color: theme.cardColor.withValues(alpha: 0.5),
       ),
       child: ListView(
         padding: const EdgeInsets.all(24),
         children: [
           const SizedBox(height: 80),
-          _buildSidebarSection('CONTEXTUAL NODES', note?.topicNames ?? []),
+          _buildSidebarSection('TOPICS', note?.topicNames ?? [], theme),
           const SizedBox(height: 32),
-          if (note != null) _buildFlashcardPreview(note),
+          if (note != null) _buildFlashcardPreview(note, theme),
           const SizedBox(height: 32),
-          _buildSidebarSection('ACTIVE INSIGHTS', provider.liveInsights),
+          _buildSidebarSection('LIVE INSIGHTS', provider.liveInsights, theme),
           const SizedBox(height: 32),
-          _buildInsightCard(sumi),
+          _buildInsightCard(sumi, theme),
           const SizedBox(height: 32),
-          _buildAISummaryCard(sumi),
+          _buildAISummaryCard(sumi, theme),
           const SizedBox(height: 32),
-          _buildRecordingsList(provider),
+          _buildRecordingsList(provider, theme),
         ],
       ),
     );
   }
 
-  Widget _buildRecordingsList(NoteProvider provider) {
+  Widget _buildRecordingsList(NoteProvider provider, ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'LECTURE RECORDINGS',
-          style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.bold, color: CyberNeuralColors.textTertiary, letterSpacing: 1.5),
+          'AUDIO SESSIONS',
+          style: GoogleFonts.jetBrainsMono(
+            fontSize: 11, 
+            fontWeight: FontWeight.bold, 
+            color: theme.hintColor, 
+            letterSpacing: 1.2
+          ),
         ),
         const SizedBox(height: 16),
         ...provider.currentNoteRecordings.map((rec) => Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: CyberNeuralColors.surfaceAlt.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(12),
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
           ),
           child: Row(
             children: [
-              IconButton(
-                icon: const Icon(Icons.play_arrow_rounded, color: CyberNeuralColors.cyan),
+              IconButton.filledTonal(
+                icon: const Icon(Icons.play_arrow_rounded),
                 onPressed: () => provider.playRecording(rec),
+                visualDensity: VisualDensity.compact,
               ),
+              const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  '${rec.durationSeconds}s • ${rec.createdAt.hour}:${rec.createdAt.minute}',
-                  style: GoogleFonts.inter(fontSize: 12, color: CyberNeuralColors.textSecondary),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Recording ${rec.createdAt.day}/${rec.createdAt.month}',
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      '${rec.durationSeconds}s • ${rec.createdAt.hour}:${rec.createdAt.minute}',
+                      style: GoogleFonts.inter(fontSize: 11, color: theme.hintColor),
+                    ),
+                  ],
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline, size: 18, color: Colors.white24),
+                icon: const Icon(Icons.delete_outline_rounded, size: 18),
                 onPressed: () => provider.deleteRecording(rec.id),
+                color: theme.colorScheme.error.withValues(alpha: 0.7),
               ),
             ],
           ),
@@ -593,22 +629,29 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     );
   }
 
-  Widget _buildSidebarSection(String title, List<String> items) {
+  Widget _buildSidebarSection(String title, List<String> items, ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.bold, color: CyberNeuralColors.textTertiary, letterSpacing: 1.5),
+          style: GoogleFonts.jetBrainsMono(
+            fontSize: 11, 
+            fontWeight: FontWeight.bold, 
+            color: theme.hintColor, 
+            letterSpacing: 1.2
+          ),
         ),
         const SizedBox(height: 16),
+        if (items.isEmpty)
+          Text('No data available yet.', style: GoogleFonts.inter(fontSize: 13, color: theme.hintColor, fontStyle: FontStyle.italic)),
         ...items.map((item) => Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: Row(
             children: [
-              const Icon(Icons.circle, size: 4, color: CyberNeuralColors.cyan),
+              Icon(Icons.circle, size: 6, color: theme.colorScheme.primary.withValues(alpha: 0.5)),
               const SizedBox(width: 12),
-              Text(item, style: GoogleFonts.inter(fontSize: 13, color: CyberNeuralColors.textSecondary)),
+              Expanded(child: Text(item, style: GoogleFonts.inter(fontSize: 14, color: theme.textTheme.bodyMedium?.color))),
             ],
           ),
         )),
@@ -616,29 +659,39 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     );
   }
 
-  Widget _buildFlashcardPreview(LocalNote note) {
-    // In a real app, we'd fetch actual flashcards linked to this note's topicIds
+  Widget _buildFlashcardPreview(LocalNote note, ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'FLASHCARD PREVIEW',
-          style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.bold, color: CyberNeuralColors.textTertiary, letterSpacing: 1.5),
+          'STUDY PREVIEW',
+          style: GoogleFonts.jetBrainsMono(
+            fontSize: 11, 
+            fontWeight: FontWeight.bold, 
+            color: theme.hintColor, 
+            letterSpacing: 1.2
+          ),
         ),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: CyberNeuralColors.surfaceAlt.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+            color: theme.colorScheme.primary.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.1)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Topic: ${note.topicNames.isNotEmpty ? note.topicNames.first : "General"}', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: CyberNeuralColors.textPrimary)),
+              Text(
+                'Focus: ${note.topicNames.isNotEmpty ? note.topicNames.first : "General"}', 
+                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)
+              ),
               const SizedBox(height: 8),
-              Text('Neural mastery will generate cards here once synthesis completes.', style: GoogleFonts.inter(fontSize: 12, color: CyberNeuralColors.textSecondary)),
+              Text(
+                'Hit "Synthesize" to generate personalized study materials from this session.', 
+                style: GoogleFonts.inter(fontSize: 12, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.8), height: 1.4)
+              ),
             ],
           ),
         ),
@@ -646,60 +699,68 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     );
   }
 
-  Widget _buildInsightCard(SumiProvider sumi) {
+  Widget _buildInsightCard(SumiProvider sumi, ThemeData theme) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: CyberNeuralColors.purple.withValues(alpha: 0.05),
+        color: theme.colorScheme.secondary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: CyberNeuralColors.purple.withValues(alpha: 0.1)),
+        border: Border.all(color: theme.colorScheme.secondary.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.auto_awesome_outlined, size: 14, color: CyberNeuralColors.purple),
+              Icon(Icons.auto_awesome_rounded, size: 16, color: theme.colorScheme.secondary),
               const SizedBox(width: 8),
-              Text('NEURAL ASSIST', style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.bold, color: CyberNeuralColors.purple)),
+              Text(
+                'SUMI ASSIST', 
+                style: GoogleFonts.jetBrainsMono(fontSize: 11, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary)
+              ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
             sumi.dialogue ?? 'Neural flow is stable. I am monitoring your lecture for key insights.',
-            style: GoogleFonts.inter(fontSize: 12, color: CyberNeuralColors.textSecondary, height: 1.4),
+            style: GoogleFonts.inter(fontSize: 13, color: theme.textTheme.bodyMedium?.color, height: 1.5),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildAISummaryCard(SumiProvider sumi) {
+  Widget _buildAISummaryCard(SumiProvider sumi, ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'AI SUMMARY',
-          style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.bold, color: CyberNeuralColors.textTertiary, letterSpacing: 1.5),
+          'SUMMARY OVERVIEW',
+          style: GoogleFonts.jetBrainsMono(
+            fontSize: 11, 
+            fontWeight: FontWeight.bold, 
+            color: theme.hintColor, 
+            letterSpacing: 1.2
+          ),
         ),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: CyberNeuralColors.cyan.withValues(alpha: 0.03),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: CyberNeuralColors.cyan.withValues(alpha: 0.1)),
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
           ),
           child: Text(
             sumi.isStreaming ? (sumi.streamingMessage ?? 'Thinking...') : (sumi.dialogue ?? 'Start recording to generate live summaries.'),
-            style: GoogleFonts.inter(fontSize: 12, color: CyberNeuralColors.textSecondary, height: 1.5),
+            style: GoogleFonts.inter(fontSize: 13, color: theme.textTheme.bodyMedium?.color, height: 1.5),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildRecordingButton(NoteProvider provider, UserModel? user, bool isRecording) {
+  Widget _buildRecordingButton(NoteProvider provider, UserModel? user, bool isRecording, ThemeData theme) {
     return GestureDetector(
       onTap: () {
         HapticFeedback.mediumImpact();
@@ -709,22 +770,23 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           provider.startRecording(user?.uid ?? '');
         }
       },
-      child: Container(
-        width: 64,
-        height: 64,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        width: 72,
+        height: 72,
         decoration: BoxDecoration(
-          color: isRecording ? CyberNeuralColors.alert : CyberNeuralColors.surface,
+          color: isRecording ? Colors.red : theme.colorScheme.primary,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: (isRecording ? CyberNeuralColors.alert : CyberNeuralColors.cyan).withValues(alpha: 0.3),
+              color: (isRecording ? Colors.red : theme.colorScheme.primary).withValues(alpha: 0.4),
               blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
           ],
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         ),
-        child: Icon(isRecording ? Icons.stop : Icons.mic, color: Colors.white, size: 32),
-      ),
+        child: Icon(isRecording ? Icons.stop_rounded : Icons.mic_rounded, color: Colors.white, size: 36),
+      ).animate(target: isRecording ? 1 : 0).scale(begin: const Offset(1, 1), end: const Offset(1.1, 1.1), duration: 500.ms, curve: Curves.easeInOut),
     );
   }
 }

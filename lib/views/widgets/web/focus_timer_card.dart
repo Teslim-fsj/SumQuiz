@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:sumquiz/theme/web_theme.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 class FocusTimerCard extends StatefulWidget {
@@ -48,17 +47,19 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
   }
 
   void _showCompletion() {
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text('Focus Session Complete!',
             style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
         content: Text('Great job staying focused! Take a short break.',
-            style: GoogleFonts.outfit()),
+            style: GoogleFonts.inter()),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Dismiss'),
+            child: Text('Dismiss', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
           ),
         ],
       ),
@@ -66,6 +67,7 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
   }
 
   void _showSettings() {
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (context) {
@@ -73,34 +75,35 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
               title: Text('Timer Settings',
                   style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Set your focus duration:', style: GoogleFonts.outfit()),
-                  const SizedBox(height: 20),
+                  Text('Set your focus duration:', style: GoogleFonts.inter()),
+                  const SizedBox(height: 24),
                   Slider(
                     value: selectedMinutes.toDouble(),
                     min: 5,
                     max: 60,
                     divisions: 11,
-                    activeColor: WebColors.purplePrimary,
+                    activeColor: theme.colorScheme.primary,
                     label: '$selectedMinutes min',
                     onChanged: (val) {
                       setDialogState(() => selectedMinutes = val.round());
                     },
                   ),
                   Text('$selectedMinutes minutes',
-                      style: GoogleFonts.outfit(
-                          fontWeight: FontWeight.w600,
-                          color: WebColors.purplePrimary)),
+                      style: GoogleFonts.jetBrainsMono(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary)),
                 ],
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: Text('Cancel', style: GoogleFonts.inter(color: theme.hintColor)),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -112,9 +115,10 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
                     Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: WebColors.purplePrimary,
-                      foregroundColor: Colors.white),
-                  child: const Text('Apply'),
+                      backgroundColor: theme.colorScheme.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  child: Text('Apply', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
                 ),
               ],
             );
@@ -136,74 +140,92 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: WebColors.border),
-        boxShadow: WebColors.subtleShadow,
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'FOCUS TIMER',
-                style: GoogleFonts.outfit(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: WebColors.textSecondary,
-                  letterSpacing: 1.5,
-                ),
+              Row(
+                children: [
+                  const Icon(Icons.timer_outlined, size: 14, color: Color(0xFF0D9488)),
+                  const SizedBox(width: 8),
+                  Text(
+                    'FOCUS TIMER',
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: theme.hintColor,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
               ),
-              InkWell(
-                onTap: _showSettings,
-                child: const Icon(Icons.settings_rounded,
-                    size: 18, color: WebColors.textSecondary),
+              IconButton(
+                onPressed: _showSettings,
+                icon: Icon(Icons.tune_rounded, size: 18, color: theme.hintColor.withOpacity(0.5)),
+                visualDensity: VisualDensity.compact,
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           Text(
             '$_minutesStr:$_secondsStr',
-            style: GoogleFonts.outfit(
-              fontSize: 36,
-              fontWeight: FontWeight.w800,
-              color: WebColors.textPrimary,
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 48,
+              fontWeight: FontWeight.bold,
+              color: theme.textTheme.displayLarge?.color,
               height: 1.0,
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'POMODORO PHASE',
-            style: GoogleFonts.outfit(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: WebColors.purplePrimary,
-              letterSpacing: 1.5,
+          ).animate(target: _isRunning ? 1 : 0).shimmer(duration: 2.seconds, color: theme.colorScheme.primary.withOpacity(0.2)),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0D9488).withOpacity(0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              'POMODORO ACTIVE',
+              style: GoogleFonts.inter(
+                fontSize: 9,
+                fontWeight: FontWeight.w900,
+                color: const Color(0xFF0D9488),
+                letterSpacing: 1,
+              ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 32),
           Row(
             children: [
               Expanded(
                 child: ElevatedButton(
                   onPressed: _toggleTimer,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: WebColors.purplePrimary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    backgroundColor: _isRunning ? theme.dividerColor.withOpacity(0.1) : theme.colorScheme.primary,
+                    foregroundColor: _isRunning ? theme.hintColor : Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   child: Text(
                     _isRunning ? 'Pause' : 'Start',
-                    style: GoogleFonts.outfit(
-                        fontWeight: FontWeight.w700, fontSize: 13),
+                    style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ),
               ),
@@ -212,17 +234,14 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
                 child: OutlinedButton(
                   onPressed: _resetTimer,
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: WebColors.textPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    side: const BorderSide(color: WebColors.border),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    foregroundColor: theme.hintColor,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    side: BorderSide(color: theme.dividerColor.withOpacity(0.1)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   child: Text(
                     'Reset',
-                    style: GoogleFonts.outfit(
-                        fontWeight: FontWeight.w700, fontSize: 13),
+                    style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ),
               ),
@@ -230,6 +249,6 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.05);
+    ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.05, end: 0);
   }
 }

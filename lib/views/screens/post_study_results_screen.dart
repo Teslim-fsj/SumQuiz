@@ -35,12 +35,15 @@ class PostStudyResultsScreen extends StatelessWidget {
   }
 
   String get _sumiMessage {
-    if (accuracy >= 90)
+    if (accuracy >= 90) {
       return "Masterful! You've practically absorbed this knowledge. Sumi is impressed!";
-    if (accuracy >= 75)
+    }
+    if (accuracy >= 75) {
       return "Great job! Your neural pathways are strengthening. Let's keep this momentum!";
-    if (accuracy >= 50)
+    }
+    if (accuracy >= 50) {
       return "Solid effort! A bit more review and you'll have this mastered. Ready for another round?";
+    }
     return "This was a tough one. Don't worry, even Sumi has off-days. Let's review the summary together!";
   }
 
@@ -67,7 +70,10 @@ class PostStudyResultsScreen extends StatelessWidget {
                     theme.colorScheme.surface,
                     theme.colorScheme.surface.withValues(alpha: 0.8)
                   ]
-                : [theme.colorScheme.primary.withValues(alpha: 0.05), Colors.white],
+                : [
+                    theme.colorScheme.primary.withValues(alpha: 0.05),
+                    Colors.white
+                  ],
           ),
         ),
         child: SafeArea(

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sumquiz/models/daily_mission.dart';
-import 'package:sumquiz/theme/web_theme.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 class ActiveMissionCard extends StatelessWidget {
@@ -18,19 +17,27 @@ class ActiveMissionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (mission == null) return _buildEmptyState();
+    final theme = Theme.of(context);
+    
+    if (mission == null) return _buildEmptyState(theme);
 
     final total = mission!.flashcardIds.length;
     final int done = mission!.isCompleted ? total : 0;
     final double progress = total > 0 ? done / total : 0.0;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: WebColors.border),
-        boxShadow: WebColors.subtleShadow,
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 32,
+            offset: const Offset(0, 16),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,139 +48,160 @@ class ActiveMissionCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: WebColors.purpleUltraLight,
-                  borderRadius: BorderRadius.circular(14),
+                  color: theme.colorScheme.primary.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Icon(Icons.shield_rounded,
-                    color: WebColors.purplePrimary, size: 24),
+                child: Icon(Icons.stars_rounded,
+                    color: theme.colorScheme.primary, size: 24),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: WebColors.purpleUltraLight,
+                  color: theme.colorScheme.primary.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  'ACTIVE TASK',
-                  style: GoogleFonts.outfit(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: WebColors.purplePrimary,
-                    letterSpacing: 1.0,
+                  'DAILY CHALLENGE',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    color: theme.colorScheme.primary,
+                    letterSpacing: 1.2,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
           Text(
-            'Daily Challenge',
+            mission!.title,
             style: GoogleFonts.outfit(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: WebColors.textPrimary,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: theme.textTheme.displayLarge?.color,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Review $total sets to unlock today\'s reward bundle.',
-            style: GoogleFonts.outfit(
+            'Complete this mission to earn 50 XP and maintain your learning streak.',
+            style: GoogleFonts.inter(
               fontSize: 14,
-              color: WebColors.textSecondary,
-              height: 1.4,
+              color: theme.hintColor,
+              height: 1.5,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 32),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '$done/$total complete',
-                style: GoogleFonts.outfit(
+                '$done/$total modules complete',
+                style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: WebColors.textPrimary,
+                  color: theme.textTheme.bodyLarge?.color,
                 ),
               ),
               Text(
-                '+50 XP',
-                style: GoogleFonts.outfit(
+                '${(progress * 100).toInt()}%',
+                style: GoogleFonts.jetBrainsMono(
                   fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: WebColors.purplePrimary,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: WebColors.purpleUltraLight,
-              color: WebColors.purplePrimary,
-              minHeight: 8,
-            ),
-          ),
           const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: WebColors.backgroundAlt,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: WebColors.border),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Consistency',
-                    style: GoogleFonts.outfit(
-                        fontSize: 13, color: WebColors.textSecondary)),
-                Text('Master',
-                    style: GoogleFonts.outfit(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: WebColors.textPrimary)),
-              ],
+          Stack(
+            children: [
+              Container(
+                height: 10,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(5),
+                ),
+              ),
+              FractionallySizedBox(
+                widthFactor: progress.clamp(0.0, 1.0),
+                child: Container(
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    borderRadius: BorderRadius.circular(5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.primary.withOpacity(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                ).animate().scaleX(begin: 0, alignment: Alignment.centerLeft, duration: 800.ms, curve: Curves.easeOutCubic),
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: onStart,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: mission!.isCompleted ? theme.dividerColor.withOpacity(0.1) : theme.colorScheme.primary,
+                foregroundColor: mission!.isCompleted ? theme.hintColor : Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              child: Text(
+                mission!.isCompleted ? 'Mission Completed' : 'Launch Session',
+                style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
             ),
           ),
         ],
       ),
-    )
-        .animate()
-        .fadeIn(duration: 400.ms)
-        .slideY(begin: 0.05, curve: Curves.easeOut);
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut);
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: WebColors.border),
-        boxShadow: WebColors.subtleShadow,
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.rocket_launch_rounded,
-              size: 40, color: WebColors.purplePrimary),
-          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.05),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.rocket_launch_rounded,
+                size: 40, color: theme.colorScheme.primary.withOpacity(0.3)),
+          ),
+          const SizedBox(height: 24),
           Text('No Active Mission',
               style: GoogleFonts.outfit(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: WebColors.textPrimary)),
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: theme.textTheme.displayLarge?.color)),
           const SizedBox(height: 12),
-          ElevatedButton(
+          Text(
+            'Create study packs to unlock curated daily challenges.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(fontSize: 14, color: theme.hintColor),
+          ),
+          const SizedBox(height: 32),
+          OutlinedButton(
             onPressed: onStart,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: WebColors.purplePrimary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
             child: const Text('Generate Mission'),
           ),

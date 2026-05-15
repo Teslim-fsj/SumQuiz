@@ -377,20 +377,10 @@ class CreateContentProvider with ChangeNotifier {
       final ComputeManager computeManager = ComputeManager();
 
       // 1. Gated Usage Deduction (One-time)
-      if (!_cuDeducted) {
-        _progressMessage = 'Orchestrating neural compute...';
-        notifyListeners();
-        
-        final bool canProceed = await computeManager.orchestrateAction(
-          userId,
-          _selectedSourceType == 'exam' ? 'exam' : 'standard',
-          isHeavy: _fileBytes != null,
-          isYoutube: _selectedSourceType == 'youtube',
-          isMultimodal: _selectedSourceType == 'pdf' || _selectedSourceType == 'image',
-        );
-        if (!canProceed) throw Exception('CAPACITY_STABILIZING');
-        _cuDeducted = true;
-      }
+      // Centralized compute orchestration is now handled within EnhancedAIService
+      // to ensure all callers are correctly tracked and deducted.
+      _progressMessage = 'Orchestrating neural compute...';
+      notifyListeners();
 
       // 2. Fast-track for Topic generation
       if (_selectedSourceType == 'topic' && _textContent.split(' ').length <= 8) {
@@ -467,6 +457,7 @@ class CreateContentProvider with ChangeNotifier {
       developer.log('Study pack generation SUCCESS in ${duration.inSeconds}s', 
           name: 'CreateContentProvider');
       
+      _progressMessage = ''; // Clear progress message
       _phase = CreationPhase.success;
       _stopTipRotation();
       
@@ -487,13 +478,15 @@ class CreateContentProvider with ChangeNotifier {
   void _handleError(dynamic e, CancellationToken cancelToken) {
     _stopTipRotation();
     if (cancelToken.isCancelled) {
+      developer.log('Generation CANCELLED by user.', name: 'CreateContentProvider');
       _isCancelled = true;
       _phase = CreationPhase.source;
     } else {
-      developer.log('Generation error in provider: $e', name: 'CreateContentProvider');
+      developer.log('NEURAL FAILURE in provider: $e', name: 'CreateContentProvider', error: e);
       final errorStr = e.toString();
       
-      if (errorStr.contains('CAPACITY_STABILIZING')) {
+      if (errorStr.contains('CAPACITY_STABILIZING') || errorStr.contains('CAPACITY_DEPLETED')) {
+        developer.log('Blocking generation: Capacity limits hit.', name: 'CreateContentProvider');
         _errorMessage = "Your neural momentum is currently stabilizing! Sumi suggests a quick 5-minute break while your learning circuits reset.";
         NotificationIntegration.coreOnUsageLimitHit(
           notificationService: _notificationService,
@@ -501,6 +494,9 @@ class CreateContentProvider with ChangeNotifier {
         );
       } else if (errorStr.contains('SYSTEM_OVERLOADED')) {
         _errorMessage = "Learning pathways are currently very busy. Let's try again in a few moments!";
+      } else if (errorStr.contains('MALFORMED_JSON') || errorStr.contains('MALFORMED_RESPONSE')) {
+        developer.log('AI Logic Error: Malformed response block.', name: 'CreateContentProvider');
+        _errorMessage = "Sumi had trouble structuring the data this time. Try refining the source text and starting over.";
       } else {
         _errorMessage = "Sumi hit a small bump in the neural path: ${errorStr.replaceFirst('Exception: ', '')}";
       }

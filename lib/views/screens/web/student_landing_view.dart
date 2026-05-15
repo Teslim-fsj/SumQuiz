@@ -228,10 +228,10 @@ class _StudentLandingViewState extends State<StudentLandingView> {
               height: 40,
               child: Stack(
                 children: [
-                  _buildAvatar('assets/images/sumquiz_logo.jpg', 0),
-                  _buildAvatar('assets/images/sumquiz_logo.jpg', 20),
-                  _buildAvatar('assets/images/sumquiz_logo.jpg', 40),
-                  _buildAvatar('assets/images/sumquiz_logo.jpg', 60),
+                  _buildAvatar('assets/images/sumquiz_logo.png', 0),
+                  _buildAvatar('assets/images/sumquiz_logo.png', 20),
+                  _buildAvatar('assets/images/sumquiz_logo.png', 40),
+                  _buildAvatar('assets/images/sumquiz_logo.png', 60),
                 ],
               ),
             ),
@@ -935,7 +935,7 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                   children: [
                     Row(
                       children: [
-                        Image.asset('assets/images/sumquiz_logo.jpg',
+                        Image.asset('assets/images/sumquiz_logo.png',
                             width: 24,
                             height: 24,
                             color: Colors.white,
@@ -990,7 +990,7 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                         children: [
                           Row(
                             children: [
-                              Image.asset('assets/images/sumquiz_logo.jpg',
+                              Image.asset('assets/images/sumquiz_logo.png',
                                   width: 24,
                                   height: 24,
                                   color: Colors.white,

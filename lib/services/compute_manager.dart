@@ -74,10 +74,15 @@ class ComputeManager {
     if (!userDoc.exists) return;
     final user = UserModel.fromFirestore(userDoc);
     
-    // Free tier uses Lifetime credits - do not refill daily
-    if (user.tier == 'free') return;
+    // Safety: If user is Pro but tier is unknown or 'free', treat as 'standard_pro'
+    String tier = user.tier ?? 'free';
+    if (user.isPro && !UsageConfig.heavyQuota.containsKey(tier)) {
+      tier = 'standard_pro';
+    }
 
-    double newMax = _getMaxCapacityForTier(user.tier ?? 'free');
+    if (tier == 'free') return;
+
+    double newMax = _getMaxCapacityForTier(tier);
     
     await _db.collection('users').doc(uid).update({
       'computeUnits': newMax,

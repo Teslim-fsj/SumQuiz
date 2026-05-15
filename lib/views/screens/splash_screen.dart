@@ -96,7 +96,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
                 padding: const EdgeInsets.all(16.0),
                 child: Image.asset(
-                  'assets/images/sumquiz_logo.jpg',
+                  'assets/images/sumquiz_logo.png',
                   width: 100,
                   height: 100,
                 ),

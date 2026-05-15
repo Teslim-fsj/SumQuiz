@@ -89,8 +89,8 @@ class NoteProvider with ChangeNotifier {
 
   void _initSpeechErrorStream() {
     _speechErrorSub = _speechService.errorStream.listen((error) {
-      developer.log('Speech error: $error', name: 'NoteProvider');
-      _errorMessage = error;
+      developer.log('Speech error emitted: $error', name: 'NoteProvider');
+      _errorMessage = "Microphone Issue: $error";
       notifyListeners();
     });
   }
@@ -102,15 +102,24 @@ class NoteProvider with ChangeNotifier {
     _notesSub = _localDb.watchAllNotes(userId).listen((notes) {
       _allNotes = notes;
       notifyListeners();
+    }, onError: (e) {
+      developer.log('Error watching notes: $e', name: 'NoteProvider');
     });
   }
 
   Future<void> loadNote(String noteId) async {
-    _currentNote = await _localDb.getNote(noteId);
-    if (_currentNote != null) {
-      _watchRecordings(noteId);
+    try {
+      _currentNote = await _localDb.getNote(noteId);
+      if (_currentNote != null) {
+        _watchRecordings(noteId);
+      }
+      notifyListeners();
+    } catch (e) {
+      developer.log('Error loading note $noteId: $e', name: 'NoteProvider');
+      _errorMessage = "Failed to load note data.";
+      _state = NoteProcessingState.error;
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   void _watchRecordings(String noteId) {
@@ -120,6 +129,8 @@ class NoteProvider with ChangeNotifier {
       _currentNoteRecordings.clear();
       _currentNoteRecordings.addAll(recordings);
       notifyListeners();
+    }, onError: (e) {
+      developer.log('Error watching recordings for note $noteId: $e', name: 'NoteProvider');
     });
   }
 
@@ -166,17 +177,25 @@ class NoteProvider with ChangeNotifier {
     _saveDebounce?.cancel();
     _saveDebounce = Timer(const Duration(seconds: 2), () async {
       if (_currentNote != null) {
-        await _localDb.saveNote(_currentNote!);
-        developer.log('Auto-saved note content', name: 'NoteProvider');
+        try {
+          await _localDb.saveNote(_currentNote!);
+          developer.log('Auto-saved note content', name: 'NoteProvider');
+        } catch (e) {
+          developer.log('Auto-save failed: $e', name: 'NoteProvider');
+        }
       }
     });
     notifyListeners();
   }
 
   Future<void> deleteNote(String noteId) async {
-    await _localDb.deleteNote(noteId);
-    if (_currentNote?.id == noteId) {
-      setCurrentNote(null);
+    try {
+      await _localDb.deleteNote(noteId);
+      if (_currentNote?.id == noteId) {
+        setCurrentNote(null);
+      }
+    } catch (e) {
+      developer.log('Error deleting note $noteId: $e', name: 'NoteProvider');
     }
   }
 
@@ -226,13 +245,25 @@ class NoteProvider with ChangeNotifier {
       : (_liveInsights.isNotEmpty ? _liveInsights.last : '');
 
   Future<void> startRecording(String userId) async {
-    if (userId.isNotEmpty && _usageService != null) {
-      final canProceed = await _usageService.canPerformAction(userId, 'lecture');
-      if (!canProceed) {
-        _errorMessage = "Neural capacity depleted. Upgrade for more intake!";
-        _state = NoteProcessingState.error;
-        notifyListeners();
-        return;
+    if (userId.isEmpty) {
+      _errorMessage = "Authentication required for recording.";
+      _state = NoteProcessingState.error;
+      notifyListeners();
+      return;
+    }
+
+    if (_usageService != null) {
+      try {
+        final canProceed = await _usageService.canPerformAction(userId, 'lecture');
+        if (!canProceed) {
+          _errorMessage = "Neural capacity depleted. Upgrade for more intake!";
+          _state = NoteProcessingState.error;
+          notifyListeners();
+          return;
+        }
+      } catch (e) {
+        developer.log('Usage check failed: $e', name: 'NoteProvider');
+        // Fail open or closed? Here we fail open but log it.
       }
     }
 
@@ -241,11 +272,19 @@ class NoteProvider with ChangeNotifier {
     }
 
     try {
+      _state = NoteProcessingState.recording; // Set early to show UI feedback
+      _errorMessage = '';
+      _liveInsights.clear();
+      _livePartialTranscript = '';
+      notifyListeners();
+
       await _recordingService.startRecording(userId);
       await _speechService.init();
       
       _speechSub?.cancel();
       _speechSub = _speechService.transcriptStream.listen((text) {
+        if (text.trim().isEmpty) return;
+        
         _liveInsights.add(text);
         _transcriptChunkController.add(text);
         _livePartialTranscript = ''; // Clear partial when committed
@@ -259,32 +298,40 @@ class NoteProvider with ChangeNotifier {
         }
         
         notifyListeners();
+      }, onError: (e) {
+        developer.log('Speech stream error: $e', name: 'NoteProvider');
       });
 
       _partialSub = _speechService.partialStream.listen((text) {
         _livePartialTranscript = text;
         notifyListeners();
+      }, onError: (e) {
+         developer.log('Partial speech stream error: $e', name: 'NoteProvider');
       });
 
       await _speechService.startListening();
-
-      _state = NoteProcessingState.recording;
-      _errorMessage = '';
-      _liveInsights.clear();
-      notifyListeners();
+      developer.log('Lecture recording session started', name: 'NoteProvider');
     } catch (e) {
-      _errorMessage = e.toString();
-      _state = NoteProcessingState.error;
+      developer.log('Failed to start recording: $e', name: 'NoteProvider');
+      _errorMessage = "Could not access microphone. Please check permissions.";
+      _clearRecordingState();
       notifyListeners();
     }
   }
 
-
+  void _clearRecordingState() {
+    _state = NoteProcessingState.idle;
+    _recordingDuration = Duration.zero;
+    _livePartialTranscript = '';
+    _speechSub?.cancel();
+    _partialSub?.cancel();
+  }
 
   Future<void> stopRecording() async {
     if (_state != NoteProcessingState.recording) return;
 
     try {
+      developer.log('Stopping lecture recording...', name: 'NoteProvider');
       await _speechService.stopListening();
       _speechSub?.cancel();
       _partialSub?.cancel();
@@ -306,16 +353,19 @@ class NoteProvider with ChangeNotifier {
         await TranscriptRecoveryService().clearRecovery(_currentNote!.id);
         
         // Record usage after successful capture
-        if (_currentNote != null && _usageService != null) {
+        if (_usageService != null) {
           await _usageService.recordAction(_currentNote!.userId, 'lecture');
         }
+        developer.log('Recording saved successfully: $path', name: 'NoteProvider');
       }
+      
       _state = NoteProcessingState.idle;
       _recordingDuration = Duration.zero;
       _liveInsights.clear();
       notifyListeners();
     } catch (e) {
-      _errorMessage = e.toString();
+      developer.log('Error stopping recording: $e', name: 'NoteProvider');
+      _errorMessage = "Failed to save the recording correctly.";
       _state = NoteProcessingState.error;
       notifyListeners();
     }
@@ -343,21 +393,22 @@ class NoteProvider with ChangeNotifier {
       _state = NoteProcessingState.idle;
       notifyListeners();
     } catch (e) {
-      _errorMessage = e.toString();
+      developer.log('Transcription failed for recording ${recording.id}: $e', name: 'NoteProvider');
+      _errorMessage = "AI transcription failed. Please try again later.";
       _state = NoteProcessingState.error;
       notifyListeners();
     }
   }
 
-  Future<void> generateStudyMaterials(String userId) async {
-    if (_currentNote == null || _currentNote!.content.isEmpty) return;
+  Future<String?> generateStudyMaterials(String userId) async {
+    if (_currentNote == null || _currentNote!.content.isEmpty) return null;
 
     _state = NoteProcessingState.generating;
     _errorMessage = '';
     notifyListeners();
 
     try {
-      await _aiService.generateAndStoreOutputs(
+      final folderId = await _aiService.generateAndStoreOutputs(
         text: _currentNote!.content,
         title: _currentNote!.title,
         requestedOutputs: ['summary', 'quiz', 'flashcards'],
@@ -369,10 +420,13 @@ class NoteProvider with ChangeNotifier {
       );
       _state = NoteProcessingState.idle;
       notifyListeners();
+      return folderId;
     } catch (e) {
-      _errorMessage = e.toString();
+      developer.log('AI synthesis failed: $e', name: 'NoteProvider');
+      _errorMessage = "Failed to generate study materials. Check your connection.";
       _state = NoteProcessingState.error;
       notifyListeners();
+      return null;
     }
   }
 
@@ -381,13 +435,24 @@ class NoteProvider with ChangeNotifier {
 
   /// Seek to a specific position during recording playback.
   Future<void> seekAudio(Duration time) async {
-    await _recordingService.seek(time);
-    notifyListeners();
+    try {
+      await _recordingService.seek(time);
+      notifyListeners();
+    } catch (e) {
+      developer.log('Seek failed: $e', name: 'NoteProvider');
+    }
   }
 
   /// Play a specific recording file.
   Future<void> playRecording(LocalRecording recording) async {
-    await _recordingService.play(recording.filePath);
+    try {
+      await _recordingService.play(recording.filePath);
+    } catch (e) {
+      developer.log('Playback failed: $e', name: 'NoteProvider');
+      _errorMessage = "Playback error. File might be missing.";
+      _state = NoteProcessingState.error;
+      notifyListeners();
+    }
   }
 
   /// Stop playback.
@@ -397,13 +462,17 @@ class NoteProvider with ChangeNotifier {
 
   /// Delete a recording and its file from disk.
   Future<void> deleteRecording(String recordingId) async {
-    final recording = _currentNoteRecordings.firstWhere(
-      (r) => r.id == recordingId,
-      orElse: () => throw Exception('Recording not found'),
-    );
-    await _recordingService.deleteRecordingFile(recording.filePath);
-    await _localDb.deleteRecording(recordingId);
-    notifyListeners();
+    try {
+      final recording = _currentNoteRecordings.firstWhere(
+        (r) => r.id == recordingId,
+        orElse: () => throw Exception('Recording not found'),
+      );
+      await _recordingService.deleteRecordingFile(recording.filePath);
+      await _localDb.deleteRecording(recordingId);
+      notifyListeners();
+    } catch (e) {
+      developer.log('Deletion failed for recording $recordingId: $e', name: 'NoteProvider');
+    }
   }
 
   void toggleBackLink(String id) {
@@ -423,7 +492,11 @@ class NoteProvider with ChangeNotifier {
   Future<void> flushPendingSave() async {
     _saveDebounce?.cancel();
     if (_currentNote != null) {
-      await _localDb.saveNote(_currentNote!);
+      try {
+        await _localDb.saveNote(_currentNote!);
+      } catch (e) {
+        developer.log('Flush save failed: $e', name: 'NoteProvider');
+      }
     }
   }
 

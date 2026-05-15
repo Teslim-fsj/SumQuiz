@@ -49,7 +49,6 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final provider = Provider.of<CreateContentProvider>(context);
     final user = Provider.of<UserModel?>(context);
 
@@ -75,39 +74,31 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
+      centerTitle: true,
       leading: IconButton(
-        icon: const Icon(Icons.close_rounded),
+        icon: const Icon(Icons.close_rounded, size: 22),
         onPressed: () {
-          if (provider.phase == CreationPhase.processing) {
-            // Show cancel confirmation if needed
-          }
           provider.reset();
           context.pop();
         },
       ),
-      title: ShaderMask(
-        shaderCallback: (b) => LinearGradient(
-          colors: [colorScheme.primary, colorScheme.secondary],
-        ).createShader(b),
-        child: Text(
-          'SumQuiz AI',
-          style: GoogleFonts.outfit(
-            fontSize: 20,
-            fontWeight: FontWeight.w900,
-            color: Colors.white,
-          ),
+      title: Text(
+        'Synthesis Lab',
+        style: GoogleFonts.outfit(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: colorScheme.primary,
         ),
       ),
-      centerTitle: true,
       actions: [
         if (provider.phase != CreationPhase.source)
           TextButton(
             onPressed: provider.reset,
             child: Text(
               'Reset',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.inter(
                 fontSize: 14,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.bold,
                 color: colorScheme.primary,
               ),
             ),
@@ -148,158 +139,141 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
     }
   }
 
-  // --- PHASE 1: SOURCE SELECTION ---
   Widget _buildSourceSelection(
       BuildContext context, CreateContentProvider provider, UserModel? user) {
     final theme = Theme.of(context);
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            theme.colorScheme.primary.withValues(alpha: 0.03),
-            theme.scaffoldBackgroundColor,
-          ],
-        ),
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Create & Study',
-              style: GoogleFonts.outfit(
-                fontSize: 36,
-                fontWeight: FontWeight.w900,
-                color: theme.colorScheme.onSurface,
-                letterSpacing: -1.0,
-                height: 1.0,
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Convert Chaos into Insight',
+            style: GoogleFonts.outfit(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: theme.textTheme.displayLarge?.color,
+              height: 1.1,
+              letterSpacing: -0.5,
+            ),
+          ).animate().fadeIn().slideY(begin: 0.1, end: 0),
+          const SizedBox(height: 12),
+          Text(
+            'Choose a source to begin your deep-dive.',
+            style: GoogleFonts.inter(
+              fontSize: 15,
+              color: theme.hintColor,
+            ),
+          ).animate().fadeIn(delay: 100.ms),
+
+          const SizedBox(height: 40),
+
+          _buildSectionHeader('Smart Tools', Icons.bolt_rounded),
+          const SizedBox(height: 16),
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            childAspectRatio: 0.85,
+            children: [
+              SourceChoiceCard(
+                title: 'New Workspace',
+                description: 'Blank note environment',
+                icon: Icons.edit_note_rounded,
+                onTap: () => context.push('/notes/new'),
+                color: const Color(0xFF8B5CF6),
+                isNew: true,
               ),
-            ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.1, end: 0),
-            const SizedBox(height: 12),
-            Text(
-              'Select a tool to start your learning journey',
-              style: GoogleFonts.outfit(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: theme.colorScheme.onSurfaceVariant,
+              SourceChoiceCard(
+                title: 'Capture Lecture',
+                description: 'Real-time transcription',
+                icon: Icons.record_voice_over_rounded,
+                onTap: () {
+                  context.push('/notes/new?startRecording=true');
+                },
+                color: const Color(0xFFEC4899),
+                isPro: true,
               ),
-            ).animate().fadeIn(delay: 200.ms),
+            ],
+          ).animate().fadeIn(delay: 200.ms),
 
-            const SizedBox(height: 48),
+          const SizedBox(height: 40),
 
-            // --- SECTION: CAPTURE ---
-            _buildSectionHeader('Smart Capture', Icons.bolt_rounded),
-            const SizedBox(height: 16),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 0.9,
-              children: [
-                SourceChoiceCard(
-                  title: 'New Note',
-                  description: 'Blank workspace',
-                  icon: Icons.edit_note_rounded,
-                  onTap: () => context.push('/notes/new'),
-                  color: Colors.deepPurple,
-                  isNew: true,
-                ),
-                SourceChoiceCard(
-                  title: 'Live Lecture',
-                  description: 'Record & Transcribe',
-                  icon: Icons.record_voice_over_rounded,
-                  onTap: () {
-                    // Navigate to a new note and start recording
-                    context.push('/notes/new?startRecording=true');
-                  },
-                  color: Colors.pink,
-                  isPro: true,
-                ),
-              ],
-            ).animate().fadeIn(delay: 400.ms),
+          _buildSectionHeader('AI Extraction Hub', Icons.auto_awesome_rounded),
+          const SizedBox(height: 16),
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            childAspectRatio: 0.85,
+            children: [
+              SourceChoiceCard(
+                title: 'Concept / Text',
+                description: 'Paste your raw research',
+                icon: Icons.text_fields_rounded,
+                onTap: () => _showTextInputDialog(context, provider),
+                color: const Color(0xFF3B82F6),
+              ),
+              SourceChoiceCard(
+                title: 'PDF Library',
+                description: 'Analyze local documents',
+                icon: Icons.picture_as_pdf_rounded,
+                onTap: () => _pickFile(context, provider, user,
+                    ['pdf', 'doc', 'docx', 'txt'], 'pdf'),
+                color: const Color(0xFFEF4444),
+              ),
+              SourceChoiceCard(
+                title: 'Web Intel',
+                description: 'Import from any URL',
+                icon: Icons.link_rounded,
+                onTap: () => _showUrlInputDialog(context, provider),
+                color: const Color(0xFF10B981),
+              ),
+              SourceChoiceCard(
+                title: 'Video Sync',
+                description: 'YouTube video analysis',
+                icon: Icons.play_circle_fill_rounded,
+                onTap: () {
+                  if (!userMayImportFromYouTube(user)) {
+                    showDialog<void>(
+                        context: context,
+                        builder: (_) => const UpgradeDialog(
+                            featureName: 'YouTube import'));
+                    return;
+                  }
+                  _showUrlInputDialog(context, provider, isYoutube: true);
+                },
+                color: const Color(0xFFF59E0B),
+                isPro: true,
+              ),
+              SourceChoiceCard(
+                title: 'Scan Notes',
+                description: 'OCR from your images',
+                icon: Icons.camera_alt_rounded,
+                onTap: () => _pickFile(context, provider, user,
+                    ['jpg', 'jpeg', 'png', 'webp'], 'image'),
+                color: const Color(0xFF6366F1),
+                isPro: true,
+              ),
+              SourceChoiceCard(
+                title: 'Audio Brief',
+                description: 'Transcribe recordings',
+                icon: Icons.audio_file_rounded,
+                onTap: () => _pickFile(context, provider, user,
+                    ['mp3', 'wav', 'm4a', 'aac'], 'audio'),
+                color: const Color(0xFF22C55E),
+                isPro: true,
+              ),
+            ],
+          ).animate().fadeIn(delay: 300.ms),
 
-            const SizedBox(height: 40),
-
-            // --- SECTION: AI EXTRACT ---
-            _buildSectionHeader('AI Extraction', Icons.auto_awesome_rounded),
-            const SizedBox(height: 16),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 0.9,
-              children: [
-                SourceChoiceCard(
-                  title: 'Topic/Text',
-                  description: 'Paste or type anything',
-                  icon: Icons.text_fields_rounded,
-                  onTap: () => _showTextInputDialog(context, provider),
-                  color: Colors.blue,
-                ),
-                SourceChoiceCard(
-                  title: 'PDF/Docs',
-                  description: 'Upload local files',
-                  icon: Icons.picture_as_pdf_rounded,
-                  onTap: () => _pickFile(context, provider, user,
-                      ['pdf', 'doc', 'docx', 'txt'], 'pdf'),
-                  color: Colors.redAccent,
-                ),
-                SourceChoiceCard(
-                  title: 'Web Link',
-                  description: 'Import from URL',
-                  icon: Icons.link_rounded,
-                  onTap: () => _showUrlInputDialog(context, provider),
-                  color: Colors.teal,
-                ),
-                SourceChoiceCard(
-                  title: 'YouTube',
-                  description: 'Video analysis',
-                  icon: Icons.play_circle_fill_rounded,
-                  onTap: () {
-                    if (!userMayImportFromYouTube(user)) {
-                      showDialog<void>(
-                          context: context,
-                          builder: (_) => const UpgradeDialog(
-                              featureName: 'YouTube import'));
-                      return;
-                    }
-                    _showUrlInputDialog(context, provider, isYoutube: true);
-                  },
-                  color: Colors.orange,
-                  isPro: true,
-                ),
-                SourceChoiceCard(
-                  title: 'Images',
-                  description: 'Scan notes & OCR',
-                  icon: Icons.camera_alt_rounded,
-                  onTap: () => _pickFile(context, provider, user,
-                      ['jpg', 'jpeg', 'png', 'webp'], 'image'),
-                  color: Colors.indigo,
-                  isPro: true,
-                ),
-                SourceChoiceCard(
-                  title: 'Audio File',
-                  description: 'Import recording',
-                  icon: Icons.audio_file_rounded,
-                  onTap: () => _pickFile(context, provider, user,
-                      ['mp3', 'wav', 'm4a', 'aac'], 'audio'),
-                  color: Colors.green,
-                  isPro: true,
-                ),
-              ],
-            ).animate().fadeIn(delay: 600.ms),
-
-            const SizedBox(height: 80), // Padding for bottom bar
-          ],
-        ),
+          const SizedBox(height: 80),
+        ],
       ),
     );
   }
@@ -307,15 +281,15 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
   Widget _buildSectionHeader(String title, IconData icon) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: Colors.grey[500]),
+        Icon(icon, size: 14, color: Colors.grey[500]),
         const SizedBox(width: 8),
         Text(
           title.toUpperCase(),
-          style: GoogleFonts.outfit(
-            fontSize: 12,
-            fontWeight: FontWeight.w800,
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
             color: Colors.grey[500],
-            letterSpacing: 1.5,
+            letterSpacing: 1.2,
           ),
         ),
       ],
@@ -357,8 +331,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-          top: 24,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+          top: 32,
           left: 24,
           right: 24,
         ),
@@ -371,30 +345,33 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Enter Topic or Notes',
+              'Input Source Knowledge',
               style: GoogleFonts.outfit(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _textController,
-              maxLines: 8,
-              autofocus: true,
-              decoration: InputDecoration(
-                hintText:
-                    'Type your topic here (e.g. Photosynthesis) or paste your long notes...',
-                hintStyle: GoogleFonts.outfit(color: Colors.grey),
-                filled: true,
-                fillColor: Theme.of(context).cardColor,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
+            const SizedBox(height: 20),
+            Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+              ),
+              child: TextField(
+                controller: _textController,
+                maxLines: 10,
+                autofocus: true,
+                style: GoogleFonts.inter(fontSize: 15),
+                decoration: InputDecoration(
+                  hintText: 'Paste your topic, notes, or raw data here...',
+                  hintStyle: GoogleFonts.inter(color: Colors.grey.withOpacity(0.5)),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.all(20),
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {
                 final text = _textController.text.trim();
@@ -405,13 +382,14 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 0,
               ),
-              child: const Text('Next'),
+              child: Text('Next Step', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
             ),
-            const SizedBox(height: 32),
           ],
         ),
       ),
@@ -427,8 +405,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-          top: 24,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+          top: 32,
           left: 24,
           right: 24,
         ),
@@ -441,33 +419,37 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              isYoutube ? 'Enter YouTube Link' : 'Enter Web Link',
+              isYoutube ? 'Synchronize YouTube Video' : 'Import Web Document',
               style: GoogleFonts.outfit(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _textController,
-              autofocus: true,
-              decoration: InputDecoration(
-                hintText: isYoutube
-                    ? 'https://youtube.com/watch?v=...'
-                    : 'https://example.com/article',
-                hintStyle: GoogleFonts.outfit(color: Colors.grey),
-                filled: true,
-                fillColor: Theme.of(context).cardColor,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
+            const SizedBox(height: 20),
+            Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+              ),
+              child: TextField(
+                controller: _textController,
+                autofocus: true,
+                style: GoogleFonts.inter(fontSize: 15),
+                decoration: InputDecoration(
+                  hintText: isYoutube
+                      ? 'https://youtube.com/watch?v=...'
+                      : 'https://example.com/article',
+                  hintStyle: GoogleFonts.inter(color: Colors.grey.withOpacity(0.5)),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.all(20),
+                  prefixIcon: Icon(isYoutube
+                      ? Icons.play_circle_outline_rounded
+                      : Icons.link_rounded, size: 20),
                 ),
-                prefixIcon: Icon(isYoutube
-                    ? Icons.play_circle_outline_rounded
-                    : Icons.link_rounded),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {
                 final url = _textController.text.trim();
@@ -490,13 +472,14 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 0,
               ),
-              child: const Text('Next'),
+              child: Text('Initialize Sync', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
             ),
-            const SizedBox(height: 32),
           ],
         ),
       ),
@@ -517,14 +500,15 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
       'mp3': 'audio/mpeg',
       'wav': 'audio/wav',
       'm4a': 'audio/mp4',
+      'aac': 'audio/aac',
     };
     return map[ext] ?? 'application/octet-stream';
   }
 
-  // --- PHASE 2: CONFIGURATION ---
   Widget _buildConfiguration(
       BuildContext context, CreateContentProvider provider) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -562,11 +546,10 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: colorScheme.primary,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 18),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20)),
-              elevation: 4,
-              shadowColor: colorScheme.primary.withValues(alpha: 0.3),
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              elevation: 8,
+              shadowColor: colorScheme.primary.withOpacity(0.3),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -574,24 +557,24 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
                 const Icon(Icons.auto_awesome_rounded, size: 20),
                 const SizedBox(width: 12),
                 Text(
-                  'Generate Study Pack',
+                  'Launch AI Synthesis',
                   style: GoogleFonts.outfit(
                     fontSize: 18,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
-          ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
-          const SizedBox(height: 12),
+          ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0),
+          const SizedBox(height: 16),
           TextButton(
             onPressed: provider.backToSource,
             child: Text(
-              'Change Source',
-              style: GoogleFonts.outfit(
+              'Change Data Source',
+              style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: colorScheme.onSurfaceVariant,
+                color: theme.hintColor,
               ),
             ),
           ),
@@ -612,51 +595,54 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
     switch (provider.selectedSourceType) {
       case 'pdf':
         icon = Icons.picture_as_pdf_rounded;
-        label = 'Document picked';
+        label = 'Document Locked';
         detail = provider.fileName ?? 'Unknown file';
         break;
       case 'image':
         icon = Icons.camera_alt_rounded;
-        label = 'Image picked';
+        label = 'Image Captured';
         detail = provider.fileName ?? 'Unknown image';
         break;
       case 'audio':
         icon = Icons.mic_rounded;
-        label = 'Audio picked';
+        label = 'Audio Initialized';
         detail = provider.fileName ?? 'Unknown recording';
         break;
       case 'link':
         icon = Icons.link_rounded;
-        label = 'Link entered';
+        label = 'URL Connected';
         detail = provider.textContent;
         break;
       case 'topic':
         icon = Icons.lightbulb_rounded;
-        label = 'Topic entered';
+        label = 'Core Concept';
         detail = provider.textContent;
         break;
       default:
         icon = Icons.text_snippet_rounded;
-        label = 'Custom text';
-        detail = 'Notes and content provided';
+        label = 'Data Stream';
+        detail = 'Custom notes provided';
     }
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: colorScheme.primary.withValues(alpha: 0.08),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.2)),
+        border: Border.all(color: colorScheme.primary.withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.1),
+              color: colorScheme.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(icon, color: colorScheme.primary),
+            child: Icon(icon, color: colorScheme.primary, size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -664,23 +650,23 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  label,
-                  style: GoogleFonts.outfit(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
+                  label.toUpperCase(),
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
                     color: colorScheme.primary,
-                    letterSpacing: 0.5,
+                    letterSpacing: 1.0,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   detail,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                    color: theme.textTheme.displayLarge?.color,
                   ),
                 ),
               ],
@@ -691,25 +677,20 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
     );
   }
 
-  // --- PHASE: ERROR ---
   Widget _buildErrorView(BuildContext context, CreateContentProvider provider) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    // Friendly error mapping
     String displayMessage = provider.errorMessage;
-    String displayTitle = 'Something went wrong';
+    String displayTitle = 'Synthesis Error';
 
-    if (provider.errorMessage.contains('USAGE_LIMIT_REACHED')) {
-      displayTitle = 'Study Limit Reached';
+    if (provider.errorMessage.contains('USAGE_LIMIT_REACHED') || 
+        provider.errorMessage.contains('CAPACITY_STABILIZING')) {
+      displayTitle = 'Neural Capacity Full';
       displayMessage =
-          "You've reached your daily generation limit. Educators and Pro members get unlimited AI extractions!";
+          "Your neural momentum is currently stabilizing! Sumi suggests a quick break while your learning circuits reset. Upgrade for more capacity!";
     } else if (provider.errorMessage.contains('API key is not configured')) {
       displayMessage =
-          "Our AI system is currently undergoing maintenance. Please try again in a few minutes.";
-    } else if (provider.errorMessage.contains('YouTube Error')) {
-      displayTitle = 'YouTube Analysis Error';
-      displayMessage =
-          "We couldn't process this video. It might be too long, private, or have transcripts disabled.";
+          "Synthesis engine is offline for maintenance. Please wait.";
     }
 
     return Padding(
@@ -717,27 +698,22 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SumiMascot(
-            state: SumiState.confused,
-            size: 150,
-          ),
+          const SumiMascot(state: SumiState.confused, size: 120),
           const SizedBox(height: 32),
           Text(
             displayTitle,
             style: GoogleFonts.outfit(
               fontSize: 24,
-              fontWeight: FontWeight.w900,
-              color: colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 12),
           Text(
             displayMessage,
             textAlign: TextAlign.center,
-            style: GoogleFonts.outfit(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: colorScheme.onSurfaceVariant,
+            style: GoogleFonts.inter(
+              fontSize: 15,
+              color: Theme.of(context).hintColor,
               height: 1.5,
             ),
           ),
@@ -746,32 +722,30 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
             ElevatedButton(
               onPressed: provider.backToConfig,
               style: ElevatedButton.styleFrom(
-                backgroundColor: colorScheme.onSurface,
-                foregroundColor: colorScheme.surface,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
+                backgroundColor: colorScheme.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 0,
               ),
-              child: const Text('Try Again'),
+              child: Text('Retry Synthesis', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
             )
           else
             ElevatedButton(
               onPressed: () => context.push('/settings/subscription'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF3300FF),
+                backgroundColor: const Color(0xFF8B5CF6),
                 foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
+                padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 0,
               ),
-              child: const Text('Upgrade to Pro'),
+              child: Text('Unlock Pro', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
             ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           TextButton(
             onPressed: provider.reset,
-            child: const Text('Change Source'),
+            child: Text('Reset Selection', style: GoogleFonts.inter(color: Theme.of(context).hintColor)),
           ),
         ],
       ),
