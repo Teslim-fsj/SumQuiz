@@ -105,8 +105,8 @@ jobs:
       # 🔟 Generate app launcher icon & splash
       - name: Generate Launcher Icon & Splash
         run: |
-          dart run flutter_launcher_icons:main
-          dart run flutter_native_splash:create
+          flutter pub run flutter_launcher_icons
+          flutter pub run flutter_native_splash:create
 
       # 1️⃣1️⃣ Build release app bundle
       - name: Build app bundle
