@@ -118,7 +118,7 @@ jobs:
         with:
           name: app-release-${{ steps.version.outputs.new_version }}
           path: build/app/outputs/bundle/release/app-release.aab
-          retention-days: 30
+          retention-days: 3
 
       # 1️⃣3️⃣ Tag the new version in Git
       - name: Create Git tag
