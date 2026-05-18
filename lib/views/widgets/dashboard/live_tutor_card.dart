@@ -21,7 +21,7 @@ class LiveTutorCard extends StatelessWidget {
       },
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(28),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
@@ -31,7 +31,7 @@ class LiveTutorCard extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
               color: theme.colorScheme.primary.withOpacity(0.2),
@@ -43,15 +43,15 @@ class LiveTutorCard extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.mic_none_rounded, color: Colors.white, size: 28),
+              child: const Icon(Icons.mic_none_rounded, color: Colors.white, size: 20),
             ).animate(onPlay: (c) => c.repeat(reverse: true))
              .shimmer(duration: 2.seconds, color: Colors.white.withOpacity(0.2)),
-            const SizedBox(width: 24),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -60,24 +60,24 @@ class LiveTutorCard extends StatelessWidget {
                     "Speak with Sumi",
                     style: GoogleFonts.outfit(
                       color: Colors.white,
-                      fontSize: 22,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                       letterSpacing: -0.2,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 2),
                   Text(
                     "Interactive voice tutoring session",
                     style: GoogleFonts.inter(
                       color: Colors.white.withOpacity(0.8),
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right_rounded, color: Colors.white.withOpacity(0.5), size: 28),
+            Icon(Icons.chevron_right_rounded, color: Colors.white.withOpacity(0.5), size: 24),
           ],
         ),
       ),

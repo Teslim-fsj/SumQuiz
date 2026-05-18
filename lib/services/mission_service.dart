@@ -94,7 +94,11 @@ class MissionService {
     // FALLBACK: If we don't have enough cards in the pool, pick random ones
     if (selectedFlashcards.length < targetCount) {
       final allTrackedIds = await _srs.getAllTrackedIds(userId);
-      final nonSelectedIds = allTrackedIds
+      final localSets = await _localDb.getAllFlashcardSets(userId);
+      final allLocalCardIds = localSets.expand((s) => s.flashcards.map((c) => c.id)).toList();
+      
+      final Set<String> allPool = {...allTrackedIds, ...allLocalCardIds};
+      final nonSelectedIds = allPool
           .where((id) => !selectedFlashcards.contains(id))
           .toList();
 

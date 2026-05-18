@@ -158,6 +158,8 @@ class SumiProvider extends ChangeNotifier {
       final canProceed = await _usageService.canPerformAction(uid, 'tutor');
       if (!canProceed) {
         _errorMessage = "Neural capacity depleted. Try again later!";
+        _dialogue = "Neural capacity depleted. Try again later!";
+        _currentState = SumiState.tired;
         notifyListeners();
         return;
       }
@@ -302,6 +304,17 @@ class SumiProvider extends ChangeNotifier {
   }
 
   Future<void> _processVoiceInput(Uint8List audioBytes, {String? context}) async {
+    final uid = _authService.currentUser?.uid;
+    if (uid != null && _usageService != null) {
+      final canProceed = await _usageService.canPerformAction(uid, 'tutor');
+      if (!canProceed) {
+        _currentState = SumiState.tired;
+        _dialogue = "Neural capacity depleted. Please try again later!";
+        notifyListeners();
+        return;
+      }
+    }
+
     // Phase 5: Build context from last 5 messages
     final history = _messages.reversed.take(5).toList().reversed
         .map((m) => "${m.role == MessageRole.user ? 'Student' : 'Sumi'}: ${m.text}")
@@ -346,6 +359,11 @@ class SumiProvider extends ChangeNotifier {
       _isStreaming = false;
       await addMessage(transcription, MessageRole.user);
       await addMessage(response, MessageRole.sumi);
+      
+      // Record usage after successful completion
+      if (uid != null && _usageService != null) {
+        await _usageService.recordAction(uid, 'tutor');
+      }
       
       _dialogue = response;
       _currentState = SumiState.analytical;
@@ -403,7 +421,9 @@ class SumiProvider extends ChangeNotifier {
     if (uid != null && _usageService != null) {
       final canProceed = await _usageService.canPerformAction(uid, 'tutor_session');
       if (!canProceed) {
+        _errorMessage = "Neural capacity too low for live sync. Use chat instead!";
         _dialogue = "Neural capacity too low for live sync. Use chat instead!";
+        _currentState = SumiState.tired;
         notifyListeners();
         return;
       }
@@ -523,6 +543,7 @@ class SumiProvider extends ChangeNotifier {
 
   void clearError() {
     _errorMessage = null;
+    _currentState = SumiState.idle;
     notifyListeners();
   }
 

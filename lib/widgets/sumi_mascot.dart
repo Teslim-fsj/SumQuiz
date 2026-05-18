@@ -93,6 +93,7 @@ class _SumiMascotState extends State<SumiMascot> with TickerProviderStateMixin {
   }
 
   Widget _buildAnimatedMascot() {
+    /*
     bool eyesClosed = _isBlinking || 
         widget.state == SumiState.tired || 
         widget.state == SumiState.incorrect;
@@ -214,6 +215,35 @@ class _SumiMascotState extends State<SumiMascot> with TickerProviderStateMixin {
         ],
       ),
     );
+    */
+
+    // Clean fallback using the brand's primary 3D sumi mascot reaction asset
+    return Container(
+      width: widget.size,
+      height: widget.size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.purple.withValues(alpha: 0.15),
+            blurRadius: 20,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(8),
+      child: ClipOval(
+        child: Image.asset(
+          'assets/images/sumi.png',
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) => 
+              const Icon(Icons.face_retouching_natural, color: Colors.purpleAccent, size: 48),
+        ),
+      ),
+    ).animate(key: ValueKey('fallback_sumi_${widget.state}'), onPlay: (c) => c.repeat(reverse: true))
+     .moveY(begin: 0, end: -8, duration: 2.seconds, curve: Curves.easeInOut)
+     .shimmer(delay: 1.seconds, duration: 1500.ms, color: Colors.purpleAccent.withValues(alpha: 0.1));
   }
 
   Widget _applyStateModifiers(Widget child) {

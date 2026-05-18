@@ -5,12 +5,12 @@ import 'package:sumquiz/models/local_quiz_question.dart';
 import 'package:sumquiz/models/local_flashcard.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
 import 'package:uuid/uuid.dart';
-import 'ai_base_service.dart';
+import 'package:sumquiz/services/ai/ai_base_service.dart';
 import 'package:sumquiz/providers/create_content_provider.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:developer' as developer;
-import 'ai_config.dart';
+import 'package:sumquiz/services/ai/ai_config.dart';
 
 class GeneratorAIService extends AIBaseService {
   Future<LocalSummary> generateSummary(String text,
@@ -647,7 +647,7 @@ Text: $text''';
 
     return generateStream(
       fullPrompt,
-      customModel: educatorModel,
+      customModel: this.model,
       generationConfig: AIConfig.conversationalGenerationConfig,
       cancelToken: cancelToken,
     );
@@ -675,7 +675,7 @@ Text: $text''';
 
     return generateConversational(
       fullPrompt,
-      customModel: educatorModel,
+      customModel: this.model,
       cancelToken: cancelToken,
     );
   }
@@ -709,7 +709,7 @@ Text: $text''';
       systemPrompt,
       audioBytes,
       mimeType,
-      customModel: educatorModel,
+      customModel: this.model,
       cancelToken: cancelToken,
     );
   }

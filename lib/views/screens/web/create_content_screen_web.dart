@@ -106,14 +106,14 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
 
   Future<void> _pickFile(BuildContext context, CreateContentProvider provider,
       UserModel? user, List<String> extensions, String type) async {
-    // Only lock for non-pro students. Teachers (creators) get free access.
+    // Only lock when free user has no computeUnits.
     if (user != null &&
         !user.isPro &&
         user.role != UserRole.creator &&
-        type != 'pdf') {
+        user.computeUnits <= 0) {
       showDialog(
           context: context,
-          builder: (_) => UpgradeDialog(featureName: '$type Uploads'));
+          builder: (_) => const UpgradeDialog(featureName: 'Neural Uploads'));
       return;
     }
     final result = await FilePicker.platform.pickFiles(

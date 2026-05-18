@@ -71,6 +71,8 @@ class LibraryShareHelper {
             };
           }
           break;
+        case LibraryItemType.folder:
+          break;
       }
 
       final shareCode = ShareCodeGenerator.generate();

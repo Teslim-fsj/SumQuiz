@@ -152,7 +152,13 @@ class _ReviewScreenState extends State<ReviewScreen> {
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.psychology_outlined, color: Colors.purpleAccent),
+            tooltip: 'Neural Debug',
+            onPressed: () => context.push('/settings/neural-debug'),
+          ),
+          IconButton(
             icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Settings',
             onPressed: () => context.push('/settings'),
           ),
         ],

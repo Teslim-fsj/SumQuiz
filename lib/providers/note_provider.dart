@@ -57,6 +57,14 @@ class NoteProvider with ChangeNotifier {
   String _errorMessage = '';
   String get errorMessage => _errorMessage;
 
+  void clearError() {
+    _errorMessage = '';
+    if (_state == NoteProcessingState.error) {
+      _state = NoteProcessingState.idle;
+    }
+    notifyListeners();
+  }
+
   Duration _recordingDuration = Duration.zero;
   Duration get recordingDuration => _recordingDuration;
 
@@ -254,9 +262,9 @@ class NoteProvider with ChangeNotifier {
 
     if (_usageService != null) {
       try {
-        final canProceed = await _usageService.canPerformAction(userId, 'lecture');
+        final canProceed = await _usageService!.canPerformAction(userId, 'lecture');
         if (!canProceed) {
-          _errorMessage = "Neural capacity depleted. Upgrade for more intake!";
+          _errorMessage = "Neural capacity depleted. Please try again later!";
           _state = NoteProcessingState.error;
           notifyListeners();
           return;
@@ -354,7 +362,7 @@ class NoteProvider with ChangeNotifier {
         
         // Record usage after successful capture
         if (_usageService != null) {
-          await _usageService.recordAction(_currentNote!.userId, 'lecture');
+          await _usageService!.recordAction(_currentNote!.userId, 'lecture');
         }
         developer.log('Recording saved successfully: $path', name: 'NoteProvider');
       }
@@ -403,6 +411,20 @@ class NoteProvider with ChangeNotifier {
   Future<String?> generateStudyMaterials(String userId) async {
     if (_currentNote == null || _currentNote!.content.isEmpty) return null;
 
+    if (_usageService != null) {
+      try {
+        final canProceed = await _usageService!.canPerformAction(userId, 'generate');
+        if (!canProceed) {
+          _errorMessage = "Neural capacity depleted. Please try again later!";
+          _state = NoteProcessingState.error;
+          notifyListeners();
+          return null;
+        }
+      } catch (e) {
+        developer.log('Usage check failed: $e', name: 'NoteProvider');
+      }
+    }
+
     _state = NoteProcessingState.generating;
     _errorMessage = '';
     notifyListeners();
@@ -418,6 +440,11 @@ class NoteProvider with ChangeNotifier {
           developer.log('Generation progress: $msg', name: 'NoteProvider');
         },
       );
+      // Record usage after successful generation
+      if (_usageService != null) {
+        await _usageService!.recordAction(userId, 'generate');
+      }
+
       _state = NoteProcessingState.idle;
       notifyListeners();
       return folderId;

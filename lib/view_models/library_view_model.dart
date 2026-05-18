@@ -90,18 +90,16 @@ class LibraryViewModel with ChangeNotifier {
     allFlashcards$ = allFlashcardsFromDb$;
     allNotes$ = allNotesFromDb$;
 
-    // Combine for "All" tab
-    allItems$ = Rx.combineLatest4<List<LibraryItem>, List<LibraryItem>,
-            List<LibraryItem>, List<LibraryItem>, List<LibraryItem>>(
-        allSummariesFromDb$,
-        allQuizzesAndExamsFromDb$,
-        allFlashcardsFromDb$,
+    // Combine for "All" tab (folders, notes, exams only)
+    allItems$ = Rx.combineLatest3<List<LibraryItem>, List<LibraryItem>,
+            List<LibraryItem>, List<LibraryItem>>(
+        allFolders$.map((folders) => folders.map(LibraryItem.fromFolder).toList()),
         allNotesFromDb$,
-        (summaries, quizzes, flashcards, notes) => [
-              ...summaries,
-              ...quizzes,
-              ...flashcards,
-              ...notes
+        allExamsFromDb$,
+        (folders, notes, exams) => [
+              ...folders,
+              ...notes,
+              ...exams
             ]).shareReplay(maxSize: 1);
 
     // Study Pack combines summaries, quizzes, flashcards
@@ -248,6 +246,7 @@ class LibraryViewModel with ChangeNotifier {
           await localDb.deleteSummary(item.id);
           break;
         case LibraryItemType.quiz:
+        case LibraryItemType.exam:
           await localDb.deleteQuiz(item.id);
           break;
         case LibraryItemType.flashcards:
@@ -256,8 +255,8 @@ class LibraryViewModel with ChangeNotifier {
         case LibraryItemType.note:
           await localDb.deleteNote(item.id);
           break;
-        case LibraryItemType.exam:
-          // TODO: handle exam deletion if needed
+        case LibraryItemType.folder:
+          await localDb.deleteFolder(item.id);
           break;
       }
       await firestoreService.deleteItem(userId, item);

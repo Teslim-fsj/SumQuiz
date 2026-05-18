@@ -8,6 +8,13 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../models/user_model.dart';
 import '../../models/library_item.dart';
 import '../../models/folder.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' show Timestamp;
+import '../../models/editable_content.dart';
+import '../../models/quiz_question.dart';
+import '../../models/flashcard.dart';
+import 'edit_summary_screen.dart';
+import 'edit_quiz_screen.dart';
+import 'edit_flashcards_screen.dart';
 import '../../services/firestore_service.dart';
 import '../../services/local_database_service.dart';
 import '../../services/sync_service.dart';
@@ -135,8 +142,8 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
                     controller: _mainTabController,
                     children: [
                       _buildContentList(viewModel.allItems$, theme, viewModel),
-                      _buildFolderList(viewModel, theme),
                       _buildContentList(viewModel.allNotes$, theme, viewModel),
+                      _buildFolderList(viewModel, theme),
                       _buildContentList(viewModel.allExams$, theme, viewModel),
                     ],
                   );
@@ -279,8 +286,8 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
         tabs: selectedFolder == null
             ? const [
                 Tab(text: '  All Content  '),
+                Tab(text: '  Notes  '),
                 Tab(text: '  Study Packs  '),
-                Tab(text: '  Observations  '),
                 Tab(text: '  Exams  '),
               ]
             : const [
@@ -322,7 +329,7 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
             final folder = filteredFolders[index];
             return _buildLibraryItemCard(
               title: folder.name,
-              subtitle: '${DateFormat('MMM d, yyyy').format(folder.createdAt)}',
+              subtitle: DateFormat('MMM d, yyyy').format(folder.createdAt),
               icon: Icons.folder_copy_rounded,
               iconColor: Colors.deepPurpleAccent,
               theme: theme,
@@ -539,6 +546,8 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
       case LibraryItemType.flashcards: return Icons.style_rounded;
       case LibraryItemType.exam: return Icons.assignment_rounded;
       case LibraryItemType.note: return Icons.edit_note_rounded;
+      case LibraryItemType.folder: return Icons.folder_copy_rounded;
+      default: return Icons.folder_copy_rounded;
     }
   }
 
@@ -549,6 +558,8 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
       case LibraryItemType.flashcards: return const Color(0xFFEC4899);
       case LibraryItemType.exam: return const Color(0xFF6366F1);
       case LibraryItemType.note: return const Color(0xFF8B5CF6);
+      case LibraryItemType.folder: return Colors.deepPurpleAccent;
+      default: return Colors.deepPurpleAccent;
     }
   }
 
@@ -599,14 +610,139 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
 
   // Navigation methods
   void _navigateToContent(BuildContext context, LibraryItem item, LibraryViewModel viewModel) {
-     if (item.type == LibraryItemType.note) {
+    if (item.type == LibraryItemType.note) {
       context.push('/notes/${item.id}');
-    } else {
-      // Handle other types
+    } else if (item.type == LibraryItemType.folder) {
+      viewModel.selectFolder(Folder(
+        id: item.id,
+        name: item.title,
+        userId: item.userId ?? '',
+        createdAt: item.timestamp.toDate(),
+        updatedAt: item.timestamp.toDate(),
+      ));
+    } else if (item.type == LibraryItemType.summary) {
+      context.pushNamed('library-summary', pathParameters: {'id': item.id});
+    } else if (item.type == LibraryItemType.quiz) {
+      context.pushNamed('library-quiz', pathParameters: {'id': item.id});
+    } else if (item.type == LibraryItemType.flashcards) {
+      context.pushNamed('library-flashcards', pathParameters: {'id': item.id});
+    } else if (item.type == LibraryItemType.exam) {
+      context.pushNamed('library-quiz', pathParameters: {'id': item.id});
     }
   }
 
-  void _navigateToEdit(BuildContext context, LibraryItem item) {
-    // Handle editing
+  void _navigateToEdit(BuildContext context, LibraryItem item) async {
+    final db = LocalDatabaseService();
+    if (item.type == LibraryItemType.summary) {
+      final localSummary = await db.getSummary(item.id);
+      if (localSummary != null && context.mounted) {
+        final editable = EditableContent.fromSummary(
+          localSummary.id,
+          localSummary.title,
+          localSummary.content,
+          localSummary.tags,
+          Timestamp.fromDate(localSummary.timestamp),
+        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => EditSummaryScreen(content: editable)),
+        );
+      }
+    } else if (item.type == LibraryItemType.quiz || item.type == LibraryItemType.exam) {
+      final localQuiz = await db.getQuiz(item.id);
+      if (localQuiz != null && context.mounted) {
+        final questions = localQuiz.questions.map((q) => QuizQuestion(
+          question: q.question,
+          options: q.options,
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation,
+          questionType: q.questionType,
+        )).toList();
+        final editable = EditableContent.fromQuiz(
+          localQuiz.id,
+          localQuiz.title,
+          questions,
+          Timestamp.fromDate(localQuiz.timestamp),
+        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => EditQuizScreen(content: editable)),
+        );
+      }
+    } else if (item.type == LibraryItemType.flashcards) {
+      final localSet = await db.getFlashcardSet(item.id);
+      if (localSet != null && context.mounted) {
+        final flashcards = localSet.flashcards.map((f) => Flashcard(
+          id: f.id,
+          question: f.question,
+          answer: f.answer,
+        )).toList();
+        final editable = EditableContent.fromFlashcardSet(
+          localSet.id,
+          localSet.title,
+          flashcards,
+          Timestamp.fromDate(localSet.timestamp),
+        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => EditFlashcardsScreen(content: editable)),
+        );
+      }
+    } else if (item.type == LibraryItemType.note) {
+      context.push('/notes/${item.id}');
+    } else if (item.type == LibraryItemType.folder) {
+      _showRenameFolderDialog(context, item);
+    }
+  }
+
+  void _showRenameFolderDialog(BuildContext context, LibraryItem item) {
+    final controller = TextEditingController(text: item.title);
+    final theme = Theme.of(context);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Rename Study Pack', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: InputDecoration(
+              hintText: 'Enter name...',
+              labelText: 'Name',
+              labelStyle: TextStyle(color: theme.colorScheme.primary),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final newName = controller.text.trim();
+                if (newName.isNotEmpty) {
+                  final db = LocalDatabaseService();
+                  final folder = Folder(
+                    id: item.id,
+                    name: newName,
+                    userId: item.userId ?? '',
+                    createdAt: item.timestamp.toDate(),
+                    updatedAt: DateTime.now(),
+                  );
+                  await db.saveFolder(folder);
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Study pack renamed successfully!')),
+                    );
+                  }
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

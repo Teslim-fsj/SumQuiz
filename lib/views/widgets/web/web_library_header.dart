@@ -53,7 +53,7 @@ class WebLibraryHeader extends StatelessWidget {
           ElevatedButton(
             onPressed: onImport,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6366F1),
+              backgroundColor: const Color(0xFF0D9488),
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),

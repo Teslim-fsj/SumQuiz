@@ -1,20 +1,20 @@
 import 'package:sumquiz/models/user_model.dart';
 
-/// Pro users and Educators (creators) may run YouTube import flows.
+/// Check if user has active CUs or is Pro to run import/upload flows.
 bool userMayImportFromYouTube(UserModel? user) =>
-    user?.isPro == true || user?.role == UserRole.creator;
+    user == null || user.isPro || user.computeUnits > 0 || user.role == UserRole.creator;
 
 const String kYoutubeProRequiredMessage =
-    'YouTube import is a Pro feature. Upgrade to unlock video-to-study import.';
+    'Neural capacity depleted. Upgrade to unlock more neural bandwidth!';
 
 bool userMayImportFromPdf(UserModel? user) =>
-    user?.isPro == true || user?.role == UserRole.creator;
+    user == null || user.isPro || user.computeUnits > 0 || user.role == UserRole.creator;
 
 const String kPdfProRequiredMessage =
-    'PDF import is a Pro feature. Upgrade to unlock document-to-study import.';
+    'Neural capacity depleted. Upgrade to unlock more neural bandwidth!';
 
 bool userMayImportFromWeb(UserModel? user) =>
-    user?.isPro == true || user?.role == UserRole.creator;
+    user == null || user.isPro || user.computeUnits > 0 || user.role == UserRole.creator;
 
 const String kWebProRequiredMessage =
-    'Web import is a Pro feature. Upgrade to unlock webpage-to-study import.';
+    'Neural capacity depleted. Upgrade to unlock more neural bandwidth!';

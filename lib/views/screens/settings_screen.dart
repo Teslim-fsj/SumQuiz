@@ -169,16 +169,6 @@ class SettingsScreen extends StatelessWidget {
                         delay: 350.ms,
                         theme: theme,
                       ),
-                      const SizedBox(height: 12),
-                      _buildSettingsCard(
-                        context,
-                        icon: Icons.psychology_outlined,
-                        title: 'Neural Debug',
-                        subtitle: 'Audit mastery math & state',
-                        onTap: () => context.push('/settings/neural-debug'),
-                        delay: 380.ms,
-                        theme: theme,
-                      ),
                       const SizedBox(height: 32),
                       _buildSectionTitle('Creator Studio', theme)
                           .animate()

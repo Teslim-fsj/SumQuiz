@@ -9,6 +9,10 @@ import '../../services/compute_manager.dart';
 import 'dart:ui';
 import 'sumi_chat_view.dart';
 import '../../models/sumi_message.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../services/content_extraction_service.dart';
+
 
 class SumiLiveSandboxOverlay extends StatefulWidget {
   const SumiLiveSandboxOverlay({super.key});
@@ -21,6 +25,7 @@ class _SumiLiveSandboxOverlayState extends State<SumiLiveSandboxOverlay> {
   final bool _isListening = false;
   bool _isProcessing = false;
   String? _currentFileName;
+  String? _extractedContext;
 
   @override
   Widget build(BuildContext context) {
@@ -75,14 +80,39 @@ class _SumiLiveSandboxOverlayState extends State<SumiLiveSandboxOverlay> {
         ).animate().fadeIn().scale(),
         const SizedBox(height: 40),
         GestureDetector(
-          onTap: () {
-            setState(() {
-              _currentFileName = "Biology_Chapter_1.pdf";
-              _isProcessing = true;
-            });
-            Future.delayed(const Duration(seconds: 2), () {
-              setState(() => _isProcessing = false);
-            });
+          onTap: () async {
+            final result = await FilePicker.platform.pickFiles(
+              type: FileType.custom,
+              allowedExtensions: ['pdf', 'txt', 'png', 'jpg'],
+            );
+            if (result != null && result.files.single.bytes != null) {
+              setState(() {
+                _isProcessing = true;
+                _currentFileName = result.files.single.name;
+              });
+              
+              try {
+                final extractionService = context.read<ContentExtractionService>();
+                final userId = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
+                
+                final extResult = await extractionService.extractContent(
+                  type: result.files.single.name.endsWith('.pdf') ? 'pdf' : 'text',
+                  input: result.files.single.bytes,
+                  userId: userId,
+                  mimeType: result.files.single.name.endsWith('.pdf') ? 'application/pdf' : 'text/plain',
+                );
+                
+                setState(() {
+                  _extractedContext = extResult.text;
+                  _isProcessing = false;
+                });
+              } catch (e) {
+                setState(() => _isProcessing = false);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to extract: $e')));
+                }
+              }
+            }
           },
           child: Container(
             padding: const EdgeInsets.all(32),
@@ -164,7 +194,9 @@ class _SumiLiveSandboxOverlayState extends State<SumiLiveSandboxOverlay> {
 
         // ChatGPT-Style Chat View
         Expanded(
-          child: SumiChatView(groundingContext: _currentFileName),
+          child: _isProcessing
+            ? const Center(child: CircularProgressIndicator())
+            : SumiChatView(groundingContext: _extractedContext ?? _currentFileName),
         ),
       ],
     );

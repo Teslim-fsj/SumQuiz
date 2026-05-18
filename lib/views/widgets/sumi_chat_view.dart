@@ -6,8 +6,11 @@ import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../providers/sumi_provider.dart';
 import '../../models/sumi_message.dart';
+import '../../services/content_extraction_service.dart';
+
 
 class SumiChatView extends StatefulWidget {
   final String? groundingContext;
@@ -20,6 +23,8 @@ class SumiChatView extends StatefulWidget {
 class _SumiChatViewState extends State<SumiChatView> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  String _additionalContext = '';
+  bool _isExtractingContext = false;
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -265,12 +270,14 @@ class _SumiChatViewState extends State<SumiChatView> {
                 decoration: InputDecoration(
                   hintText: "Ask Sumi anything...",
                   hintStyle: GoogleFonts.inter(color: theme.hintColor.withValues(alpha: 0.5), fontSize: 14),
-                  prefixIcon: IconButton(
-                    icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
-                    color: theme.colorScheme.primary.withValues(alpha: 0.7),
-                    onPressed: _pickFiles,
-                    tooltip: 'Add context',
-                  ),
+                  prefixIcon: _isExtractingContext 
+                    ? const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2))
+                    : IconButton(
+                        icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
+                        color: theme.colorScheme.primary.withValues(alpha: 0.7),
+                        onPressed: _pickFiles,
+                        tooltip: 'Add context',
+                      ),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.mic_none_rounded, size: 20),
                     color: theme.colorScheme.primary.withValues(alpha: 0.7),
@@ -304,22 +311,46 @@ class _SumiChatViewState extends State<SumiChatView> {
 
   Future<void> _pickFiles() async {
     final result = await FilePicker.platform.pickFiles(
-      allowMultiple: true,
+      allowMultiple: false,
       type: FileType.custom,
-      allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'png', 'jpg', 'jpeg', 'mp3', 'wav'],
+      allowedExtensions: ['pdf', 'txt', 'png', 'jpg'],
+      withData: true,
     );
     
-    if (result != null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            content: Text(
-              '${result.files.length} sources added to context',
-              style: GoogleFonts.inter(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-            ),
-          ),
+    if (result != null && result.files.single.bytes != null) {
+      setState(() => _isExtractingContext = true);
+      try {
+        final extractionService = context.read<ContentExtractionService>();
+        final userId = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
+        
+        final extResult = await extractionService.extractContent(
+          type: result.files.single.name.endsWith('.pdf') ? 'pdf' : 'text',
+          input: result.files.single.bytes,
+          userId: userId,
+          mimeType: result.files.single.name.endsWith('.pdf') ? 'application/pdf' : 'text/plain',
         );
+        
+        setState(() {
+          _additionalContext += '\n\n[Content from ${result.files.single.name}]:\n${extResult.text}';
+          _isExtractingContext = false;
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              content: Text(
+                'Added ${result.files.single.name} to context',
+                style: GoogleFonts.inter(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        setState(() => _isExtractingContext = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e')));
+        }
       }
     }
   }
@@ -333,8 +364,15 @@ class _SumiChatViewState extends State<SumiChatView> {
     if (text.isEmpty || sumi.isStreaming) return;
 
     HapticFeedback.lightImpact();
-    sumi.askSumi(text, context: widget.groundingContext);
+    
+    final fullContext = [
+      if (widget.groundingContext != null) widget.groundingContext!,
+      if (_additionalContext.isNotEmpty) _additionalContext,
+    ].join('\n\n');
+    
+    sumi.askSumi(text, context: fullContext.isNotEmpty ? fullContext : null);
     _controller.clear();
+    _additionalContext = ''; // Clear additional context after sending
     _scrollToBottom();
   }
 }

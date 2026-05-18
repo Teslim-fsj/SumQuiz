@@ -43,6 +43,7 @@ abstract class AIBaseService {
   GenerativeModel? _visionModel;
   GenerativeModel? _youtubeModel;
   GenerativeModel? _educatorModel;
+  GenerativeModel? _conversationalModel;
   GenerativeModel? _extractorModel;
 
   bool _initialized = false;
@@ -119,6 +120,13 @@ abstract class AIBaseService {
         model: AIConfig.primaryModel,
         apiKey: apiKey,
         generationConfig: defaultConfig,
+        systemInstruction: eduInstruction,
+      );
+
+      _conversationalModel = GenerativeModel(
+        model: AIConfig.primaryModel,
+        apiKey: apiKey,
+        generationConfig: AIConfig.conversationalGenerationConfig,
         systemInstruction: eduInstruction,
       );
 
@@ -224,6 +232,7 @@ abstract class AIBaseService {
   GenerativeModel get visionModel => _visionModel!;
   GenerativeModel get youtubeModel => _youtubeModel!;
   GenerativeModel get educatorModel => _educatorModel!;
+  GenerativeModel get conversationalModel => _conversationalModel!;
   GenerativeModel get extractorModel => _extractorModel!;
   String? get initializationError => _initializationError;
 

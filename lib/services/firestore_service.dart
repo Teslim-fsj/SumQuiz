@@ -16,6 +16,7 @@ import 'package:sumquiz/models/local_flashcard.dart';
 import 'package:sumquiz/models/local_flashcard_set.dart';
 import 'package:sumquiz/models/local_note.dart';
 import 'package:sumquiz/models/public_deck.dart';
+import 'package:sumquiz/models/folder.dart';
 import 'package:sumquiz/services/local_database_service.dart';
 
 class FirestoreService {
@@ -412,6 +413,14 @@ class FirestoreService {
             .doc(item.id)
             .get();
         return Quiz.fromFirestore(doc);
+      case LibraryItemType.folder:
+        doc = await _db
+            .collection('users')
+            .doc(userId)
+            .collection('folders')
+            .doc(item.id)
+            .get();
+        return Folder.fromFirestore(doc.data() as Map<String, dynamic>? ?? {}, doc.id);
     }
   }
 
@@ -431,6 +440,15 @@ class FirestoreService {
         break;
       case LibraryItemType.note:
         await deleteNote(userId, item.id);
+        break;
+      case LibraryItemType.folder:
+        await _db
+            .collection('users')
+            .doc(userId)
+            .collection('folders')
+            .doc(item.id)
+            .delete();
+        await _localDb.deleteFolder(item.id);
         break;
     }
   }

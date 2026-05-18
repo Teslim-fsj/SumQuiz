@@ -75,10 +75,11 @@ class _SumiLiveScreenState extends State<SumiLiveScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final sumi = context.watch<SumiProvider>();
     
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: colorScheme.surface,
       body: Stack(
         children: [
           // Ambient Background Aura
@@ -107,17 +108,10 @@ class _SumiLiveScreenState extends State<SumiLiveScreen> {
 
           // Top Floating Navigation Bar
           Positioned(
-            top: 20,
-            left: 20,
-            right: 20,
-            child: _buildTopBar(theme, sumi),
-          ),
-
-          // Exit Button
-          Positioned(
-            top: 24,
+            top: MediaQuery.paddingOf(context).top + 16,
+            left: 24,
             right: 24,
-            child: _buildExitButton(theme),
+            child: _buildTopBar(theme, sumi),
           ),
         ],
       ),
@@ -125,12 +119,13 @@ class _SumiLiveScreenState extends State<SumiLiveScreen> {
   }
 
   Widget _buildAmbientBackground(ThemeData theme, SumiProvider sumi) {
+    final colorScheme = theme.colorScheme;
     Color moodColor;
     switch (sumi.currentState) {
       case SumiState.tired: moodColor = Colors.orange; break;
-      case SumiState.thinking: moodColor = Colors.deepPurple; break;
-      case SumiState.analytical: moodColor = Colors.amber; break;
-      default: moodColor = theme.colorScheme.primary;
+      case SumiState.thinking: moodColor = colorScheme.tertiary; break;
+      case SumiState.analytical: moodColor = colorScheme.secondary; break;
+      default: moodColor = colorScheme.primary;
     }
 
     return AnimatedContainer(
@@ -140,8 +135,8 @@ class _SumiLiveScreenState extends State<SumiLiveScreen> {
           center: Alignment.center,
           radius: 1.2,
           colors: [
-            moodColor.withOpacity(0.04),
-            theme.scaffoldBackgroundColor,
+            moodColor.withValues(alpha: 0.08),
+            colorScheme.surface,
           ],
         ),
       ),
@@ -149,28 +144,40 @@ class _SumiLiveScreenState extends State<SumiLiveScreen> {
   }
 
   Widget _buildTopBar(ThemeData theme, SumiProvider sumi) {
+    final colorScheme = theme.colorScheme;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(100),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
         child: Container(
-          height: 52,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          height: 64,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           decoration: BoxDecoration(
-            color: theme.cardColor.withOpacity(0.7),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
+            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(100),
+            border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
+              IconButton(
+                onPressed: () => context.pop(),
+                icon: Icon(Icons.close_rounded, color: colorScheme.onSurfaceVariant),
+                style: IconButton.styleFrom(
+                  backgroundColor: colorScheme.surface,
+                  shape: const CircleBorder(),
+                ),
+              ),
+              const SizedBox(width: 16),
               _buildSessionTimer(theme),
-              const SizedBox(width: 20),
-              const VerticalDivider(width: 1, indent: 16, endIndent: 16),
-              const SizedBox(width: 20),
-              _buildGroundedIndicator(theme),
+              if (widget.groundingSource != null) ...[
+                const SizedBox(width: 16),
+                Container(width: 1, height: 24, color: colorScheme.outline.withValues(alpha: 0.2)),
+                const SizedBox(width: 16),
+                _buildGroundedIndicator(theme),
+              ],
               const Spacer(),
               _buildStatusBadge(theme),
+              const SizedBox(width: 8),
             ],
           ),
         ),
@@ -179,6 +186,7 @@ class _SumiLiveScreenState extends State<SumiLiveScreen> {
   }
 
   Widget _buildSessionTimer(ThemeData theme) {
+    final colorScheme = theme.colorScheme;
     final duration = DateTime.now().difference(_sessionStart ?? DateTime.now());
     final minutes = duration.inMinutes.toString().padLeft(2, '0');
     final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
@@ -188,58 +196,48 @@ class _SumiLiveScreenState extends State<SumiLiveScreen> {
         Container(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(color: theme.colorScheme.primary, shape: BoxShape.circle),
-        ).animate(onPlay: (c) => c.repeat()).fadeIn().fadeOut(),
+          decoration: BoxDecoration(color: colorScheme.primary, shape: BoxShape.circle),
+        ).animate(onPlay: (c) => c.repeat()).fadeIn(duration: 800.ms).fadeOut(duration: 800.ms),
         const SizedBox(width: 10),
         Text(
           "$minutes:$seconds",
-          style: GoogleFonts.jetBrainsMono(fontSize: 13, fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color),
+          style: GoogleFonts.jetBrainsMono(fontSize: 14, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
         ),
       ],
     );
   }
 
   Widget _buildGroundedIndicator(ThemeData theme) {
+    final colorScheme = theme.colorScheme;
     return Row(
       children: [
-        Icon(Icons.auto_awesome_outlined, size: 16, color: theme.hintColor),
-        const SizedBox(width: 10),
+        Icon(Icons.auto_awesome_rounded, size: 16, color: colorScheme.tertiary),
+        const SizedBox(width: 8),
         Text(
-          "${widget.groundingSource ?? 'Global'}",
-          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: theme.hintColor),
+          "${widget.groundingSource}",
+          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: colorScheme.onSurfaceVariant),
         ),
       ],
     );
   }
 
   Widget _buildStatusBadge(ThemeData theme) {
+    final colorScheme = theme.colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF22C55E).withOpacity(0.08),
-        borderRadius: BorderRadius.circular(10),
+        color: colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(100),
       ),
       child: Row(
         children: [
-          const Icon(Icons.bolt_rounded, size: 12, color: Color(0xFF22C55E)),
-          const SizedBox(width: 6),
+          Icon(Icons.spatial_audio_off_rounded, size: 14, color: colorScheme.primary),
+          const SizedBox(width: 8),
           Text(
-            "LIVE LINK",
-            style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFF22C55E)),
+            "VOICE SYNC",
+            style: GoogleFonts.jetBrainsMono(fontSize: 11, fontWeight: FontWeight.bold, color: colorScheme.primary),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildExitButton(ThemeData theme) {
-    return IconButton(
-      onPressed: () => context.pop(),
-      icon: Icon(Icons.close_rounded, color: theme.hintColor),
-      style: IconButton.styleFrom(
-        backgroundColor: theme.cardColor,
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -247,7 +245,7 @@ class _SumiLiveScreenState extends State<SumiLiveScreen> {
   Widget _buildVoiceCentricLayout(ThemeData theme, SumiProvider sumi) {
     return Column(
       children: [
-        const Spacer(flex: 2),
+        const Spacer(flex: 3),
         
         // Centerpiece — The Aura Orb
         Stack(
@@ -256,42 +254,22 @@ class _SumiLiveScreenState extends State<SumiLiveScreen> {
             AuraOrb(
               state: _getOrbState(sumi),
               amplitude: _voiceAmplitude,
-              size: 200,
-            ).animate().scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack),
-            if (widget.groundingSource != null)
-              Positioned(
-                bottom: 0,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    widget.groundingSource!.toUpperCase(),
-                    style: GoogleFonts.inter(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: theme.colorScheme.primary,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ).animate().fadeIn(delay: 600.ms),
-              ),
+              size: 240,
+            ).animate().scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack, duration: 800.ms),
           ],
         ),
         
-        const Spacer(),
-
-        // Predictive Prompts
-        _buildPredictivePrompts(theme, sumi),
-        
-        const SizedBox(height: 32),
+        const Spacer(flex: 2),
 
         // Subtitles / Dialogue
         _buildVoiceSubtitles(theme, sumi),
         
-        const Spacer(flex: 2),
+        const SizedBox(height: 48),
+
+        // Predictive Prompts
+        _buildPredictivePrompts(theme, sumi),
+        
+        const Spacer(flex: 1),
 
         // Bottom Actions
         _buildBottomActions(theme, sumi),
@@ -302,31 +280,33 @@ class _SumiLiveScreenState extends State<SumiLiveScreen> {
   }
 
   Widget _buildBottomActions(ThemeData theme, SumiProvider sumi) {
+    final colorScheme = theme.colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
         children: [
           Expanded(
             child: Container(
-              height: 56,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              height: 64,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               decoration: BoxDecoration(
-                color: theme.cardColor,
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(100),
+                border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, 8)),
                 ],
               ),
               child: Row(
                 children: [
+                  const SizedBox(width: 16),
                   Expanded(
                     child: TextField(
                       controller: _liveTextController,
-                      style: GoogleFonts.inter(fontSize: 14),
+                      style: GoogleFonts.inter(fontSize: 15, color: colorScheme.onSurface),
                       decoration: InputDecoration(
-                        hintText: "Type a message...",
-                        hintStyle: GoogleFonts.inter(fontSize: 14, color: theme.hintColor.withOpacity(0.5)),
+                        hintText: "Type a message instead...",
+                        hintStyle: GoogleFonts.inter(fontSize: 15, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
                         border: InputBorder.none,
                       ),
                       onSubmitted: (text) {
@@ -347,7 +327,11 @@ class _SumiLiveScreenState extends State<SumiLiveScreen> {
                         _liveTextController.clear();
                       }
                     },
-                    icon: Icon(Icons.arrow_upward_rounded, color: theme.colorScheme.primary),
+                    icon: Icon(Icons.arrow_upward_rounded, color: colorScheme.onPrimary),
+                    style: IconButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      shape: const CircleBorder(),
+                    ),
                   ),
                 ],
               ),
@@ -355,159 +339,173 @@ class _SumiLiveScreenState extends State<SumiLiveScreen> {
           ),
           const SizedBox(width: 16),
           _buildFloatingAction(
-            _isGroundedMode ? Icons.close_fullscreen_rounded : Icons.open_in_full_rounded,
+            _isGroundedMode ? Icons.close_fullscreen_rounded : Icons.splitscreen_rounded,
             () => setState(() => _isGroundedMode = !_isGroundedMode),
             theme
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 400.ms);
+    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, end: 0);
   }
 
   Widget _buildFloatingAction(IconData icon, VoidCallback onTap, ThemeData theme) {
+    final colorScheme = theme.colorScheme;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(28),
+      borderRadius: BorderRadius.circular(100),
       child: Container(
-        width: 56,
-        height: 56,
+        width: 64,
+        height: 64,
         decoration: BoxDecoration(
-          color: theme.cardColor,
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
           shape: BoxShape.circle,
-          border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
-          ],
+          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
         ),
-        child: Icon(icon, color: theme.hintColor, size: 22),
+        child: Icon(icon, color: colorScheme.onSurfaceVariant, size: 24),
       ),
     );
   }
 
   Widget _buildPredictivePrompts(ThemeData theme, SumiProvider sumi) {
-    final prompts = ["Summarize this", "Test my knowledge", "Give an analogy", "Next steps?"];
+    final prompts = ["Explain that again", "Test my knowledge", "Give me an analogy", "Can we summarize?"];
+    final colorScheme = theme.colorScheme;
     
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
-        children: prompts.map((p) => _buildPromptChip(theme, p, sumi)).toList(),
+        children: prompts.map((p) => Container(
+          margin: const EdgeInsets.only(right: 12),
+          child: ActionChip(
+            label: Text(p),
+            onPressed: () => sumi.askSumi(p, context: widget.groundingSource),
+            backgroundColor: colorScheme.surface,
+            labelStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: colorScheme.onSurface),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(100), 
+              side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2))
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            elevation: 0,
+            pressElevation: 0,
+          ),
+        )).toList(),
       ),
     ).animate().fadeIn(delay: 200.ms);
   }
 
-  Widget _buildPromptChip(ThemeData theme, String text, SumiProvider sumi) {
-    return Container(
-      margin: const EdgeInsets.only(right: 12),
-      child: ActionChip(
-        label: Text(text),
-        onPressed: () => sumi.askSumi(text, context: widget.groundingSource),
-        backgroundColor: theme.cardColor,
-        labelStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: theme.textTheme.bodyMedium?.color),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20), 
-          side: BorderSide(color: theme.dividerColor.withOpacity(0.1))
-        ),
-        elevation: 0,
-        pressElevation: 0,
-      ),
-    );
-  }
-
   Widget _buildVoiceSubtitles(ThemeData theme, SumiProvider sumi) {
-    final text = sumi.isStreaming ? (sumi.streamingMessage ?? "Synthesizing...") : (sumi.dialogue ?? "Listening...");
+    final colorScheme = theme.colorScheme;
+    final text = sumi.isStreaming ? (sumi.streamingMessage ?? "Synthesizing...") : (sumi.dialogue ?? "I'm listening...");
     
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 48),
+      padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Text(
         text,
         textAlign: TextAlign.center,
-        style: GoogleFonts.inter(
-          fontSize: 18,
+        style: GoogleFonts.outfit(
+          fontSize: 28,
           fontWeight: FontWeight.w500,
-          color: theme.textTheme.bodyLarge?.color?.withOpacity(0.8),
-          height: 1.5,
-          letterSpacing: -0.2,
+          color: colorScheme.onSurface.withValues(alpha: 0.9),
+          height: 1.3,
         ),
       ).animate(key: ValueKey(text)).fadeIn(duration: 400.ms).slideY(begin: 0.05, end: 0),
     );
   }
 
   Widget _buildSplitScreenLayout(ThemeData theme, SumiProvider sumi) {
-    return Row(
-      children: [
-        // Content Area (60%)
-        Expanded(
-          flex: 60,
-          child: Container(
-            margin: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.cardColor.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
-            ),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.auto_awesome_rounded, size: 48, color: theme.colorScheme.primary.withOpacity(0.1)),
-                  const SizedBox(height: 16),
-                  Text(
-                    'CONTEXTUAL VIEW',
-                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: theme.hintColor.withOpacity(0.5)),
-                  ),
+    final colorScheme = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 100), // Account for top bar
+      child: Row(
+        children: [
+          // Content Area (50%)
+          Expanded(
+            flex: 50,
+            child: Container(
+              margin: const EdgeInsets.only(left: 24, bottom: 24),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(32),
+                border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 20, offset: const Offset(0, 4)),
                 ],
               ),
-            ),
-          ),
-        ),
-
-        // AI Panel (40%)
-        Expanded(
-          flex: 40,
-          child: Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(24),
-                  itemCount: sumi.messages.length,
-                  itemBuilder: (context, index) {
-                    final msg = sumi.messages[index];
-                    return _buildCompactMessage(theme, msg);
-                  },
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.auto_awesome_rounded, size: 64, color: colorScheme.tertiary.withValues(alpha: 0.3)),
+                    const SizedBox(height: 24),
+                    Text(
+                      'ACTIVE CONTEXT',
+                      style: GoogleFonts.jetBrainsMono(fontSize: 13, fontWeight: FontWeight.bold, color: colorScheme.onSurfaceVariant, letterSpacing: 2),
+                    ),
+                  ],
                 ),
               ),
-              if (sumi.isStreaming)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: _buildCompactStreaming(theme, sumi.streamingMessage ?? "..."),
-                ),
-              
-              const SizedBox(height: 16),
-              AuraOrb(state: _getOrbState(sumi), amplitude: _voiceAmplitude, size: 100),
-              const SizedBox(height: 32),
-            ],
+            ),
           ),
-        ),
-      ],
+
+          // AI Panel (50%)
+          Expanded(
+            flex: 50,
+            child: Column(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                    itemCount: sumi.messages.length,
+                    itemBuilder: (context, index) {
+                      final msg = sumi.messages[index];
+                      return _buildCompactMessage(theme, msg);
+                    },
+                  ),
+                ),
+                if (sumi.isStreaming)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: _buildCompactStreaming(theme, sumi.streamingMessage ?? "..."),
+                  ),
+                
+                const SizedBox(height: 24),
+                AuraOrb(state: _getOrbState(sumi), amplitude: _voiceAmplitude, size: 120),
+                const SizedBox(height: 32),
+                _buildBottomActions(theme, sumi),
+                const SizedBox(height: 32),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildCompactMessage(ThemeData theme, SumiMessage msg) {
+    final colorScheme = theme.colorScheme;
     final isUser = msg.role == MessageRole.user;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.only(bottom: 24),
       child: Column(
         crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           Text(
             isUser ? "YOU" : "SUMI",
-            style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold, color: isUser ? theme.hintColor : theme.colorScheme.primary, letterSpacing: 1),
+            style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.bold, color: isUser ? colorScheme.onSurfaceVariant : colorScheme.primary, letterSpacing: 1.5),
           ),
           const SizedBox(height: 8),
-          Text(
-            msg.text,
-            style: GoogleFonts.inter(fontSize: 14, color: theme.textTheme.bodyLarge?.color, height: 1.5),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isUser ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.5) : colorScheme.primaryContainer.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: isUser ? colorScheme.outline.withValues(alpha: 0.1) : colorScheme.primary.withValues(alpha: 0.1)),
+            ),
+            child: Text(
+              msg.text,
+              style: GoogleFonts.inter(fontSize: 15, color: colorScheme.onSurface, height: 1.6),
+            ),
           ),
         ],
       ),
@@ -515,17 +513,26 @@ class _SumiLiveScreenState extends State<SumiLiveScreen> {
   }
 
   Widget _buildCompactStreaming(ThemeData theme, String text) {
+    final colorScheme = theme.colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           "SUMI",
-          style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold, color: theme.colorScheme.primary, letterSpacing: 1),
+          style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.bold, color: colorScheme.primary, letterSpacing: 1.5),
         ),
         const SizedBox(height: 8),
-        Text(
-          text,
-          style: GoogleFonts.inter(fontSize: 14, color: theme.textTheme.bodyLarge?.color, height: 1.5),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: colorScheme.primary.withValues(alpha: 0.1)),
+          ),
+          child: Text(
+            text,
+            style: GoogleFonts.inter(fontSize: 15, color: colorScheme.onSurface, height: 1.6),
+          ),
         ),
       ],
     );

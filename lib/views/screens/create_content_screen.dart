@@ -298,10 +298,10 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
 
   Future<void> _pickFile(BuildContext context, CreateContentProvider provider,
       UserModel? user, List<String> extensions, String type) async {
-    if (user != null && !user.isPro && type != 'pdf') {
+    if (user != null && !user.isPro && user.computeUnits <= 0) {
       showDialog(
           context: context,
-          builder: (_) => UpgradeDialog(featureName: '$type Uploads'));
+          builder: (_) => const UpgradeDialog(featureName: 'Neural Uploads'));
       return;
     }
 

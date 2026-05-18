@@ -6,6 +6,14 @@ import 'package:go_router/go_router.dart';
 import 'package:sumquiz/theme/web_theme.dart';
 import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/models/library_item.dart';
+import 'package:sumquiz/models/folder.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' show Timestamp;
+import 'package:sumquiz/models/editable_content.dart';
+import 'package:sumquiz/models/quiz_question.dart';
+import 'package:sumquiz/models/flashcard.dart';
+import 'package:sumquiz/views/screens/edit_summary_screen.dart';
+import 'package:sumquiz/views/screens/edit_quiz_screen.dart';
+import 'package:sumquiz/views/screens/edit_flashcards_screen.dart';
 import 'package:sumquiz/services/firestore_service.dart';
 import 'package:sumquiz/services/local_database_service.dart';
 import 'package:sumquiz/view_models/library_view_model.dart';
@@ -243,11 +251,10 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
 
   Widget _buildCategoryFilters() {
     final categories = [
-      {'label': 'All Items', 'icon': Icons.grid_view_rounded},
-      {'label': 'Summaries', 'icon': Icons.description_rounded},
-      {'label': 'Quizzes', 'icon': Icons.quiz_rounded},
+      {'label': 'All Content', 'icon': Icons.grid_view_rounded},
+      {'label': 'Notes', 'icon': Icons.note_alt_rounded},
+      {'label': 'Study Packs', 'icon': Icons.folder_copy_rounded},
       {'label': 'Exams', 'icon': Icons.assignment_rounded},
-      {'label': 'Flashcards', 'icon': Icons.style_rounded},
     ];
 
     return SingleChildScrollView(
@@ -317,10 +324,9 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
     // Map filter index to the correct stream
     final stream = switch (_selectedFilter) {
       0 => viewModel.allItems$,
-      1 => viewModel.allSummaries$,
-      2 => viewModel.allQuizzes$,
+      1 => viewModel.allNotes$,
+      2 => viewModel.allFolders$.map((folders) => folders.map(LibraryItem.fromFolder).toList()),
       3 => viewModel.allExams$,
-      4 => viewModel.allFlashcards$,
       _ => viewModel.allItems$,
     };
 
@@ -403,6 +409,13 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
           typeName = 'NOTE';
           badge = 'Smart Note';
           break;
+        case LibraryItemType.folder:
+          icon = Icons.folder_open_outlined;
+          bgColor = Colors.deepPurple.withValues(alpha: 0.1);
+          textColor = Colors.deepPurple;
+          typeName = 'STUDY PACK';
+          badge = 'Folder';
+          break;
       }
 
       return _LibraryCardData(
@@ -415,6 +428,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
         badge: badge,
         date: DateFormat('MMM dd, yyyy').format(item.timestamp.toDate()),
         onTap: () => _navigateToContent(item),
+        onEdit: () => _navigateToEdit(item),
       );
     }).toList();
 
@@ -450,6 +464,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
         return 'Formal exam paper with ${item.itemCount ?? 0} questions.';
       case LibraryItemType.note:
         return 'Personal study notes and lecture transcriptions.';
+      case LibraryItemType.folder:
+        return 'Collection of related study materials and notes.';
     }
   }
 
@@ -521,22 +537,53 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
                               Icon(card.icon, color: card.textColor, size: 24),
                         ),
                         if (card.typeName.isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: card.textColor.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              card.typeName,
-                              style: GoogleFonts.outfit(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                color: card.textColor,
-                                letterSpacing: 0.5,
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: card.textColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  card.typeName,
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    color: card.textColor,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
                               ),
-                            ),
+                              if (card.onEdit != null) ...[
+                                const SizedBox(width: 6),
+                                PopupMenuButton<String>(
+                                  icon: Icon(Icons.more_vert_rounded, color: card.textColor.withValues(alpha: 0.7), size: 18),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  onSelected: (value) {
+                                    if (value == 'edit') {
+                                      card.onEdit!();
+                                    }
+                                  },
+                                  itemBuilder: (context) => [
+                                    PopupMenuItem(
+                                      value: 'edit',
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.edit_rounded, size: 16),
+                                          const SizedBox(width: 8),
+                                          Text('Edit', style: GoogleFonts.outfit(fontSize: 13)),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
                           ),
                       ],
                     ),
@@ -632,6 +679,15 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
         case LibraryItemType.note:
           context.push('/note/${item.id}');
           return;
+        case LibraryItemType.folder:
+          _viewModel?.selectFolder(Folder(
+            id: item.id,
+            name: item.title,
+            userId: item.userId ?? '',
+            createdAt: item.timestamp.toDate(),
+            updatedAt: item.timestamp.toDate(),
+          ));
+          return;
       }
 
       context.pushNamed(
@@ -653,6 +709,119 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
     }
   }
 
+  void _navigateToEdit(LibraryItem item) async {
+    final db = LocalDatabaseService();
+    if (item.type == LibraryItemType.summary) {
+      final localSummary = await db.getSummary(item.id);
+      if (localSummary != null && mounted) {
+        final editable = EditableContent.fromSummary(
+          localSummary.id,
+          localSummary.title,
+          localSummary.content,
+          localSummary.tags,
+          Timestamp.fromDate(localSummary.timestamp),
+        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => EditSummaryScreen(content: editable)),
+        );
+      }
+    } else if (item.type == LibraryItemType.quiz || item.type == LibraryItemType.exam) {
+      final localQuiz = await db.getQuiz(item.id);
+      if (localQuiz != null && mounted) {
+        final questions = localQuiz.questions.map((q) => QuizQuestion(
+          question: q.question,
+          options: q.options,
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation,
+          questionType: q.questionType,
+        )).toList();
+        final editable = EditableContent.fromQuiz(
+          localQuiz.id,
+          localQuiz.title,
+          questions,
+          Timestamp.fromDate(localQuiz.timestamp),
+        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => EditQuizScreen(content: editable)),
+        );
+      }
+    } else if (item.type == LibraryItemType.flashcards) {
+      final localSet = await db.getFlashcardSet(item.id);
+      if (localSet != null && mounted) {
+        final flashcards = localSet.flashcards.map((f) => Flashcard(
+          id: f.id,
+          question: f.question,
+          answer: f.answer,
+        )).toList();
+        final editable = EditableContent.fromFlashcardSet(
+          localSet.id,
+          localSet.title,
+          flashcards,
+          Timestamp.fromDate(localSet.timestamp),
+        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => EditFlashcardsScreen(content: editable)),
+        );
+      }
+    } else if (item.type == LibraryItemType.note) {
+      context.push('/note/${item.id}');
+    } else if (item.type == LibraryItemType.folder) {
+      _showRenameFolderDialog(item);
+    }
+  }
+
+  void _showRenameFolderDialog(LibraryItem item) {
+    final controller = TextEditingController(text: item.title);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Rename Study Pack', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              hintText: 'Enter name...',
+              labelText: 'Name',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final newName = controller.text.trim();
+                if (newName.isNotEmpty) {
+                  final db = LocalDatabaseService();
+                  final folder = Folder(
+                    id: item.id,
+                    name: newName,
+                    userId: item.userId ?? '',
+                    createdAt: item.timestamp.toDate(),
+                    updatedAt: DateTime.now(),
+                  );
+                  await db.saveFolder(folder);
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Study pack renamed successfully!')),
+                    );
+                  }
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -670,6 +839,7 @@ class _LibraryCardData {
   final String badge;
   final String date;
   final VoidCallback onTap;
+  final VoidCallback? onEdit;
   final bool isAddCard;
 
   _LibraryCardData({
@@ -682,6 +852,7 @@ class _LibraryCardData {
     required this.badge,
     required this.date,
     required this.onTap,
+    this.onEdit,
     this.isAddCard = false,
   });
 }

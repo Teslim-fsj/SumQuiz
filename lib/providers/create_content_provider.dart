@@ -7,16 +7,12 @@ import 'package:sumquiz/services/content_extraction_service.dart';
 import 'package:sumquiz/services/enhanced_ai_service.dart';
 import 'package:sumquiz/services/local_database_service.dart';
 import 'package:sumquiz/services/usage_service.dart';
-import 'package:sumquiz/services/youtube_service.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
 import 'package:sumquiz/utils/youtube_pro_gate.dart';
 import 'package:uuid/uuid.dart';
 import 'package:sumquiz/models/local_note.dart';
-import 'package:sumquiz/services/compute_manager.dart';
 import 'package:sumquiz/services/notification_service.dart';
 import 'package:sumquiz/services/notification_integration.dart';
-import 'package:sumquiz/services/enhanced_ai_service.dart';
-import 'package:sumquiz/services/content_extraction_service.dart';
 
 enum CreationPhase {
   source,
@@ -372,17 +368,52 @@ class CreateContentProvider with ChangeNotifier {
     _cancelToken = CancellationToken();
     final cancelToken = _cancelToken!;
 
+    final title = _fileName ?? _extractionResult?.suggestedTitle ?? 'Study Deck';
+    final textToProcess = _textContent;
+    final folderIdToUse = _preSelectedFolderId ?? const Uuid().v4();
+
+    // 1. Save note first to prevent data loss if generation fails or is blocked
+    if (_saveAsNote) {
+      try {
+        developer.log('Pre-saving study note to prevent data loss', name: 'CreateContentProvider');
+        final note = LocalNote(
+          id: const Uuid().v4(),
+          userId: userId,
+          title: title,
+          content: textToProcess,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          folderId: folderIdToUse,
+          tags: [],
+          isSynced: false,
+        );
+        await _localDb.saveNote(note);
+      } catch (e) {
+        developer.log('Pre-saving note failed: $e', name: 'CreateContentProvider');
+      }
+    }
+
+    // 2. Gated Usage / Credit Unit Check (Pre-generation)
+    final usageService = UsageService();
+    try {
+      final canProceed = await usageService.canPerformAction(userId, 'generate');
+      if (!canProceed) {
+        _errorMessage = "Neural capacity depleted. Please try again later!";
+        _phase = CreationPhase.error;
+        _stopTipRotation();
+        notifyListeners();
+        return;
+      }
+    } catch (e) {
+      developer.log('Usage check failed: $e', name: 'CreateContentProvider');
+    }
+
     final startTime = DateTime.now();
     try {
-      final ComputeManager computeManager = ComputeManager();
-
-      // 1. Gated Usage Deduction (One-time)
-      // Centralized compute orchestration is now handled within EnhancedAIService
-      // to ensure all callers are correctly tracked and deducted.
       _progressMessage = 'Orchestrating neural compute...';
       notifyListeners();
 
-      // 2. Fast-track for Topic generation
+      // 3. Fast-track for Topic generation
       if (_selectedSourceType == 'topic' && _textContent.split(' ').length <= 8) {
         _progressMessage = 'Generating full study set from topic...';
         _generatedFolderId = await _aiService.generateFromTopic(
@@ -401,14 +432,19 @@ class CreateContentProvider with ChangeNotifier {
         );
         _phase = CreationPhase.success;
         _stopTipRotation();
+
+        // Record usage on success
+        try {
+          await usageService.recordAction(userId, 'generate');
+        } catch (e) {
+          developer.log('Error recording topic generation usage: $e', name: 'CreateContentProvider');
+        }
+
         notifyListeners();
         return;
       }
 
-      // 3. Standard Generation Flow
-      final textToProcess = _textContent;
-      final title = _fileName ?? _extractionResult?.suggestedTitle ?? 'Study Deck';
-
+      // 4. Standard Generation Flow
       _generatedFolderId = await _aiService.generateAndStoreOutputs(
         text: textToProcess,
         title: title,
@@ -419,7 +455,7 @@ class CreateContentProvider with ChangeNotifier {
         questionCount: _quizCount,
         cardCount: _flashcardCount,
         questionTypes: _selectedQuestionTypes,
-        existingFolderId: _preSelectedFolderId,
+        existingFolderId: folderIdToUse,
         onProgress: (msg) {
           _progressMessage = msg;
           notifyListeners();
@@ -427,7 +463,7 @@ class CreateContentProvider with ChangeNotifier {
         cancelToken: cancelToken,
       );
 
-      // 4. Validation Pass
+      // 5. Validation Pass
       onProgress('Verifying neural artifacts...');
       final folderContents = await _localDb.getFolderContentsForUser(userId);
       final hasArtifacts = folderContents.any((c) => c.folderId == _generatedFolderId);
@@ -435,22 +471,11 @@ class CreateContentProvider with ChangeNotifier {
         throw Exception('Generation completed but artifacts were not stored correctly.');
       }
 
-      // 5. Auto-save as Note
-      if (_saveAsNote) {
-        _progressMessage = 'Saving as note...';
-        notifyListeners();
-        final note = LocalNote(
-          id: const Uuid().v4(),
-          userId: userId,
-          title: title,
-          content: textToProcess,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-          folderId: _generatedFolderId,
-          tags: [],
-          isSynced: false,
-        );
-        await _localDb.saveNote(note);
+      // Record usage on successful standard generation
+      try {
+        await usageService.recordAction(userId, 'generate');
+      } catch (e) {
+        developer.log('Error recording generation usage: $e', name: 'CreateContentProvider');
       }
 
       final duration = DateTime.now().difference(startTime);
