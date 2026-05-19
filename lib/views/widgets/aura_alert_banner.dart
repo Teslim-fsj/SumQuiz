@@ -28,12 +28,12 @@ class AuraAlertBanner extends StatelessWidget {
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFFEF4444).withOpacity(0.2),
+          color: const Color(0xFFEF4444).withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -81,7 +81,7 @@ class AuraAlertBanner extends StatelessWidget {
                   description,
                   style: GoogleFonts.inter(
                     fontSize: 14,
-                    color: theme.textTheme.bodyMedium?.color?.withOpacity(0.8),
+                    color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
                     height: 1.5,
                   ),
                 ),
@@ -110,12 +110,12 @@ class AuraAlertBanner extends StatelessWidget {
                       child: ElevatedButton(
                         onPressed: onAction,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFEF4444).withOpacity(0.1),
+                          backgroundColor: const Color(0xFFEF4444).withValues(alpha: 0.1),
                           foregroundColor: const Color(0xFFEF4444),
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          side: BorderSide(color: const Color(0xFFEF4444).withOpacity(0.2)),
+                          side: BorderSide(color: const Color(0xFFEF4444).withValues(alpha: 0.2)),
                         ),
                         child: Text(
                           actionLabel,

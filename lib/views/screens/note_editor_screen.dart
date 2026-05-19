@@ -11,7 +11,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../providers/note_provider.dart';
-import '../../providers/sumi_provider.dart';
 import '../../models/user_model.dart';
 import '../../services/mastery_service.dart';
 import '../widgets/handwriting_canvas.dart';
@@ -493,7 +492,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   }
 
   Widget _buildRightSidebar(NoteProvider provider, ThemeData theme) {
-    final sumi = context.watch<SumiProvider>();
     final note = provider.currentNote;
     final colorScheme = theme.colorScheme;
     

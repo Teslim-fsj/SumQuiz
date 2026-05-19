@@ -403,17 +403,16 @@ class _MyAppState extends State<MyApp> {
           update: (context, mastery, recs, notifications, ai, previous) =>
               SumiTutorService(mastery, recs, ai.generatorService, notifications),
         ),
-        ChangeNotifierProxyProvider6<LocalDatabaseService, EnhancedAIService,
-            RecordingService, SpeechService, UsageService?, AuthService, NoteProvider>(
+        ChangeNotifierProxyProvider5<LocalDatabaseService, EnhancedAIService,
+            RecordingService, SpeechService, UsageService?, NoteProvider>(
           create: (context) => NoteProvider(
             localDb: context.read<LocalDatabaseService>(),
             aiService: context.read<EnhancedAIService>(),
             recordingService: context.read<RecordingService>(),
             speechService: context.read<SpeechService>(),
             usageService: context.read<UsageService?>(),
-            authService: context.read<AuthService>(),
           ),
-          update: (context, localDb, ai, recording, speech, usage, auth, previous) =>
+          update: (context, localDb, ai, recording, speech, usage, previous) =>
               previous ??
               NoteProvider(
                 localDb: localDb,
@@ -421,7 +420,6 @@ class _MyAppState extends State<MyApp> {
                 recordingService: recording,
                 speechService: speech,
                 usageService: usage,
-                authService: auth,
               ),
         ),
         ChangeNotifierProxyProvider2<AuthService, MasteryService,

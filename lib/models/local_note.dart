@@ -144,10 +144,17 @@ class LocalNote extends HiveObject {
 
   String get plainText {
     if (content.isEmpty) return '';
-    if (!content.trim().startsWith('[')) return content;
+    final trimmed = content.trim();
+    if (!trimmed.startsWith('[') && !trimmed.startsWith('{')) return content;
     try {
-      final List<dynamic> ops = jsonDecode(content);
-      return ops.map((op) => op['insert']?.toString() ?? '').join().trim();
+      final decoded = jsonDecode(trimmed);
+      if (decoded is List) {
+        return decoded.map((op) => op['insert']?.toString() ?? '').join().trim();
+      } else if (decoded is Map && decoded['ops'] is List) {
+        final List<dynamic> ops = decoded['ops'];
+        return ops.map((op) => op['insert']?.toString() ?? '').join().trim();
+      }
+      return content;
     } catch (e) {
       return content;
     }

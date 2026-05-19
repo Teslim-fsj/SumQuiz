@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/providers/subscription_provider.dart';
@@ -18,7 +17,6 @@ class SubscriptionScreen extends StatefulWidget {
 }
 
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
-  bool _isYearly = false;
   final PageController _pageController =
       PageController(viewportFraction: 0.85, initialPage: 1);
   int _currentPage = 1;
@@ -26,7 +24,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   final List<Map<String, dynamic>> _allTiers = [
     {
       'id': 'free_hub',
-      'title': 'Free Neural Hub',
+      'title': 'Free Hub',
       'price': r'$0',
       'label': 'LEARNER',
       'color': Colors.grey,
@@ -36,7 +34,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         '5 AI-Light Transformations / day',
         'Manual Note Editor',
         'Sumi Text Hints',
-        'Limited Quiz Previews',
         'Streak Tracking'
       ]
     },
@@ -67,7 +64,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         '30 Heavy AI Actions / day',
         '500 AI-Light Transformations / day',
         'Unlimited Voice Tutoring',
-        'Multimodal Ingestion',
         'ALPS Adaptive Missions',
         'Bulk Session Scheduling'
       ]
@@ -83,7 +79,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         '50 Heavy AI Actions / day',
         '1,000 AI-Light Transformations / day',
         'Teacher/Creator Analytics',
-        'Full Class Automation',
         'Custom Exam Generation',
         'Verified Educator Badge'
       ]
@@ -93,7 +88,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   @override
   void initState() {
     super.initState();
-    // Load products on initialization
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SubscriptionProvider>().loadProducts();
     });
@@ -107,74 +101,67 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final subProvider = context.watch<SubscriptionProvider>();
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: _buildAppBar(),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: BackButton(color: theme.colorScheme.onSurface),
+        title: Text(
+          'Premium Plans',
+          style: GoogleFonts.outfit(
+            fontWeight: FontWeight.w800,
+            color: theme.colorScheme.primary,
+            fontSize: 22,
+          ),
+        ),
+      ),
       body: subProvider.isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: WebColors.purplePrimary))
+          ? Center(
+              child: CircularProgressIndicator(
+                  color: theme.colorScheme.primary))
           : LayoutBuilder(
               builder: (context, constraints) {
                 if (constraints.maxWidth > 900) {
-                  return _buildWebLayout();
+                  return _buildWebLayout(theme);
                 } else {
-                  return _buildMobileLayout();
+                  return _buildMobileLayout(theme);
                 }
               },
             ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      leading: IconButton(
-        icon: Icon(Icons.arrow_back,
-            color: Theme.of(context).textTheme.bodyLarge?.color),
-        onPressed: () => context.pop(),
-      ),
-      centerTitle: !kIsWeb,
-      title: Text(
-        kIsWeb ? '' : 'Subscription',
-        style: GoogleFonts.outfit(
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).textTheme.bodyLarge?.color,
-          fontSize: 20,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWebLayout() {
+  Widget _buildWebLayout(ThemeData theme) {
     return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(vertical: 40),
       child: Column(
         children: [
-          const SizedBox(height: 40),
           Text(
-            'Subscription Plans',
+            'Elevate Your Learning',
             style: GoogleFonts.outfit(
               fontSize: 48,
               fontWeight: FontWeight.w900,
-              color: Theme.of(context).textTheme.displayLarge?.color,
-              letterSpacing: -1,
+              color: theme.colorScheme.onSurface,
+              letterSpacing: -1.5,
             ),
           ),
           const SizedBox(height: 12),
           Text(
-            'Become a Top Performer. Unlock your full academic revision potential.',
+            'Become a top performer. Unlock your full academic potential.',
             style: GoogleFonts.inter(
-              fontSize: 18,
-              color: Theme.of(context).textTheme.bodyMedium?.color,
+              fontSize: 16,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
-          const SizedBox(height: 20),
-          _buildActiveSubscriptionBanner(),
-          const SizedBox(height: 60),
+          const SizedBox(height: 32),
+          _buildActiveSubscriptionBanner(theme),
+          const SizedBox(height: 48),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
+            padding: const EdgeInsets.symmetric(horizontal: 48),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -182,195 +169,85 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 return Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: _buildTierCard(entry.value, entry.key, isWeb: true),
+                    child: _buildTierCard(entry.value, entry.key, theme, isWeb: true),
                   ),
                 );
               }).toList(),
             ),
           ),
-          const SizedBox(height: 100),
-          _buildSatisfactionSection(),
-          const SizedBox(height: 60),
         ],
       ),
     );
   }
 
-  Widget _buildMobileLayout() {
+  Widget _buildMobileLayout(ThemeData theme) {
     return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(vertical: 24),
       child: Column(
         children: [
-          const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               children: [
                 Text(
-                  'Elevate Your Learning',
+                  'Unlock Unlimited Revision',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.outfit(
                     fontSize: 32,
                     fontWeight: FontWeight.w900,
-                    color: Theme.of(context).textTheme.displayLarge?.color,
-                    height: 1.1,
+                    color: theme.colorScheme.onSurface,
+                    letterSpacing: -0.5,
+                    height: 1.15,
                   ),
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Choose a plan that fits your academic goals and unlock AI-powered tools.',
+                  'Choose the plan that matches your goals and supercharge your studies.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
-                    fontSize: 16,
-                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                    fontSize: 15,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     height: 1.5,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          _buildActiveSubscriptionBanner(),
-          const SizedBox(height: 40),
+          const SizedBox(height: 24),
+          _buildActiveSubscriptionBanner(theme),
+          const SizedBox(height: 36),
           SizedBox(
-            height: 520,
+            height: 480,
             child: PageView.builder(
               controller: _pageController,
               itemCount: _allTiers.length,
               onPageChanged: (index) => setState(() => _currentPage = index),
               itemBuilder: (context, index) {
                 return AnimatedScale(
-                  scale: _currentPage == index ? 1.0 : 0.9,
-                  duration: const Duration(milliseconds: 300),
-                  child: _buildTierCard(_allTiers[index], index, isWeb: false),
+                  scale: _currentPage == index ? 1.0 : 0.93,
+                  duration: const Duration(milliseconds: 250),
+                  child: _buildTierCard(_allTiers[index], index, theme, isWeb: false),
                 );
               },
             ),
           ),
-          const SizedBox(height: 20),
-          _buildPageIndicator(_allTiers.length),
-          const SizedBox(height: 60),
-          _buildSecurePaymentSection(),
-          const SizedBox(height: 40),
+          const SizedBox(height: 24),
+          _buildPageIndicator(_allTiers.length, theme),
         ],
       ),
     );
   }
 
-  Widget _buildRegionalPricingSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Theme.of(context).dividerColor),
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.public, color: Colors.blue, size: 20),
-                const SizedBox(width: 12),
-                Text(
-                  'Regional Pricing Available',
-                  style: GoogleFonts.outfit(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Prices are adjusted for local purchasing power in specific regions. '
-              'Nigeria: Student Pro starting at ₦6,500. India: starting at ₹550. '
-              'Regional rates are applied automatically at checkout.',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: Theme.of(context).textTheme.bodySmall?.color,
-                height: 1.4,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildToggles() {
-    return Column(
-      children: [
-        _buildBillingToggle(),
-      ],
-    );
-  }
-
-  Widget _buildBillingToggle() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          'Monthly',
-          style: GoogleFonts.inter(
-            fontSize: 14,
-            fontWeight: _isYearly ? FontWeight.w500 : FontWeight.bold,
-            color: _isYearly
-                ? Theme.of(context).textTheme.bodySmall?.color
-                : Theme.of(context).colorScheme.primary,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Switch(
-          value: _isYearly,
-          onChanged: (val) => setState(() => _isYearly = val),
-          activeThumbColor: WebColors.purplePrimary,
-        ),
-        const SizedBox(width: 12),
-        Row(
-          children: [
-            Text(
-              'Yearly',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: _isYearly ? FontWeight.bold : FontWeight.w500,
-                color: _isYearly
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).textTheme.bodySmall?.color,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: const Color(0xFF10B981),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                'Save 20%',
-                style: GoogleFonts.inter(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTierCard(Map<String, dynamic> tier, int index,
+  Widget _buildTierCard(Map<String, dynamic> tier, int index, ThemeData theme,
       {required bool isWeb}) {
+    final colorScheme = theme.colorScheme;
     bool isFeatured = tier['label'] == 'MOST CHOSEN';
     Color tierColor = tier['color'] == WebColors.purplePrimary
-        ? Theme.of(context).colorScheme.primary
+        ? colorScheme.primary
         : tier['color'];
     final user = context.watch<UserModel?>();
     final subProvider = context.watch<SubscriptionProvider>();
 
-    // Get real price from IAP if on mobile
     String displayPrice = tier['price'];
     if (!isWeb) {
       final iapProduct =
@@ -384,189 +261,173 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         subProvider.currentProduct == tier['id'] && subProvider.isActive;
 
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isFeatured
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).dividerColor,
-          width: isFeatured ? 2 : 1,
+              ? colorScheme.primary
+              : theme.dividerColor.withValues(alpha: 0.05),
+          width: isFeatured ? 2.0 : 1.0,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(7),
+            color: Colors.black.withValues(alpha: isFeatured ? 0.03 : 0.01),
             blurRadius: 20,
             offset: const Offset(0, 10),
           )
         ],
       ),
-      child: Stack(
-        clipBehavior: Clip.none,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (isFeatured)
-            Positioned(
-              top: -44,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'MOST CHOSEN',
-                    style: GoogleFonts.inter(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 tier['title'],
                 style: GoogleFonts.outfit(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: isFeatured
-                      ? Theme.of(context).textTheme.displayLarge?.color
-                      : Theme.of(context).textTheme.bodyMedium?.color,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
-              const SizedBox(height: 12),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    _isYearly && tier['yearlyPrice'] != null
-                        ? tier['yearlyPrice']
-                        : displayPrice,
-                    style: GoogleFonts.outfit(
-                      fontSize: 40,
-                      fontWeight: FontWeight.w900,
-                      color: Theme.of(context).textTheme.displayLarge?.color,
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8, left: 4),
-                    child: Text(
-                      _isYearly && tier['yearlyPrice'] != null ? '/yr' : '/mo',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        color: Theme.of(context).textTheme.bodySmall?.color,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              ...tier['features']
-                  .map<Widget>((f) => Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                color: tierColor.withAlpha(25),
-                                shape: BoxShape.circle,
-                              ),
-                              child:
-                                  Icon(Icons.check, color: tierColor, size: 16),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                f,
-                                style: GoogleFonts.inter(
-                                  fontSize: 15,
-                                  color: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.color,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ))
-                  .toList(),
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed:
-                      isCurrentPlan ? null : () => _handlePurchase(tier, user),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isCurrentPlan
-                        ? const Color(0xFF10B981) // Success green
-                        : (isFeatured
-                            ? WebColors.purplePrimary
-                            : (isWeb
-                                ? const Color(0xFFDBEAFE)
-                                : WebColors.purplePrimary)),
-                    foregroundColor: isCurrentPlan
-                        ? Colors.white
-                        : (isFeatured
-                            ? Colors.white
-                            : (isWeb ? WebColors.purplePrimary : Colors.white)),
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    elevation: 0,
+              if (isFeatured)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    isCurrentPlan
-                        ? 'Current Plan'
-                        : (isWeb ? 'Get Started Now' : 'Select Plan'),
-                    style: GoogleFonts.inter(
-                        fontWeight: FontWeight.bold, fontSize: 16),
+                    'PRO',
+                    style: GoogleFonts.outfit(
+                      color: colorScheme.primary,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                displayPrice,
+                style: GoogleFonts.outfit(
+                  fontSize: 36,
+                  fontWeight: FontWeight.w900,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6, left: 4),
+                child: Text(
+                  '/month',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 24),
+          Expanded(
+            child: ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: tier['features'].length,
+              itemBuilder: (context, idx) {
+                final feature = tier['features'][idx];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle_rounded, color: tierColor, size: 18),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          feature,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed:
+                  isCurrentPlan ? null : () => _handlePurchase(tier, user),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isCurrentPlan
+                    ? Colors.green
+                    : (isFeatured ? colorScheme.primary : theme.scaffoldBackgroundColor),
+                foregroundColor: isCurrentPlan
+                    ? Colors.white
+                    : (isFeatured ? Colors.white : colorScheme.primary),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  side: isFeatured
+                      ? BorderSide.none
+                      : BorderSide(color: colorScheme.primary.withValues(alpha: 0.2)),
+                ),
+              ),
+              child: Text(
+                isCurrentPlan
+                    ? 'Current Plan'
+                    : (isWeb ? 'Get Started' : 'Select Plan'),
+                style: GoogleFonts.inter(
+                    fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActiveSubscriptionBanner() {
+  Widget _buildActiveSubscriptionBanner(ThemeData theme) {
     final user = context.watch<UserModel?>();
     if (user != null && user.isPro) {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 24),
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
         decoration: BoxDecoration(
-          color: WebColors.purplePrimary.withAlpha(25),
+          color: theme.colorScheme.primary.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: WebColors.purplePrimary.withAlpha(50)),
+          border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.15)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.stars_rounded,
-                color: WebColors.purplePrimary, size: 28),
-            const SizedBox(width: 16),
+            Icon(Icons.stars_rounded,
+                color: theme.colorScheme.primary, size: 24),
+            const SizedBox(width: 12),
             Flexible(
               child: Text(
-                'You are currently subscribed to SumQuiz Pro! Thank you for your support.',
+                'You are currently subscribed to SumQuiz Pro! Thank you!',
                 style: GoogleFonts.inter(
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: WebColors.purplePrimary,
+                  color: theme.colorScheme.primary,
                 ),
               ),
             ),
@@ -588,9 +449,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         (p) => p.id == productId,
         orElse: () => WebPaymentService.webProducts.first,
       );
-      // Assuming processWebPurchase handles its own flow and success callbacks,
-      // but if we want to show a success dialog, we might need to wait for it.
-      // For now, web purchase redirects to Stripe checkout usually.
       webService.processWebPurchase(
         context: context,
         product: product,
@@ -627,7 +485,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),
             style: ElevatedButton.styleFrom(
-              backgroundColor: WebColors.purplePrimary,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10)),
@@ -639,147 +497,23 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-  Widget _buildPageIndicator(int count) {
+  Widget _buildPageIndicator(int count, ThemeData theme) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(count, (index) {
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           margin: const EdgeInsets.symmetric(horizontal: 4),
-          height: 8,
-          width: _currentPage == index ? 24 : 8,
+          height: 6,
+          width: _currentPage == index ? 20 : 6,
           decoration: BoxDecoration(
             color: _currentPage == index
-                ? WebColors.purplePrimary
-                : const Color(0xFFE2E8F0),
-            borderRadius: BorderRadius.circular(4),
+                ? theme.colorScheme.primary
+                : theme.dividerColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(3),
           ),
         );
       }),
-    );
-  }
-
-  Widget _buildSatisfactionSection() {
-    return Container(
-      width: 1000,
-      padding: const EdgeInsets.all(40),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9).withAlpha(127),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.verified_user_outlined,
-                  color: WebColors.purplePrimary, size: 24),
-              const SizedBox(width: 12),
-              Text(
-                'Satisfaction Guarantee',
-                style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF0F172A)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Not seeing the results you expected? We offer a 14-day full refund policy\nfor any student who feels SumQuiz hasn\'t improved their revision efficiency.',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-                fontSize: 16, color: const Color(0xFF64748B), height: 1.5),
-          ),
-          const SizedBox(height: 40),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _paymentLogo('VISA'),
-              _paymentLogo('MASTERCARD'),
-              _paymentLogo('STRIPE'),
-              _paymentLogo('APPLE PAY'),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _paymentLogo(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Text(
-        text,
-        style: GoogleFonts.inter(
-          fontSize: 14,
-          fontWeight: FontWeight.w900,
-          color: const Color(0xFF94A3B8),
-          letterSpacing: 2,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSecurePaymentSection() {
-    return Column(
-      children: [
-        Text(
-          'SECURE PAYMENT PROCESSING',
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            fontWeight: FontWeight.w900,
-            color: const Color(0xFF94A3B8),
-            letterSpacing: 2,
-          ),
-        ),
-        const SizedBox(height: 20),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.credit_card, color: Color(0xFF94A3B8), size: 32),
-            const SizedBox(width: 24),
-            const Icon(Icons.account_balance,
-                color: Color(0xFF94A3B8), size: 32),
-            const SizedBox(width: 24),
-            const Icon(Icons.contactless_outlined,
-                color: Color(0xFF94A3B8), size: 32),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMobileBottomNav() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
-      ),
-      child: BottomNavigationBar(
-        currentIndex: 2, // Plans
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: WebColors.purplePrimary,
-        unselectedItemColor: const Color(0xFF94A3B8),
-        selectedLabelStyle:
-            GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 12),
-        unselectedLabelStyle:
-            GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 12),
-        items: const [
-          BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined), label: 'Home'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.menu_book_outlined), label: 'Study'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.stars_outlined), label: 'Plans'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline), label: 'Profile'),
-        ],
-        onTap: (index) {
-          // Navigation logic
-        },
-      ),
     );
   }
 }

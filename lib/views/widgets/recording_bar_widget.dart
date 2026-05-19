@@ -18,17 +18,17 @@ class RecordingBarWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
-        color: theme.cardColor.withOpacity(0.95),
+        color: theme.cardColor.withValues(alpha: 0.95),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 15,
             offset: const Offset(0, -5),
           ),
         ],
         border: Border(
-          top: BorderSide(color: theme.dividerColor.withOpacity(0.1)),
+          top: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1)),
         ),
       ),
       child: SafeArea(
@@ -86,7 +86,7 @@ class RecordingBarWidget extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: colorScheme.primary.withOpacity(0.1),
+              color: colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(Icons.mic_rounded, color: colorScheme.primary, size: 24),
@@ -170,7 +170,7 @@ class RecordingBarWidget extends StatelessWidget {
         .animate(onPlay: (controller) => controller.repeat(reverse: true))
         .boxShadow(
             begin: const BoxShadow(color: Colors.transparent, blurRadius: 0),
-            end: BoxShadow(color: Colors.redAccent.withOpacity(0.4), blurRadius: 10));
+            end: BoxShadow(color: Colors.redAccent.withValues(alpha: 0.4), blurRadius: 10));
   }
 
   String _formatDuration(Duration duration) {

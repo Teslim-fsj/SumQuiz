@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:uuid/uuid.dart';
 import '../models/local_note.dart';
 import '../models/local_recording.dart';
@@ -10,7 +12,6 @@ import '../services/enhanced_ai_service.dart';
 import '../services/recording_service.dart';
 import '../services/speech_service.dart';
 import '../services/usage_service.dart';
-import '../services/auth_service.dart';
 import '../services/transcript_recovery_service.dart';
 
 enum NoteProcessingState { idle, recording, transcribing, generating, error }
@@ -31,7 +32,6 @@ class NoteProvider with ChangeNotifier {
   Timer? _saveDebounce;
 
   final UsageService? _usageService;
-  final AuthService _authService;
 
   NoteProvider({
     required LocalDatabaseService localDb,
@@ -39,13 +39,11 @@ class NoteProvider with ChangeNotifier {
     required RecordingService recordingService,
     required SpeechService speechService,
     UsageService? usageService,
-    required AuthService authService,
   })  : _localDb = localDb,
         _aiService = aiService,
         _recordingService = recordingService,
         _speechService = speechService,
-        _usageService = usageService,
-        _authService = authService {
+        _usageService = usageService {
     _initRecordingStreams();
     _initSpeechErrorStream();
   }
@@ -367,8 +365,9 @@ class NoteProvider with ChangeNotifier {
         await TranscriptRecoveryService().clearRecovery(_currentNote!.id);
         
         // Record usage after successful capture
-        if (_usageService != null) {
-          await _usageService!.recordAction(_currentNote!.userId, 'lecture');
+        final usage = _usageService;
+        if (usage != null) {
+          await usage.recordAction(_currentNote!.userId, 'lecture');
         }
         developer.log('Recording saved successfully: $path', name: 'NoteProvider');
       }
@@ -437,8 +436,28 @@ class NoteProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      // Decode Quill Delta JSON -> plain text for AI consumption.
+      // The stored content is a JSON-encoded Delta; we must extract
+      // readable text so the AI doesn't receive raw JSON syntax.
+      String plainText;
+      try {
+        final decoded = jsonDecode(_currentNote!.content);
+        final doc = quill.Document.fromJson(decoded as List);
+        plainText = doc.toPlainText().trim();
+      } catch (_) {
+        // Fallback: treat as raw plain text (legacy notes or live transcripts)
+        plainText = _currentNote!.content.trim();
+      }
+
+      if (plainText.isEmpty) {
+        _errorMessage = 'Note is empty. Add some content before synthesizing.';
+        _state = NoteProcessingState.error;
+        notifyListeners();
+        return null;
+      }
+
       final folderId = await _aiService.generateAndStoreOutputs(
-        text: _currentNote!.content,
+        text: plainText,
         title: _currentNote!.title,
         requestedOutputs: ['summary', 'quiz', 'flashcards'],
         userId: userId,
@@ -448,8 +467,9 @@ class NoteProvider with ChangeNotifier {
         },
       );
       // Record usage after successful generation
-      if (_usageService != null) {
-        await _usageService!.recordAction(userId, 'generate');
+      final usage = _usageService;
+      if (usage != null) {
+        await usage.recordAction(userId, 'generate');
       }
 
       _state = NoteProcessingState.idle;

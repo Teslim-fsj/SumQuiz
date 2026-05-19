@@ -116,9 +116,11 @@ class SpeechService {
         },
         listenFor: const Duration(hours: 1),
         pauseFor: const Duration(seconds: 10),
-        cancelOnError: false,
-        partialResults: true,
-        listenMode: ListenMode.dictation,
+        listenOptions: SpeechListenOptions(
+          cancelOnError: false,
+          partialResults: true,
+          listenMode: ListenMode.dictation,
+        ),
       );
     } catch (e) {
       developer.log('Failed to begin listening: $e', name: 'SpeechService');
