@@ -369,7 +369,10 @@ class _QuizViewState extends State<QuizView> {
               .scale(begin: const Offset(0.98, 0.98), curve: Curves.easeOut),
         ],
       ),
-    ).animate().slideY(begin: 0.05, end: 0, duration: 500.ms, curve: Curves.easeOut).fade();
+    )
+        .animate()
+        .slideY(begin: 0.05, end: 0, duration: 500.ms, curve: Curves.easeOut)
+        .fade();
   }
 
   Widget _buildEssayInput(ThemeData theme) {
@@ -469,7 +472,8 @@ class _QuizViewState extends State<QuizView> {
       decoration: BoxDecoration(
         color: accentColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: accentColor.withValues(alpha: 0.4), width: 1.5),
+        border:
+            Border.all(color: accentColor.withValues(alpha: 0.4), width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -617,7 +621,8 @@ class _QuizViewState extends State<QuizView> {
                 child: OutlinedButton(
                   onPressed: _handlePreviousQuestion,
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: WebColors.primary.withValues(alpha: 0.3)),
+                    side: BorderSide(
+                        color: WebColors.primary.withValues(alpha: 0.3)),
                     padding:
                         EdgeInsets.symmetric(horizontal: isMobile ? 12 : 20),
                     shape: RoundedRectangleBorder(
@@ -745,7 +750,8 @@ class _QuizViewState extends State<QuizView> {
                 ),
               if (_answerWasSelected && (isCorrect || isSelected))
                 BoxShadow(
-                  color: (isCorrect ? Colors.green : Colors.red).withValues(alpha: 0.05),
+                  color: (isCorrect ? Colors.green : Colors.red)
+                      .withValues(alpha: 0.05),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -772,7 +778,9 @@ class _QuizViewState extends State<QuizView> {
                       ? (isCorrect
                           ? Colors.green
                           : (isSelected ? Colors.red : Colors.transparent))
-                      : (isSelected ? colorScheme.primary : theme.dividerColor.withValues(alpha: 0.1)),
+                      : (isSelected
+                          ? colorScheme.primary
+                          : theme.dividerColor.withValues(alpha: 0.1)),
                   width: 1.5,
                 ),
               ),
@@ -787,8 +795,13 @@ class _QuizViewState extends State<QuizView> {
                           color: _answerWasSelected
                               ? (isCorrect
                                   ? Colors.green.shade700
-                                  : (isSelected ? Colors.red.shade700 : theme.hintColor))
-                              : (isSelected ? colorScheme.primary : theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                                  : (isSelected
+                                      ? Colors.red.shade700
+                                      : theme.hintColor))
+                              : (isSelected
+                                  ? colorScheme.primary
+                                  : theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.6)),
                         ),
                       ),
               ),

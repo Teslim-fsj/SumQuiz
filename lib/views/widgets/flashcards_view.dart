@@ -87,7 +87,8 @@ class _FlashcardsViewState extends State<FlashcardsView> {
                     child: Text(
                       'Created by ${widget.creatorName}',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onPrimary.withValues(alpha: 0.7),
+                        color:
+                            theme.colorScheme.onPrimary.withValues(alpha: 0.7),
                         fontStyle: FontStyle.italic,
                       ),
                     ),
@@ -100,8 +101,8 @@ class _FlashcardsViewState extends State<FlashcardsView> {
                         borderRadius: BorderRadius.circular(4),
                         child: LinearProgressIndicator(
                           value: progress,
-                          backgroundColor:
-                              theme.colorScheme.onPrimary.withValues(alpha: 0.2),
+                          backgroundColor: theme.colorScheme.onPrimary
+                              .withValues(alpha: 0.2),
                           valueColor: AlwaysStoppedAnimation<Color>(
                               theme.colorScheme.secondary),
                           minHeight: 6,
@@ -112,7 +113,8 @@ class _FlashcardsViewState extends State<FlashcardsView> {
                     Text(
                       '${_currentIndex + 1}/${widget.flashcards.length}',
                       style: theme.textTheme.titleSmall?.copyWith(
-                          color: theme.colorScheme.onPrimary.withValues(alpha: 0.8),
+                          color: theme.colorScheme.onPrimary
+                              .withValues(alpha: 0.8),
                           fontWeight: FontWeight.w500),
                     ),
                   ],
@@ -241,7 +243,8 @@ class _FlashcardsViewState extends State<FlashcardsView> {
                 children: [
                   Icon(Icons.touch_app_outlined,
                       size: 20,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.4)),
                   const SizedBox(width: 8),
                   Text(
                     "Tap to Flip",

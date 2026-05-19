@@ -20,11 +20,13 @@ class _NeuralDebugScreenState extends State<NeuralDebugScreen> {
     final theme = Theme.of(context);
     final masteryService = Provider.of<MasteryService>(context);
     final user = Provider.of<UserModel?>(context);
-    
+
     if (user == null) {
       return Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
-        body: Center(child: Text('Please login to use neural debug.', style: GoogleFonts.inter())),
+        body: Center(
+            child: Text('Please login to use neural debug.',
+                style: GoogleFonts.inter())),
       );
     }
 
@@ -33,7 +35,8 @@ class _NeuralDebugScreenState extends State<NeuralDebugScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('System Analytics', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        title: Text('System Analytics',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
@@ -77,7 +80,10 @@ class _NeuralDebugScreenState extends State<NeuralDebugScreen> {
               itemCount: topics.length,
               itemBuilder: (context, index) {
                 final topic = topics[index];
-                return _buildTopicCard(theme, topic, masteryService).animate().fadeIn(delay: (index * 50).ms).slideY(begin: 0.1, end: 0);
+                return _buildTopicCard(theme, topic, masteryService)
+                    .animate()
+                    .fadeIn(delay: (index * 50).ms)
+                    .slideY(begin: 0.1, end: 0);
               },
             ),
           ),
@@ -86,7 +92,8 @@ class _NeuralDebugScreenState extends State<NeuralDebugScreen> {
     );
   }
 
-  Widget _buildGlobalStats(ThemeData theme, MasteryService service, String userId) {
+  Widget _buildGlobalStats(
+      ThemeData theme, MasteryService service, String userId) {
     final avg = service.getAverageMastery(userId);
     return Container(
       margin: const EdgeInsets.all(20),
@@ -106,9 +113,14 @@ class _NeuralDebugScreenState extends State<NeuralDebugScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _statItem(theme, 'Average Mastery', '${(avg * 100).toStringAsFixed(1)}%'),
-          Container(width: 1, height: 40, color: theme.dividerColor.withValues(alpha: 0.1)),
-          _statItem(theme, 'Active Clusters', '${service.getUserTopics(userId).length}'),
+          _statItem(
+              theme, 'Average Mastery', '${(avg * 100).toStringAsFixed(1)}%'),
+          Container(
+              width: 1,
+              height: 40,
+              color: theme.dividerColor.withValues(alpha: 0.1)),
+          _statItem(theme, 'Active Clusters',
+              '${service.getUserTopics(userId).length}'),
         ],
       ),
     );
@@ -117,14 +129,23 @@ class _NeuralDebugScreenState extends State<NeuralDebugScreen> {
   Widget _statItem(ThemeData theme, String label, String value) {
     return Column(
       children: [
-        Text(label, style: GoogleFonts.inter(color: theme.hintColor, fontSize: 11, fontWeight: FontWeight.w600)),
+        Text(label,
+            style: GoogleFonts.inter(
+                color: theme.hintColor,
+                fontSize: 11,
+                fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
-        Text(value, style: GoogleFonts.outfit(color: theme.textTheme.displayLarge?.color, fontSize: 24, fontWeight: FontWeight.bold)),
+        Text(value,
+            style: GoogleFonts.outfit(
+                color: theme.textTheme.displayLarge?.color,
+                fontSize: 24,
+                fontWeight: FontWeight.bold)),
       ],
     );
   }
 
-  Widget _buildTopicCard(ThemeData theme, TopicNode topic, MasteryService service) {
+  Widget _buildTopicCard(
+      ThemeData theme, TopicNode topic, MasteryService service) {
     final alps = service.calculateALPS(topic);
     final lastSeen = DateFormat('MMM d, HH:mm').format(topic.lastInteraction);
 
@@ -138,8 +159,11 @@ class _NeuralDebugScreenState extends State<NeuralDebugScreen> {
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(topic.name, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16)),
+        collapsedShape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(topic.name,
+            style:
+                GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16)),
         subtitle: Text(
           'Mastery: ${(topic.masteryScore * 100).toStringAsFixed(0)}% • Risk: ${(topic.forgettingRisk * 100).toStringAsFixed(0)}%',
           style: GoogleFonts.inter(fontSize: 12, color: theme.hintColor),
@@ -159,7 +183,8 @@ class _NeuralDebugScreenState extends State<NeuralDebugScreen> {
               ),
               Text(
                 (alps * 10).toStringAsFixed(0),
-                style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.bold),
+                style: GoogleFonts.jetBrainsMono(
+                    fontSize: 10, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -176,20 +201,37 @@ class _NeuralDebugScreenState extends State<NeuralDebugScreen> {
                 _detailRow(theme, 'Confidence', topic.confidenceScore),
                 _detailRow(theme, 'Priority', alps),
                 const SizedBox(height: 12),
-                Text('Telemetry Sync: $lastSeen', style: GoogleFonts.jetBrainsMono(fontSize: 10, color: theme.hintColor)),
+                Text('Telemetry Sync: $lastSeen',
+                    style: GoogleFonts.jetBrainsMono(
+                        fontSize: 10, color: theme.hintColor)),
                 const SizedBox(height: 20),
                 Row(
                   children: [
                     Expanded(
-                      child: _debugAction(theme, 'Success', Icons.check_circle_outline, () => _injectSignal(topic.id, SignalType.quizCorrect, service)),
+                      child: _debugAction(
+                          theme,
+                          'Success',
+                          Icons.check_circle_outline,
+                          () => _injectSignal(
+                              topic.id, SignalType.quizCorrect, service)),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: _debugAction(theme, 'Fail', Icons.error_outline, () => _injectSignal(topic.id, SignalType.quizWrong, service), isRed: true),
+                      child: _debugAction(
+                          theme,
+                          'Fail',
+                          Icons.error_outline,
+                          () => _injectSignal(
+                              topic.id, SignalType.quizWrong, service),
+                          isRed: true),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: _debugAction(theme, '+Day', Icons.fast_forward_rounded, () => _fastForward(topic, service)),
+                      child: _debugAction(
+                          theme,
+                          '+Day',
+                          Icons.fast_forward_rounded,
+                          () => _fastForward(topic, service)),
                     ),
                   ],
                 ),
@@ -201,7 +243,9 @@ class _NeuralDebugScreenState extends State<NeuralDebugScreen> {
     );
   }
 
-  Widget _debugAction(ThemeData theme, String label, IconData icon, VoidCallback onTap, {bool isRed = false}) {
+  Widget _debugAction(
+      ThemeData theme, String label, IconData icon, VoidCallback onTap,
+      {bool isRed = false}) {
     final color = isRed ? const Color(0xFFEF4444) : theme.colorScheme.primary;
     return InkWell(
       onTap: onTap,
@@ -216,7 +260,9 @@ class _NeuralDebugScreenState extends State<NeuralDebugScreen> {
           children: [
             Icon(icon, size: 16, color: color),
             const SizedBox(height: 4),
-            Text(label, style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
+            Text(label,
+                style: GoogleFonts.inter(
+                    fontSize: 10, fontWeight: FontWeight.bold, color: color)),
           ],
         ),
       ),
@@ -228,7 +274,13 @@ class _NeuralDebugScreenState extends State<NeuralDebugScreen> {
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
         children: [
-          SizedBox(width: 70, child: Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: theme.hintColor))),
+          SizedBox(
+              width: 70,
+              child: Text(label,
+                  style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: theme.hintColor))),
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(4),
@@ -236,18 +288,22 @@ class _NeuralDebugScreenState extends State<NeuralDebugScreen> {
                 value: value,
                 backgroundColor: theme.dividerColor.withValues(alpha: 0.05),
                 minHeight: 6,
-                valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary.withValues(alpha: 0.6)),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                    theme.colorScheme.primary.withValues(alpha: 0.6)),
               ),
             ),
           ),
           const SizedBox(width: 12),
-          Text(value.toStringAsFixed(2), style: GoogleFonts.jetBrainsMono(fontSize: 11, fontWeight: FontWeight.bold)),
+          Text(value.toStringAsFixed(2),
+              style: GoogleFonts.jetBrainsMono(
+                  fontSize: 11, fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
 
-  Future<void> _injectSignal(String topicId, SignalType type, MasteryService service) async {
+  Future<void> _injectSignal(
+      String topicId, SignalType type, MasteryService service) async {
     await service.processSignal(LearningSignal(
       topicId: topicId,
       type: type,
@@ -257,11 +313,13 @@ class _NeuralDebugScreenState extends State<NeuralDebugScreen> {
   }
 
   Future<void> _fastForward(TopicNode topic, MasteryService service) async {
-    topic.lastInteraction = topic.lastInteraction.subtract(const Duration(days: 1));
+    topic.lastInteraction =
+        topic.lastInteraction.subtract(const Duration(days: 1));
     await topic.save();
     if (mounted) {
       setState(() {});
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Time shifted back by 1 day.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Time shifted back by 1 day.')));
     }
   }
 }

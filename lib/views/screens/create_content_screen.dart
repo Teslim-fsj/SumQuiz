@@ -175,9 +175,7 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
               color: theme.hintColor,
             ),
           ).animate().fadeIn(delay: 100.ms),
-
           const SizedBox(height: 40),
-
           _buildSectionHeader('Smart Tools', Icons.bolt_rounded),
           const SizedBox(height: 16),
           GridView.count(
@@ -208,9 +206,7 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
               ),
             ],
           ).animate().fadeIn(delay: 200.ms),
-
           const SizedBox(height: 40),
-
           _buildSectionHeader('AI Extraction Hub', Icons.auto_awesome_rounded),
           const SizedBox(height: 16),
           GridView.count(
@@ -251,8 +247,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
                   if (!userMayImportFromYouTube(user)) {
                     showDialog<void>(
                         context: context,
-                        builder: (_) => const UpgradeDialog(
-                            featureName: 'YouTube import'));
+                        builder: (_) =>
+                            const UpgradeDialog(featureName: 'YouTube import'));
                     return;
                   }
                   _showUrlInputDialog(context, provider, isYoutube: true);
@@ -280,7 +276,6 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
               ),
             ],
           ).animate().fadeIn(delay: 300.ms),
-
           const SizedBox(height: 80),
         ],
       ),
@@ -365,7 +360,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+                border: Border.all(
+                    color: Theme.of(context).dividerColor.withOpacity(0.1)),
               ),
               child: TextField(
                 controller: _textController,
@@ -374,7 +370,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
                 style: GoogleFonts.inter(fontSize: 15),
                 decoration: InputDecoration(
                   hintText: 'Paste your topic, notes, or raw data here...',
-                  hintStyle: GoogleFonts.inter(color: Colors.grey.withOpacity(0.5)),
+                  hintStyle:
+                      GoogleFonts.inter(color: Colors.grey.withOpacity(0.5)),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.all(20),
                 ),
@@ -394,10 +391,12 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
                 elevation: 0,
               ),
-              child: Text('Next Step', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+              child: Text('Next Step',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -439,7 +438,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+                border: Border.all(
+                    color: Theme.of(context).dividerColor.withOpacity(0.1)),
               ),
               child: TextField(
                 controller: _textController,
@@ -449,12 +449,15 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
                   hintText: isYoutube
                       ? 'https://youtube.com/watch?v=...'
                       : 'https://example.com/article',
-                  hintStyle: GoogleFonts.inter(color: Colors.grey.withOpacity(0.5)),
+                  hintStyle:
+                      GoogleFonts.inter(color: Colors.grey.withOpacity(0.5)),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.all(20),
-                  prefixIcon: Icon(isYoutube
-                      ? Icons.play_circle_outline_rounded
-                      : Icons.link_rounded, size: 20),
+                  prefixIcon: Icon(
+                      isYoutube
+                          ? Icons.play_circle_outline_rounded
+                          : Icons.link_rounded,
+                      size: 20),
                 ),
               ),
             ),
@@ -484,10 +487,12 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
                 elevation: 0,
               ),
-              child: Text('Initialize Sync', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+              child: Text('Initialize Sync',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -556,7 +561,8 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
               backgroundColor: colorScheme.primary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 20),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
               elevation: 8,
               shadowColor: colorScheme.primary.withOpacity(0.3),
             ),
@@ -640,7 +646,10 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: colorScheme.primary.withOpacity(0.1)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4)),
         ],
       ),
       child: Row(
@@ -692,7 +701,7 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
     String displayMessage = provider.errorMessage;
     String displayTitle = 'Synthesis Error';
 
-    if (provider.errorMessage.contains('USAGE_LIMIT_REACHED') || 
+    if (provider.errorMessage.contains('USAGE_LIMIT_REACHED') ||
         provider.errorMessage.contains('CAPACITY_STABILIZING')) {
       displayTitle = 'Neural Capacity Full';
       displayMessage =
@@ -733,11 +742,14 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: colorScheme.primary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
                 elevation: 0,
               ),
-              child: Text('Retry Synthesis', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+              child: Text('Retry Synthesis',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
             )
           else
             ElevatedButton(
@@ -745,16 +757,20 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF8B5CF6),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
                 elevation: 0,
               ),
-              child: Text('Unlock Pro', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+              child: Text('Unlock Pro',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
             ),
           const SizedBox(height: 16),
           TextButton(
             onPressed: provider.reset,
-            child: Text('Reset Selection', style: GoogleFonts.inter(color: Theme.of(context).hintColor)),
+            child: Text('Reset Selection',
+                style: GoogleFonts.inter(color: Theme.of(context).hintColor)),
           ),
         ],
       ),

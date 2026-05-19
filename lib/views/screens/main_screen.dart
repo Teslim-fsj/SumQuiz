@@ -119,8 +119,8 @@ class MainScreen extends StatelessWidget {
                         selectedIconTheme:
                             IconThemeData(color: theme.colorScheme.primary),
                         unselectedIconTheme: IconThemeData(
-                            color:
-                                theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.5)),
                         selectedLabelTextStyle:
                             theme.textTheme.labelMedium?.copyWith(
                           color: theme.colorScheme.primary,
@@ -128,7 +128,8 @@ class MainScreen extends StatelessWidget {
                         ),
                         unselectedLabelTextStyle:
                             theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.5),
                         ),
                       ),
                     ),

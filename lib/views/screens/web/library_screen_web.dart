@@ -170,7 +170,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.lock_person,
-              size: 60, color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+              size: 60,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
           const SizedBox(height: 20),
           Text("Please Log In to View Library",
               style: TextStyle(
@@ -284,7 +285,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                              color: WebColors.purplePrimary.withValues(alpha: 0.1),
+                              color: WebColors.purplePrimary
+                                  .withValues(alpha: 0.1),
                               blurRadius: 10,
                               offset: const Offset(0, 4))
                         ]
@@ -325,7 +327,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
     final stream = switch (_selectedFilter) {
       0 => viewModel.allItems$,
       1 => viewModel.allNotes$,
-      2 => viewModel.allFolders$.map((folders) => folders.map(LibraryItem.fromFolder).toList()),
+      2 => viewModel.allFolders$
+          .map((folders) => folders.map(LibraryItem.fromFolder).toList()),
       3 => viewModel.allExams$,
       _ => viewModel.allItems$,
     };
@@ -560,10 +563,14 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
                               if (card.onEdit != null) ...[
                                 const SizedBox(width: 6),
                                 PopupMenuButton<String>(
-                                  icon: Icon(Icons.more_vert_rounded, color: card.textColor.withValues(alpha: 0.7), size: 18),
+                                  icon: Icon(Icons.more_vert_rounded,
+                                      color:
+                                          card.textColor.withValues(alpha: 0.7),
+                                      size: 18),
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
                                   onSelected: (value) {
                                     if (value == 'edit') {
                                       card.onEdit!();
@@ -574,9 +581,12 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
                                       value: 'edit',
                                       child: Row(
                                         children: [
-                                          const Icon(Icons.edit_rounded, size: 16),
+                                          const Icon(Icons.edit_rounded,
+                                              size: 16),
                                           const SizedBox(width: 8),
-                                          Text('Edit', style: GoogleFonts.outfit(fontSize: 13)),
+                                          Text('Edit',
+                                              style: GoogleFonts.outfit(
+                                                  fontSize: 13)),
                                         ],
                                       ),
                                     ),
@@ -633,7 +643,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
                         ),
                         const Spacer(),
                         Icon(Icons.arrow_forward,
-                            size: 16, color: card.textColor.withValues(alpha: 0.5)),
+                            size: 16,
+                            color: card.textColor.withValues(alpha: 0.5)),
                       ],
                     ),
                   ],
@@ -723,19 +734,23 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
         );
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => EditSummaryScreen(content: editable)),
+          MaterialPageRoute(
+              builder: (context) => EditSummaryScreen(content: editable)),
         );
       }
-    } else if (item.type == LibraryItemType.quiz || item.type == LibraryItemType.exam) {
+    } else if (item.type == LibraryItemType.quiz ||
+        item.type == LibraryItemType.exam) {
       final localQuiz = await db.getQuiz(item.id);
       if (localQuiz != null && mounted) {
-        final questions = localQuiz.questions.map((q) => QuizQuestion(
-          question: q.question,
-          options: q.options,
-          correctAnswer: q.correctAnswer,
-          explanation: q.explanation,
-          questionType: q.questionType,
-        )).toList();
+        final questions = localQuiz.questions
+            .map((q) => QuizQuestion(
+                  question: q.question,
+                  options: q.options,
+                  correctAnswer: q.correctAnswer,
+                  explanation: q.explanation,
+                  questionType: q.questionType,
+                ))
+            .toList();
         final editable = EditableContent.fromQuiz(
           localQuiz.id,
           localQuiz.title,
@@ -744,17 +759,20 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
         );
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => EditQuizScreen(content: editable)),
+          MaterialPageRoute(
+              builder: (context) => EditQuizScreen(content: editable)),
         );
       }
     } else if (item.type == LibraryItemType.flashcards) {
       final localSet = await db.getFlashcardSet(item.id);
       if (localSet != null && mounted) {
-        final flashcards = localSet.flashcards.map((f) => Flashcard(
-          id: f.id,
-          question: f.question,
-          answer: f.answer,
-        )).toList();
+        final flashcards = localSet.flashcards
+            .map((f) => Flashcard(
+                  id: f.id,
+                  question: f.question,
+                  answer: f.answer,
+                ))
+            .toList();
         final editable = EditableContent.fromFlashcardSet(
           localSet.id,
           localSet.title,
@@ -763,7 +781,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
         );
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => EditFlashcardsScreen(content: editable)),
+          MaterialPageRoute(
+              builder: (context) => EditFlashcardsScreen(content: editable)),
         );
       }
     } else if (item.type == LibraryItemType.note) {
@@ -779,7 +798,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Rename Study Pack', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+          title: Text('Rename Study Pack',
+              style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
           content: TextField(
             controller: controller,
             autofocus: true,
@@ -809,7 +829,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
                   if (context.mounted) {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Study pack renamed successfully!')),
+                      const SnackBar(
+                          content: Text('Study pack renamed successfully!')),
                     );
                   }
                 }

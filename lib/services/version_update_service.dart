@@ -12,7 +12,7 @@ enum UpdateState {
 
 class VersionUpdateService extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
+
   UpdateState _updateState = UpdateState.upToDate;
   UpdateState get updateState => _updateState;
 
@@ -29,7 +29,7 @@ class VersionUpdateService extends ChangeNotifier {
   String? get minSupportedVersion => _minSupportedVersion;
 
   int _dynamicContentVersion = 0;
-  
+
   // Track if we've already shown the optional update dialog during this session
   bool _hasShownOptionalUpdateNudge = false;
   bool get hasShownOptionalUpdateNudge => _hasShownOptionalUpdateNudge;
@@ -49,29 +49,37 @@ class VersionUpdateService extends ChangeNotifier {
       _currentVersion = packageInfo.version;
 
       // 2. Fetch config from Firestore
-      final docSnapshot = await _firestore.collection('system').doc('app_config').get();
-      
+      final docSnapshot =
+          await _firestore.collection('system').doc('app_config').get();
+
       if (docSnapshot.exists) {
         final data = docSnapshot.data()!;
         _latestVersion = data['latest_version'] as String?;
         _minSupportedVersion = data['min_supported_version'] as String?;
         final updateType = data['update_type'] as String? ?? 'optional';
-        final newDynamicContentVersion = data['dynamic_content_version'] as int? ?? 0;
+        final newDynamicContentVersion =
+            data['dynamic_content_version'] as int? ?? 0;
 
-        if (_currentVersion != null && _minSupportedVersion != null && _latestVersion != null) {
+        if (_currentVersion != null &&
+            _minSupportedVersion != null &&
+            _latestVersion != null) {
           // Check for mandatory update
-          if (VersionComparator.compare(_currentVersion!, _minSupportedVersion!) < 0) {
+          if (VersionComparator.compare(
+                  _currentVersion!, _minSupportedVersion!) <
+              0) {
             _updateState = UpdateState.mandatory;
-          } 
+          }
           // Check for optional update
-          else if (VersionComparator.compare(_currentVersion!, _latestVersion!) < 0) {
+          else if (VersionComparator.compare(
+                  _currentVersion!, _latestVersion!) <
+              0) {
             if (updateType == 'mandatory') {
-               // The latest version is marked as mandatory for all.
-               _updateState = UpdateState.mandatory;
+              // The latest version is marked as mandatory for all.
+              _updateState = UpdateState.mandatory;
             } else {
-               _updateState = UpdateState.optional;
+              _updateState = UpdateState.optional;
             }
-          } 
+          }
           // Up to date
           else {
             _updateState = UpdateState.upToDate;
@@ -100,7 +108,7 @@ class VersionUpdateService extends ChangeNotifier {
         debugPrint('New dynamic content available (v$newVersion). Fetching...');
         // TODO: Implement actual fetch logic for templates/weights here.
         // E.g., await DynamicContentRepository.fetchBundles(newVersion);
-        
+
         await prefs.setInt('dynamic_content_version', newVersion);
         _dynamicContentVersion = newVersion;
       }

@@ -9,7 +9,7 @@ class LiveTutorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return GestureDetector(
       onTap: () {
         showModalBottomSheet(
@@ -48,9 +48,10 @@ class LiveTutorCard extends StatelessWidget {
                 color: Colors.white.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.mic_none_rounded, color: Colors.white, size: 20),
-            ).animate(onPlay: (c) => c.repeat(reverse: true))
-             .shimmer(duration: 2.seconds, color: Colors.white.withOpacity(0.2)),
+              child: const Icon(Icons.mic_none_rounded,
+                  color: Colors.white, size: 20),
+            ).animate(onPlay: (c) => c.repeat(reverse: true)).shimmer(
+                duration: 2.seconds, color: Colors.white.withOpacity(0.2)),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -77,7 +78,8 @@ class LiveTutorCard extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.chevron_right_rounded, color: Colors.white.withOpacity(0.5), size: 24),
+            Icon(Icons.chevron_right_rounded,
+                color: Colors.white.withOpacity(0.5), size: 24),
           ],
         ),
       ),

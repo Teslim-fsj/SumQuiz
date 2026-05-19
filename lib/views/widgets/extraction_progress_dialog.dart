@@ -30,7 +30,8 @@ class ExtractionProgressDialog extends StatelessWidget {
               : Colors.white.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(32),
           border: Border.all(
-            color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+            color:
+                (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1),
             width: 1.5,
           ),
           boxShadow: [
@@ -78,7 +79,8 @@ class ExtractionProgressDialog extends StatelessWidget {
                       style: GoogleFonts.outfit(
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ).animate(key: ValueKey(message)).fadeIn(duration: 300.ms);
                   },

@@ -117,7 +117,8 @@ class AccountProfileScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color: theme.cardColor.withValues(alpha: 0.7),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.dividerColor.withValues(alpha: 0.6)),
+            border:
+                Border.all(color: theme.dividerColor.withValues(alpha: 0.6)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
@@ -172,8 +173,8 @@ class AccountProfileScreen extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           user.email,
-          style: theme.textTheme.bodyMedium
-              ?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+          style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
         ),
         if (user.subscriptionExpiry != null)
           Padding(
@@ -183,7 +184,8 @@ class AccountProfileScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.amberAccent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.amberAccent.withValues(alpha: 0.3)),
+                border: Border.all(
+                    color: Colors.amberAccent.withValues(alpha: 0.3)),
               ),
               child: Text(
                 'Pro until ${user.subscriptionExpiry!.toLocal().toString().split(' ')[0]}',
@@ -229,8 +231,8 @@ class AccountProfileScreen extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child:
-                Divider(height: 1, color: theme.dividerColor.withValues(alpha: 0.1)),
+            child: Divider(
+                height: 1, color: theme.dividerColor.withValues(alpha: 0.1)),
           ),
           _buildListTile(
             context,
@@ -241,8 +243,8 @@ class AccountProfileScreen extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child:
-                Divider(height: 1, color: theme.dividerColor.withValues(alpha: 0.1)),
+            child: Divider(
+                height: 1, color: theme.dividerColor.withValues(alpha: 0.1)),
           ),
           _buildListTile(
             context,
@@ -257,8 +259,8 @@ class AccountProfileScreen extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child:
-                Divider(height: 1, color: theme.dividerColor.withValues(alpha: 0.1)),
+            child: Divider(
+                height: 1, color: theme.dividerColor.withValues(alpha: 0.1)),
           ),
           _buildListTile(
             context,

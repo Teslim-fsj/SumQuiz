@@ -28,12 +28,13 @@ class UsageConfig {
   };
 
   // Compute Unit (CU) Weights (Internal Economics - Margin Safety)
-  static const double cuNano = 0.5;      // Mascot state, tiny nudges
-  static const double cuMicro = 1.5;     // Summaries, Title generation
-  static const double cuStandard = 6.0;  // Quizzes (10q), Flashcards (20c)
-  static const double cuMacro = 20.0;    // Exams, Long PDFs, YouTube
-  static const double cuExtreme = 45.0;  // Live Lecture recordings (Neural Intake)
-  static const double cuTutor = 8.0;      // AI Tutor Interaction (Voice or Chat)
+  static const double cuNano = 0.5; // Mascot state, tiny nudges
+  static const double cuMicro = 1.5; // Summaries, Title generation
+  static const double cuStandard = 6.0; // Quizzes (10q), Flashcards (20c)
+  static const double cuMacro = 20.0; // Exams, Long PDFs, YouTube
+  static const double cuExtreme =
+      45.0; // Live Lecture recordings (Neural Intake)
+  static const double cuTutor = 8.0; // AI Tutor Interaction (Voice or Chat)
   static const double cuTutorSession = 25.0; // Start a Live Voice Session
 
   // Adaptive Multipliers
@@ -42,17 +43,19 @@ class UsageConfig {
   static const double multiHeavy = 1.8;
 
   // Tier-Based Neural Capacity (CU) - Hidden Buffer
-  static const double capFree = 50.0;    
-  static const double capStandardPro = 500.0; 
-  static const double capPowerPro = 2000.0;   
-  static const double capCreator = 5000.0;   
+  static const double capFree = 50.0;
+  static const double capStandardPro = 500.0;
+  static const double capPowerPro = 2000.0;
+  static const double capCreator = 5000.0;
 }
 
 class UsageService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   /// Check if user can proceed with a study session (Checks Quota + CU)
-  Future<bool> canStartStudySession(String uid, String actionType, {
+  Future<bool> canStartStudySession(
+    String uid,
+    String actionType, {
     bool isHeavy = false,
     bool isYoutube = false,
     bool isMultimodal = false,
@@ -64,59 +67,71 @@ class UsageService {
 
       // Safety: If user is Pro but tier is unknown or 'free', treat as 'standard_pro'
       String tier = user.tier ?? 'free';
-      if (user.isPro && (tier == 'free' || !UsageConfig.heavyQuota.containsKey(tier))) {
+      if (user.isPro &&
+          (tier == 'free' || !UsageConfig.heavyQuota.containsKey(tier))) {
         tier = 'standard_pro';
-        developer.log('UsageService: Auto-promoting active Pro user to standard_pro for quota check (tier: ${user.tier}).', name: 'UsageService');
+        developer.log(
+            'UsageService: Auto-promoting active Pro user to standard_pro for quota check (tier: ${user.tier}).',
+            name: 'UsageService');
       }
 
       final now = TimeSyncService.now;
       final lastAction = user.lastDeckGenerationDate;
 
       // Daily Reset Logic (Client-side trigger)
-      bool isNewDay = lastAction == null || 
-          now.day != lastAction.day || 
-          now.month != lastAction.month || 
+      bool isNewDay = lastAction == null ||
+          now.day != lastAction.day ||
+          now.month != lastAction.month ||
           now.year != lastAction.year;
 
       int currentHeavy = isNewDay ? 0 : user.dailyHeavyActions;
       int currentLight = isNewDay ? 0 : user.dailyLightActions;
 
       // Determine if this is a "Heavy Action" or "Light Transformation"
-      final bool effectivelyHeavy = isHeavy || isYoutube || isMultimodal || 
+      final bool effectivelyHeavy = isHeavy ||
+          isYoutube ||
+          isMultimodal ||
           ['lecture', 'tutor_session', 'exam'].contains(actionType);
 
       // 1. Quota Check (Visible Limits)
       if (effectivelyHeavy) {
         final int limit = UsageConfig.heavyQuota[tier] ?? 1;
         if (currentHeavy >= limit) {
-          developer.log('Heavy quota exceeded for $tier user: $uid', name: 'UsageService');
+          developer.log('Heavy quota exceeded for $tier user: $uid',
+              name: 'UsageService');
           return false;
         }
       } else {
         final int limit = UsageConfig.lightQuota[tier] ?? 5;
         if (currentLight >= limit) {
-          developer.log('Light quota exceeded for $tier user: $uid', name: 'UsageService');
+          developer.log('Light quota exceeded for $tier user: $uid',
+              name: 'UsageService');
           return false;
         }
       }
 
       // 2. Hidden Compute Check (Margin Safety)
-      double approximateCost = _calculateInternalCost(actionType, 
-          isHeavy: effectivelyHeavy, isYoutube: isYoutube, isMultimodal: isMultimodal);
+      double approximateCost = _calculateInternalCost(actionType,
+          isHeavy: effectivelyHeavy,
+          isYoutube: isYoutube,
+          isMultimodal: isMultimodal);
 
       double computeUnits = user.computeUnits;
       if (user.isPro && computeUnits < approximateCost) {
         double tierCap = UsageConfig.capStandardPro;
         if (tier == 'power_pro') tierCap = UsageConfig.capPowerPro;
         if (tier == 'creator') tierCap = UsageConfig.capCreator;
-        
+
         computeUnits = tierCap;
-        developer.log('UsageService: Auto-refilling active Pro user compute units to tier cap: $tierCap.', name: 'UsageService');
+        developer.log(
+            'UsageService: Auto-refilling active Pro user compute units to tier cap: $tierCap.',
+            name: 'UsageService');
         _db.collection('users').doc(uid).update({'computeUnits': tierCap});
       }
 
       if (computeUnits < approximateCost) {
-        developer.log('Neural capacity depleted (Hidden CU) for user: $uid', name: 'UsageService');
+        developer.log('Neural capacity depleted (Hidden CU) for user: $uid',
+            name: 'UsageService');
         return false;
       }
 
@@ -139,7 +154,7 @@ class UsageService {
     if (lastAction == null) return false;
 
     final diff = now.difference(lastAction);
-    
+
     // Safety thresholds
     if (user.tier == 'free' && diff.inSeconds < 60) return true;
     if (user.isPro && diff.inSeconds < 5) return true;
@@ -149,13 +164,19 @@ class UsageService {
 
   /// Record a Study Session (Deduct Quota + CU invisibly)
   Future<void> recordStudySession(String uid, String actionType,
-      {bool isHeavy = false, bool isYoutube = false, bool isMultimodal = false}) async {
+      {bool isHeavy = false,
+      bool isYoutube = false,
+      bool isMultimodal = false}) async {
     try {
-      final bool effectivelyHeavy = isHeavy || isYoutube || isMultimodal || 
+      final bool effectivelyHeavy = isHeavy ||
+          isYoutube ||
+          isMultimodal ||
           ['lecture', 'tutor_session', 'exam'].contains(actionType);
-          
-      double cost = _calculateInternalCost(actionType, 
-          isHeavy: effectivelyHeavy, isYoutube: isYoutube, isMultimodal: isMultimodal);
+
+      double cost = _calculateInternalCost(actionType,
+          isHeavy: effectivelyHeavy,
+          isYoutube: isYoutube,
+          isMultimodal: isMultimodal);
 
       await _db.runTransaction((transaction) async {
         final userRef = _db.collection('users').doc(uid);
@@ -168,19 +189,20 @@ class UsageService {
 
         // Safety tier promote
         String tier = user.tier ?? 'free';
-        if (user.isPro && (tier == 'free' || !UsageConfig.heavyQuota.containsKey(tier))) {
+        if (user.isPro &&
+            (tier == 'free' || !UsageConfig.heavyQuota.containsKey(tier))) {
           tier = 'standard_pro';
         }
 
         // Reset if new day
-        bool isNewDay = lastAction == null || 
-            now.day != lastAction.day || 
-            now.month != lastAction.month || 
+        bool isNewDay = lastAction == null ||
+            now.day != lastAction.day ||
+            now.month != lastAction.month ||
             now.year != lastAction.year;
 
         int newHeavy = isNewDay ? 0 : user.dailyHeavyActions;
         int newLight = isNewDay ? 0 : user.dailyLightActions;
-        
+
         double computeUnits = user.computeUnits;
         if (user.isPro && computeUnits < cost) {
           double tierCap = UsageConfig.capStandardPro;
@@ -191,26 +213,32 @@ class UsageService {
 
         transaction.update(userRef, {
           'computeUnits': (computeUnits - cost).clamp(0.0, 10000.0),
-          if (effectivelyHeavy) 'dailyHeavyActions': newHeavy + 1
-          else 'dailyLightActions': newLight + 1,
+          if (effectivelyHeavy)
+            'dailyHeavyActions': newHeavy + 1
+          else
+            'dailyLightActions': newLight + 1,
           'totalDecksGenerated': user.totalDecksGenerated + 1,
           'lastDeckGenerationDate': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         });
       });
 
-      developer.log('Recorded action: $actionType (Heavy: $effectivelyHeavy, CU: $cost)',
+      developer.log(
+          'Recorded action: $actionType (Heavy: $effectivelyHeavy, CU: $cost)',
           name: 'UsageService');
     } catch (e) {
       developer.log('Error recording usage', name: 'UsageService', error: e);
     }
   }
 
-  double _calculateInternalCost(String actionType, 
-      {bool isHeavy = false, bool isYoutube = false, bool isMultimodal = false}) {
+  double _calculateInternalCost(String actionType,
+      {bool isHeavy = false,
+      bool isYoutube = false,
+      bool isMultimodal = false}) {
     double base = UsageConfig.cuStandard;
-    
-    if (actionType == 'summary' || actionType == 'note') base = UsageConfig.cuMicro;
+
+    if (actionType == 'summary' || actionType == 'note')
+      base = UsageConfig.cuMicro;
     if (actionType == 'exam') base = UsageConfig.cuMacro;
     if (actionType == 'lecture') base = UsageConfig.cuExtreme;
     if (actionType == 'tutor') base = UsageConfig.cuTutor;
@@ -220,12 +248,14 @@ class UsageService {
     if (isYoutube) base *= UsageConfig.multiYoutube;
     if (isMultimodal) base *= UsageConfig.multiPdfImage;
     if (isHeavy) base *= UsageConfig.multiHeavy;
-    
+
     return base;
   }
 
   // --- Legacy Compatibility ---
-  Future<bool> canPerformAction(String uid, String action) => canStartStudySession(uid, action);
-  Future<void> recordAction(String uid, String action) => recordStudySession(uid, action);
+  Future<bool> canPerformAction(String uid, String action) =>
+      canStartStudySession(uid, action);
+  Future<void> recordAction(String uid, String action) =>
+      recordStudySession(uid, action);
   Future<bool> canGenerateDeck(String uid) => canStartStudySession(uid, 'quiz');
 }

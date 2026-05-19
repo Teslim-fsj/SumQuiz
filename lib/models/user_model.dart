@@ -68,7 +68,6 @@ class UserModel {
   final DateTime? trialStartDate;
   final DateTime? lastCreditRefillDate;
 
-
   UserModel({
     required this.uid,
     required this.email,
@@ -120,11 +119,13 @@ class UserModel {
 
   // Legacy compatibility getters (mapped to Compute Units)
   int get credits => computeUnits.floor();
-  int get lifetimeCreditsEarned => (credits + totalDecksGenerated * 5); // Approximate
+  int get lifetimeCreditsEarned =>
+      (credits + totalDecksGenerated * 5); // Approximate
 
   // Compute Energy States (Invisible UX Logic)
-  double get computeEnergyLevel => (computeUnits / maxComputeCapacity).clamp(0.0, 1.0);
-  
+  double get computeEnergyLevel =>
+      (computeUnits / maxComputeCapacity).clamp(0.0, 1.0);
+
   bool get isHighEnergy => computeEnergyLevel >= 0.5;
   bool get isFatigued => computeEnergyLevel > 0.1 && computeEnergyLevel < 0.5;
   bool get isExhausted => computeEnergyLevel > 0.0 && computeEnergyLevel <= 0.1;
@@ -227,8 +228,11 @@ class UserModel {
       creatorProfile: data['creatorProfile'] ?? {},
       photoUrl: data['photoUrl'] ?? data['photoURL'],
       isEmailVerified: data['isEmailVerified'] ?? false,
-      computeUnits: (data['computeUnits'] as num?)?.toDouble() ?? (data['credits'] as num?)?.toDouble() ?? 20.0,
-      maxComputeCapacity: (data['maxComputeCapacity'] as num?)?.toDouble() ?? 20.0,
+      computeUnits: (data['computeUnits'] as num?)?.toDouble() ??
+          (data['credits'] as num?)?.toDouble() ??
+          20.0,
+      maxComputeCapacity:
+          (data['maxComputeCapacity'] as num?)?.toDouble() ?? 20.0,
       computeSessionId: data['computeSessionId'],
       isTrialActive: data['isTrialActive'] ?? false,
       trialStartDate: (data['trialStartDate'] as Timestamp?)?.toDate(),

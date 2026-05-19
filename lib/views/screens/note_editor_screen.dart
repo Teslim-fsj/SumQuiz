@@ -33,12 +33,12 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _titleController = TextEditingController();
   final FocusNode _editorFocusNode = FocusNode();
-  
+
   bool _isDrawingMode = false;
   bool _isInitialized = false;
   bool _showSidebar = true;
   Offset? _lensPosition;
-  
+
   StreamSubscription<String>? _transcriptSub;
 
   @override
@@ -90,10 +90,10 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
 
   void _appendLiveText(String text) {
     if (text.isEmpty) return;
-    
+
     final length = _controller.document.length;
     final insertionIndex = length > 0 ? length - 1 : 0;
-    
+
     String textToInsert = text;
     if (insertionIndex > 0) {
       final textStr = _controller.document.toPlainText();
@@ -104,27 +104,35 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         }
       }
     }
-    
+
     final currentSelection = _controller.selection;
     final isAtEnd = currentSelection.extentOffset >= insertionIndex;
 
     _controller.document.insert(insertionIndex, textToInsert);
-    
+
     // Highlight keywords
-    final List<String> keywords = ['mitochondria', 'energy', 'atp', 'cell', 'nucleus', 'important', 'exam'];
+    final List<String> keywords = [
+      'mitochondria',
+      'energy',
+      'atp',
+      'cell',
+      'nucleus',
+      'important',
+      'exam'
+    ];
     final lowerText = textToInsert.toLowerCase();
     for (final keyword in keywords) {
       int idx = lowerText.indexOf(keyword);
       while (idx != -1) {
         _controller.formatText(
-          insertionIndex + idx, 
-          keyword.length, 
-          quill.Attribute.clone(quill.Attribute.color, Colors.orangeAccent.toARGB32().toRadixString(16))
-        );
+            insertionIndex + idx,
+            keyword.length,
+            quill.Attribute.clone(quill.Attribute.color,
+                Colors.orangeAccent.toARGB32().toRadixString(16)));
         idx = lowerText.indexOf(keyword, idx + keyword.length);
       }
     }
-    
+
     if (isAtEnd) {
       final newLength = _controller.document.length;
       _controller.updateSelection(
@@ -182,11 +190,13 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         _isInitialized = true;
       });
 
-      final recovered = await TranscriptRecoveryService().getRecoveredTranscript(note.id);
+      final recovered =
+          await TranscriptRecoveryService().getRecoveredTranscript(note.id);
       if (recovered != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Found unsaved transcript from previous session.'),
+            content:
+                const Text('Found unsaved transcript from previous session.'),
             action: SnackBarAction(
               label: 'RESTORE',
               onPressed: () {
@@ -216,12 +226,13 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   Future<void> _insertImage() async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-    
+
     if (image != null) {
       final String path = image.path;
       final int index = _controller.selection.baseOffset;
       final int length = _controller.selection.extentOffset - index;
-      _controller.replaceText(index, length, quill.BlockEmbed.image(path), null);
+      _controller.replaceText(
+          index, length, quill.BlockEmbed.image(path), null);
     }
   }
 
@@ -247,17 +258,19 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     if (noteProvider.limitReached) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          noteProvider.clearError(); // resets limitReached to false so it doesn't infinite loop
-          UpgradeDialog.show(context, featureName: 'Advanced Synthesis & Recordings');
+          noteProvider
+              .clearError(); // resets limitReached to false so it doesn't infinite loop
+          UpgradeDialog.show(context,
+              featureName: 'Advanced Synthesis & Recordings');
         }
       });
     }
 
     if (!_isInitialized) {
       return Scaffold(
-        backgroundColor: colorScheme.surface, 
-        body: Center(child: CircularProgressIndicator(color: colorScheme.primary))
-      );
+          backgroundColor: colorScheme.surface,
+          body: Center(
+              child: CircularProgressIndicator(color: colorScheme.primary)));
     }
 
     return Scaffold(
@@ -284,8 +297,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                       ],
                     ),
                   ),
-                  if (_showSidebar)
-                    _buildRightSidebar(noteProvider, theme),
+                  if (_showSidebar) _buildRightSidebar(noteProvider, theme),
                 ],
               ),
             ),
@@ -296,22 +308,27 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     );
   }
 
-  Widget _buildTopBar(NoteProvider noteProvider, bool isRecording, UserModel? user, ThemeData theme) {
+  Widget _buildTopBar(NoteProvider noteProvider, bool isRecording,
+      UserModel? user, ThemeData theme) {
     final colorScheme = theme.colorScheme;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        border: Border(bottom: BorderSide(color: colorScheme.outline.withValues(alpha: 0.1))),
+        border: Border(
+            bottom:
+                BorderSide(color: colorScheme.outline.withValues(alpha: 0.1))),
       ),
       child: Row(
         children: [
           IconButton(
             onPressed: () => context.pop(),
-            icon: Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: colorScheme.onSurface),
+            icon: Icon(Icons.arrow_back_ios_new_rounded,
+                size: 20, color: colorScheme.onSurface),
             style: IconButton.styleFrom(
-              backgroundColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              backgroundColor:
+                  colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
               padding: const EdgeInsets.all(12),
             ),
           ),
@@ -327,32 +344,38 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
               decoration: InputDecoration(
                 hintText: 'Untitled Note',
                 border: InputBorder.none,
-                hintStyle: TextStyle(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                hintStyle: TextStyle(
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
               ),
             ),
           ),
-          if (isRecording)
-            _buildCaptureBadge(theme),
+          if (isRecording) _buildCaptureBadge(theme),
           const SizedBox(width: 16),
           _buildTopAction(Icons.draw_rounded, 'Sketch', () {
             setState(() => _isDrawingMode = !_isDrawingMode);
           }, theme, isActive: _isDrawingMode),
           const SizedBox(width: 12),
-          _buildTopAction(Icons.add_photo_alternate_rounded, 'Diagram', _insertImage, theme),
+          _buildTopAction(Icons.add_photo_alternate_rounded, 'Diagram',
+              _insertImage, theme),
           const SizedBox(width: 12),
           _buildTopAction(
-            noteProvider.state == NoteProcessingState.generating 
-              ? Icons.hourglass_empty_rounded 
-              : Icons.auto_awesome_rounded, 
-            noteProvider.state == NoteProcessingState.generating ? 'Processing...' : 'Synthesize', 
+            noteProvider.state == NoteProcessingState.generating
+                ? Icons.hourglass_empty_rounded
+                : Icons.auto_awesome_rounded,
+            noteProvider.state == NoteProcessingState.generating
+                ? 'Processing...'
+                : 'Synthesize',
             () async {
-              if (user != null && noteProvider.state != NoteProcessingState.generating) {
-                final folderId = await noteProvider.generateStudyMaterials(user.uid);
+              if (user != null &&
+                  noteProvider.state != NoteProcessingState.generating) {
+                final folderId =
+                    await noteProvider.generateStudyMaterials(user.uid);
                 if (folderId != null && mounted) {
-                  context.pushNamed('results-view', pathParameters: {'folderId': folderId});
+                  context.pushNamed('results-view',
+                      pathParameters: {'folderId': folderId});
                 }
               }
-            }, 
+            },
             theme,
             isActive: noteProvider.state == NoteProcessingState.generating,
             activeColor: colorScheme.tertiary,
@@ -361,11 +384,14 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           IconButton(
             onPressed: () => setState(() => _showSidebar = !_showSidebar),
             icon: Icon(
-              _showSidebar ? Icons.arrow_forward_ios_rounded : Icons.arrow_back_ios_rounded, 
-              color: colorScheme.onSurfaceVariant
-            ),
+                _showSidebar
+                    ? Icons.arrow_forward_ios_rounded
+                    : Icons.arrow_back_ios_rounded,
+                color: colorScheme.onSurfaceVariant),
             style: IconButton.styleFrom(
-              backgroundColor: _showSidebar ? colorScheme.primary.withValues(alpha: 0.1) : Colors.transparent,
+              backgroundColor: _showSidebar
+                  ? colorScheme.primary.withValues(alpha: 0.1)
+                  : Colors.transparent,
             ),
           ),
         ],
@@ -379,29 +405,36 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
       decoration: BoxDecoration(
         color: theme.colorScheme.errorContainer.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: theme.colorScheme.error.withValues(alpha: 0.3)),
+        border:
+            Border.all(color: theme.colorScheme.error.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           Container(
             width: 8,
             height: 8,
-            decoration: BoxDecoration(color: theme.colorScheme.error, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+                color: theme.colorScheme.error, shape: BoxShape.circle),
           ).animate(onPlay: (c) => c.repeat()).fadeIn().fadeOut(),
           const SizedBox(width: 8),
           Text(
             'LIVE RECORDING',
-            style: GoogleFonts.jetBrainsMono(fontSize: 11, fontWeight: FontWeight.bold, color: theme.colorScheme.error),
+            style: GoogleFonts.jetBrainsMono(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.error),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTopAction(IconData icon, String? label, VoidCallback onTap, ThemeData theme, {bool isActive = false, Color? activeColor}) {
+  Widget _buildTopAction(
+      IconData icon, String? label, VoidCallback onTap, ThemeData theme,
+      {bool isActive = false, Color? activeColor}) {
     final colorScheme = theme.colorScheme;
     final color = activeColor ?? colorScheme.primary;
-    
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(100),
@@ -409,7 +442,9 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isActive ? color.withValues(alpha: 0.1) : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+          color: isActive
+              ? color.withValues(alpha: 0.1)
+              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(100),
           border: Border.all(
             color: isActive ? color.withValues(alpha: 0.5) : Colors.transparent,
@@ -417,16 +452,17 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: isActive ? color : colorScheme.onSurfaceVariant),
+            Icon(icon,
+                size: 18,
+                color: isActive ? color : colorScheme.onSurfaceVariant),
             if (label != null) ...[
               const SizedBox(width: 8),
               Text(
                 label,
                 style: GoogleFonts.inter(
-                  fontSize: 14, 
-                  fontWeight: FontWeight.w600, 
-                  color: isActive ? color : colorScheme.onSurfaceVariant
-                ),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isActive ? color : colorScheme.onSurfaceVariant),
               ),
             ],
           ],
@@ -437,7 +473,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
 
   Widget _buildEditorArea(NoteProvider provider, ThemeData theme) {
     final colorScheme = theme.colorScheme;
-    
+
     return Container(
       color: colorScheme.surface,
       child: Stack(
@@ -456,22 +492,33 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                 customStyles: quill.DefaultStyles(
                   paragraph: quill.DefaultTextBlockStyle(
                     GoogleFonts.inter(
-                      fontSize: 16, 
-                      height: 1.8, 
-                      color: colorScheme.onSurface
-                    ),
+                        fontSize: 16,
+                        height: 1.8,
+                        color: colorScheme.onSurface),
                     const quill.HorizontalSpacing(0, 0),
                     const quill.VerticalSpacing(0, 0),
                     const quill.VerticalSpacing(0, 0),
                     null,
                   ),
                   h1: quill.DefaultTextBlockStyle(
-                    GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
-                    const quill.HorizontalSpacing(0, 0), const quill.VerticalSpacing(16, 0), const quill.VerticalSpacing(0, 0), null,
+                    GoogleFonts.outfit(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface),
+                    const quill.HorizontalSpacing(0, 0),
+                    const quill.VerticalSpacing(16, 0),
+                    const quill.VerticalSpacing(0, 0),
+                    null,
                   ),
                   h2: quill.DefaultTextBlockStyle(
-                    GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
-                    const quill.HorizontalSpacing(0, 0), const quill.VerticalSpacing(12, 0), const quill.VerticalSpacing(0, 0), null,
+                    GoogleFonts.outfit(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface),
+                    const quill.HorizontalSpacing(0, 0),
+                    const quill.VerticalSpacing(12, 0),
+                    const quill.VerticalSpacing(0, 0),
+                    null,
                   ),
                 ),
               ),
@@ -494,17 +541,20 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   Widget _buildRightSidebar(NoteProvider provider, ThemeData theme) {
     final note = provider.currentNote;
     final colorScheme = theme.colorScheme;
-    
+
     return Container(
       width: 320,
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLowest,
-        border: Border(left: BorderSide(color: colorScheme.outline.withValues(alpha: 0.1))),
+        border: Border(
+            left:
+                BorderSide(color: colorScheme.outline.withValues(alpha: 0.1))),
       ),
       child: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          _buildSidebarSection('TOPICS & ENTITIES', note?.topicNames ?? [], theme),
+          _buildSidebarSection(
+              'TOPICS & ENTITIES', note?.topicNames ?? [], theme),
           const SizedBox(height: 32),
           _buildRecordingsList(provider, theme),
         ],
@@ -520,70 +570,80 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         Text(
           'AUDIO SESSIONS',
           style: GoogleFonts.jetBrainsMono(
-            fontSize: 11, 
-            fontWeight: FontWeight.bold, 
-            color: colorScheme.onSurfaceVariant, 
-            letterSpacing: 1.2
-          ),
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onSurfaceVariant,
+              letterSpacing: 1.2),
         ),
         const SizedBox(height: 16),
         if (provider.currentNoteRecordings.isEmpty)
-          Text('No recordings yet.', style: GoogleFonts.inter(fontSize: 13, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7), fontStyle: FontStyle.italic)),
+          Text('No recordings yet.',
+              style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                  fontStyle: FontStyle.italic)),
         ...provider.currentNoteRecordings.map((rec) => Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                    color: colorScheme.outline.withValues(alpha: 0.1)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              IconButton.filledTonal(
-                icon: const Icon(Icons.play_arrow_rounded, size: 20),
-                onPressed: () => provider.playRecording(rec),
-                visualDensity: VisualDensity.compact,
-                style: IconButton.styleFrom(
-                  backgroundColor: colorScheme.primaryContainer,
-                  foregroundColor: colorScheme.primary,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Recording ${rec.createdAt.day}/${rec.createdAt.month}',
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: colorScheme.onSurface),
+              child: Row(
+                children: [
+                  IconButton.filledTonal(
+                    icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                    onPressed: () => provider.playRecording(rec),
+                    visualDensity: VisualDensity.compact,
+                    style: IconButton.styleFrom(
+                      backgroundColor: colorScheme.primaryContainer,
+                      foregroundColor: colorScheme.primary,
                     ),
-                    Text(
-                      '${rec.durationSeconds}s • ${rec.createdAt.hour}:${rec.createdAt.minute.toString().padLeft(2, '0')}',
-                      style: GoogleFonts.inter(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Recording ${rec.createdAt.day}/${rec.createdAt.month}',
+                          style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface),
+                        ),
+                        Text(
+                          '${rec.durationSeconds}s • ${rec.createdAt.hour}:${rec.createdAt.minute.toString().padLeft(2, '0')}',
+                          style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: colorScheme.onSurfaceVariant),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                    onPressed: () => provider.deleteRecording(rec.id),
+                    color: colorScheme.error.withValues(alpha: 0.8),
+                  ),
+                ],
               ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                onPressed: () => provider.deleteRecording(rec.id),
-                color: colorScheme.error.withValues(alpha: 0.8),
-              ),
-            ],
-          ),
-        )),
+            )),
       ],
     );
   }
 
-  Widget _buildSidebarSection(String title, List<String> items, ThemeData theme) {
+  Widget _buildSidebarSection(
+      String title, List<String> items, ThemeData theme) {
     final colorScheme = theme.colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -591,32 +651,39 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         Text(
           title,
           style: GoogleFonts.jetBrainsMono(
-            fontSize: 11, 
-            fontWeight: FontWeight.bold, 
-            color: colorScheme.onSurfaceVariant, 
-            letterSpacing: 1.2
-          ),
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onSurfaceVariant,
+              letterSpacing: 1.2),
         ),
         const SizedBox(height: 16),
         if (items.isEmpty)
-          Text('Extracting context...', style: GoogleFonts.inter(fontSize: 13, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7), fontStyle: FontStyle.italic)),
+          Text('Extracting context...',
+              style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                  fontStyle: FontStyle.italic)),
         ...items.map((item) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: colorScheme.tertiaryContainer,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.tag_rounded, size: 10, color: colorScheme.tertiary),
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: colorScheme.tertiaryContainer,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.tag_rounded,
+                        size: 10, color: colorScheme.tertiary),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                      child: Text(item,
+                          style: GoogleFonts.inter(
+                              fontSize: 14, color: colorScheme.onSurface))),
+                ],
               ),
-              const SizedBox(width: 12),
-              Expanded(child: Text(item, style: GoogleFonts.inter(fontSize: 14, color: colorScheme.onSurface))),
-            ],
-          ),
-        )),
+            )),
       ],
     );
   }
@@ -635,7 +702,7 @@ class ImageEmbedBuilder extends quill.EmbedBuilder {
     if (imageUrl == null || imageUrl.toString().isEmpty) {
       return const SizedBox.shrink();
     }
-    
+
     final String urlStr = imageUrl.toString();
     if (kIsWeb || urlStr.startsWith('http') || urlStr.startsWith('blob:')) {
       return Padding(
@@ -645,7 +712,8 @@ class ImageEmbedBuilder extends quill.EmbedBuilder {
           child: Image.network(
             urlStr,
             fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 50, color: Colors.red),
+            errorBuilder: (context, error, stackTrace) =>
+                const Icon(Icons.broken_image, size: 50, color: Colors.red),
           ),
         ),
       );
@@ -657,7 +725,8 @@ class ImageEmbedBuilder extends quill.EmbedBuilder {
           child: Image.file(
             io.File(urlStr),
             fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 50, color: Colors.red),
+            errorBuilder: (context, error, stackTrace) =>
+                const Icon(Icons.broken_image, size: 50, color: Colors.red),
           ),
         ),
       );

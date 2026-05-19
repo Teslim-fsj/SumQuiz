@@ -20,7 +20,7 @@ class ReviewListCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     if (dueItems.isEmpty) {
       return _buildEmptyState(theme);
     }
@@ -83,7 +83,8 @@ class ReviewListCard extends StatelessWidget {
                     color: theme.colorScheme.primary.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(Icons.school_rounded, color: theme.colorScheme.primary, size: 20),
+                  child: Icon(Icons.school_rounded,
+                      color: theme.colorScheme.primary, size: 20),
                 ),
                 const SizedBox(width: 20),
                 Expanded(
@@ -120,17 +121,23 @@ class ReviewListCard extends StatelessWidget {
                     backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
                     foregroundColor: theme.colorScheme.primary,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                   child: Text(
                     'Review',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14),
+                    style: GoogleFonts.inter(
+                        fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ),
               ],
             ),
-          ).animate().fadeIn(delay: (100 * index).ms).slideX(begin: -0.05, end: 0);
+          )
+              .animate()
+              .fadeIn(delay: (100 * index).ms)
+              .slideX(begin: -0.05, end: 0);
         }),
       ],
     );
@@ -141,7 +148,9 @@ class ReviewListCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: isHigh ? const Color(0xFFEF4444).withOpacity(0.08) : theme.dividerColor.withOpacity(0.05),
+        color: isHigh
+            ? const Color(0xFFEF4444).withOpacity(0.08)
+            : theme.dividerColor.withOpacity(0.05),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(

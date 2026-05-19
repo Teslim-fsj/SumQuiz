@@ -118,8 +118,8 @@ class PreferencesScreen extends StatelessWidget {
                             if (value) {
                               // If turning ON, check/request permissions
                               await notificationService.requestPermissions();
-                              final granted =
-                                  await notificationService.arePermissionsGranted();
+                              final granted = await notificationService
+                                  .arePermissionsGranted();
 
                               if (!granted) {
                                 if (context.mounted) {
@@ -130,7 +130,8 @@ class PreferencesScreen extends StatelessWidget {
                             }
 
                             themeProvider.toggleNotifications(value);
-                            await notificationService.toggleNotifications(value);
+                            await notificationService
+                                .toggleNotifications(value);
 
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -194,8 +195,8 @@ class PreferencesScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color: theme.cardColor.withValues(alpha: 0.7),
             borderRadius: BorderRadius.circular(24),
-            border:
-                Border.all(color: theme.cardColor.withValues(alpha: 0.6), width: 1.5),
+            border: Border.all(
+                color: theme.cardColor.withValues(alpha: 0.6), width: 1.5),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),

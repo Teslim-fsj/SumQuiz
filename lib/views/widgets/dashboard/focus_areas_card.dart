@@ -32,7 +32,8 @@ class FocusAreasCard extends StatelessWidget {
             TextButton(
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const SpacedRepetitionScreen()),
+                MaterialPageRoute(
+                    builder: (context) => const SpacedRepetitionScreen()),
               ),
               child: Text(
                 'View All',
@@ -49,7 +50,8 @@ class FocusAreasCard extends StatelessWidget {
         ...topics.take(3).map((topic) {
           final riskPercent = (topic.forgettingRisk * 100).toStringAsFixed(0);
           final isHighRisk = topic.forgettingRisk > 0.6;
-          final accentColor = isHighRisk ? const Color(0xFFF59E0B) : theme.colorScheme.primary;
+          final accentColor =
+              isHighRisk ? const Color(0xFFF59E0B) : theme.colorScheme.primary;
 
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
@@ -70,7 +72,8 @@ class FocusAreasCard extends StatelessWidget {
               child: InkWell(
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const SpacedRepetitionScreen()),
+                  MaterialPageRoute(
+                      builder: (context) => const SpacedRepetitionScreen()),
                 ),
                 borderRadius: BorderRadius.circular(24),
                 child: Padding(

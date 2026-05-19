@@ -63,7 +63,7 @@ class TopicNode extends HiveObject {
   /// Higher values mean the user is likely to forget this topic soon.
   double get forgettingRisk {
     if (stabilityScore == 0) return 1.0;
-    
+
     final now = DateTime.now();
     final diff = now.difference(lastInteraction);
     final daysSince = diff.inSeconds / (24 * 3600);
@@ -71,10 +71,10 @@ class TopicNode extends HiveObject {
     // Exponential decay model: R = e^(-t / S)
     // S (stability) is scaled so 1.0 stability ~ 30 days of retention
     final adjustedStability = (stabilityScore * 30.0).clamp(0.1, 1000.0);
-    
+
     // Risk = 1.0 - Retrievability
     final retrievability = math.exp(-daysSince / adjustedStability);
-    
+
     return (1.0 - retrievability).clamp(0.0, 1.0);
   }
 

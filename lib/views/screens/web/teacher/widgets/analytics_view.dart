@@ -73,7 +73,8 @@ class AnalyticsView extends StatelessWidget {
       decoration: BoxDecoration(
         color: WebColors.purplePrimary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: WebColors.purplePrimary.withValues(alpha: 0.2)),
+        border:
+            Border.all(color: WebColors.purplePrimary.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [

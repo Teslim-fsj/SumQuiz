@@ -165,7 +165,8 @@ class _RoleSelectionDialogState extends State<RoleSelectionDialog> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: WebColors.primary,
                     foregroundColor: Colors.white,
-                    disabledBackgroundColor: WebColors.primary.withValues(alpha: 0.2),
+                    disabledBackgroundColor:
+                        WebColors.primary.withValues(alpha: 0.2),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -222,7 +223,9 @@ class _RoleSelectionDialogState extends State<RoleSelectionDialog> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(28),
         decoration: BoxDecoration(
-          color: isSelected ? color.withValues(alpha: 0.08) : WebColors.backgroundAlt,
+          color: isSelected
+              ? color.withValues(alpha: 0.08)
+              : WebColors.backgroundAlt,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: isSelected ? color : WebColors.border,

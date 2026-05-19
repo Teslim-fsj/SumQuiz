@@ -15,7 +15,7 @@ class GhostLinkIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
@@ -32,7 +32,8 @@ class GhostLinkIndicator extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.auto_awesome_rounded, size: 12, color: theme.colorScheme.primary),
+            Icon(Icons.auto_awesome_rounded,
+                size: 12, color: theme.colorScheme.primary),
             const SizedBox(width: 6),
             Text(
               label.toUpperCase(),

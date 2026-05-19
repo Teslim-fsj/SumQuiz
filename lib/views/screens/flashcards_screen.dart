@@ -65,7 +65,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
   String _loadingMessage = 'Generating Flashcards...';
   String _errorMessage = '';
 
-   List<Flashcard> _flashcards = [];
+  List<Flashcard> _flashcards = [];
   List<String> _topicIds = [];
   int _correctCount = 0;
   final Stopwatch _stopwatch = Stopwatch();
@@ -161,9 +161,8 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
     final iapService = Provider.of<IAPService>(context, listen: false);
     _localDbService = LocalDatabaseService();
     await _localDbService.init();
-    _aiService = EnhancedAIService(
-        iapService: iapService,
-        localDb: _localDbService);
+    _aiService =
+        EnhancedAIService(iapService: iapService, localDb: _localDbService);
     _srsService =
         SpacedRepetitionService(_localDbService as Box<SpacedRepetitionItem>);
   }
@@ -672,7 +671,10 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
                         ? SignalType.flashcardSuccess
                         : SignalType.flashcardFailure,
                     timestamp: DateTime.now(),
-                    metadata: {'context': 'flashcard_review', 'userId': user.uid},
+                    metadata: {
+                      'context': 'flashcard_review',
+                      'userId': user.uid
+                    },
                   ));
                 }
               }
@@ -687,7 +689,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
             onFinish: () {
               _stopwatch.stop();
               final timeSpent = _stopwatch.elapsed.inSeconds;
-              
+
               context.push('/post-study-results', extra: {
                 'score': _correctCount,
                 'totalQuestions': _flashcards.length,

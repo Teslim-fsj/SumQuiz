@@ -121,8 +121,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       ),
       body: subProvider.isLoading
           ? Center(
-              child: CircularProgressIndicator(
-                  color: theme.colorScheme.primary))
+              child:
+                  CircularProgressIndicator(color: theme.colorScheme.primary))
           : LayoutBuilder(
               builder: (context, constraints) {
                 if (constraints.maxWidth > 900) {
@@ -169,7 +169,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 return Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: _buildTierCard(entry.value, entry.key, theme, isWeb: true),
+                    child: _buildTierCard(entry.value, entry.key, theme,
+                        isWeb: true),
                   ),
                 );
               }).toList(),
@@ -226,7 +227,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 return AnimatedScale(
                   scale: _currentPage == index ? 1.0 : 0.93,
                   duration: const Duration(milliseconds: 250),
-                  child: _buildTierCard(_allTiers[index], index, theme, isWeb: false),
+                  child: _buildTierCard(_allTiers[index], index, theme,
+                      isWeb: false),
                 );
               },
             ),
@@ -350,14 +352,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Row(
                     children: [
-                      Icon(Icons.check_circle_rounded, color: tierColor, size: 18),
+                      Icon(Icons.check_circle_rounded,
+                          color: tierColor, size: 18),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           feature,
                           style: GoogleFonts.inter(
                             fontSize: 14,
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.8),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -378,7 +382,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: isCurrentPlan
                     ? Colors.green
-                    : (isFeatured ? colorScheme.primary : theme.scaffoldBackgroundColor),
+                    : (isFeatured
+                        ? colorScheme.primary
+                        : theme.scaffoldBackgroundColor),
                 foregroundColor: isCurrentPlan
                     ? Colors.white
                     : (isFeatured ? Colors.white : colorScheme.primary),
@@ -387,7 +393,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   borderRadius: BorderRadius.circular(14),
                   side: isFeatured
                       ? BorderSide.none
-                      : BorderSide(color: colorScheme.primary.withValues(alpha: 0.2)),
+                      : BorderSide(
+                          color: colorScheme.primary.withValues(alpha: 0.2)),
                 ),
               ),
               child: Text(
@@ -413,7 +420,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         decoration: BoxDecoration(
           color: theme.colorScheme.primary.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.15)),
+          border: Border.all(
+              color: theme.colorScheme.primary.withValues(alpha: 0.15)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

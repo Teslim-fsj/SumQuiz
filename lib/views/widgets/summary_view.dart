@@ -51,7 +51,8 @@ class SummaryView extends StatelessWidget {
               children: tags.map((tag) {
                 final cleanTag = tag.startsWith('#') ? tag : '#$tag';
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: const Color(0xFF0D9488).withOpacity(0.08),
                     borderRadius: BorderRadius.circular(10),
@@ -89,12 +90,15 @@ class SummaryView extends StatelessWidget {
                     child: ElevatedButton.icon(
                       onPressed: onGenerateQuiz,
                       icon: const Icon(Icons.quiz_rounded, size: 18),
-                      label: Text('Practice Quiz', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                      label: Text('Practice Quiz',
+                          style:
+                              GoogleFonts.inter(fontWeight: FontWeight.bold)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFF59E0B),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
                         elevation: 0,
                       ),
                     ),
@@ -112,21 +116,32 @@ class SummaryView extends StatelessWidget {
             data: content,
             selectable: true,
             styleSheet: MarkdownStyleSheet(
-              p: GoogleFonts.inter(fontSize: 16, height: 1.7, color: theme.textTheme.bodyMedium?.color?.withOpacity(0.8)),
-              h1: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold, height: 2),
-              h2: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, height: 1.8),
-              h3: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, height: 1.6),
-              listBullet: GoogleFonts.inter(fontSize: 16, color: const Color(0xFF0D9488)),
+              p: GoogleFonts.inter(
+                  fontSize: 16,
+                  height: 1.7,
+                  color: theme.textTheme.bodyMedium?.color?.withOpacity(0.8)),
+              h1: GoogleFonts.outfit(
+                  fontSize: 24, fontWeight: FontWeight.bold, height: 2),
+              h2: GoogleFonts.outfit(
+                  fontSize: 20, fontWeight: FontWeight.bold, height: 1.8),
+              h3: GoogleFonts.outfit(
+                  fontSize: 18, fontWeight: FontWeight.bold, height: 1.6),
+              listBullet: GoogleFonts.inter(
+                  fontSize: 16, color: const Color(0xFF0D9488)),
             ),
           ).animate().fadeIn(delay: showActions ? 300.ms : 200.ms),
-          
+
           const SizedBox(height: 48),
         ],
       ),
     );
   }
 
-  Widget _buildActionButton({required IconData icon, required String label, required VoidCallback? onTap, required ThemeData theme}) {
+  Widget _buildActionButton(
+      {required IconData icon,
+      required String label,
+      required VoidCallback? onTap,
+      required ThemeData theme}) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -142,7 +157,11 @@ class SummaryView extends StatelessWidget {
           children: [
             Icon(icon, size: 18, color: theme.hintColor),
             const SizedBox(width: 8),
-            Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: theme.hintColor)),
+            Text(label,
+                style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: theme.hintColor)),
           ],
         ),
       ),

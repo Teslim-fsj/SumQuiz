@@ -65,7 +65,9 @@ Text: $text''';
       final data = safeJsonDecode(jsonStr, requiredKeys: ['content']);
 
       if (data['content'].toString().trim().isEmpty) {
-        throw AIServiceException('AI generated an empty summary. Neural circuits might be fatigued.', code: 'EMPTY_SUMMARY');
+        throw AIServiceException(
+            'AI generated an empty summary. Neural circuits might be fatigued.',
+            code: 'EMPTY_SUMMARY');
       }
 
       final List<String> tags = [];
@@ -158,7 +160,9 @@ Text: $text''';
       }
 
       if (questions.isEmpty) {
-        throw AIServiceException('AI generated an empty quiz. Neural pathways might be fluctuating.', code: 'EMPTY_QUIZ');
+        throw AIServiceException(
+            'AI generated an empty quiz. Neural pathways might be fluctuating.',
+            code: 'EMPTY_QUIZ');
       }
 
       return LocalQuiz(
@@ -235,7 +239,8 @@ Text: $text''';
       }
 
       if (flashcards.isEmpty) {
-        throw AIServiceException('AI generated an empty flashcard set.', code: 'EMPTY_FLASHCARDS');
+        throw AIServiceException('AI generated an empty flashcard set.',
+            code: 'EMPTY_FLASHCARDS');
       }
 
       return LocalFlashcardSet(
@@ -345,7 +350,8 @@ Text: $text''';
       final response = await generateWithRetry(prompt,
           customModel: educatorModel, isPro: isPro, cancelToken: cancelToken);
       final jsonStr = extractJson(response);
-      var data = safeJsonDecode(jsonStr, requiredKeys: ['summary', 'quiz', 'flashcards']);
+      var data = safeJsonDecode(jsonStr,
+          requiredKeys: ['summary', 'quiz', 'flashcards']);
 
       // If safeJsonDecode failed, it returned an empty map
       if (data.isEmpty) {
@@ -363,7 +369,8 @@ Text: $text''';
       if (data.containsKey('title')) {
         // Validation: Ensure we have at least some content
         if (data['quiz'] is! List || (data['quiz'] as List).isEmpty) {
-          developer.log('Topic generation returned empty quiz', name: 'GeneratorAIService', level: 900);
+          developer.log('Topic generation returned empty quiz',
+              name: 'GeneratorAIService', level: 900);
         }
         return data;
       }
@@ -630,7 +637,8 @@ Text: $text''';
     String? userName,
     CancellationToken? cancelToken,
   }) {
-    final systemPrompt = '''You are Sumi, a brilliant and empathetic AI tutor for SumQuiz.
+    final systemPrompt =
+        '''You are Sumi, a brilliant and empathetic AI tutor for SumQuiz.
     Your goal is to help ${userName ?? 'the student'} master their subjects through active recall and Socratic questioning.
     
     CURRENT CONTEXT: ${context ?? 'General study session.'}
@@ -659,7 +667,8 @@ Text: $text''';
     String? userName,
     CancellationToken? cancelToken,
   }) async {
-    final systemPrompt = '''You are Sumi, a brilliant and empathetic AI tutor for SumQuiz.
+    final systemPrompt =
+        '''You are Sumi, a brilliant and empathetic AI tutor for SumQuiz.
     Your goal is to help ${userName ?? 'the student'} master their subjects through active recall and Socratic questioning.
     
     CURRENT CONTEXT: ${context ?? 'General study session.'}
@@ -688,7 +697,8 @@ Text: $text''';
     String? userName,
     CancellationToken? cancelToken,
   }) async {
-    final systemPrompt = '''You are Sumi, a brilliant and empathetic AI tutor for SumQuiz.
+    final systemPrompt =
+        '''You are Sumi, a brilliant and empathetic AI tutor for SumQuiz.
     
     STUDENT NAME: ${userName ?? 'Student'}
     CURRENT CONTEXT: ${context ?? 'General study session.'}

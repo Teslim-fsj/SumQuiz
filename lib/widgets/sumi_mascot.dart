@@ -25,17 +25,18 @@ class SumiMascot extends StatefulWidget {
 class _SumiMascotState extends State<SumiMascot> with TickerProviderStateMixin {
   late AnimationController _blinkController;
   late AnimationController _breatheController;
-  
+
   bool _isBlinking = false;
 
   @override
   void initState() {
     super.initState();
-    
+
     _breatheController = AnimationController(
-      vsync: this, 
-      duration: const Duration(milliseconds: 3000) // Slower, deeper breathing
-    )..repeat(reverse: true);
+        vsync: this,
+        duration: const Duration(milliseconds: 3000) // Slower, deeper breathing
+        )
+      ..repeat(reverse: true);
 
     _blinkController = AnimationController(
       vsync: this,
@@ -46,19 +47,19 @@ class _SumiMascotState extends State<SumiMascot> with TickerProviderStateMixin {
 
   void _scheduleNextBlink() async {
     if (!mounted) return;
-    
+
     // Random interval, sometimes double-blinks
     int nextDelay = 2000 + Random().nextInt(4000);
     if (Random().nextDouble() > 0.8) nextDelay = 300; // Double blink chance
 
     await Future.delayed(Duration(milliseconds: nextDelay));
-    
+
     if (!mounted) return;
-    
+
     setState(() => _isBlinking = true);
     await _blinkController.forward(from: 0.0);
     setState(() => _isBlinking = false);
-    
+
     _scheduleNextBlink();
   }
 
@@ -81,7 +82,7 @@ class _SumiMascotState extends State<SumiMascot> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Stack(
       alignment: Alignment.center,
       clipBehavior: Clip.none,
@@ -237,69 +238,118 @@ class _SumiMascotState extends State<SumiMascot> with TickerProviderStateMixin {
         child: Image.asset(
           'assets/images/sumi.png',
           fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) => 
-              const Icon(Icons.face_retouching_natural, color: Colors.purpleAccent, size: 48),
+          errorBuilder: (context, error, stackTrace) => const Icon(
+              Icons.face_retouching_natural,
+              color: Colors.purpleAccent,
+              size: 48),
         ),
       ),
-    ).animate(key: ValueKey('fallback_sumi_${widget.state}'), onPlay: (c) => c.repeat(reverse: true))
-     .moveY(begin: 0, end: -8, duration: 2.seconds, curve: Curves.easeInOut)
-     .shimmer(delay: 1.seconds, duration: 1500.ms, color: Colors.purpleAccent.withValues(alpha: 0.1));
+    )
+        .animate(
+            key: ValueKey('fallback_sumi_${widget.state}'),
+            onPlay: (c) => c.repeat(reverse: true))
+        .moveY(begin: 0, end: -8, duration: 2.seconds, curve: Curves.easeInOut)
+        .shimmer(
+            delay: 1.seconds,
+            duration: 1500.ms,
+            color: Colors.purpleAccent.withValues(alpha: 0.1));
   }
 
   Widget _applyStateModifiers(Widget child) {
     // We chain flutter_animate calls based on the state to give unique "personalities"
-    
-    if (widget.state == SumiState.correct || widget.state == SumiState.celebrating || widget.state == SumiState.streakBoost) {
+
+    if (widget.state == SumiState.correct ||
+        widget.state == SumiState.celebrating ||
+        widget.state == SumiState.streakBoost) {
       // Joyful Jump with Squash and Stretch
-      return child.animate(key: ValueKey('correct_jump'))
-        .scale(begin: const Offset(1.2, 0.8), end: const Offset(0.9, 1.1), duration: 200.ms, curve: Curves.easeOut) // Squash then stretch
-        .moveY(end: -30, duration: 300.ms, curve: Curves.easeOutCirc) // Jump up
-        .then()
-        .moveY(end: 0, duration: 300.ms, curve: Curves.easeInCirc) // Fall down
-        .scale(begin: const Offset(0.9, 1.1), end: const Offset(1.1, 0.9), duration: 150.ms) // Squash on impact
-        .then()
-        .scale(begin: const Offset(1.1, 0.9), end: const Offset(1.0, 1.0), duration: 200.ms, curve: Curves.elasticOut); // Settle
-    } 
-    else if (widget.state == SumiState.incorrect || widget.state == SumiState.tired) {
+      return child
+          .animate(key: ValueKey('correct_jump'))
+          .scale(
+              begin: const Offset(1.2, 0.8),
+              end: const Offset(0.9, 1.1),
+              duration: 200.ms,
+              curve: Curves.easeOut) // Squash then stretch
+          .moveY(
+              end: -30, duration: 300.ms, curve: Curves.easeOutCirc) // Jump up
+          .then()
+          .moveY(
+              end: 0, duration: 300.ms, curve: Curves.easeInCirc) // Fall down
+          .scale(
+              begin: const Offset(0.9, 1.1),
+              end: const Offset(1.1, 0.9),
+              duration: 150.ms) // Squash on impact
+          .then()
+          .scale(
+              begin: const Offset(1.1, 0.9),
+              end: const Offset(1.0, 1.0),
+              duration: 200.ms,
+              curve: Curves.elasticOut); // Settle
+    } else if (widget.state == SumiState.incorrect ||
+        widget.state == SumiState.tired) {
       // Defeated Droop
-      return child.animate(key: ValueKey('sad_droop'))
-        .scale(begin: const Offset(1.0, 1.0), end: const Offset(1.05, 0.85), duration: 800.ms, curve: Curves.bounceOut) // Flatten out
-        .moveY(end: 15, duration: 800.ms, curve: Curves.easeOut) // Sink down
-        .rotate(end: 0.05, duration: 1000.ms); // Slight tilt of defeat
-    }
-    else if (widget.state == SumiState.thinking) {
+      return child
+          .animate(key: ValueKey('sad_droop'))
+          .scale(
+              begin: const Offset(1.0, 1.0),
+              end: const Offset(1.05, 0.85),
+              duration: 800.ms,
+              curve: Curves.bounceOut) // Flatten out
+          .moveY(end: 15, duration: 800.ms, curve: Curves.easeOut) // Sink down
+          .rotate(end: 0.05, duration: 1000.ms); // Slight tilt of defeat
+    } else if (widget.state == SumiState.thinking) {
       // Pondering tilt
-      return child.animate(key: ValueKey('thinking_tilt'))
-        .rotate(end: -0.05, duration: 600.ms, curve: Curves.easeInOut) // Tilt head left
-        .moveY(end: -5, duration: 600.ms)
-        .then()
-        .rotate(end: 0.02, duration: 1200.ms, curve: Curves.easeInOut); // Slowly sway right
-    }
-    else if (widget.state == SumiState.confused) {
+      return child
+          .animate(key: ValueKey('thinking_tilt'))
+          .rotate(
+              end: -0.05,
+              duration: 600.ms,
+              curve: Curves.easeInOut) // Tilt head left
+          .moveY(end: -5, duration: 600.ms)
+          .then()
+          .rotate(
+              end: 0.02,
+              duration: 1200.ms,
+              curve: Curves.easeInOut); // Slowly sway right
+    } else if (widget.state == SumiState.confused) {
       // Confused back and forth tilt
-      return child.animate(key: ValueKey('confused_tilt'), onPlay: (c) => c.repeat(reverse: true))
-        .rotate(begin: -0.08, end: 0.08, duration: 800.ms, curve: Curves.easeInOutSine);
-    }
-    else if (widget.state == SumiState.shocked || widget.state == SumiState.analytical) {
+      return child
+          .animate(
+              key: ValueKey('confused_tilt'),
+              onPlay: (c) => c.repeat(reverse: true))
+          .rotate(
+              begin: -0.08,
+              end: 0.08,
+              duration: 800.ms,
+              curve: Curves.easeInOutSine);
+    } else if (widget.state == SumiState.shocked ||
+        widget.state == SumiState.analytical) {
       // Wide awake, slight vibration
-      return child.animate(key: ValueKey('shocked_vibes'), onPlay: (c) => c.repeat(reverse: true))
-        .moveY(end: -10, duration: 200.ms, curve: Curves.easeOut)
-        .scale(end: const Offset(1.05, 1.05), duration: 200.ms)
-        .shake(hz: 8, offset: const Offset(1, 1), duration: 1.seconds);
+      return child
+          .animate(
+              key: ValueKey('shocked_vibes'),
+              onPlay: (c) => c.repeat(reverse: true))
+          .moveY(end: -10, duration: 200.ms, curve: Curves.easeOut)
+          .scale(end: const Offset(1.05, 1.05), duration: 200.ms)
+          .shake(hz: 8, offset: const Offset(1, 1), duration: 1.seconds);
     }
 
     // Default continuous breathing scale (Squash & Stretch breathing)
-    return child.animate(key: const ValueKey('idle_breathe'), onPlay: (c) => c.repeat(reverse: true))
-      .scale(
-        begin: const Offset(1.0, 1.0),
-        end: const Offset(1.03, 0.98), // Body gets slightly wider and shorter
-        duration: 3000.ms,
-        curve: Curves.easeInOutSine,
-      );
+    return child
+        .animate(
+            key: const ValueKey('idle_breathe'),
+            onPlay: (c) => c.repeat(reverse: true))
+        .scale(
+          begin: const Offset(1.0, 1.0),
+          end: const Offset(1.03, 0.98), // Body gets slightly wider and shorter
+          duration: 3000.ms,
+          curve: Curves.easeInOutSine,
+        );
   }
 
   Widget _buildDialogueBubble(ThemeData theme) {
-    if (!widget.showBubble || widget.dialogue == null || widget.dialogue!.isEmpty) {
+    if (!widget.showBubble ||
+        widget.dialogue == null ||
+        widget.dialogue!.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -337,10 +387,10 @@ class _SumiMascotState extends State<SumiMascot> with TickerProviderStateMixin {
           ),
         ),
       ).animate().fadeIn(duration: 400.ms).scale(
-        alignment: Alignment.bottomCenter,
-        begin: const Offset(0.8, 0.8),
-        curve: Curves.easeOutBack,
-      ),
+            alignment: Alignment.bottomCenter,
+            begin: const Offset(0.8, 0.8),
+            curve: Curves.easeOutBack,
+          ),
     );
   }
 }

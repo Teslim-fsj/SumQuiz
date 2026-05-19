@@ -32,8 +32,8 @@ class GenerationLoadingOverlay extends StatelessWidget {
               margin: const EdgeInsets.symmetric(horizontal: 40),
               padding: const EdgeInsets.all(40),
               decoration: BoxDecoration(
-                color:
-                    theme.colorScheme.surface.withValues(alpha: isDark ? 0.2 : 0.8),
+                color: theme.colorScheme.surface
+                    .withValues(alpha: isDark ? 0.2 : 0.8),
                 borderRadius: BorderRadius.circular(32),
                 border: Border.all(
                   color: theme.colorScheme.outline.withValues(alpha: 0.2),
@@ -60,7 +60,8 @@ class GenerationLoadingOverlay extends StatelessWidget {
                         height: 80,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.1),
                         ),
                       )
                           .animate(onPlay: (c) => c.repeat())
@@ -103,8 +104,8 @@ class GenerationLoadingOverlay extends StatelessWidget {
                   Text(
                     subMessage,
                     style: GoogleFonts.outfit(
-                      color:
-                          theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                      color: theme.textTheme.bodyMedium?.color
+                          ?.withValues(alpha: 0.6),
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -124,7 +125,8 @@ class GenerationLoadingOverlay extends StatelessWidget {
                         foregroundColor: Colors.redAccent,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 24, vertical: 12),
-                        backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
+                        backgroundColor:
+                            Colors.redAccent.withValues(alpha: 0.1),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(100),
                         ),

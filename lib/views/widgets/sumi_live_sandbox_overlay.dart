@@ -70,10 +70,12 @@ class _SumiLiveSandboxOverlayState extends State<SumiLiveSandboxOverlay> {
                 top: MediaQuery.paddingOf(context).top + 12,
                 right: 16,
                 child: IconButton(
-                  icon: Icon(Icons.close_rounded, color: cs.onSurfaceVariant, size: 28),
+                  icon: Icon(Icons.close_rounded,
+                      color: cs.onSurfaceVariant, size: 28),
                   onPressed: () => Navigator.pop(context),
                   style: IconButton.styleFrom(
-                    backgroundColor: cs.surfaceContainerHighest.withValues(alpha: 0.6),
+                    backgroundColor:
+                        cs.surfaceContainerHighest.withValues(alpha: 0.6),
                     shape: const CircleBorder(),
                   ),
                 ),
@@ -110,7 +112,8 @@ class _SumiLiveSandboxOverlayState extends State<SumiLiveSandboxOverlay> {
                                       : cs.outlineVariant,
                                   shape: BoxShape.circle,
                                 ),
-                              ).animate(onPlay: (c) => c.repeat())
+                              )
+                                  .animate(onPlay: (c) => c.repeat())
                                   .fadeIn(duration: 700.ms)
                                   .fadeOut(duration: 700.ms),
                               const SizedBox(width: 8),
@@ -133,7 +136,10 @@ class _SumiLiveSandboxOverlayState extends State<SumiLiveSandboxOverlay> {
                           ),
                         ],
                       ),
-                    ).animate().fadeIn(duration: 350.ms).slideY(begin: -0.1, end: 0),
+                    )
+                        .animate()
+                        .fadeIn(duration: 350.ms)
+                        .slideY(begin: -0.1, end: 0),
 
                     const Divider(height: 1),
 

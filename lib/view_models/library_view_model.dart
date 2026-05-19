@@ -92,15 +92,13 @@ class LibraryViewModel with ChangeNotifier {
 
     // Combine for "All" tab (folders, notes, exams only)
     allItems$ = Rx.combineLatest3<List<LibraryItem>, List<LibraryItem>,
-            List<LibraryItem>, List<LibraryItem>>(
-        allFolders$.map((folders) => folders.map(LibraryItem.fromFolder).toList()),
-        allNotesFromDb$,
-        allExamsFromDb$,
-        (folders, notes, exams) => [
-              ...folders,
-              ...notes,
-              ...exams
-            ]).shareReplay(maxSize: 1);
+                List<LibraryItem>, List<LibraryItem>>(
+            allFolders$
+                .map((folders) => folders.map(LibraryItem.fromFolder).toList()),
+            allNotesFromDb$,
+            allExamsFromDb$,
+            (folders, notes, exams) => [...folders, ...notes, ...exams])
+        .shareReplay(maxSize: 1);
 
     // Study Pack combines summaries, quizzes, flashcards
     studyPack$ = Rx.combineLatest3<List<LibraryItem>, List<LibraryItem>,

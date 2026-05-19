@@ -12,7 +12,6 @@ import '../../models/sumi_message.dart';
 import '../../services/content_extraction_service.dart';
 import 'upgrade_dialog.dart';
 
-
 class SumiChatView extends StatefulWidget {
   final String? groundingContext;
   const SumiChatView({super.key, this.groundingContext});
@@ -70,20 +69,21 @@ class _SumiChatViewState extends State<SumiChatView> {
           child: ListView.builder(
             controller: _scrollController,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            itemCount: sumiProvider.messages.length + (sumiProvider.isStreaming ? 1 : 0),
+            itemCount: sumiProvider.messages.length +
+                (sumiProvider.isStreaming ? 1 : 0),
             itemBuilder: (context, index) {
               if (index < sumiProvider.messages.length) {
                 final message = sumiProvider.messages[index];
                 return _buildMessageBubble(theme, message);
               } else {
-                return _buildStreamingBubble(theme, sumiProvider.streamingMessage ?? "");
+                return _buildStreamingBubble(
+                    theme, sumiProvider.streamingMessage ?? "");
               }
             },
           ),
         ),
         _buildInputArea(theme, sumiProvider),
-        if (sumiProvider.isSumiSpeaking)
-          _buildSpeakingIndicator(theme),
+        if (sumiProvider.isSumiSpeaking) _buildSpeakingIndicator(theme),
       ],
     );
   }
@@ -95,16 +95,16 @@ class _SumiChatViewState extends State<SumiChatView> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.volume_up_rounded, size: 16, color: theme.colorScheme.primary),
+          Icon(Icons.volume_up_rounded,
+              size: 16, color: theme.colorScheme.primary),
           const SizedBox(width: 10),
           Text(
             'SUMI IS SPEAKING...',
             style: GoogleFonts.inter(
-              color: theme.colorScheme.primary, 
-              fontWeight: FontWeight.bold, 
-              fontSize: 10,
-              letterSpacing: 1.2
-            ),
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: 10,
+                letterSpacing: 1.2),
           ),
         ],
       ).animate(onPlay: (c) => c.repeat()).shimmer(duration: 2.seconds),
@@ -127,19 +127,23 @@ class _SumiChatViewState extends State<SumiChatView> {
                 bottomLeft: Radius.circular(4),
                 bottomRight: Radius.circular(20),
               ),
-              border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
+              border:
+                  Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4)),
+                BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4)),
               ],
             ),
-            child: text.isEmpty 
-              ? _buildTypingIndicator(theme)
-              : MarkdownBody(
-                  data: text,
-                  styleSheet: MarkdownStyleSheet(
-                    p: GoogleFonts.inter(height: 1.5, fontSize: 14),
+            child: text.isEmpty
+                ? _buildTypingIndicator(theme)
+                : MarkdownBody(
+                    data: text,
+                    styleSheet: MarkdownStyleSheet(
+                      p: GoogleFonts.inter(height: 1.5, fontSize: 14),
+                    ),
                   ),
-                ),
           ),
           const SizedBox(height: 8),
           Padding(
@@ -162,26 +166,29 @@ class _SumiChatViewState extends State<SumiChatView> {
   Widget _buildTypingIndicator(ThemeData theme) {
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: List.generate(3, (i) => 
-        Container(
-          width: 6,
-          height: 6,
-          margin: const EdgeInsets.symmetric(horizontal: 2),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withValues(alpha: 0.4),
-            shape: BoxShape.circle,
-          ),
-        ).animate(onPlay: (c) => c.repeat()).scale(
-          delay: (i * 200).ms,
-          duration: 600.ms,
-          begin: const Offset(0.5, 0.5),
-          end: const Offset(1, 1),
-          curve: Curves.easeInOut,
-        ).fadeIn(
-          delay: (i * 200).ms,
-          duration: 600.ms,
-        )
-      ),
+      children: List.generate(
+          3,
+          (i) => Container(
+                width: 6,
+                height: 6,
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.4),
+                  shape: BoxShape.circle,
+                ),
+              )
+                  .animate(onPlay: (c) => c.repeat())
+                  .scale(
+                    delay: (i * 200).ms,
+                    duration: 600.ms,
+                    begin: const Offset(0.5, 0.5),
+                    end: const Offset(1, 1),
+                    curve: Curves.easeInOut,
+                  )
+                  .fadeIn(
+                    delay: (i * 200).ms,
+                    duration: 600.ms,
+                  )),
     );
   }
 
@@ -214,29 +221,32 @@ class _SumiChatViewState extends State<SumiChatView> {
                       bottomRight: Radius.circular(isUser ? 4 : 20),
                     ),
                     border: Border.all(
-                      color: isUser 
-                        ? theme.colorScheme.primary.withValues(alpha: 0.1)
-                        : theme.dividerColor.withValues(alpha: 0.1),
+                      color: isUser
+                          ? theme.colorScheme.primary.withValues(alpha: 0.1)
+                          : theme.dividerColor.withValues(alpha: 0.1),
                     ),
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.01), blurRadius: 5, offset: const Offset(0, 2)),
+                      BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.01),
+                          blurRadius: 5,
+                          offset: const Offset(0, 2)),
                     ],
                   ),
-                  child: isUser 
-                    ? Text(
-                        message.text,
-                        style: GoogleFonts.inter(
-                          height: 1.5,
-                          fontSize: 14,
-                          color: theme.textTheme.bodyMedium?.color,
+                  child: isUser
+                      ? Text(
+                          message.text,
+                          style: GoogleFonts.inter(
+                            height: 1.5,
+                            fontSize: 14,
+                            color: theme.textTheme.bodyMedium?.color,
+                          ),
+                        )
+                      : MarkdownBody(
+                          data: message.text,
+                          styleSheet: MarkdownStyleSheet(
+                            p: GoogleFonts.inter(height: 1.5, fontSize: 14),
+                          ),
                         ),
-                      )
-                    : MarkdownBody(
-                        data: message.text,
-                        styleSheet: MarkdownStyleSheet(
-                          p: GoogleFonts.inter(height: 1.5, fontSize: 14),
-                        ),
-                      ),
                 ),
               ),
             ],
@@ -267,7 +277,8 @@ class _SumiChatViewState extends State<SumiChatView> {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       decoration: BoxDecoration(
         color: theme.scaffoldBackgroundColor,
-        border: Border(top: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05))),
+        border: Border(
+            top: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05))),
       ),
       child: Row(
         children: [
@@ -276,22 +287,29 @@ class _SumiChatViewState extends State<SumiChatView> {
               decoration: BoxDecoration(
                 color: theme.cardColor,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
+                border: Border.all(
+                    color: theme.dividerColor.withValues(alpha: 0.1)),
               ),
               child: TextField(
                 controller: _controller,
                 style: GoogleFonts.inter(fontSize: 14),
                 decoration: InputDecoration(
                   hintText: "Ask Sumi anything...",
-                  hintStyle: GoogleFonts.inter(color: theme.hintColor.withValues(alpha: 0.5), fontSize: 14),
-                  prefixIcon: _isExtractingContext 
-                    ? const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2))
-                    : IconButton(
-                        icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
-                        color: theme.colorScheme.primary.withValues(alpha: 0.7),
-                        onPressed: _pickFiles,
-                        tooltip: 'Add context',
-                      ),
+                  hintStyle: GoogleFonts.inter(
+                      color: theme.hintColor.withValues(alpha: 0.5),
+                      fontSize: 14),
+                  prefixIcon: _isExtractingContext
+                      ? const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : IconButton(
+                          icon: const Icon(Icons.add_circle_outline_rounded,
+                              size: 20),
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.7),
+                          onPressed: _pickFiles,
+                          tooltip: 'Add context',
+                        ),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.mic_none_rounded, size: 20),
                     color: theme.colorScheme.primary.withValues(alpha: 0.7),
@@ -299,7 +317,8 @@ class _SumiChatViewState extends State<SumiChatView> {
                     tooltip: 'Voice mode',
                   ),
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
                 onSubmitted: (_) => _sendMessage(sumi),
               ),
@@ -308,13 +327,18 @@ class _SumiChatViewState extends State<SumiChatView> {
           const SizedBox(width: 12),
           IconButton.filled(
             onPressed: () => _sendMessage(sumi),
-            icon: sumi.isStreaming 
-              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : const Icon(Icons.arrow_upward_rounded, size: 20),
+            icon: sumi.isStreaming
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
+                : const Icon(Icons.arrow_upward_rounded, size: 20),
             style: IconButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
               padding: const EdgeInsets.all(12),
             ),
           ),
@@ -330,32 +354,38 @@ class _SumiChatViewState extends State<SumiChatView> {
       allowedExtensions: ['pdf', 'txt', 'png', 'jpg'],
       withData: true,
     );
-    
+
     if (result != null && result.files.single.bytes != null) {
       setState(() => _isExtractingContext = true);
       try {
         final extractionService = context.read<ContentExtractionService>();
         final userId = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
-        
+
         final extResult = await extractionService.extractContent(
           type: result.files.single.name.endsWith('.pdf') ? 'pdf' : 'text',
           input: result.files.single.bytes,
           userId: userId,
-          mimeType: result.files.single.name.endsWith('.pdf') ? 'application/pdf' : 'text/plain',
+          mimeType: result.files.single.name.endsWith('.pdf')
+              ? 'application/pdf'
+              : 'text/plain',
         );
-        
+
         setState(() {
-          _additionalContext += '\n\n[Content from ${result.files.single.name}]:\n${extResult.text}';
+          _additionalContext +=
+              '\n\n[Content from ${result.files.single.name}]:\n${extResult.text}';
           _isExtractingContext = false;
         });
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               backgroundColor: Theme.of(context).colorScheme.primary,
               content: Text(
                 'Added ${result.files.single.name} to context',
-                style: GoogleFonts.inter(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold),
               ),
             ),
           );
@@ -363,14 +393,16 @@ class _SumiChatViewState extends State<SumiChatView> {
       } catch (e) {
         setState(() => _isExtractingContext = false);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e')));
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('Failed: $e')));
         }
       }
     }
   }
 
   void _startVoiceTutoring(SumiProvider sumi) {
-    context.push('/sumi-live?source=${widget.groundingContext ?? "General Context"}');
+    context.push(
+        '/sumi-live?source=${widget.groundingContext ?? "General Context"}');
   }
 
   void _sendMessage(SumiProvider sumi) {
@@ -378,12 +410,12 @@ class _SumiChatViewState extends State<SumiChatView> {
     if (text.isEmpty || sumi.isStreaming) return;
 
     HapticFeedback.lightImpact();
-    
+
     final fullContext = [
       if (widget.groundingContext != null) widget.groundingContext!,
       if (_additionalContext.isNotEmpty) _additionalContext,
     ].join('\n\n');
-    
+
     sumi.askSumi(text, context: fullContext.isNotEmpty ? fullContext : null);
     _controller.clear();
     _additionalContext = ''; // Clear additional context after sending

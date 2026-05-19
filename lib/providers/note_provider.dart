@@ -67,7 +67,6 @@ class NoteProvider with ChangeNotifier {
   bool _limitReached = false;
   bool get limitReached => _limitReached;
 
-
   Duration _recordingDuration = Duration.zero;
   Duration get recordingDuration => _recordingDuration;
 
@@ -86,7 +85,8 @@ class NoteProvider with ChangeNotifier {
   List<LocalNote> get allNotes => _allNotes;
 
   /// Whether STT is currently auto-restarting after a platform timeout.
-  bool get isAutoRestarting => _speechService.isActive && _state == NoteProcessingState.recording;
+  bool get isAutoRestarting =>
+      _speechService.isActive && _state == NoteProcessingState.recording;
 
   /// Real-time amplitude stream (0.0 – 1.0) for waveform visualization.
   Stream<double> get amplitudeStream => _recordingService.amplitudeStream;
@@ -141,7 +141,8 @@ class NoteProvider with ChangeNotifier {
       _currentNoteRecordings.addAll(recordings);
       notifyListeners();
     }, onError: (e) {
-      developer.log('Error watching recordings for note $noteId: $e', name: 'NoteProvider');
+      developer.log('Error watching recordings for note $noteId: $e',
+          name: 'NoteProvider');
     });
   }
 
@@ -216,13 +217,14 @@ class NoteProvider with ChangeNotifier {
 
   Future<void> addDrawingStroke(LocalDrawingStroke stroke) async {
     if (_currentNote == null) return;
-    
-    final updatedStrokes = List<LocalDrawingStroke>.from(_currentNote!.strokes)..add(stroke);
+
+    final updatedStrokes = List<LocalDrawingStroke>.from(_currentNote!.strokes)
+      ..add(stroke);
     _currentNote = _currentNote!.copyWith(
       strokes: updatedStrokes,
       updatedAt: DateTime.now(),
     );
-    
+
     // We save to DB after each stroke for maximum data safety in production
     await _localDb.saveNote(_currentNote!);
     notifyListeners();
@@ -230,15 +232,18 @@ class NoteProvider with ChangeNotifier {
 
   Future<void> undoLastStroke() async {
     if (_currentNote == null || _currentNote!.strokes.isEmpty) return;
-    final updatedStrokes = List<LocalDrawingStroke>.from(_currentNote!.strokes)..removeLast();
-    _currentNote = _currentNote!.copyWith(strokes: updatedStrokes, updatedAt: DateTime.now());
+    final updatedStrokes = List<LocalDrawingStroke>.from(_currentNote!.strokes)
+      ..removeLast();
+    _currentNote = _currentNote!
+        .copyWith(strokes: updatedStrokes, updatedAt: DateTime.now());
     await _localDb.saveNote(_currentNote!);
     notifyListeners();
   }
 
   Future<void> clearStrokes() async {
     if (_currentNote == null) return;
-    _currentNote = _currentNote!.copyWith(strokes: [], updatedAt: DateTime.now());
+    _currentNote =
+        _currentNote!.copyWith(strokes: [], updatedAt: DateTime.now());
     await _localDb.saveNote(_currentNote!);
     notifyListeners();
   }
@@ -251,8 +256,8 @@ class NoteProvider with ChangeNotifier {
   String _livePartialTranscript = '';
   String get livePartialTranscript => _livePartialTranscript;
 
-  String get liveTranscript => _livePartialTranscript.isNotEmpty 
-      ? _livePartialTranscript 
+  String get liveTranscript => _livePartialTranscript.isNotEmpty
+      ? _livePartialTranscript
       : (_liveInsights.isNotEmpty ? _liveInsights.last : '');
 
   Future<void> startRecording(String userId) async {
@@ -265,7 +270,8 @@ class NoteProvider with ChangeNotifier {
 
     if (_usageService != null) {
       try {
-        final canProceed = await _usageService!.canPerformAction(userId, 'lecture');
+        final canProceed =
+            await _usageService!.canPerformAction(userId, 'lecture');
         if (!canProceed) {
           developer.log('Limit reached for lecture', name: 'NoteProvider');
           _limitReached = true;
@@ -292,23 +298,21 @@ class NoteProvider with ChangeNotifier {
 
       await _recordingService.startRecording(userId);
       await _speechService.init();
-      
+
       _speechSub?.cancel();
       _speechSub = _speechService.transcriptStream.listen((text) {
         if (text.trim().isEmpty) return;
-        
+
         _liveInsights.add(text);
         _transcriptChunkController.add(text);
         _livePartialTranscript = ''; // Clear partial when committed
-        
+
         // Save for recovery
         if (_currentNote != null) {
-          TranscriptRecoveryService().savePendingTranscript(
-            _currentNote!.id, 
-            _liveInsights.join(" ")
-          );
+          TranscriptRecoveryService()
+              .savePendingTranscript(_currentNote!.id, _liveInsights.join(" "));
         }
-        
+
         notifyListeners();
       }, onError: (e) {
         developer.log('Speech stream error: $e', name: 'NoteProvider');
@@ -318,7 +322,7 @@ class NoteProvider with ChangeNotifier {
         _livePartialTranscript = text;
         notifyListeners();
       }, onError: (e) {
-         developer.log('Partial speech stream error: $e', name: 'NoteProvider');
+        developer.log('Partial speech stream error: $e', name: 'NoteProvider');
       });
 
       await _speechService.startListening();
@@ -348,7 +352,7 @@ class NoteProvider with ChangeNotifier {
       _speechSub?.cancel();
       _partialSub?.cancel();
       _livePartialTranscript = '';
-      
+
       final path = await _recordingService.stopRecording();
       if (path != null && _currentNote != null) {
         final recording = LocalRecording(
@@ -360,18 +364,19 @@ class NoteProvider with ChangeNotifier {
           createdAt: DateTime.now(),
         );
         await _localDb.saveRecording(recording);
-        
+
         // Clear recovery data on success
         await TranscriptRecoveryService().clearRecovery(_currentNote!.id);
-        
+
         // Record usage after successful capture
         final usage = _usageService;
         if (usage != null) {
           await usage.recordAction(_currentNote!.userId, 'lecture');
         }
-        developer.log('Recording saved successfully: $path', name: 'NoteProvider');
+        developer.log('Recording saved successfully: $path',
+            name: 'NoteProvider');
       }
-      
+
       _state = NoteProcessingState.idle;
       _recordingDuration = Duration.zero;
       _liveInsights.clear();
@@ -406,7 +411,8 @@ class NoteProvider with ChangeNotifier {
       _state = NoteProcessingState.idle;
       notifyListeners();
     } catch (e) {
-      developer.log('Transcription failed for recording ${recording.id}: $e', name: 'NoteProvider');
+      developer.log('Transcription failed for recording ${recording.id}: $e',
+          name: 'NoteProvider');
       _errorMessage = "AI transcription failed. Please try again later.";
       _state = NoteProcessingState.error;
       notifyListeners();
@@ -418,7 +424,8 @@ class NoteProvider with ChangeNotifier {
 
     if (_usageService != null) {
       try {
-        final canProceed = await _usageService!.canPerformAction(userId, 'generate');
+        final canProceed =
+            await _usageService!.canPerformAction(userId, 'generate');
         if (!canProceed) {
           developer.log('Limit reached for synthesis', name: 'NoteProvider');
           _limitReached = true;
@@ -477,13 +484,13 @@ class NoteProvider with ChangeNotifier {
       return folderId;
     } catch (e) {
       developer.log('AI synthesis failed: $e', name: 'NoteProvider');
-      _errorMessage = "Failed to generate study materials. Check your connection.";
+      _errorMessage =
+          "Failed to generate study materials. Check your connection.";
       _state = NoteProcessingState.error;
       notifyListeners();
       return null;
     }
   }
-
 
   // --- AUDIO ACTIONS ---
 
@@ -525,7 +532,8 @@ class NoteProvider with ChangeNotifier {
       await _localDb.deleteRecording(recordingId);
       notifyListeners();
     } catch (e) {
-      developer.log('Deletion failed for recording $recordingId: $e', name: 'NoteProvider');
+      developer.log('Deletion failed for recording $recordingId: $e',
+          name: 'NoteProvider');
     }
   }
 

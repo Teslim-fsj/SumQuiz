@@ -20,8 +20,7 @@ class AuraOrb extends StatefulWidget {
   State<AuraOrb> createState() => _AuraOrbState();
 }
 
-class _AuraOrbState extends State<AuraOrb>
-    with SingleTickerProviderStateMixin {
+class _AuraOrbState extends State<AuraOrb> with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
 
   @override
@@ -59,9 +58,9 @@ class _AuraOrbState extends State<AuraOrb>
             animation: _pulseController,
             builder: (context, child) {
               final pulse = _pulseController.value;
-              final sizeMultiplier = widget.state == OrbState.listening 
-                ? 0.6 + (widget.amplitude * 0.4)
-                : 0.6;
+              final sizeMultiplier = widget.state == OrbState.listening
+                  ? 0.6 + (widget.amplitude * 0.4)
+                  : 0.6;
 
               return Container(
                 width: widget.size * sizeMultiplier,
@@ -176,7 +175,8 @@ class _AuraOrbState extends State<AuraOrb>
             height: widget.size * 0.5,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
+              border:
+                  Border.all(color: Colors.white.withOpacity(0.3), width: 2),
             ),
           )
               .animate(onPlay: (c) => c.repeat())
@@ -199,7 +199,9 @@ class _AuraOrbState extends State<AuraOrb>
       case OrbState.thinking:
         return const Color(0xFF6B5CE7); // Purple
       case OrbState.speaking:
-        return theme.brightness == Brightness.dark ? Colors.white : colorScheme.primary;
+        return theme.brightness == Brightness.dark
+            ? Colors.white
+            : colorScheme.primary;
       case OrbState.burnout:
         return const Color(0xFFEF4444); // Red
       case OrbState.momentum:

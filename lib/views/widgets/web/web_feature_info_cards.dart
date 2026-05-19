@@ -63,7 +63,8 @@ class WebFeatureInfoCards extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03), blurRadius: 10)
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10)
                 ],
               ),
               child: Icon(icon, color: iconColor, size: 24),

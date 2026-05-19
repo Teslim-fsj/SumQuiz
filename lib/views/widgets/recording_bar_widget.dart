@@ -62,15 +62,15 @@ class RecordingBarWidget extends StatelessWidget {
                 Text(
                   _formatDuration(provider.recordingDuration),
                   style: GoogleFonts.jetBrainsMono(
-                    fontWeight: FontWeight.bold, 
-                    fontSize: 16,
-                    color: Colors.redAccent
-                  ),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.redAccent),
                 ),
-                Text(
-                  'Capturing lecture audio...', 
-                  style: GoogleFonts.inter(fontSize: 11, color: theme.hintColor, fontWeight: FontWeight.w500)
-                ),
+                Text('Capturing lecture audio...',
+                    style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: theme.hintColor,
+                        fontWeight: FontWeight.w500)),
               ],
             ),
           ),
@@ -89,7 +89,8 @@ class RecordingBarWidget extends StatelessWidget {
               color: colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(Icons.mic_rounded, color: colorScheme.primary, size: 24),
+            child:
+                Icon(Icons.mic_rounded, color: colorScheme.primary, size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -97,14 +98,12 @@ class RecordingBarWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  'Live Lecture Recording', 
-                  style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14)
-                ),
-                Text(
-                  'Ready to capture insights', 
-                  style: GoogleFonts.inter(fontSize: 12, color: theme.hintColor)
-                ),
+                Text('Live Lecture Recording',
+                    style: GoogleFonts.inter(
+                        fontWeight: FontWeight.bold, fontSize: 14)),
+                Text('Ready to capture insights',
+                    style: GoogleFonts.inter(
+                        fontSize: 12, color: theme.hintColor)),
               ],
             ),
           ),
@@ -115,14 +114,16 @@ class RecordingBarWidget extends StatelessWidget {
               foregroundColor: colorScheme.onPrimary,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(Icons.play_arrow_rounded, size: 20),
                 const SizedBox(width: 8),
-                Text('Start', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                Text('Start',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -136,16 +137,16 @@ class RecordingBarWidget extends StatelessWidget {
       children: [
         Icon(Icons.lock_outline_rounded, color: theme.hintColor, size: 20),
         const SizedBox(width: 12),
-        Text(
-          'Recording is a Pro feature',
-          style: GoogleFonts.inter(color: theme.hintColor, fontWeight: FontWeight.w500)
-        ),
+        Text('Recording is a Pro feature',
+            style: GoogleFonts.inter(
+                color: theme.hintColor, fontWeight: FontWeight.w500)),
         const Spacer(),
         TextButton(
           onPressed: () {
             // Trigger upgrade flow
           },
-          child: Text('Upgrade', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+          child: Text('Upgrade',
+              style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
         ),
       ],
     );
@@ -170,7 +171,9 @@ class RecordingBarWidget extends StatelessWidget {
         .animate(onPlay: (controller) => controller.repeat(reverse: true))
         .boxShadow(
             begin: const BoxShadow(color: Colors.transparent, blurRadius: 0),
-            end: BoxShadow(color: Colors.redAccent.withValues(alpha: 0.4), blurRadius: 10));
+            end: BoxShadow(
+                color: Colors.redAccent.withValues(alpha: 0.4),
+                blurRadius: 10));
   }
 
   String _formatDuration(Duration duration) {

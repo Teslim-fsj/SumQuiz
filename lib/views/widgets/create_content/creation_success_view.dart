@@ -85,7 +85,10 @@ class CreationSuccessView extends StatelessWidget {
                     color: colorScheme.primary,
                   ),
                 ),
-              ).animate().fadeIn(delay: 500.ms).scale(begin: const Offset(0.8, 0.8)),
+              )
+                  .animate()
+                  .fadeIn(delay: 500.ms)
+                  .scale(begin: const Offset(0.8, 0.8)),
               const SizedBox(height: 56),
               // Primary Action
               SizedBox(

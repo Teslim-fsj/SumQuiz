@@ -16,7 +16,7 @@ class ComputeManager {
   /// This should be called at the start of any major study session.
   Future<void> syncNeuralState(UserModel user) async {
     final double energy = user.computeEnergyLevel;
-    
+
     NeuralState newState;
     if (energy >= 0.5) {
       newState = NeuralState.highEnergy;
@@ -29,12 +29,16 @@ class ComputeManager {
     }
 
     AIConfig.currentNeuralState = newState;
-    developer.log('Neural State Synced: $newState (Energy: ${energy.toStringAsFixed(2)})', name: 'ComputeManager');
+    developer.log(
+        'Neural State Synced: $newState (Energy: ${energy.toStringAsFixed(2)})',
+        name: 'ComputeManager');
   }
 
   /// Orchestrates an AI action with full compute tracking and abuse protection.
   /// [actionType] - standard, summary, exam, lecture, mascot
-  Future<bool> orchestrateAction(String uid, String actionType, {
+  Future<bool> orchestrateAction(
+    String uid,
+    String actionType, {
     bool isHeavy = false,
     bool isYoutube = false,
     bool isMultimodal = false,
@@ -49,21 +53,18 @@ class ComputeManager {
       await syncNeuralState(user);
 
       // 3. Pre-check capacity & burst
-      final canProceed = await _usageService.canStartStudySession(uid, actionType);
+      final canProceed =
+          await _usageService.canStartStudySession(uid, actionType);
       if (!canProceed) return false;
 
       // 4. Update usage (Silent deduction)
-      await _usageService.recordStudySession(
-        uid, 
-        actionType, 
-        isHeavy: isHeavy, 
-        isYoutube: isYoutube, 
-        isMultimodal: isMultimodal
-      );
+      await _usageService.recordStudySession(uid, actionType,
+          isHeavy: isHeavy, isYoutube: isYoutube, isMultimodal: isMultimodal);
 
       return true;
     } catch (e) {
-      developer.log('Compute orchestration failed', name: 'ComputeManager', error: e);
+      developer.log('Compute orchestration failed',
+          name: 'ComputeManager', error: e);
       return false;
     }
   }
@@ -73,7 +74,7 @@ class ComputeManager {
     final userDoc = await _db.collection('users').doc(uid).get();
     if (!userDoc.exists) return;
     final user = UserModel.fromFirestore(userDoc);
-    
+
     // Safety: If user is Pro but tier is unknown or 'free', treat as 'standard_pro'
     String tier = user.tier ?? 'free';
     if (user.isPro && !UsageConfig.heavyQuota.containsKey(tier)) {
@@ -83,7 +84,7 @@ class ComputeManager {
     if (tier == 'free') return;
 
     double newMax = _getMaxCapacityForTier(tier);
-    
+
     await _db.collection('users').doc(uid).update({
       'computeUnits': newMax,
       'maxComputeCapacity': newMax,
@@ -93,10 +94,14 @@ class ComputeManager {
 
   double _getMaxCapacityForTier(String tier) {
     switch (tier) {
-      case 'standard_pro': return UsageConfig.capStandardPro;
-      case 'power_pro': return UsageConfig.capPowerPro;
-      case 'creator': return UsageConfig.capCreator;
-      default: return UsageConfig.capFree;
+      case 'standard_pro':
+        return UsageConfig.capStandardPro;
+      case 'power_pro':
+        return UsageConfig.capPowerPro;
+      case 'creator':
+        return UsageConfig.capCreator;
+      default:
+        return UsageConfig.capFree;
     }
   }
 }

@@ -36,7 +36,8 @@ class CatchUpWidget extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.history_rounded, size: 16, color: theme.colorScheme.primary),
+              Icon(Icons.history_rounded,
+                  size: 16, color: theme.colorScheme.primary),
               const SizedBox(width: 8),
               Text(
                 'RAPID RECAP',
@@ -51,33 +52,33 @@ class CatchUpWidget extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           ...missedConcepts.take(3).map((concept) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 6),
-                  width: 5,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.4),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    concept,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: theme.textTheme.bodyMedium?.color,
-                      height: 1.4,
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 6),
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withOpacity(0.4),
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        concept,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: theme.textTheme.bodyMedium?.color,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          )),
+              )),
           const SizedBox(height: 8),
           Divider(color: theme.dividerColor.withOpacity(0.05)),
           const SizedBox(height: 8),

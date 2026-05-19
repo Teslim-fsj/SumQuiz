@@ -87,8 +87,7 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
     final colorScheme = theme.colorScheme;
     final provider = Provider.of<CreateContentProvider>(context);
 
-    final bool isBusy =
-        _isSavingNote || provider.progressMessage.isNotEmpty;
+    final bool isBusy = _isSavingNote || provider.progressMessage.isNotEmpty;
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -128,9 +127,7 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
               ),
               // AI clean-up button
               IconButton.filledTonal(
-                onPressed: isBusy
-                    ? null
-                    : () => provider.refineExtractedText(),
+                onPressed: isBusy ? null : () => provider.refineExtractedText(),
                 icon: provider.progressMessage.contains('cleaning')
                     ? const SizedBox(
                         width: 20,
@@ -278,7 +275,8 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
                   borderRadius: BorderRadius.circular(20)),
               elevation: 4,
               shadowColor: colorScheme.primary.withValues(alpha: 0.3),
-              disabledBackgroundColor: colorScheme.primary.withValues(alpha: 0.4),
+              disabledBackgroundColor:
+                  colorScheme.primary.withValues(alpha: 0.4),
             ),
             child: isBusy
                 ? Row(

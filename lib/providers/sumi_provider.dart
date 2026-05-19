@@ -36,7 +36,6 @@ class SumiProvider extends ChangeNotifier {
         _authService = authService {
     _initChatHistory();
     _initTts();
-    _configureAudioSession();
   }
 
   Future<void> _configureAudioSession() async {
@@ -45,7 +44,7 @@ class SumiProvider extends ChangeNotifier {
       avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
       avAudioSessionCategoryOptions:
           AVAudioSessionCategoryOptions.allowBluetooth |
-          AVAudioSessionCategoryOptions.defaultToSpeaker,
+              AVAudioSessionCategoryOptions.defaultToSpeaker,
       avAudioSessionMode: AVAudioSessionMode.spokenAudio,
       avAudioSessionRouteSharingPolicy:
           AVAudioSessionRouteSharingPolicy.defaultPolicy,
@@ -65,16 +64,17 @@ class SumiProvider extends ChangeNotifier {
     await _tts.setSpeechRate(0.5);
     await _tts.setVolume(1.0);
     await _tts.setPitch(1.0);
-    
+
     _tts.setCompletionHandler(() {
-      _isSumiSpeaking = false;
-      notifyListeners();
+      developer.log("TTS completed a sentence", name: "SumiProvider");
+      _cancelTtsWatchdog();
+      _speakNextInQueue();
     });
-    
+
     _tts.setErrorHandler((msg) {
-      developer.log("TTS Error: $msg");
-      _isSumiSpeaking = false;
-      notifyListeners();
+      developer.log("TTS Error: $msg", name: "SumiProvider");
+      _cancelTtsWatchdog();
+      _speakNextInQueue();
     });
   }
 
@@ -94,6 +94,11 @@ class SumiProvider extends ChangeNotifier {
 
   bool _isSumiSpeaking = false;
   bool get isSumiSpeaking => _isSumiSpeaking;
+
+  final List<String> _ttsQueue = [];
+  bool _isTtsActive = false;
+  bool get isTtsActive => _isTtsActive;
+  Timer? _ttsWatchdogTimer;
 
   Timer? _vadTimer;
   int _silenceCount = 0;
@@ -154,14 +159,15 @@ class SumiProvider extends ChangeNotifier {
       timestamp: DateTime.now(),
     );
     await _localDb.saveChatMessage(message);
-    
+
     if (role == MessageRole.sumi) {
       _dialogue = text;
       _streamingMessage = null;
     }
   }
 
-  Future<void> askSumi(String prompt, {String? context, String? userName}) async {
+  Future<void> askSumi(String prompt,
+      {String? context, String? userName}) async {
     final uid = _authService.currentUser?.uid;
     if (uid != null && _usageService != null) {
       final canProceed = await _usageService.canPerformAction(uid, 'tutor');
@@ -185,10 +191,14 @@ class SumiProvider extends ChangeNotifier {
 
     try {
       String fullResponse = '';
-      
+
       // Build context from last 5 messages for continuity
-      final history = _messages.reversed.take(5).toList().reversed
-          .map((m) => "${m.role == MessageRole.user ? 'Student' : 'Sumi'}: ${m.text}")
+      final history = _messages.reversed
+          .take(5)
+          .toList()
+          .reversed
+          .map((m) =>
+              "${m.role == MessageRole.user ? 'Student' : 'Sumi'}: ${m.text}")
           .join("\n");
 
       final stream = _aiService.getTutorResponseStream(
@@ -210,7 +220,8 @@ class SumiProvider extends ChangeNotifier {
           if (sentences.length > 1) {
             for (int i = 0; i < sentences.length - 1; i++) {
               final sentence = sentences[i].trim();
-              if (sentence.isNotEmpty && !lastSpokenSentence.contains(sentence)) {
+              if (sentence.isNotEmpty &&
+                  !lastSpokenSentence.contains(sentence)) {
                 _speakSentence(sentence);
                 lastSpokenSentence += " $sentence";
               }
@@ -230,12 +241,12 @@ class SumiProvider extends ChangeNotifier {
 
       // 4. Save full response to DB
       await addMessage(fullResponse, MessageRole.sumi);
-      
+
       // Record usage after successful completion
       if (uid != null && _usageService != null) {
         await _usageService.recordAction(uid, 'tutor');
       }
-      
+
       // 5. Update emotion based on response length/tone
       if (fullResponse.length > 200) {
         _currentState = SumiState.analytical;
@@ -243,10 +254,10 @@ class SumiProvider extends ChangeNotifier {
         _currentState = SumiState.idle;
       }
       notifyListeners();
-      
     } catch (e) {
       _currentState = SumiState.tired;
-      _dialogue = "Oops, my neural circuits got a bit tangled! Let's try that again?";
+      _dialogue =
+          "Oops, my neural circuits got a bit tangled! Let's try that again?";
       notifyListeners();
     } finally {
       _isStreaming = false;
@@ -256,7 +267,7 @@ class SumiProvider extends ChangeNotifier {
 
   Future<void> startVoiceRecording() async {
     if (_isVoiceRecording) return;
-    
+
     try {
       final hasPermission = await _recordingService.hasPermission();
       if (!hasPermission) {
@@ -265,6 +276,10 @@ class SumiProvider extends ChangeNotifier {
         return;
       }
 
+      await _configureAudioSession();
+      final session = await AudioSession.instance;
+      await session.setActive(true);
+
       _isVoiceRecording = true;
       _recordingDuration = Duration.zero;
       _currentState = SumiState.idle;
@@ -272,7 +287,7 @@ class SumiProvider extends ChangeNotifier {
 
       await _recordingService.startRecording("sumi_voice");
       HapticFeedback.lightImpact();
-      
+
       _recordingSub = _recordingService.durationStream.listen((duration) {
         _recordingDuration = duration;
         notifyListeners();
@@ -296,10 +311,13 @@ class SumiProvider extends ChangeNotifier {
 
     try {
       final path = await _recordingService.stopRecording();
+      final session = await AudioSession.instance;
+      await session.setActive(false);
+
       if (path != null) {
         final file = File(path);
         final bytes = await file.readAsBytes();
-        
+
         // Process with AI
         await _processVoiceInput(bytes, context: context);
       }
@@ -312,7 +330,8 @@ class SumiProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _processVoiceInput(Uint8List audioBytes, {String? context}) async {
+  Future<void> _processVoiceInput(Uint8List audioBytes,
+      {String? context}) async {
     final uid = _authService.currentUser?.uid;
     if (uid != null && _usageService != null) {
       final canProceed = await _usageService.canPerformAction(uid, 'tutor');
@@ -326,15 +345,19 @@ class SumiProvider extends ChangeNotifier {
     }
 
     // Phase 5: Build context from last 5 messages
-    final history = _messages.reversed.take(5).toList().reversed
-        .map((m) => "${m.role == MessageRole.user ? 'Student' : 'Sumi'}: ${m.text}")
+    final history = _messages.reversed
+        .take(5)
+        .toList()
+        .reversed
+        .map((m) =>
+            "${m.role == MessageRole.user ? 'Student' : 'Sumi'}: ${m.text}")
         .join("\n");
 
     try {
       _isStreaming = true;
       _streamingMessage = "...";
       notifyListeners();
-      
+
       final prompt = """
       Analyze the student's audio input. 
       1. Provide a verbatim transcription.
@@ -346,8 +369,8 @@ class SumiProvider extends ChangeNotifier {
       """;
 
       final rawResponse = await _aiService.getConversationalResponseWithAudio(
-        prompt: prompt, 
-        audioBytes: audioBytes, 
+        prompt: prompt,
+        audioBytes: audioBytes,
         context: history + (context != null ? "\nFILE CONTEXT: $context" : ""),
         userName: _authService.currentUser?.displayName,
       );
@@ -355,26 +378,35 @@ class SumiProvider extends ChangeNotifier {
       String transcription = "[Voice Input]";
       String response = rawResponse;
 
-      // Robust parsing for TRANSCRIPTION and RESPONSE
-      final transcriptionIndex = rawResponse.toUpperCase().indexOf("TRANSCRIPTION:");
-      final responseIndex = rawResponse.toUpperCase().indexOf("RESPONSE:");
+      // Robust regex-based parsing
+      final transcriptionRegex = RegExp(
+          r'(?:\*\*?)?TRANSCRIPTION(?:\*\*?)?\s*:\s*(.*?)(?=(?:\*\*?)?RESPONSE(?:\*\*?)?\s*:|$)',
+          caseSensitive: false,
+          dotAll: true);
+      final responseRegex = RegExp(r'(?:\*\*?)?RESPONSE(?:\*\*?)?\s*:\s*(.*)',
+          caseSensitive: false, dotAll: true);
 
-      if (transcriptionIndex != -1 && responseIndex != -1) {
-        transcription = rawResponse.substring(transcriptionIndex + 14, responseIndex).trim();
-        response = rawResponse.substring(responseIndex + 9).trim();
-      } else if (responseIndex != -1) {
-        response = rawResponse.substring(responseIndex + 9).trim();
+      final transMatch = transcriptionRegex.firstMatch(rawResponse);
+      final respMatch = responseRegex.firstMatch(rawResponse);
+
+      if (transMatch != null) {
+        transcription = transMatch.group(1)!.trim();
       }
-      
+      if (respMatch != null) {
+        response = respMatch.group(1)!.trim();
+      } else if (transMatch == null) {
+        response = rawResponse;
+      }
+
       _isStreaming = false;
       await addMessage(transcription, MessageRole.user);
       await addMessage(response, MessageRole.sumi);
-      
+
       // Record usage after successful completion
       if (uid != null && _usageService != null) {
         await _usageService.recordAction(uid, 'tutor');
       }
-      
+
       _dialogue = response;
       _currentState = SumiState.analytical;
       notifyListeners();
@@ -389,47 +421,83 @@ class SumiProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _speakSentence(String text) async {
-    // Non-blocking TTS for streaming chunks
-    try {
-      final cleanText = text.replaceAll(RegExp(r'[*_#]'), '');
-      await _tts.speak(cleanText);
-    } catch (e) {
-      developer.log("Streaming TTS Error: $e");
-    }
+  void _startTtsWatchdog(String text) {
+    _ttsWatchdogTimer?.cancel();
+    final estimatedMs = (text.length * 75).clamp(3000, 15000);
+    _ttsWatchdogTimer = Timer(Duration(milliseconds: estimatedMs), () {
+      developer.log(
+          "TTS Watchdog triggered (completion handler missed). Moving next.",
+          name: "SumiProvider");
+      _speakNextInQueue();
+    });
   }
 
-  Future<void> _speakResponse(String text) async {
+  void _cancelTtsWatchdog() {
+    _ttsWatchdogTimer?.cancel();
+    _ttsWatchdogTimer = null;
+  }
+
+  Future<void> _speakNextInQueue() async {
+    _cancelTtsWatchdog();
+
+    if (_ttsQueue.isEmpty) {
+      _isTtsActive = false;
+      _isSumiSpeaking = false;
+      _currentState = SumiState.idle;
+      notifyListeners();
+      return;
+    }
+
+    _isTtsActive = true;
     _isSumiSpeaking = true;
     _currentState = SumiState.speaking;
     notifyListeners();
 
+    final text = _ttsQueue.removeAt(0);
     try {
-      HapticFeedback.mediumImpact();
-      final cleanText = text.replaceAll(RegExp(r'[*_#]'), '');
-      await _tts.speak(cleanText);
-      
-      // Wait for completion via handler, or timeout
-      int waitCount = 0;
-      while (_isSumiSpeaking && waitCount < 100) { // 10s max
-        await Future.delayed(const Duration(milliseconds: 100));
-        waitCount++;
+      final cleanText = text.replaceAll(RegExp(r'[*_#]'), '').trim();
+      if (cleanText.isNotEmpty) {
+        developer.log("Speaking from queue: $cleanText", name: "SumiProvider");
+        _startTtsWatchdog(cleanText);
+        await _tts.speak(cleanText);
+      } else {
+        _speakNextInQueue();
       }
     } catch (e) {
-      developer.log("TTS Error: $e");
-    } finally {
-      _isSumiSpeaking = false;
-      _currentState = SumiState.idle;
-      notifyListeners();
+      developer.log("TTS Queue speak error: $e", name: "SumiProvider");
+      _speakNextInQueue();
+    }
+  }
+
+  void _enqueueSentence(String text) {
+    if (text.trim().isEmpty) return;
+    _ttsQueue.add(text);
+    if (!_isTtsActive) {
+      _speakNextInQueue();
+    }
+  }
+
+  Future<void> _speakSentence(String text) async {
+    _enqueueSentence(text);
+  }
+
+  Future<void> _speakResponse(String text) async {
+    _ttsQueue.clear();
+    _isTtsActive = false;
+    _enqueueSentence(text);
+
+    while (_isTtsActive) {
+      await Future.delayed(const Duration(milliseconds: 100));
     }
   }
 
   Future<void> startLiveSession({String? context}) async {
     if (_isLiveSession) return;
-    
+
     final uid = _authService.currentUser?.uid;
     if (uid != null && _usageService != null) {
-      final canProceed = await _usageService.canPerformAction(uid, 'tutor_session');
+      final canProceed =
+          await _usageService.canPerformAction(uid, 'tutor_session');
       if (!canProceed) {
         _limitReached = true;
         _dialogue = "I've reached my limit — let's power up your plan!";
@@ -440,10 +508,18 @@ class SumiProvider extends ChangeNotifier {
       await _usageService.recordAction(uid, 'tutor_session');
     }
 
+    try {
+      await _configureAudioSession();
+      final session = await AudioSession.instance;
+      await session.setActive(true);
+    } catch (e) {
+      developer.log("AudioSession activation error: $e", name: "SumiProvider");
+    }
+
     _isLiveSession = true;
     _currentState = SumiState.idle;
     notifyListeners();
-    
+
     await _runLiveLoop(context: context);
   }
 
@@ -451,8 +527,19 @@ class SumiProvider extends ChangeNotifier {
     _isLiveSession = false;
     _vadTimer?.cancel();
     _recordingSub?.cancel();
-    await _recordingService.stopRecording();
-    await _recordingService.stopPlayer();
+    _cancelTtsWatchdog();
+    _ttsQueue.clear();
+    _isTtsActive = false;
+    try {
+      await _recordingService.stopRecording();
+      await _recordingService.stopPlayer();
+      await _tts.stop();
+      final session = await AudioSession.instance;
+      await session.setActive(false);
+    } catch (e) {
+      developer.log("Error tearing down voice session: $e",
+          name: "SumiProvider");
+    }
     _isVoiceRecording = false;
     _isSumiSpeaking = false;
     _currentState = SumiState.idle;
@@ -476,11 +563,11 @@ class SumiProvider extends ChangeNotifier {
         while (_isVoiceRecording && _isLiveSession) {
           await Future.delayed(const Duration(milliseconds: 100));
           gracePeriod++;
-          
+
           final amp = await _recordingService.getAmplitude();
           if (amp.current > amplitudeThreshold) {
             peakCount++;
-            if (peakCount > 1) { 
+            if (peakCount > 1) {
               _silenceCount = 0;
               _hasSpeaked = true;
             }
@@ -490,9 +577,10 @@ class SumiProvider extends ChangeNotifier {
           }
 
           // Force stop if too long or silence threshold reached after speaking
-          if ((_hasSpeaked && _silenceCount >= silenceThreshold) || 
-              _recordingDuration.inSeconds > 30 || 
-              (gracePeriod > 100 && !_hasSpeaked)) { // Stop after 10s of silence if no speech
+          if ((_hasSpeaked && _silenceCount >= silenceThreshold) ||
+              _recordingDuration.inSeconds > 30 ||
+              (gracePeriod > 100 && !_hasSpeaked)) {
+            // Stop after 10s of silence if no speech
             break;
           }
         }
@@ -522,7 +610,8 @@ class SumiProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void showTutorMessage(String message, {SumiState state = SumiState.thinking}) {
+  void showTutorMessage(String message,
+      {SumiState state = SumiState.thinking}) {
     _dialogue = message;
     _currentState = state;
     notifyListeners();
@@ -574,10 +663,12 @@ class SumiProvider extends ChangeNotifier {
     int streak = _context.streak;
     int wrongStreak = _context.wrongStreak;
 
-    if (event == SumiEvent.answerCorrect || event == SumiEvent.streakIncreased) {
+    if (event == SumiEvent.answerCorrect ||
+        event == SumiEvent.streakIncreased) {
       streak += 1;
       wrongStreak = 0;
-    } else if (event == SumiEvent.answerWrong || event == SumiEvent.streakBroken) {
+    } else if (event == SumiEvent.answerWrong ||
+        event == SumiEvent.streakBroken) {
       streak = 0;
       wrongStreak += 1;
     }
@@ -597,19 +688,23 @@ class SumiProvider extends ChangeNotifier {
     switch (state) {
       case NeuralState.highEnergy:
         _currentState = SumiState.idle;
-        _dialogue = "Your neural momentum is incredible! Ready for a deep dive?";
+        _dialogue =
+            "Your neural momentum is incredible! Ready for a deep dive?";
         break;
       case NeuralState.fatigued:
         _currentState = SumiState.focused;
-        _dialogue = "Steady flow detected. I'll focus on the essentials to keep us moving.";
+        _dialogue =
+            "Steady flow detected. I'll focus on the essentials to keep us moving.";
         break;
       case NeuralState.exhausted:
         _currentState = SumiState.thinking;
-        _dialogue = "Cognitive load is high. Let's simplify and summarize our progress.";
+        _dialogue =
+            "Cognitive load is high. Let's simplify and summarize our progress.";
         break;
       case NeuralState.depleted:
         _currentState = SumiState.tired;
-        _dialogue = "Neural pathways need rest. Let's pause and integrate what you've learned. Sumi will be ready for more tomorrow!";
+        _dialogue =
+            "Neural pathways need rest. Let's pause and integrate what you've learned. Sumi will be ready for more tomorrow!";
         break;
     }
     notifyListeners();
@@ -623,6 +718,8 @@ class SumiProvider extends ChangeNotifier {
   void dispose() {
     _chatSub?.cancel();
     _focusTimer?.cancel();
+    _cancelTtsWatchdog();
+    _ttsQueue.clear();
     super.dispose();
   }
 }

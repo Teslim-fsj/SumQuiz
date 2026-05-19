@@ -55,7 +55,8 @@ class CreationProgressIndicator extends StatelessWidget {
                   : Colors.white.withValues(alpha: 0.7),
               borderRadius: BorderRadius.circular(40),
               border: Border.all(
-                color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+                color: (isDark ? Colors.white : Colors.black)
+                    .withValues(alpha: 0.1),
                 width: 1.5,
               ),
               boxShadow: [
@@ -93,7 +94,8 @@ class CreationProgressIndicator extends StatelessWidget {
                       message,
                       style: GoogleFonts.outfit(
                         fontSize: 14,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.5),
                         fontWeight: FontWeight.w500,
                       ),
                     )
@@ -106,10 +108,12 @@ class CreationProgressIndicator extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 12),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.05),
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                            color: theme.colorScheme.primary
+                                .withValues(alpha: 0.1),
                           ),
                         ),
                         child: Text(
@@ -235,7 +239,8 @@ class CreationProgressIndicator extends StatelessWidget {
           ),
           child: Center(
             child: SumiMascot(
-              state: activeStep == 2 ? SumiState.celebrating : SumiState.thinking,
+              state:
+                  activeStep == 2 ? SumiState.celebrating : SumiState.thinking,
               size: 64,
             ),
           ),
@@ -317,7 +322,8 @@ class CreationProgressIndicator extends StatelessWidget {
               fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
               color: isActive
                   ? theme.colorScheme.onSurface
-                  : theme.colorScheme.onSurface.withValues(alpha: isDone ? 0.6 : 0.2),
+                  : theme.colorScheme.onSurface
+                      .withValues(alpha: isDone ? 0.6 : 0.2),
             ),
           ),
         ],

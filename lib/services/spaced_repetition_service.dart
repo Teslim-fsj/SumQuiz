@@ -69,7 +69,7 @@ class SpacedRepetitionService {
           .collection('users')
           .doc(userId)
           .get();
-      
+
       bool isPro = false;
       if (doc.exists) {
         final data = doc.data();
@@ -77,12 +77,13 @@ class SpacedRepetitionService {
           if (data['subscriptionExpiry'] == null) {
             isPro = true;
           } else {
-            final expiryDate = (data['subscriptionExpiry'] as Timestamp).toDate();
+            final expiryDate =
+                (data['subscriptionExpiry'] as Timestamp).toDate();
             isPro = expiryDate.isAfter(now);
           }
         }
       }
-      
+
       _proCache[userId] = (isPro, now.add(const Duration(minutes: 15)));
       return isPro;
     } catch (e) {
@@ -99,15 +100,17 @@ class SpacedRepetitionService {
   Future<void> pruneOrphanedItems(String userId, List<String> validIds) async {
     final setValidIds = validIds.toSet();
     final toDelete = _box.values
-        .where((item) => item.userId == userId && !setValidIds.contains(item.id))
+        .where(
+            (item) => item.userId == userId && !setValidIds.contains(item.id))
         .map((item) => item.id)
         .toList();
-    
+
     for (final id in toDelete) {
       await _box.delete(id);
     }
     if (toDelete.isNotEmpty) {
-      developer.log('Pruned ${toDelete.length} orphaned SRS items', name: 'SpacedRepetitionService');
+      developer.log('Pruned ${toDelete.length} orphaned SRS items',
+          name: 'SpacedRepetitionService');
     }
   }
 

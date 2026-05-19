@@ -350,8 +350,9 @@ class _ArchetypeMobileCard extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color:
-              isSelected ? colorScheme.primary.withValues(alpha: 0.05) : Colors.white,
+          color: isSelected
+              ? colorScheme.primary.withValues(alpha: 0.05)
+              : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
               color: isSelected ? colorScheme.primary : const Color(0xFFE5E7EB),

@@ -91,8 +91,7 @@ void main() async {
   usePathUrlStrategy(); // Remove # from web URLs (sumquiz.xyz/route instead of sumquiz.xyz/#/route)
   WidgetsFlutterBinding.ensureInitialized();
   if (!kIsWeb) {
-    await Workmanager()
-        .initialize(callbackDispatcher);
+    await Workmanager().initialize(callbackDispatcher);
   }
 
   await Firebase.initializeApp(
@@ -247,7 +246,8 @@ class _MyAppState extends State<MyApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()..init()),
-        ChangeNotifierProvider(create: (_) => VersionUpdateService()..checkForUpdates()),
+        ChangeNotifierProvider(
+            create: (_) => VersionUpdateService()..checkForUpdates()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
         Provider<AuthService>.value(value: widget.authService),
         Provider<NotificationService>.value(value: widget.notificationService),
@@ -295,14 +295,15 @@ class _MyAppState extends State<MyApp> {
           update: (context, iapService, previous) =>
               previous!..update(iapService),
         ),
-        ProxyProvider3<IAPService?, LocalDatabaseService, SyncService, EnhancedAIService>(
+        ProxyProvider3<IAPService?, LocalDatabaseService, SyncService,
+            EnhancedAIService>(
           update: (context, iapService, localDb, syncService, previous) {
             if (iapService == null) {
               // Return a temporary service or handle null
               // (EnhancedAIService needs IAPService for usage logic)
             }
             final service = EnhancedAIService(
-              iapService: iapService!, 
+              iapService: iapService!,
               localDb: localDb,
               syncService: syncService,
             );
@@ -313,7 +314,8 @@ class _MyAppState extends State<MyApp> {
             return service;
           },
         ),
-        ChangeNotifierProxyProvider4<EnhancedAIService, LocalDatabaseService, UsageService?, AuthService, SumiProvider>(
+        ChangeNotifierProxyProvider4<EnhancedAIService, LocalDatabaseService,
+            UsageService?, AuthService, SumiProvider>(
           create: (context) => SumiProvider(
             aiService: context.read<EnhancedAIService>().generatorService,
             localDb: context.read<LocalDatabaseService>(),
@@ -321,8 +323,9 @@ class _MyAppState extends State<MyApp> {
             authService: context.read<AuthService>(),
           ),
           update: (context, ai, localDb, usage, auth, previous) =>
-              previous ?? SumiProvider(
-                aiService: ai.generatorService, 
+              previous ??
+              SumiProvider(
+                aiService: ai.generatorService,
                 localDb: localDb,
                 usageService: usage,
                 authService: auth,
@@ -398,10 +401,11 @@ class _MyAppState extends State<MyApp> {
           update: (context, masteryService, previous) =>
               RecommendationService(masteryService),
         ),
-        ProxyProvider4<MasteryService, RecommendationService, NotificationService,
-            EnhancedAIService, SumiTutorService>(
+        ProxyProvider4<MasteryService, RecommendationService,
+            NotificationService, EnhancedAIService, SumiTutorService>(
           update: (context, mastery, recs, notifications, ai, previous) =>
-              SumiTutorService(mastery, recs, ai.generatorService, notifications),
+              SumiTutorService(
+                  mastery, recs, ai.generatorService, notifications),
         ),
         ChangeNotifierProxyProvider5<LocalDatabaseService, EnhancedAIService,
             RecordingService, SpeechService, UsageService?, NoteProvider>(
@@ -467,23 +471,23 @@ class _MyAppState extends State<MyApp> {
                   }
 
                   return NotificationNavigator(
-                child: MaterialApp.router(
-                  title: 'SumQuiz',
-                  theme: themeProvider.getTheme(),
-                  darkTheme: themeProvider.getTheme(),
-                  themeMode: themeProvider.themeMode,
-                  routerConfig: _router,
-                  debugShowCheckedModeBanner: false,
-                  localizationsDelegates: const [
-                    GlobalMaterialLocalizations.delegate,
-                    GlobalCupertinoLocalizations.delegate,
-                    GlobalWidgetsLocalizations.delegate,
-                    FlutterQuillLocalizations.delegate,
-                  ],
-                  supportedLocales: const [
-                    Locale('en', ''),
-                  ],
-                ),
+                    child: MaterialApp.router(
+                      title: 'SumQuiz',
+                      theme: themeProvider.getTheme(),
+                      darkTheme: themeProvider.getTheme(),
+                      themeMode: themeProvider.themeMode,
+                      routerConfig: _router,
+                      debugShowCheckedModeBanner: false,
+                      localizationsDelegates: const [
+                        GlobalMaterialLocalizations.delegate,
+                        GlobalCupertinoLocalizations.delegate,
+                        GlobalWidgetsLocalizations.delegate,
+                        FlutterQuillLocalizations.delegate,
+                      ],
+                      supportedLocales: const [
+                        Locale('en', ''),
+                      ],
+                    ),
                   );
                 },
               );

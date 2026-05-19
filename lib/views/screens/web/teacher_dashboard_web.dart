@@ -403,7 +403,8 @@ class _TeacherDashboardWebState extends State<TeacherDashboardWeb> {
                   'Manually link a student to your content using its share code.',
                   style: GoogleFonts.outfit(
                       fontSize: 13,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.6))),
               const SizedBox(height: 20),
               TextField(
                 controller: emailController,

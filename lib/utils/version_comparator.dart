@@ -7,7 +7,8 @@ class VersionComparator {
     List<int> parts1 = _parseVersion(v1);
     List<int> parts2 = _parseVersion(v2);
 
-    int maxLength = parts1.length > parts2.length ? parts1.length : parts2.length;
+    int maxLength =
+        parts1.length > parts2.length ? parts1.length : parts2.length;
 
     for (int i = 0; i < maxLength; i++) {
       int p1 = i < parts1.length ? parts1[i] : 0;
@@ -23,7 +24,7 @@ class VersionComparator {
   static List<int> _parseVersion(String version) {
     // Remove any build numbers (e.g., "1.0.34+196" -> "1.0.34")
     String cleanVersion = version.split('+')[0];
-    
+
     // Remove any pre-release tags (e.g., "1.0.0-alpha" -> "1.0.0")
     cleanVersion = cleanVersion.split('-')[0];
 

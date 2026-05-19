@@ -818,7 +818,8 @@ class _ContentManagerState extends State<ContentManager> {
                   onPressed: () {},
                   style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white,
-                      side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                      side: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.2)),
                       padding: const EdgeInsets.symmetric(vertical: 24),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12))),

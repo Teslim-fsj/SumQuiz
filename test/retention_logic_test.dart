@@ -8,11 +8,15 @@ import 'package:sumquiz/services/mastery_service.dart';
 import 'package:sumquiz/services/local_database_service.dart';
 
 class MockBox<T> extends Mock implements Box<T> {}
+
 class MockLocalDatabaseService extends Mock implements LocalDatabaseService {}
+
 class MockTopicNode extends Mock implements TopicNode {}
 
 class FakeMasteryHistory extends Fake implements MasteryHistory {}
+
 class FakeTopicNode extends Fake implements TopicNode {}
+
 class FakeLearningSignal extends Fake implements LearningSignal {}
 
 void main() {
@@ -31,11 +35,12 @@ void main() {
     mockTopicBox = MockBox<TopicNode>();
     mockSrsBox = MockBox<SpacedRepetitionItem>();
     mockDb = MockLocalDatabaseService();
-    
+
     // Default mock behavior
     when(() => mockDb.saveMasteryHistory(any())).thenAnswer((_) async {});
-    when(() => mockTopicBox.values).thenReturn([]); // Prevent null errors in global analytics
-    
+    when(() => mockTopicBox.values)
+        .thenReturn([]); // Prevent null errors in global analytics
+
     masteryService = MasteryService(mockTopicBox, mockSrsBox, mockDb);
   });
 
@@ -43,7 +48,7 @@ void main() {
     test('Quiz Signal Flow: Success increases mastery and stability', () async {
       final topicId = 'test_topic_1';
       final topic = MockTopicNode();
-      
+
       when(() => topic.id).thenReturn(topicId);
       when(() => topic.userId).thenReturn('user_123');
       when(() => topic.name).thenReturn('Mitosis');
@@ -51,14 +56,19 @@ void main() {
       when(() => topic.stabilityScore).thenReturn(0.5);
       when(() => topic.confidenceScore).thenReturn(0.5);
       when(() => topic.lastInteraction).thenReturn(DateTime.now());
-      
+
       // Assignments in Dart return the assigned value
-      when(() => topic.masteryScore = any()).thenAnswer((invocation) => invocation.positionalArguments[0] as double);
-      when(() => topic.stabilityScore = any()).thenAnswer((invocation) => invocation.positionalArguments[0] as double);
-      when(() => topic.confidenceScore = any()).thenAnswer((invocation) => invocation.positionalArguments[0] as double);
-      when(() => topic.learningVelocity = any()).thenAnswer((invocation) => invocation.positionalArguments[0] as double);
-      when(() => topic.lastInteraction = any()).thenAnswer((invocation) => invocation.positionalArguments[0] as DateTime);
-      
+      when(() => topic.masteryScore = any()).thenAnswer(
+          (invocation) => invocation.positionalArguments[0] as double);
+      when(() => topic.stabilityScore = any()).thenAnswer(
+          (invocation) => invocation.positionalArguments[0] as double);
+      when(() => topic.confidenceScore = any()).thenAnswer(
+          (invocation) => invocation.positionalArguments[0] as double);
+      when(() => topic.learningVelocity = any()).thenAnswer(
+          (invocation) => invocation.positionalArguments[0] as double);
+      when(() => topic.lastInteraction = any()).thenAnswer(
+          (invocation) => invocation.positionalArguments[0] as DateTime);
+
       when(() => topic.save()).thenAnswer((_) async {});
       when(() => mockTopicBox.get(topicId)).thenReturn(topic);
 
@@ -72,7 +82,8 @@ void main() {
       verify(() => topic.masteryScore = any(that: greaterThan(0.5))).called(1);
     });
 
-    test('Fuzzy Matching: Should return existing topic for similar names', () async {
+    test('Fuzzy Matching: Should return existing topic for similar names',
+        () async {
       final existingTopic = TopicNode(
         id: '1',
         name: 'Photosynthesis',
@@ -84,8 +95,9 @@ void main() {
 
       when(() => mockTopicBox.values).thenReturn([existingTopic]);
 
-      final result = await masteryService.getOrCreateTopic('user_123', 'photosynthesys');
-      
+      final result =
+          await masteryService.getOrCreateTopic('user_123', 'photosynthesys');
+
       expect(result.id, equals(existingTopic.id));
       expect(result.name, equals('Photosynthesis'));
     });

@@ -87,7 +87,8 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                             context: context,
                             barrierDismissible: true,
                             barrierLabel: "Sumi Tutor",
-                            pageBuilder: (context, _, __) => const SumiLiveSandboxOverlay(),
+                            pageBuilder: (context, _, __) =>
+                                const SumiLiveSandboxOverlay(),
                           );
                         },
                         child: Container(
@@ -98,13 +99,15 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                             color: theme.colorScheme.surface,
                             boxShadow: [
                               BoxShadow(
-                                color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                                color: theme.colorScheme.primary
+                                    .withValues(alpha: 0.3),
                                 blurRadius: 15,
                                 spreadRadius: 2,
                               ),
                             ],
                             border: Border.all(
-                              color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                              color: theme.colorScheme.primary
+                                  .withValues(alpha: 0.5),
                               width: 2,
                             ),
                           ),
@@ -112,12 +115,16 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                             child: Image.asset(
                               'assets/images/sumi.png',
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => 
-                                  Icon(Icons.face_retouching_natural, color: theme.colorScheme.primary),
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Icon(Icons.face_retouching_natural,
+                                      color: theme.colorScheme.primary),
                             ),
                           ),
-                        ).animate(onPlay: (c) => c.repeat(reverse: true))
-                         .moveY(begin: 0, end: -8, duration: 2.seconds, curve: Curves.easeInOut),
+                        ).animate(onPlay: (c) => c.repeat(reverse: true)).moveY(
+                            begin: 0,
+                            end: -8,
+                            duration: 2.seconds,
+                            curve: Curves.easeInOut),
                       ),
                       const SizedBox(height: 16),
                       // Create + FAB (Slightly larger, beautiful, matches Sumi orb)
@@ -137,7 +144,8 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                             color: WebColors.purplePrimary,
                             boxShadow: [
                               BoxShadow(
-                                color: WebColors.purplePrimary.withValues(alpha: 0.4),
+                                color: WebColors.purplePrimary
+                                    .withValues(alpha: 0.4),
                                 blurRadius: 15,
                                 spreadRadius: 1,
                                 offset: const Offset(0, 4),
@@ -150,7 +158,10 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                             size: 32,
                           ),
                         ),
-                      ).animate().scale(delay: 200.ms, duration: 300.ms, curve: Curves.easeOutBack),
+                      ).animate().scale(
+                          delay: 200.ms,
+                          duration: 300.ms,
+                          curve: Curves.easeOutBack),
                     ],
                   ),
                 ),

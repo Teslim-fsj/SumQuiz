@@ -691,9 +691,11 @@ class _ExtractionViewScreenWebState extends State<ExtractionViewScreenWeb> {
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.05),
+        color:
+            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+        border:
+            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
         boxShadow: [
           BoxShadow(
               color: Colors.black.withValues(alpha: 0.08),

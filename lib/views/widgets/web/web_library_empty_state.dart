@@ -38,7 +38,8 @@ class WebLibraryEmptyState extends StatelessWidget {
                   ),
                 ).animate().scale(duration: 600.ms, curve: Curves.easeOutBack),
                 Icon(Icons.folder_open_rounded,
-                    size: 80, color: const Color(0xFF6366F1).withValues(alpha: 0.2)),
+                    size: 80,
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.2)),
                 Positioned(
                   right: 20,
                   top: 20,
@@ -129,7 +130,8 @@ class WebLibraryEmptyState extends StatelessWidget {
                 ElevatedButton(
                   onPressed: onCreateNew,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE0E7FF).withValues(alpha: 0.5),
+                    backgroundColor:
+                        const Color(0xFFE0E7FF).withValues(alpha: 0.5),
                     foregroundColor: const Color(0xFF4338CA),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 40, vertical: 20),

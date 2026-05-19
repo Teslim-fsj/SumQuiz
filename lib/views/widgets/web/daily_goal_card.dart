@@ -59,7 +59,10 @@ class DailyGoalCard extends StatelessWidget {
                     color: theme.colorScheme.primary,
                     strokeCap: StrokeCap.round,
                   ),
-                ).animate().scale(begin: const Offset(0.9, 0.9), duration: 1.seconds, curve: Curves.easeOutBack),
+                ).animate().scale(
+                    begin: const Offset(0.9, 0.9),
+                    duration: 1.seconds,
+                    curve: Curves.easeOutBack),
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -121,7 +124,10 @@ class DailyGoalCard extends StatelessWidget {
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 400.ms, delay: 200.ms).slideY(begin: 0.05, end: 0);
+    )
+        .animate()
+        .fadeIn(duration: 400.ms, delay: 200.ms)
+        .slideY(begin: 0.05, end: 0);
   }
 
   Widget _buildBadge(ThemeData theme, String label, Color color) {

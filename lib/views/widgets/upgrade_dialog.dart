@@ -34,11 +34,16 @@ class UpgradeDialog extends StatelessWidget {
     final cs = theme.colorScheme;
 
     final features = [
-      _Feat(Icons.all_inclusive_rounded, 'Unlimited AI Tutoring', 'Voice + text, no daily cap'),
-      _Feat(Icons.bolt_rounded, '10× More AI Actions / day', 'Quizzes, summaries, flashcards'),
-      _Feat(Icons.upload_file_rounded, 'PDF & Image Uploads', 'Ground Sumi in your materials'),
-      _Feat(Icons.insights_rounded, 'ALPS Intelligence', 'Personalised performance insights'),
-      _Feat(Icons.mic_rounded, 'Live Lecture Notes', 'Instant transcription + summary'),
+      _Feat(Icons.all_inclusive_rounded, 'Unlimited AI Tutoring',
+          'Voice + text, no daily cap'),
+      _Feat(Icons.bolt_rounded, '10× More AI Actions / day',
+          'Quizzes, summaries, flashcards'),
+      _Feat(Icons.upload_file_rounded, 'PDF & Image Uploads',
+          'Ground Sumi in your materials'),
+      _Feat(Icons.insights_rounded, 'ALPS Intelligence',
+          'Personalised performance insights'),
+      _Feat(Icons.mic_rounded, 'Live Lecture Notes',
+          'Instant transcription + summary'),
     ];
 
     return Dialog(
@@ -66,8 +71,10 @@ class UpgradeDialog extends StatelessWidget {
                 state: SumiState.streakBoost,
                 size: 88,
                 dialogue: null,
-              ).animate()
-                .scale(begin: const Offset(0.6, 0.6), curve: Curves.easeOutBack, duration: 500.ms),
+              ).animate().scale(
+                  begin: const Offset(0.6, 0.6),
+                  curve: Curves.easeOutBack,
+                  duration: 500.ms),
 
               const SizedBox(height: 16),
 
@@ -101,11 +108,13 @@ class UpgradeDialog extends StatelessWidget {
 
               // ── Feature list ─────────────────────────────────────────────
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: cs.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.4)),
+                  border: Border.all(
+                      color: cs.outlineVariant.withValues(alpha: 0.4)),
                 ),
                 child: Column(
                   children: features.asMap().entries.map((e) {
@@ -121,7 +130,8 @@ class UpgradeDialog extends StatelessWidget {
 
               // ── Pricing pill ─────────────────────────────────────────────
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: cs.primaryContainer,
                   borderRadius: BorderRadius.circular(100),
@@ -134,12 +144,16 @@ class UpgradeDialog extends StatelessWidget {
                     Text(
                       'Student Pro · from ',
                       style: GoogleFonts.inter(
-                          fontSize: 13, color: cs.onPrimaryContainer, fontWeight: FontWeight.w500),
+                          fontSize: 13,
+                          color: cs.onPrimaryContainer,
+                          fontWeight: FontWeight.w500),
                     ),
                     Text(
                       '\$15/mo',
                       style: GoogleFonts.outfit(
-                          fontSize: 14, color: cs.primary, fontWeight: FontWeight.w900),
+                          fontSize: 14,
+                          color: cs.primary,
+                          fontWeight: FontWeight.w900),
                     ),
                   ],
                 ),
@@ -159,12 +173,14 @@ class UpgradeDialog extends StatelessWidget {
                     backgroundColor: cs.primary,
                     foregroundColor: cs.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
                     elevation: 0,
                   ),
                   child: Text(
                     'Unlock Full Access',
-                    style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w800),
+                    style: GoogleFonts.outfit(
+                        fontSize: 16, fontWeight: FontWeight.w800),
                   ),
                 ),
               ).animate().fadeIn(delay: 460.ms).slideY(begin: 0.08, end: 0),
@@ -175,7 +191,8 @@ class UpgradeDialog extends StatelessWidget {
                 onPressed: () => Navigator.of(context).pop(),
                 child: Text(
                   'Continue with free plan',
-                  style: GoogleFonts.inter(color: cs.onSurfaceVariant, fontSize: 13),
+                  style: GoogleFonts.inter(
+                      color: cs.onSurfaceVariant, fontSize: 13),
                 ),
               ),
             ],
@@ -206,7 +223,9 @@ class UpgradeDialog extends StatelessWidget {
               children: [
                 Text(feat.title,
                     style: GoogleFonts.inter(
-                        fontSize: 13, fontWeight: FontWeight.w700, color: cs.onSurface)),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: cs.onSurface)),
                 Text(feat.subtitle,
                     style: GoogleFonts.inter(
                         fontSize: 11, color: cs.onSurfaceVariant, height: 1.3)),

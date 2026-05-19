@@ -59,7 +59,10 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Dismiss', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+            child: Text('Dismiss',
+                style: GoogleFonts.inter(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary)),
           ),
         ],
       ),
@@ -75,7 +78,8 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24)),
               title: Text('Timer Settings',
                   style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
               content: Column(
@@ -103,7 +107,8 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text('Cancel', style: GoogleFonts.inter(color: theme.hintColor)),
+                  child: Text('Cancel',
+                      style: GoogleFonts.inter(color: theme.hintColor)),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -117,8 +122,10 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
                   style: ElevatedButton.styleFrom(
                       backgroundColor: theme.colorScheme.primary,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  child: Text('Apply', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12))),
+                  child: Text('Apply',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
                 ),
               ],
             );
@@ -163,7 +170,8 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.timer_outlined, size: 14, color: Color(0xFF0D9488)),
+                  const Icon(Icons.timer_outlined,
+                      size: 14, color: Color(0xFF0D9488)),
                   const SizedBox(width: 8),
                   Text(
                     'FOCUS TIMER',
@@ -178,7 +186,8 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
               ),
               IconButton(
                 onPressed: _showSettings,
-                icon: Icon(Icons.tune_rounded, size: 18, color: theme.hintColor.withOpacity(0.5)),
+                icon: Icon(Icons.tune_rounded,
+                    size: 18, color: theme.hintColor.withOpacity(0.5)),
                 visualDensity: VisualDensity.compact,
               ),
             ],
@@ -192,7 +201,9 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
               color: theme.textTheme.displayLarge?.color,
               height: 1.0,
             ),
-          ).animate(target: _isRunning ? 1 : 0).shimmer(duration: 2.seconds, color: theme.colorScheme.primary.withOpacity(0.2)),
+          ).animate(target: _isRunning ? 1 : 0).shimmer(
+              duration: 2.seconds,
+              color: theme.colorScheme.primary.withOpacity(0.2)),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -217,15 +228,20 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
                 child: ElevatedButton(
                   onPressed: _toggleTimer,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _isRunning ? theme.dividerColor.withOpacity(0.1) : theme.colorScheme.primary,
-                    foregroundColor: _isRunning ? theme.hintColor : Colors.white,
+                    backgroundColor: _isRunning
+                        ? theme.dividerColor.withOpacity(0.1)
+                        : theme.colorScheme.primary,
+                    foregroundColor:
+                        _isRunning ? theme.hintColor : Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
                   ),
                   child: Text(
                     _isRunning ? 'Pause' : 'Start',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14),
+                    style: GoogleFonts.inter(
+                        fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ),
               ),
@@ -236,12 +252,15 @@ class _FocusTimerCardState extends State<FocusTimerCard> {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: theme.hintColor,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: BorderSide(color: theme.dividerColor.withOpacity(0.1)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    side:
+                        BorderSide(color: theme.dividerColor.withOpacity(0.1)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
                   ),
                   child: Text(
                     'Reset',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14),
+                    style: GoogleFonts.inter(
+                        fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ),
               ),

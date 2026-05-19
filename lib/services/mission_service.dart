@@ -95,12 +95,12 @@ class MissionService {
     if (selectedFlashcards.length < targetCount) {
       final allTrackedIds = await _srs.getAllTrackedIds(userId);
       final localSets = await _localDb.getAllFlashcardSets(userId);
-      final allLocalCardIds = localSets.expand((s) => s.flashcards.map((c) => c.id)).toList();
-      
+      final allLocalCardIds =
+          localSets.expand((s) => s.flashcards.map((c) => c.id)).toList();
+
       final Set<String> allPool = {...allTrackedIds, ...allLocalCardIds};
-      final nonSelectedIds = allPool
-          .where((id) => !selectedFlashcards.contains(id))
-          .toList();
+      final nonSelectedIds =
+          allPool.where((id) => !selectedFlashcards.contains(id)).toList();
 
       nonSelectedIds.shuffle();
       final needed = targetCount - selectedFlashcards.length;

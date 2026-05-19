@@ -9,9 +9,13 @@ import 'package:sumquiz/services/notification_service.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockExtractionService extends Mock implements ContentExtractionService {}
+
 class MockAIService extends Mock implements EnhancedAIService {}
+
 class MockLocalDb extends Mock implements LocalDatabaseService {}
+
 class MockYoutubeService extends Mock implements YoutubeService {}
+
 class MockNotificationService extends Mock implements NotificationService {}
 
 void main() {
@@ -60,10 +64,10 @@ void main() {
       provider.setSource('pdf');
       // Set some dummy bytes to trigger extraction
       // (Internal implementation details might need more setup)
-      
+
       // Since we can't easily set private fields, we'll test the public interface
       // but the provider is heavily dependent on internal state.
-      
+
       // For a real production test, we'd use a more testable design
       // or set up the provider state via public methods.
     });

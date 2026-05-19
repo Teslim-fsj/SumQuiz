@@ -18,7 +18,7 @@ class ActiveMissionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     if (mission == null) return _buildEmptyState(theme);
 
     final total = mission!.flashcardIds.length;
@@ -55,7 +55,8 @@ class ActiveMissionCard extends StatelessWidget {
                     color: theme.colorScheme.primary, size: 24),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primary.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(20),
@@ -137,7 +138,11 @@ class ActiveMissionCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                ).animate().scaleX(begin: 0, alignment: Alignment.centerLeft, duration: 800.ms, curve: Curves.easeOutCubic),
+                ).animate().scaleX(
+                    begin: 0,
+                    alignment: Alignment.centerLeft,
+                    duration: 800.ms,
+                    curve: Curves.easeOutCubic),
               ),
             ],
           ),
@@ -147,21 +152,29 @@ class ActiveMissionCard extends StatelessWidget {
             child: ElevatedButton(
               onPressed: onStart,
               style: ElevatedButton.styleFrom(
-                backgroundColor: mission!.isCompleted ? theme.dividerColor.withOpacity(0.1) : theme.colorScheme.primary,
-                foregroundColor: mission!.isCompleted ? theme.hintColor : Colors.white,
+                backgroundColor: mission!.isCompleted
+                    ? theme.dividerColor.withOpacity(0.1)
+                    : theme.colorScheme.primary,
+                foregroundColor:
+                    mission!.isCompleted ? theme.hintColor : Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
               child: Text(
                 mission!.isCompleted ? 'Mission Completed' : 'Launch Session',
-                style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15),
+                style: GoogleFonts.inter(
+                    fontWeight: FontWeight.bold, fontSize: 15),
               ),
             ),
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut);
+    )
+        .animate()
+        .fadeIn(duration: 400.ms)
+        .slideY(begin: 0.05, curve: Curves.easeOut);
   }
 
   Widget _buildEmptyState(ThemeData theme) {
@@ -201,7 +214,8 @@ class ActiveMissionCard extends StatelessWidget {
             onPressed: onStart,
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
             ),
             child: const Text('Generate Mission'),
           ),

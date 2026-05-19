@@ -15,7 +15,7 @@ class SumiLensMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Positioned(
       left: position.dx,
       top: position.dy - 70,
@@ -51,7 +51,8 @@ class SumiLensMenu extends StatelessWidget {
               const SizedBox(width: 4),
               IconButton(
                 onPressed: () => onAction('more'),
-                icon: Icon(Icons.more_horiz_rounded, size: 20, color: theme.hintColor),
+                icon: Icon(Icons.more_horiz_rounded,
+                    size: 20, color: theme.hintColor),
                 visualDensity: VisualDensity.compact,
                 style: IconButton.styleFrom(
                   padding: const EdgeInsets.all(8),
@@ -61,10 +62,9 @@ class SumiLensMenu extends StatelessWidget {
           ),
         ),
       ).animate().fadeIn(duration: 200.ms).scale(
-        alignment: Alignment.bottomCenter,
-        begin: const Offset(0.9, 0.9), 
-        curve: Curves.easeOutBack
-      ),
+          alignment: Alignment.bottomCenter,
+          begin: const Offset(0.9, 0.9),
+          curve: Curves.easeOutBack),
     );
   }
 

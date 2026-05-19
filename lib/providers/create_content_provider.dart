@@ -50,9 +50,9 @@ class CreateContentProvider with ChangeNotifier {
     required LocalDatabaseService localDb,
     required NotificationService notificationService,
   })  : _extractionService = extractionService,
-    _aiService = aiService,
-    _localDb = localDb,
-    _notificationService = notificationService;
+        _aiService = aiService,
+        _localDb = localDb,
+        _notificationService = notificationService;
 
   // --- STATE ---
   CreationPhase _phase = CreationPhase.source;
@@ -160,12 +160,14 @@ class CreateContentProvider with ChangeNotifier {
   /// fails or is blocked by a usage limit.
   Future<void> saveNoteNow() async {
     if (!_saveAsNote) return;
-    final title = _fileName ?? _extractionResult?.suggestedTitle ?? 'Untitled Note';
+    final title =
+        _fileName ?? _extractionResult?.suggestedTitle ?? 'Untitled Note';
     final text = _textContent;
     if (text.trim().isEmpty) return;
 
     try {
-      developer.log('saveNoteNow: saving note "$title"', name: 'CreateContentProvider');
+      developer.log('saveNoteNow: saving note "$title"',
+          name: 'CreateContentProvider');
       final note = LocalNote(
         id: const Uuid().v4(),
         userId: '', // Will be replaced by the caller if needed; stored locally
@@ -397,19 +399,24 @@ class CreateContentProvider with ChangeNotifier {
     _cancelToken = CancellationToken();
     final cancelToken = _cancelToken!;
 
-    final title = _fileName ?? _extractionResult?.suggestedTitle ?? 'Study Deck';
+    final title =
+        _fileName ?? _extractionResult?.suggestedTitle ?? 'Study Deck';
     final textToProcess = _textContent;
     final folderIdToUse = _preSelectedFolderId ?? const Uuid().v4();
 
     // 1. Gated Usage / Credit Unit Check (Pre-generation)
     final usageService = UsageService();
     try {
-      final canProceed = await usageService.canPerformAction(userId, 'generate');
+      final canProceed =
+          await usageService.canPerformAction(userId, 'generate');
       if (!canProceed) {
-        developer.log('Limit reached for synthesis', name: 'CreateContentProvider');
+        developer.log('Limit reached for synthesis',
+            name: 'CreateContentProvider');
         _limitReached = true;
         // Don't show error view, revert to previous view so user can upgrade and retry
-        _phase = _extractionResult != null ? CreationPhase.extractionReview : CreationPhase.source;
+        _phase = _extractionResult != null
+            ? CreationPhase.extractionReview
+            : CreationPhase.source;
         _stopTipRotation();
         notifyListeners();
         return;
@@ -424,7 +431,8 @@ class CreateContentProvider with ChangeNotifier {
       notifyListeners();
 
       // 3. Fast-track for Topic generation
-      if (_selectedSourceType == 'topic' && _textContent.split(' ').length <= 8) {
+      if (_selectedSourceType == 'topic' &&
+          _textContent.split(' ').length <= 8) {
         _progressMessage = 'Generating full study set from topic...';
         _generatedFolderId = await _aiService.generateFromTopic(
           topic: _textContent,
@@ -447,7 +455,8 @@ class CreateContentProvider with ChangeNotifier {
         try {
           await usageService.recordAction(userId, 'generate');
         } catch (e) {
-          developer.log('Error recording topic generation usage: $e', name: 'CreateContentProvider');
+          developer.log('Error recording topic generation usage: $e',
+              name: 'CreateContentProvider');
         }
 
         notifyListeners();
@@ -476,26 +485,29 @@ class CreateContentProvider with ChangeNotifier {
       // 5. Validation Pass
       onProgress('Verifying neural artifacts...');
       final folderContents = await _localDb.getFolderContentsForUser(userId);
-      final hasArtifacts = folderContents.any((c) => c.folderId == _generatedFolderId);
+      final hasArtifacts =
+          folderContents.any((c) => c.folderId == _generatedFolderId);
       if (!hasArtifacts) {
-        throw Exception('Generation completed but artifacts were not stored correctly.');
+        throw Exception(
+            'Generation completed but artifacts were not stored correctly.');
       }
 
       // Record usage on successful standard generation
       try {
         await usageService.recordAction(userId, 'generate');
       } catch (e) {
-        developer.log('Error recording generation usage: $e', name: 'CreateContentProvider');
+        developer.log('Error recording generation usage: $e',
+            name: 'CreateContentProvider');
       }
 
       final duration = DateTime.now().difference(startTime);
-      developer.log('Study pack generation SUCCESS in ${duration.inSeconds}s', 
+      developer.log('Study pack generation SUCCESS in ${duration.inSeconds}s',
           name: 'CreateContentProvider');
-      
+
       _progressMessage = ''; // Clear progress message
       _phase = CreationPhase.success;
       _stopTipRotation();
-      
+
       // 6. Notifications
       NotificationIntegration.coreOnContentGenerated(
         notificationService: _notificationService,
@@ -511,7 +523,7 @@ class CreateContentProvider with ChangeNotifier {
   }
 
   bool _limitReached = false;
-  
+
   bool get isProcessing => _phase == CreationPhase.processing;
   bool get limitReached => _limitReached;
 
@@ -523,27 +535,37 @@ class CreateContentProvider with ChangeNotifier {
   void _handleError(dynamic e, CancellationToken cancelToken) {
     _stopTipRotation();
     if (cancelToken.isCancelled) {
-      developer.log('Generation CANCELLED by user.', name: 'CreateContentProvider');
+      developer.log('Generation CANCELLED by user.',
+          name: 'CreateContentProvider');
       _isCancelled = true;
       _phase = CreationPhase.source;
     } else {
-      developer.log('NEURAL FAILURE in provider: $e', name: 'CreateContentProvider', error: e);
+      developer.log('NEURAL FAILURE in provider: $e',
+          name: 'CreateContentProvider', error: e);
       final errorStr = e.toString();
-      
-      if (errorStr.contains('CAPACITY_STABILIZING') || errorStr.contains('CAPACITY_DEPLETED')) {
-        developer.log('Blocking generation: Capacity limits hit.', name: 'CreateContentProvider');
-        _errorMessage = "Your neural momentum is currently stabilizing! Sumi suggests a quick 5-minute break while your learning circuits reset.";
+
+      if (errorStr.contains('CAPACITY_STABILIZING') ||
+          errorStr.contains('CAPACITY_DEPLETED')) {
+        developer.log('Blocking generation: Capacity limits hit.',
+            name: 'CreateContentProvider');
+        _errorMessage =
+            "Your neural momentum is currently stabilizing! Sumi suggests a quick 5-minute break while your learning circuits reset.";
         NotificationIntegration.coreOnUsageLimitHit(
           notificationService: _notificationService,
           localDb: _localDb,
         );
       } else if (errorStr.contains('SYSTEM_OVERLOADED')) {
-        _errorMessage = "Learning pathways are currently very busy. Let's try again in a few moments!";
-      } else if (errorStr.contains('MALFORMED_JSON') || errorStr.contains('MALFORMED_RESPONSE')) {
-        developer.log('AI Logic Error: Malformed response block.', name: 'CreateContentProvider');
-        _errorMessage = "Sumi had trouble structuring the data this time. Try refining the source text and starting over.";
+        _errorMessage =
+            "Learning pathways are currently very busy. Let's try again in a few moments!";
+      } else if (errorStr.contains('MALFORMED_JSON') ||
+          errorStr.contains('MALFORMED_RESPONSE')) {
+        developer.log('AI Logic Error: Malformed response block.',
+            name: 'CreateContentProvider');
+        _errorMessage =
+            "Sumi had trouble structuring the data this time. Try refining the source text and starting over.";
       } else {
-        _errorMessage = "Sumi hit a small bump in the neural path: ${errorStr.replaceFirst('Exception: ', '')}";
+        _errorMessage =
+            "Sumi hit a small bump in the neural path: ${errorStr.replaceFirst('Exception: ', '')}";
       }
       _phase = CreationPhase.error;
     }

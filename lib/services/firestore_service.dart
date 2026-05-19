@@ -420,7 +420,8 @@ class FirestoreService {
             .collection('folders')
             .doc(item.id)
             .get();
-        return Folder.fromFirestore(doc.data() as Map<String, dynamic>? ?? {}, doc.id);
+        return Folder.fromFirestore(
+            doc.data() as Map<String, dynamic>? ?? {}, doc.id);
     }
   }
 

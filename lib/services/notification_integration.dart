@@ -75,7 +75,8 @@ class NotificationIntegration {
       if (!userDoc.exists) return;
       final user = UserModel.fromFirestore(userDoc);
 
-      final notificationManager = NotificationManager(notificationService, localDb);
+      final notificationManager =
+          NotificationManager(notificationService, localDb);
 
       // Extract topic from title (first word or full title if short)
       final extractedTopic = topic.split(' ').first;
@@ -84,7 +85,8 @@ class NotificationIntegration {
       await notificationManager.scheduleDailyLearningReminder(user);
 
       // Schedule topic recommendation
-      await notificationManager.scheduleTopicRecommendation(extractedTopic, extractedTopic);
+      await notificationManager.scheduleTopicRecommendation(
+          extractedTopic, extractedTopic);
 
       debugPrint('✅ Notifications scheduled after content generation');
     } catch (e) {
@@ -135,7 +137,8 @@ class NotificationIntegration {
     required LocalDatabaseService localDb,
   }) async {
     try {
-      final notificationManager = NotificationManager(notificationService, localDb);
+      final notificationManager =
+          NotificationManager(notificationService, localDb);
 
       // Schedule Pro upgrade reminder
       await notificationManager.scheduleProUpgradeReminder();
@@ -184,7 +187,6 @@ class NotificationIntegration {
         cardCount: cardCount,
         estimatedMinutes: estimatedMinutes,
       );
-
 
       debugPrint(
           '✅ Mission priming notification scheduled for $preferredStudyTime');

@@ -278,7 +278,8 @@ class _EditFlashcardsScreenState extends State<EditFlashcardsScreen> {
                                 fontWeight: FontWeight.bold)),
                         IconButton(
                           icon: Icon(Icons.delete_outline,
-                              color: theme.colorScheme.error.withValues(alpha: 0.8),
+                              color: theme.colorScheme.error
+                                  .withValues(alpha: 0.8),
                               size: 20),
                           onPressed: () => _deleteFlashcard(index),
                           padding: EdgeInsets.zero,
@@ -293,8 +294,8 @@ class _EditFlashcardsScreenState extends State<EditFlashcardsScreen> {
                         border: InputBorder.none,
                         hintText: 'Enter question',
                         hintStyle: TextStyle(
-                            color:
-                                theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.4)),
                         contentPadding: const EdgeInsets.symmetric(vertical: 8),
                       ),
                       onChanged: (val) =>
@@ -321,8 +322,8 @@ class _EditFlashcardsScreenState extends State<EditFlashcardsScreen> {
                         border: InputBorder.none,
                         hintText: 'Enter answer',
                         hintStyle: TextStyle(
-                            color:
-                                theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.4)),
                         contentPadding: const EdgeInsets.symmetric(vertical: 8),
                       ),
                       onChanged: (val) =>

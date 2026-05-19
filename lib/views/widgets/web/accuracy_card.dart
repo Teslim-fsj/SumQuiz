@@ -87,7 +87,8 @@ class AccuracyCard extends StatelessWidget {
                   height: 1,
                   color: theme.colorScheme.onSurface,
                 ),
-              ).animate().scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack),
+              ).animate().scale(
+                  begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack),
               Padding(
                 padding: const EdgeInsets.only(bottom: 10.0, left: 4),
                 child: Text(
@@ -106,13 +107,17 @@ class AccuracyCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildStatDetail(theme, 'Peak', '$highestPerc%'),
-              _buildStatDetail(theme, 'Low', '${(lowestAccuracy * 100).toInt()}%'),
+              _buildStatDetail(
+                  theme, 'Low', '${(lowestAccuracy * 100).toInt()}%'),
               _buildStatDetail(theme, 'Rank', 'Gold'),
             ],
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 400.ms, delay: 100.ms).slideY(begin: 0.05, curve: Curves.easeOut);
+    )
+        .animate()
+        .fadeIn(duration: 400.ms, delay: 100.ms)
+        .slideY(begin: 0.05, curve: Curves.easeOut);
   }
 
   Widget _buildStatDetail(ThemeData theme, String label, String value) {

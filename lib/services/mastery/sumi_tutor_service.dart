@@ -9,8 +9,9 @@ class SumiTutorService {
   final NotificationService? _notificationService;
   final GeneratorAIService _generatorService;
 
-  SumiTutorService(this._masteryService, this._recommendationService,
-      this._generatorService, [this._notificationService]);
+  SumiTutorService(
+      this._masteryService, this._recommendationService, this._generatorService,
+      [this._notificationService]);
 
   /// Analyzes the current brain state and schedules a retention alert if needed.
   Future<void> checkAndScheduleRetentionAlert(String userId) async {
@@ -56,7 +57,7 @@ class SumiTutorService {
     int? sourcePage,
   }) async {
     final aiService = _generatorService;
-    
+
     final prompt = '''You are Sumi, a Socratic tutor. 
 Topic: $topicName
 Question: $question
@@ -69,7 +70,7 @@ Stay friendly, neural-themed, and concise.''';
 
     try {
       final hint = await aiService.refineContent(prompt);
-      
+
       if (sourceName != null) {
         final pageInfo = sourcePage != null ? " on page $sourcePage" : "";
         return "Sumi Tip: Your material from '$sourceName'$pageInfo has a clue. $hint";

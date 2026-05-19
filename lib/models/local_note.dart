@@ -149,7 +149,10 @@ class LocalNote extends HiveObject {
     try {
       final decoded = jsonDecode(trimmed);
       if (decoded is List) {
-        return decoded.map((op) => op['insert']?.toString() ?? '').join().trim();
+        return decoded
+            .map((op) => op['insert']?.toString() ?? '')
+            .join()
+            .trim();
       } else if (decoded is Map && decoded['ops'] is List) {
         final List<dynamic> ops = decoded['ops'];
         return ops.map((op) => op['insert']?.toString() ?? '').join().trim();

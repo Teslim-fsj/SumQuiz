@@ -17,11 +17,12 @@ class KnowledgeGraphView extends StatefulWidget {
   State<KnowledgeGraphView> createState() => _KnowledgeGraphViewState();
 }
 
-class _KnowledgeGraphViewState extends State<KnowledgeGraphView> with SingleTickerProviderStateMixin {
+class _KnowledgeGraphViewState extends State<KnowledgeGraphView>
+    with SingleTickerProviderStateMixin {
   late List<_NodePosition> _nodes;
   late Ticker _ticker;
   Offset _dragOffset = Offset.zero;
-  
+
   @override
   void initState() {
     super.initState();
@@ -44,12 +45,12 @@ class _KnowledgeGraphViewState extends State<KnowledgeGraphView> with SingleTick
 
   void _onTick(Duration elapsed) {
     if (!mounted) return;
-    
+
     // Simple Force-Directed Layout Simulation
     setState(() {
       for (var i = 0; i < _nodes.length; i++) {
         final nodeA = _nodes[i];
-        
+
         // 1. Repulsion (between all nodes)
         for (var j = 0; j < _nodes.length; j++) {
           if (i == j) continue;
@@ -155,12 +156,13 @@ class _GraphPainter extends CustomPainter {
   final Offset dragOffset;
   final ThemeData theme;
 
-  _GraphPainter({required this.nodes, required this.dragOffset, required this.theme});
+  _GraphPainter(
+      {required this.nodes, required this.dragOffset, required this.theme});
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2) + dragOffset;
-    
+
     final linkPaint = Paint()
       ..color = theme.colorScheme.primary.withValues(alpha: 0.15)
       ..strokeWidth = 1.0;
@@ -171,7 +173,8 @@ class _GraphPainter extends CustomPainter {
       for (var j = i + 1; j < nodes.length; j++) {
         final nodeB = nodes[j];
         if (_isLinked(nodeA.topic, nodeB.topic)) {
-          canvas.drawLine(center + nodeA.position, center + nodeB.position, linkPaint);
+          canvas.drawLine(
+              center + nodeA.position, center + nodeB.position, linkPaint);
         }
       }
     }
@@ -181,7 +184,7 @@ class _GraphPainter extends CustomPainter {
       final mastery = node.topic.masteryScore;
       final radius = 10.0 + (mastery * 20.0);
       final pos = center + node.position;
-      
+
       final nodePaint = Paint()
         ..color = Color.lerp(Colors.redAccent, Colors.cyanAccent, mastery)!
         ..style = PaintingStyle.fill;
@@ -192,7 +195,7 @@ class _GraphPainter extends CustomPainter {
 
       // Draw Glow
       canvas.drawCircle(pos, radius + 5, glowPaint);
-      
+
       // Draw Node
       canvas.drawCircle(pos, radius, nodePaint);
 

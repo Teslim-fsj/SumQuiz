@@ -67,7 +67,8 @@ class SpeechService {
           'Max restart attempts reached — stopping.',
           name: 'SpeechService',
         );
-        _errorController.add('Speech recognition timed out after extended use.');
+        _errorController
+            .add('Speech recognition timed out after extended use.');
         _isActive = false;
       }
     }

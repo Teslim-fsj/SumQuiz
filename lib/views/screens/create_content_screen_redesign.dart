@@ -1626,11 +1626,11 @@ class _CreateContentScreenState extends State<CreateContentScreen>
         errorStr.contains('overloaded')) {
       return '🔑 Intelligence access is currently full or restricted. Sumi recommends continuing with manual notes for a moment.';
     }
-    
+
     if (errorStr.contains('too long')) {
       return '📏 Concept too vast for single transmutation. Try a shorter segment.';
     }
-    
+
     return '❌ Sumi hit a small bump in the neural path. Please retry or refresh your momentum.';
   }
 }

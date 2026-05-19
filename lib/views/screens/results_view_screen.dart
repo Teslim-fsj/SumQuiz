@@ -115,16 +115,23 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
         title: _currentTitle,
         description: "Generated from $_currentTitle",
         shareCode: shareCode,
-        summaryData: _summary != null ? {
-          'content': _summary!.content,
-          'tags': _summary!.tags,
-        } : {},
-        quizData: _quiz != null ? {
-          'questions': _quiz!.questions.map((q) => q.toMap()).toList(),
-        } : {},
-        flashcardData: _flashcardSet != null ? {
-          'flashcards': _flashcardSet!.flashcards.map((f) => f.toMap()).toList(),
-        } : {},
+        summaryData: _summary != null
+            ? {
+                'content': _summary!.content,
+                'tags': _summary!.tags,
+              }
+            : {},
+        quizData: _quiz != null
+            ? {
+                'questions': _quiz!.questions.map((q) => q.toMap()).toList(),
+              }
+            : {},
+        flashcardData: _flashcardSet != null
+            ? {
+                'flashcards':
+                    _flashcardSet!.flashcards.map((f) => f.toMap()).toList(),
+              }
+            : {},
         noteData: {},
         publishedAt: DateTime.now(),
       );
@@ -134,11 +141,13 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
       if (!mounted) return;
 
       final origin = kIsWeb ? Uri.base.origin : 'https://sumquiz.xyz';
-      final shareLink = (publishedDeck.slug != null && publishedDeck.slug!.isNotEmpty)
-          ? '$origin/s/${publishedDeck.slug}'
-          : '$origin/deck?code=$shareCode';
+      final shareLink =
+          (publishedDeck.slug != null && publishedDeck.slug!.isNotEmpty)
+              ? '$origin/s/${publishedDeck.slug}'
+              : '$origin/deck?code=$shareCode';
 
-      final String message = 'Check out this synthesis I created on SumQuiz: "$_currentTitle". $shareLink';
+      final String message =
+          'Check out this synthesis I created on SumQuiz: "$_currentTitle". $shareLink';
 
       await SharePlus.instance.share(
         ShareParams(
@@ -148,7 +157,8 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error sharing: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error sharing: $e')));
       }
     }
   }
@@ -194,9 +204,12 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const CircularProgressIndicator(strokeWidth: 3, valueColor: AlwaysStoppedAnimation(Color(0xFF0D9488))),
+          const CircularProgressIndicator(
+              strokeWidth: 3,
+              valueColor: AlwaysStoppedAnimation(Color(0xFF0D9488))),
           const SizedBox(height: 24),
-          Text('Synchronizing Knowledge...', style: GoogleFonts.inter(color: theme.hintColor)),
+          Text('Synchronizing Knowledge...',
+              style: GoogleFonts.inter(color: theme.hintColor)),
         ],
       ).animate().fadeIn(),
     );
@@ -209,12 +222,18 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 48),
+            const Icon(Icons.error_outline_rounded,
+                color: Colors.redAccent, size: 48),
             const SizedBox(height: 16),
-            Text(_errorMessage!, textAlign: TextAlign.center, style: GoogleFonts.inter(color: theme.hintColor)),
+            Text(_errorMessage!,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(color: theme.hintColor)),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () => setState(() { _isLoading = true; _loadData(); }),
+              onPressed: () => setState(() {
+                _isLoading = true;
+                _loadData();
+              }),
               child: const Text('Retry'),
             ),
           ],
@@ -259,7 +278,9 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: isSelected ? theme.colorScheme.primary : Colors.transparent,
+                  color: isSelected
+                      ? theme.colorScheme.primary
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
@@ -309,16 +330,20 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
         showActions: true,
         onCopy: () {
           Clipboard.setData(ClipboardData(text: _summary!.content));
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Synthesis copied!')));
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text('Synthesis copied!')));
         },
-        onGenerateQuiz: _quiz == null ? () {
-          // If quiz doesn't exist, navigate to creation
-          context.push('/create-content', extra: {
-            'initialText': _summary!.content,
-            'initialTitle': _summary!.title,
-            'mode': 'quiz'
-          });
-        } : () => setState(() => _selectedTab = _availableTabs.indexOf('Practice')),
+        onGenerateQuiz: _quiz == null
+            ? () {
+                // If quiz doesn't exist, navigate to creation
+                context.push('/create-content', extra: {
+                  'initialText': _summary!.content,
+                  'initialTitle': _summary!.title,
+                  'mode': 'quiz'
+                });
+              }
+            : () => setState(
+                () => _selectedTab = _availableTabs.indexOf('Practice')),
       ),
     );
   }
@@ -331,13 +356,15 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
       questions: _quiz!.questions,
       onAnswer: (bool isCorrect, LocalQuizQuestion question) {},
       onFinish: () {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Practice complete!')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Practice complete!')));
       },
     );
   }
 
   Widget _buildFlashcardsTab(ThemeData theme) {
-    if (_flashcardSet == null || _flashcardSet!.flashcards.isEmpty) return const SizedBox.shrink();
+    if (_flashcardSet == null || _flashcardSet!.flashcards.isEmpty)
+      return const SizedBox.shrink();
 
     final flashcards = _flashcardSet!.flashcards
         .map((f) => Flashcard(id: f.id, question: f.question, answer: f.answer))
@@ -348,7 +375,8 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
       flashcards: flashcards,
       onReview: (int index, bool knewIt, {int? quality}) {},
       onFinish: () {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Review complete!')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Review complete!')));
       },
     );
   }

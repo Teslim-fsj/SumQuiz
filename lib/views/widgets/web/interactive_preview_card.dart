@@ -17,7 +17,7 @@ class InteractivePreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Container(
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
@@ -42,7 +42,8 @@ class InteractivePreviewCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primary.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(10),
@@ -59,7 +60,8 @@ class InteractivePreviewCard extends StatelessWidget {
               ),
               IconButton(
                 onPressed: onClipPressed,
-                icon: Icon(Icons.content_copy_rounded, size: 18, color: theme.hintColor.withOpacity(0.5)),
+                icon: Icon(Icons.content_copy_rounded,
+                    size: 18, color: theme.hintColor.withOpacity(0.5)),
                 visualDensity: VisualDensity.compact,
               ),
             ],
@@ -86,11 +88,13 @@ class InteractivePreviewCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 elevation: 4,
                 shadowColor: theme.colorScheme.primary.withOpacity(0.3),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
               child: Text(
                 'Instant Practice',
-                style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15),
+                style: GoogleFonts.inter(
+                    fontWeight: FontWeight.bold, fontSize: 15),
               ),
             ),
           ),

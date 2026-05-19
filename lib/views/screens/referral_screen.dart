@@ -213,7 +213,8 @@ class _ReferralScreenState extends State<ReferralScreen> {
           decoration: BoxDecoration(
             color: theme.cardColor.withValues(alpha: 0.8),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
+            border:
+                Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
@@ -328,7 +329,8 @@ class _ReferralScreenState extends State<ReferralScreen> {
           // Regenerate Code Button
           TextButton.icon(
             icon: Icon(Icons.refresh,
-                size: 18, color: theme.colorScheme.primary.withValues(alpha: 0.7)),
+                size: 18,
+                color: theme.colorScheme.primary.withValues(alpha: 0.7)),
             label: Text(
               'Regenerate Code',
               style: theme.textTheme.bodySmall?.copyWith(
@@ -582,7 +584,8 @@ class _ReferralScreenState extends State<ReferralScreen> {
                 const SizedBox(height: 4),
                 Text(description,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7))),
+                        color: theme.colorScheme.onSurface
+                            .withValues(alpha: 0.7))),
               ],
             ),
           ),

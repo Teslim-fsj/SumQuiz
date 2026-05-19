@@ -33,7 +33,7 @@ class RecommendationService {
 
   List<StudyRecommendation> getDailyRecommendations(String userId) {
     final priorityTopics = _masteryService.getPriorityTopics(userId, limit: 3);
-    
+
     return priorityTopics
         .map((topic) {
           final alps = _masteryService.calculateALPS(topic);

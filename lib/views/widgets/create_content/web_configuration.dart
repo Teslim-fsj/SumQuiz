@@ -644,7 +644,8 @@ class _PreviewItem extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)
+                BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)
               ],
             ),
             child: Icon(icon, color: const Color(0xFF3300FF), size: 20),

@@ -660,7 +660,8 @@ class _CreatorTabViewState extends State<CreatorTabView> {
                     : MainAxisAlignment.start,
                 children: [
                   CircleAvatar(
-                    backgroundColor: WebColors.purplePrimary.withValues(alpha: 0.2),
+                    backgroundColor:
+                        WebColors.purplePrimary.withValues(alpha: 0.2),
                     radius: 24,
                     child: const Icon(Icons.person,
                         color: WebColors.purplePrimary),

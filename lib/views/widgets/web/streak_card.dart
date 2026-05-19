@@ -32,7 +32,8 @@ class StreakCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.calendar_today_rounded, size: 14, color: Color(0xFFF59E0B)),
+              const Icon(Icons.calendar_today_rounded,
+                  size: 14, color: Color(0xFFF59E0B)),
               const SizedBox(width: 8),
               Text(
                 'STREAK HISTORY',
@@ -50,11 +51,13 @@ class StreakCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: List.generate(days.length, (index) {
               final dayNum = index + 1;
-              final isCompleted = dayNum < currentDayOfWeek && (currentDayOfWeek - dayNum) < streakDays;
+              final isCompleted = dayNum < currentDayOfWeek &&
+                  (currentDayOfWeek - dayNum) < streakDays;
               final isToday = dayNum == currentDayOfWeek;
               final isFuture = dayNum > currentDayOfWeek;
 
-              return _buildDayBubble(theme, days[index], isCompleted, isToday, isFuture);
+              return _buildDayBubble(
+                  theme, days[index], isCompleted, isToday, isFuture);
             }),
           ),
         ],
@@ -62,7 +65,8 @@ class StreakCard extends StatelessWidget {
     ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0);
   }
 
-  Widget _buildDayBubble(ThemeData theme, String label, bool isCompleted, bool isToday, bool isFuture) {
+  Widget _buildDayBubble(ThemeData theme, String label, bool isCompleted,
+      bool isToday, bool isFuture) {
     return Column(
       children: [
         Container(
@@ -83,9 +87,11 @@ class StreakCard extends StatelessWidget {
           child: isCompleted
               ? const Icon(Icons.check_rounded, color: Colors.white, size: 18)
               : isToday
-                  ? Icon(Icons.bolt_rounded, color: theme.colorScheme.primary, size: 16)
+                  ? Icon(Icons.bolt_rounded,
+                      color: theme.colorScheme.primary, size: 16)
                   : isFuture
-                      ? Icon(Icons.lock_rounded, color: theme.hintColor.withOpacity(0.2), size: 12)
+                      ? Icon(Icons.lock_rounded,
+                          color: theme.hintColor.withOpacity(0.2), size: 12)
                       : null,
         ),
         const SizedBox(height: 10),

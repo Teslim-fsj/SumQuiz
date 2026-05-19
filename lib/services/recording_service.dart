@@ -39,9 +39,11 @@ class RecordingService {
   /// - `RecordQuality.low` — smaller files, lower fidelity
   /// - `RecordQuality.medium` — balanced (default)
   /// - `RecordQuality.high` — larger files, higher fidelity
-  Future<void> startRecording(String userId, {RecordQuality quality = RecordQuality.medium}) async {
+  Future<void> startRecording(String userId,
+      {RecordQuality quality = RecordQuality.medium}) async {
     if (await _recorder.isRecording()) {
-      developer.log('Already recording — ignoring duplicate start.', name: 'RecordingService');
+      developer.log('Already recording — ignoring duplicate start.',
+          name: 'RecordingService');
       return;
     }
 
@@ -72,17 +74,23 @@ class RecordingService {
 
   int _bitRateForQuality(RecordQuality quality) {
     switch (quality) {
-      case RecordQuality.low: return 64000;
-      case RecordQuality.medium: return 128000;
-      case RecordQuality.high: return 256000;
+      case RecordQuality.low:
+        return 64000;
+      case RecordQuality.medium:
+        return 128000;
+      case RecordQuality.high:
+        return 256000;
     }
   }
 
   int _sampleRateForQuality(RecordQuality quality) {
     switch (quality) {
-      case RecordQuality.low: return 22050;
-      case RecordQuality.medium: return 44100;
-      case RecordQuality.high: return 44100;
+      case RecordQuality.low:
+        return 22050;
+      case RecordQuality.medium:
+        return 44100;
+      case RecordQuality.high:
+        return 44100;
     }
   }
 
@@ -146,7 +154,8 @@ class RecordingService {
   /// Poll amplitude every 100ms and emit normalized values (0.0 – 1.0).
   void _startAmplitudePolling() {
     _amplitudeTimer?.cancel();
-    _amplitudeTimer = Timer.periodic(const Duration(milliseconds: 100), (_) async {
+    _amplitudeTimer =
+        Timer.periodic(const Duration(milliseconds: 100), (_) async {
       try {
         final amp = await _recorder.getAmplitude();
         // amp.current is in dBFS: 0 = max, -160 = silence.

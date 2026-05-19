@@ -435,7 +435,8 @@ class _QuizScreenState extends State<QuizScreen> {
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
         icon: const Icon(Icons.school_rounded),
-        label: Text('Create Exam', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+        label: Text('Create Exam',
+            style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
       ).animate().scale(delay: 200.ms),
       appBar: AppBar(
         title: Text(
@@ -492,7 +493,8 @@ class _QuizScreenState extends State<QuizScreen> {
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 12.0),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: colorScheme.primary.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(20),
@@ -501,8 +503,7 @@ class _QuizScreenState extends State<QuizScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.person_outline_rounded,
-                            size: 14,
-                            color: colorScheme.primary),
+                            size: 14, color: colorScheme.primary),
                         const SizedBox(width: 6),
                         Text(
                           'Created by ${widget.quiz!.creatorName}',
@@ -601,7 +602,8 @@ class _QuizScreenState extends State<QuizScreen> {
           decoration: BoxDecoration(
             color: theme.cardColor,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: colorScheme.error.withValues(alpha: 0.15)),
+            border:
+                Border.all(color: colorScheme.error.withValues(alpha: 0.15)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -632,7 +634,8 @@ class _QuizScreenState extends State<QuizScreen> {
               ElevatedButton.icon(
                 onPressed: _retry,
                 icon: const Icon(Icons.refresh_rounded),
-                label: Text('Try Again', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                label: Text('Try Again',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorScheme.primary,
                   foregroundColor: colorScheme.onPrimary,
@@ -692,7 +695,8 @@ class _QuizScreenState extends State<QuizScreen> {
                 decoration: BoxDecoration(
                   color: theme.cardColor,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: theme.dividerColor.withValues(alpha: 0.05)),
+                  border: Border.all(
+                      color: theme.dividerColor.withValues(alpha: 0.05)),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.01),
@@ -719,24 +723,30 @@ class _QuizScreenState extends State<QuizScreen> {
                       decoration: InputDecoration(
                         hintText: 'e.g., Biology: Chapter 5 - Photosynthesis',
                         hintStyle: GoogleFonts.inter(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.35),
                           fontSize: 14,
                         ),
                         filled: true,
-                        fillColor: theme.scaffoldBackgroundColor.withValues(alpha: 0.5),
+                        fillColor: theme.scaffoldBackgroundColor
+                            .withValues(alpha: 0.5),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1)),
+                          borderSide: BorderSide(
+                              color: theme.dividerColor.withValues(alpha: 0.1)),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1)),
+                          borderSide: BorderSide(
+                              color: theme.dividerColor.withValues(alpha: 0.1)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                          borderSide:
+                              BorderSide(color: colorScheme.primary, width: 2),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 16),
                       ),
                       onChanged: (_) => setState(() {}),
                     ),
@@ -752,7 +762,8 @@ class _QuizScreenState extends State<QuizScreen> {
                 decoration: BoxDecoration(
                   color: theme.cardColor,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: theme.dividerColor.withValues(alpha: 0.05)),
+                  border: Border.all(
+                      color: theme.dividerColor.withValues(alpha: 0.05)),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.01),
@@ -781,22 +792,27 @@ class _QuizScreenState extends State<QuizScreen> {
                         hintText:
                             'Paste your study document, chapter summaries, lecture transcripts, or articles here. Sumi will formulate adaptive questions based on this text...',
                         hintStyle: GoogleFonts.inter(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.35),
                           fontSize: 14,
                         ),
                         filled: true,
-                        fillColor: theme.scaffoldBackgroundColor.withValues(alpha: 0.5),
+                        fillColor: theme.scaffoldBackgroundColor
+                            .withValues(alpha: 0.5),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1)),
+                          borderSide: BorderSide(
+                              color: theme.dividerColor.withValues(alpha: 0.1)),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1)),
+                          borderSide: BorderSide(
+                              color: theme.dividerColor.withValues(alpha: 0.1)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                          borderSide:
+                              BorderSide(color: colorScheme.primary, width: 2),
                         ),
                         contentPadding: const EdgeInsets.all(16),
                       ),
@@ -816,7 +832,8 @@ class _QuizScreenState extends State<QuizScreen> {
                   icon: const Icon(Icons.auto_awesome_rounded),
                   label: Text(
                     'Generate Evaluation',
-                    style: GoogleFonts.outfit(fontSize: 17, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.outfit(
+                        fontSize: 17, fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: colorScheme.primary,
@@ -826,7 +843,8 @@ class _QuizScreenState extends State<QuizScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    disabledBackgroundColor: theme.disabledColor.withValues(alpha: 0.12),
+                    disabledBackgroundColor:
+                        theme.disabledColor.withValues(alpha: 0.12),
                     disabledForegroundColor: theme.disabledColor,
                   ),
                 ),
@@ -884,14 +902,16 @@ class _QuizScreenState extends State<QuizScreen> {
 
                   if (quiz != null && !isCorrect) {
                     final tutor = context.read<SumiTutorService>();
-                    tutor.getSocraticHint(
+                    tutor
+                        .getSocraticHint(
                       topicName: quiz.topicNames.isNotEmpty
                           ? quiz.topicNames.first
                           : 'this topic',
                       question: question.question,
                       wrongAnswer: '',
                       sourceName: quiz.sourceName,
-                    ).then((hint) {
+                    )
+                        .then((hint) {
                       sumi.showTutorMessage(hint, state: SumiState.confused);
 
                       // Auto-clear hint after 5 seconds
@@ -1025,7 +1045,8 @@ class _QuizScreenState extends State<QuizScreen> {
                     Text(
                       '$_score out of ${_questions.length} correct',
                       style: theme.textTheme.titleLarge?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                   ],

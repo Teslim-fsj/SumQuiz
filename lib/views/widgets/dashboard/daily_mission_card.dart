@@ -31,7 +31,8 @@ class DailyMissionCard extends StatelessWidget {
         child: Center(
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary.withValues(alpha: 0.5)),
+            valueColor: AlwaysStoppedAnimation<Color>(
+                theme.colorScheme.primary.withValues(alpha: 0.5)),
           ),
         ),
       );
@@ -53,18 +54,23 @@ class DailyMissionCard extends StatelessWidget {
                 color: theme.hintColor.withValues(alpha: 0.05),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.flag_outlined, size: 32, color: theme.hintColor.withValues(alpha: 0.3)),
+              child: Icon(Icons.flag_outlined,
+                  size: 32, color: theme.hintColor.withValues(alpha: 0.3)),
             ),
             const SizedBox(height: 20),
             Text(
               "No active mission",
-              style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: theme.hintColor),
+              style: GoogleFonts.outfit(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: theme.hintColor),
             ),
             const SizedBox(height: 8),
             Text(
               "Study more to unlock missions.",
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(fontSize: 13, color: theme.hintColor.withValues(alpha: 0.6)),
+              style: GoogleFonts.inter(
+                  fontSize: 13, color: theme.hintColor.withValues(alpha: 0.6)),
             ),
           ],
         ),
@@ -74,10 +80,12 @@ class DailyMissionCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: isCompleted ? theme.colorScheme.primary.withValues(alpha: 0.03) : theme.cardColor,
+        color: isCompleted
+            ? theme.colorScheme.primary.withValues(alpha: 0.03)
+            : theme.cardColor,
         borderRadius: BorderRadius.circular(32),
         border: Border.all(
-          color: isCompleted 
+          color: isCompleted
               ? theme.colorScheme.primary.withValues(alpha: 0.2)
               : theme.dividerColor.withValues(alpha: 0.05),
         ),
@@ -98,12 +106,17 @@ class DailyMissionCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: isCompleted ? theme.colorScheme.primary.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
+                  color: isCompleted
+                      ? theme.colorScheme.primary.withValues(alpha: 0.1)
+                      : Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
-                  isCompleted ? Icons.check_circle_rounded : Icons.auto_awesome_rounded,
-                  color: isCompleted ? theme.colorScheme.primary : Colors.orange,
+                  isCompleted
+                      ? Icons.check_circle_rounded
+                      : Icons.auto_awesome_rounded,
+                  color:
+                      isCompleted ? theme.colorScheme.primary : Colors.orange,
                   size: 18,
                 ),
               ),
@@ -114,7 +127,8 @@ class DailyMissionCard extends StatelessWidget {
                   fontSize: 11,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1.2,
-                  color: isCompleted ? theme.colorScheme.primary : theme.hintColor,
+                  color:
+                      isCompleted ? theme.colorScheme.primary : theme.hintColor,
                 ),
               ),
             ],
@@ -125,7 +139,9 @@ class DailyMissionCard extends StatelessWidget {
             style: GoogleFonts.outfit(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: isCompleted ? theme.colorScheme.primary : theme.textTheme.displayLarge?.color,
+              color: isCompleted
+                  ? theme.colorScheme.primary
+                  : theme.textTheme.displayLarge?.color,
             ),
           ),
           const SizedBox(height: 28),
@@ -140,7 +156,8 @@ class DailyMissionCard extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.stars_rounded, size: 20, color: theme.colorScheme.primary),
+                  Icon(Icons.stars_rounded,
+                      size: 20, color: theme.colorScheme.primary),
                   const SizedBox(width: 10),
                   Text(
                     'Mission Accomplished',
@@ -173,10 +190,9 @@ class DailyMissionCard extends StatelessWidget {
                   children: [
                     const Icon(Icons.play_arrow_rounded, size: 20),
                     const SizedBox(width: 8),
-                    Text(
-                      'Launch Mission', 
-                      style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15)
-                    ),
+                    Text('Launch Mission',
+                        style: GoogleFonts.inter(
+                            fontWeight: FontWeight.bold, fontSize: 15)),
                   ],
                 ),
               ),

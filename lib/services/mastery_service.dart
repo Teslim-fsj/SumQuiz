@@ -96,7 +96,7 @@ class MasteryService extends ChangeNotifier {
 
     // Velocity = |New - Old|
     topic.learningVelocity = (newMastery - oldMastery).abs();
-    
+
     // Constraints
     topic.masteryScore = newMastery.clamp(0.0, 1.0);
     topic.stabilityScore = newStability.clamp(0.0, 1.0);
@@ -104,7 +104,7 @@ class MasteryService extends ChangeNotifier {
     topic.lastInteraction = signal.timestamp;
 
     await topic.save();
-    
+
     // Save history snapshot (Throttled: max 1 per 5 minutes per topic/user)
     _saveMasterySnapshot(topic);
 
@@ -114,13 +114,13 @@ class MasteryService extends ChangeNotifier {
   Future<void> _saveMasterySnapshot(TopicNode topic) async {
     final now = DateTime.now();
     final key = topic.id;
-    
+
     if (_lastSnapshots.containsKey(key)) {
       if (now.difference(_lastSnapshots[key]!).inMinutes < 5) {
         return; // Throttled
       }
     }
-    
+
     _lastSnapshots[key] = now;
 
     // Per-Topic Snapshot
@@ -135,7 +135,8 @@ class MasteryService extends ChangeNotifier {
 
     // Global Snapshot (Throttled separately or just every topic update)
     if (_lastSnapshots.containsKey('global_${topic.userId}')) {
-      if (now.difference(_lastSnapshots['global_${topic.userId}']!).inMinutes < 15) {
+      if (now.difference(_lastSnapshots['global_${topic.userId}']!).inMinutes <
+          15) {
         return;
       }
     }
@@ -154,19 +155,21 @@ class MasteryService extends ChangeNotifier {
   Future<TopicNode> getOrCreateTopic(String userId, String name,
       {String? parentId}) async {
     final String normalizedName = name.trim().toLowerCase();
-    
+
     // 1. Exact/Normalized match
     final existing = _topicBox.values
-        .where((t) =>
-            t.userId == userId && t.name.toLowerCase() == normalizedName)
+        .where(
+            (t) => t.userId == userId && t.name.toLowerCase() == normalizedName)
         .toList();
 
     if (existing.isNotEmpty) return existing.first;
 
     // 2. Fuzzy match (Levenshtein distance)
     for (var topic in _topicBox.values.where((t) => t.userId == userId)) {
-      if (_calculateLevenshtein(topic.name.toLowerCase(), normalizedName) <= 2) {
-        developer.log('Fuzzy match found: "${topic.name}" for "$name"', name: 'MasteryService');
+      if (_calculateLevenshtein(topic.name.toLowerCase(), normalizedName) <=
+          2) {
+        developer.log('Fuzzy match found: "${topic.name}" for "$name"',
+            name: 'MasteryService');
         return topic;
       }
     }
@@ -197,7 +200,8 @@ class MasteryService extends ChangeNotifier {
         int insertions = previousRow[j + 1] + 1;
         int deletions = currentRow[j] + 1;
         int substitutions = previousRow[j] + (s1[i] == s2[j] ? 0 : 1);
-        currentRow.add([insertions, deletions, substitutions].reduce((a, b) => a < b ? a : b));
+        currentRow.add([insertions, deletions, substitutions]
+            .reduce((a, b) => a < b ? a : b));
       }
       previousRow = currentRow;
     }
@@ -232,7 +236,8 @@ class MasteryService extends ChangeNotifier {
         DateTime.now().difference(topic.lastInteraction).inDays;
     double overduePart = (daysSinceLastInteraction / 7.0).clamp(0.0, 1.0) * 0.1;
 
-    return (riskPart + weaknessPart + stabilityPart + overduePart).clamp(0.0, 1.0);
+    return (riskPart + weaknessPart + stabilityPart + overduePart)
+        .clamp(0.0, 1.0);
   }
 
   /// Get top priority topics for the user based on ALPS
@@ -243,7 +248,7 @@ class MasteryService extends ChangeNotifier {
       final minsSince = DateTime.now().difference(t.lastInteraction).inMinutes;
       return minsSince > 30 || t.forgettingRisk > 0.8;
     }).toList();
-    
+
     filtered.sort((a, b) => calculateALPS(b).compareTo(calculateALPS(a)));
     return filtered.take(limit).toList();
   }
@@ -257,24 +262,28 @@ class MasteryService extends ChangeNotifier {
   }
 
   /// Cleanup topics that are no longer linked to any content
-  Future<void> cleanupOrphanedTopics(String userId, List<String> activeContentIds) async {
+  Future<void> cleanupOrphanedTopics(
+      String userId, List<String> activeContentIds) async {
     final setValidIds = activeContentIds.toSet();
     final toDelete = _topicBox.values
-        .where((t) => t.userId == userId && t.contentIds.every((id) => !setValidIds.contains(id)))
+        .where((t) =>
+            t.userId == userId &&
+            t.contentIds.every((id) => !setValidIds.contains(id)))
         .map((t) => t.id)
         .toList();
-    
+
     for (final id in toDelete) {
       await _topicBox.delete(id);
     }
     if (toDelete.isNotEmpty) {
-      developer.log('Pruned ${toDelete.length} orphaned topics', name: 'MasteryService');
+      developer.log('Pruned ${toDelete.length} orphaned topics',
+          name: 'MasteryService');
     }
   }
 
   /// Prune mastery history snapshots older than [keepDays]
   Future<void> pruneSnapshots(String userId, {int keepDays = 90}) async {
-    // Note: History is usually in a separate box or Firestore. 
+    // Note: History is usually in a separate box or Firestore.
     // Assuming it's in LocalDatabaseService's history box.
     await _localDb.pruneHistory(userId, keepDays);
   }

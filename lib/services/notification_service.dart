@@ -93,13 +93,15 @@ class NotificationService {
 
   Future<void> _createNotificationChannels() async {
     if (kIsWeb) return;
-    
-    final androidPlugin = _localNotifications
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-        
+
+    final androidPlugin =
+        _localNotifications.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+
     if (androidPlugin != null) {
       // 1. Learning Reminders Channel
-      const AndroidNotificationChannel learningChannel = AndroidNotificationChannel(
+      const AndroidNotificationChannel learningChannel =
+          AndroidNotificationChannel(
         'learning_reminders',
         'Learning Reminders',
         description: 'Daily study goals and topic recommendations',
@@ -109,7 +111,8 @@ class NotificationService {
       );
 
       // 2. Missions & Streaks Channel
-      const AndroidNotificationChannel missionChannel = AndroidNotificationChannel(
+      const AndroidNotificationChannel missionChannel =
+          AndroidNotificationChannel(
         'mission_updates',
         'Missions & Streaks',
         description: 'Notifications about your daily missions and streak saves',
@@ -117,7 +120,8 @@ class NotificationService {
       );
 
       // 3. System & Support Channel
-      const AndroidNotificationChannel systemChannel = AndroidNotificationChannel(
+      const AndroidNotificationChannel systemChannel =
+          AndroidNotificationChannel(
         'system_updates',
         'System & Support',
         description: 'Important app updates and account notifications',
@@ -127,7 +131,7 @@ class NotificationService {
       await androidPlugin.createNotificationChannel(learningChannel);
       await androidPlugin.createNotificationChannel(missionChannel);
       await androidPlugin.createNotificationChannel(systemChannel);
-      
+
       debugPrint('🔔 Android notification channels created');
     }
   }
@@ -205,16 +209,17 @@ class NotificationService {
     if (kIsWeb) return true;
 
     // Check Android
-    final androidPlugin = _localNotifications
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin =
+        _localNotifications.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
     if (androidPlugin != null) {
       final bool? granted = await androidPlugin.areNotificationsEnabled();
       if (granted == false) return false;
     }
 
     // Check iOS
-    final iosPlugin = _localNotifications
-        .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+    final iosPlugin = _localNotifications.resolvePlatformSpecificImplementation<
+        IOSFlutterLocalNotificationsPlugin>();
     if (iosPlugin != null) {
       // For iOS, we can't easily check if it's granted without requesting or using another package
       // but usually requestPermissions handles it.
@@ -355,7 +360,10 @@ class NotificationService {
       NotificationDetails(
         android: AndroidNotificationDetails(
           channelId,
-          channelId.split('_').map((s) => s[0].toUpperCase() + s.substring(1)).join(' '),
+          channelId
+              .split('_')
+              .map((s) => s[0].toUpperCase() + s.substring(1))
+              .join(' '),
           importance: Importance.max,
           priority: Priority.high,
           color: Colors.black,
@@ -438,8 +446,9 @@ class NotificationService {
     final prefs = await SharedPreferences.getInstance();
     if (!(prefs.getBool(notificationEnabledKey) ?? true)) return;
 
-    final String message = _getPersonalizedMessage('brain_state_greeting', {'name': userName});
-    
+    final String message =
+        _getPersonalizedMessage('brain_state_greeting', {'name': userName});
+
     // Parse time
     final parts = preferredStudyTime.split(':');
     final hour = int.parse(parts[0]);
@@ -485,7 +494,8 @@ class NotificationService {
     final prefs = await SharedPreferences.getInstance();
     if (!(prefs.getBool(notificationEnabledKey) ?? true)) return;
 
-    final String message = _getPersonalizedMessage('alps_retention_alert', {'topic': topicName});
+    final String message =
+        _getPersonalizedMessage('alps_retention_alert', {'topic': topicName});
 
     if (!kIsWeb) {
       await Workmanager().registerOneOffTask(
@@ -511,7 +521,8 @@ class NotificationService {
     final prefs = await SharedPreferences.getInstance();
     if (!(prefs.getBool(notificationEnabledKey) ?? true)) return;
 
-    final String message = _getPersonalizedMessage('streak_and_motivation', {'count': momentumGain.toString()});
+    final String message = _getPersonalizedMessage(
+        'streak_and_motivation', {'count': momentumGain.toString()});
 
     if (!kIsWeb) {
       await Workmanager().registerOneOffTask(
@@ -538,7 +549,8 @@ class NotificationService {
     final prefs = await SharedPreferences.getInstance();
     if (!(prefs.getBool(notificationEnabledKey) ?? true)) return;
 
-    final String message = _getPersonalizedMessage('streak_and_motivation', {'count': currentStreak.toString()});
+    final String message = _getPersonalizedMessage(
+        'streak_and_motivation', {'count': currentStreak.toString()});
 
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
     tz.TZDateTime scheduledDate = tz.TZDateTime(

@@ -42,7 +42,9 @@ class _HandwritingCanvasState extends State<HandwritingCanvas> {
       final drawColor = theme.colorScheme.primary;
       final stroke = LocalDrawingStroke(
         points: List.from(_currentPoints),
-        colorValue: widget.isEraserMode ? Colors.transparent.toARGB32() : drawColor.toARGB32(),
+        colorValue: widget.isEraserMode
+            ? Colors.transparent.toARGB32()
+            : drawColor.toARGB32(),
         strokeWidth: widget.isEraserMode ? 20.0 : 3.0,
         timestamp: DateTime.now(),
         audioTimestamp: widget.currentAudioTime,
@@ -98,7 +100,10 @@ class StrokePainter extends CustomPainter {
   final List<Offset> currentPoints;
   final Color activeColor;
 
-  StrokePainter({required this.strokes, required this.currentPoints, required this.activeColor});
+  StrokePainter(
+      {required this.strokes,
+      required this.currentPoints,
+      required this.activeColor});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -137,7 +142,7 @@ class StrokePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant StrokePainter oldDelegate) {
-    return oldDelegate.strokes.length != strokes.length || 
-           oldDelegate.currentPoints.length != currentPoints.length;
+    return oldDelegate.strokes.length != strokes.length ||
+        oldDelegate.currentPoints.length != currentPoints.length;
   }
 }

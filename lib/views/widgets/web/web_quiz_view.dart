@@ -388,7 +388,8 @@ class _WebQuizViewState extends State<WebQuizView> {
       decoration: BoxDecoration(
         color: accentColor.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: accentColor.withValues(alpha: 0.3), width: 1.5),
+        border:
+            Border.all(color: accentColor.withValues(alpha: 0.3), width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
