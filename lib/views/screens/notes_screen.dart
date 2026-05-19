@@ -67,7 +67,7 @@ class _NotesScreenState extends State<NotesScreen> {
 
     final filteredNotes = noteProvider.allNotes.where((note) {
       return note.title.toLowerCase().contains(_searchQuery) ||
-          note.content.toLowerCase().contains(_searchQuery);
+          note.plainText.toLowerCase().contains(_searchQuery);
     }).toList();
 
     return Scaffold(
@@ -215,9 +215,9 @@ class _NotesScreenState extends State<NotesScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  note.content.isEmpty
+                  note.plainText.isEmpty
                       ? 'Start capturing your thoughts...'
-                      : note.content,
+                      : note.plainText,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(

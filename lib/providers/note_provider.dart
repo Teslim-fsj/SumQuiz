@@ -59,11 +59,16 @@ class NoteProvider with ChangeNotifier {
 
   void clearError() {
     _errorMessage = '';
+    _limitReached = false;
     if (_state == NoteProcessingState.error) {
       _state = NoteProcessingState.idle;
     }
     notifyListeners();
   }
+
+  bool _limitReached = false;
+  bool get limitReached => _limitReached;
+
 
   Duration _recordingDuration = Duration.zero;
   Duration get recordingDuration => _recordingDuration;
@@ -264,14 +269,15 @@ class NoteProvider with ChangeNotifier {
       try {
         final canProceed = await _usageService!.canPerformAction(userId, 'lecture');
         if (!canProceed) {
-          _errorMessage = "Neural capacity depleted. Please try again later!";
-          _state = NoteProcessingState.error;
+          developer.log('Limit reached for lecture', name: 'NoteProvider');
+          _limitReached = true;
+          // We don't set an ugly error string anymore, let UI handle UpgradeDialog
+          _state = NoteProcessingState.idle;
           notifyListeners();
           return;
         }
       } catch (e) {
         developer.log('Usage check failed: $e', name: 'NoteProvider');
-        // Fail open or closed? Here we fail open but log it.
       }
     }
 
@@ -415,8 +421,9 @@ class NoteProvider with ChangeNotifier {
       try {
         final canProceed = await _usageService!.canPerformAction(userId, 'generate');
         if (!canProceed) {
-          _errorMessage = "Neural capacity depleted. Please try again later!";
-          _state = NoteProcessingState.error;
+          developer.log('Limit reached for synthesis', name: 'NoteProvider');
+          _limitReached = true;
+          _state = NoteProcessingState.idle;
           notifyListeners();
           return null;
         }

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:hive/hive.dart';
 import 'local_drawing_stroke.dart';
 
@@ -139,5 +140,16 @@ class LocalNote extends HiveObject {
       isSynced: true,
       strokes: [], // Strokes are local only for now to save bandwidth
     );
+  }
+
+  String get plainText {
+    if (content.isEmpty) return '';
+    if (!content.trim().startsWith('[')) return content;
+    try {
+      final List<dynamic> ops = jsonDecode(content);
+      return ops.map((op) => op['insert']?.toString() ?? '').join().trim();
+    } catch (e) {
+      return content;
+    }
   }
 }

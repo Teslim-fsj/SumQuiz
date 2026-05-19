@@ -52,6 +52,15 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
     final provider = Provider.of<CreateContentProvider>(context);
     final user = Provider.of<UserModel?>(context);
 
+    if (provider.limitReached) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          provider.clearLimitReached();
+          UpgradeDialog.show(context, featureName: 'AI Synthesis');
+        }
+      });
+    }
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: _buildAppBar(context, provider),

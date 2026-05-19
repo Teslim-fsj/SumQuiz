@@ -593,6 +593,8 @@ class _LibraryViewState extends State<_LibraryView>
         return Icons.assignment_rounded;
       case LibraryItemType.note:
         return Icons.edit_note_rounded;
+      case LibraryItemType.folder:
+        return Icons.folder_copy_rounded;
     }
   }
 
@@ -608,6 +610,8 @@ class _LibraryViewState extends State<_LibraryView>
         return const Color(0xFF6366F1);
       case LibraryItemType.note:
         return const Color(0xFF8B5CF6);
+      case LibraryItemType.folder:
+        return Colors.deepPurpleAccent;
     }
   }
 

@@ -15,12 +15,10 @@ import '../../providers/sumi_provider.dart';
 import '../../models/user_model.dart';
 import '../../services/mastery_service.dart';
 import '../widgets/handwriting_canvas.dart';
-import '../widgets/sumi_lens.dart';
-import '../widgets/ghost_link.dart';
-import '../widgets/catch_up_widget.dart';
 import '../../services/transcript_recovery_service.dart';
 import '../widgets/recording_bar_widget.dart';
 import '../widgets/aura_alert_banner.dart';
+import '../widgets/upgrade_dialog.dart';
 
 class NoteEditorScreen extends StatefulWidget {
   final String noteId;
@@ -92,34 +90,46 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   }
 
   void _appendLiveText(String text) {
+    if (text.isEmpty) return;
+    
     final length = _controller.document.length;
     final insertionIndex = length > 0 ? length - 1 : 0;
     
-    final List<String> keywords = ['mitochondria', 'energy', 'atp', 'cell', 'nucleus', 'important', 'exam'];
-    bool isKeyword = keywords.any((k) => text.toLowerCase().contains(k));
-    
     String textToInsert = text;
     if (insertionIndex > 0) {
-      final lastChar = _controller.document.toPlainText().substring(insertionIndex - 1, insertionIndex);
-      if (lastChar != ' ' && lastChar != '\n') {
-        textToInsert = ' $text';
+      final textStr = _controller.document.toPlainText();
+      if (textStr.length >= insertionIndex) {
+        final lastChar = textStr.substring(insertionIndex - 1, insertionIndex);
+        if (lastChar != ' ' && lastChar != '\n') {
+          textToInsert = ' $text';
+        }
       }
     }
     
+    final currentSelection = _controller.selection;
+    final isAtEnd = currentSelection.extentOffset >= insertionIndex;
+
     _controller.document.insert(insertionIndex, textToInsert);
     
-    if (isKeyword) {
-      _controller.formatText(
-        insertionIndex, 
-        textToInsert.length, 
-        quill.Attribute.clone(quill.Attribute.color, Colors.orangeAccent.toARGB32().toRadixString(16))
-      );
+    // Highlight keywords
+    final List<String> keywords = ['mitochondria', 'energy', 'atp', 'cell', 'nucleus', 'important', 'exam'];
+    final lowerText = textToInsert.toLowerCase();
+    for (final keyword in keywords) {
+      int idx = lowerText.indexOf(keyword);
+      while (idx != -1) {
+        _controller.formatText(
+          insertionIndex + idx, 
+          keyword.length, 
+          quill.Attribute.clone(quill.Attribute.color, Colors.orangeAccent.toARGB32().toRadixString(16))
+        );
+        idx = lowerText.indexOf(keyword, idx + keyword.length);
+      }
     }
     
-    final isAtEnd = _controller.selection.extentOffset >= length - 1;
     if (isAtEnd) {
+      final newLength = _controller.document.length;
       _controller.updateSelection(
-        TextSelection.collapsed(offset: _controller.document.length - 1),
+        TextSelection.collapsed(offset: newLength > 0 ? newLength - 1 : 0),
         quill.ChangeSource.local,
       );
 
@@ -234,6 +244,16 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     final user = Provider.of<UserModel?>(context);
     final isRecording = noteProvider.state == NoteProcessingState.recording;
 
+    // Show upgrade dialog if limit reached
+    if (noteProvider.limitReached) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          noteProvider.clearError(); // resets limitReached to false so it doesn't infinite loop
+          UpgradeDialog.show(context, featureName: 'Advanced Synthesis & Recordings');
+        }
+      });
+    }
+
     if (!_isInitialized) {
       return Scaffold(
         backgroundColor: colorScheme.surface, 
@@ -262,40 +282,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                     child: Stack(
                       children: [
                         _buildEditorArea(noteProvider, theme),
-                        if (_lensPosition != null)
-                          SumiLensMenu(
-                            position: _lensPosition!,
-                            onAction: (action) async {
-                              final selection = _controller.selection;
-                              if (selection.isCollapsed) {
-                                setState(() => _lensPosition = null);
-                                return;
-                              }
-
-                              final selectedText = _controller.document.toPlainText().substring(selection.start, selection.end);
-                              final sumi = context.read<SumiProvider>();
-                              
-                              setState(() => _lensPosition = null);
-
-                              if (action == 'Simplify') {
-                                sumi.askSumi("Simplify this: $selectedText");
-                              } else if (action == 'Explain') {
-                                sumi.askSumi("Explain this concepts: $selectedText");
-                              } else if (action == 'Deep Dive') {
-                                sumi.askSumi("Give me a deep dive on: $selectedText");
-                              } else if (action == 'Quiz') {
-                                sumi.askSumi("Quiz me on this: $selectedText");
-                              }
-                            },
-                          ),
-                        if (isRecording && noteProvider.liveInsights.isNotEmpty)
-                          Positioned(
-                            right: 20,
-                            bottom: 20,
-                            child: CatchUpWidget(
-                              missedConcepts: noteProvider.liveInsights.take(3).toList(),
-                            ),
-                          ),
                       ],
                     ),
                   ),
@@ -501,11 +487,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                 onStrokeTap: (time) => provider.seekAudio(time),
               ),
             ),
-          Positioned(
-            top: 24,
-            right: 24,
-            child: GhostLinkIndicator(label: 'Related Concepts', onTap: () {}),
-          ),
         ],
       ),
     );
@@ -526,8 +507,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         padding: const EdgeInsets.all(24),
         children: [
           _buildSidebarSection('TOPICS & ENTITIES', note?.topicNames ?? [], theme),
-          const SizedBox(height: 32),
-          _buildInsightCard(sumi, theme),
           const SizedBox(height: 32),
           _buildRecordingsList(provider, theme),
         ],
@@ -641,40 +620,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           ),
         )),
       ],
-    );
-  }
-
-  Widget _buildInsightCard(SumiProvider sumi, ThemeData theme) {
-    final colorScheme = theme.colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.secondaryContainer.withValues(alpha: 0.4),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.secondary.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.auto_awesome_rounded, size: 16, color: colorScheme.secondary),
-              const SizedBox(width: 8),
-              Text(
-                'AI ASSISTANT', 
-                style: GoogleFonts.jetBrainsMono(fontSize: 11, fontWeight: FontWeight.bold, color: colorScheme.secondary)
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            sumi.isStreaming 
-              ? (sumi.streamingMessage ?? 'Thinking...') 
-              : (sumi.dialogue ?? 'I am monitoring your notes to provide real-time insights.'),
-            style: GoogleFonts.inter(fontSize: 13, color: colorScheme.onSurface, height: 1.5),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -467,9 +467,8 @@ class _MyAppState extends State<MyApp> {
                       home: const UpdateBlockerScreen(),
                     );
                   }
-              });
 
-              return NotificationNavigator(
+                  return NotificationNavigator(
                 child: MaterialApp.router(
                   title: 'SumQuiz',
                   theme: themeProvider.getTheme(),

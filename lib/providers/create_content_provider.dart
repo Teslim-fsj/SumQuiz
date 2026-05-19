@@ -102,8 +102,6 @@ class CreateContentProvider with ChangeNotifier {
 
   bool _isCancelled = false;
   CancellationToken? _cancelToken;
-  bool _cuDeducted = false;
-
   String? _preSelectedFolderId;
   String? get preSelectedFolderId => _preSelectedFolderId;
 
@@ -187,6 +185,11 @@ class CreateContentProvider with ChangeNotifier {
     }
   }
 
+  void proceedToConfig() {
+    _phase = CreationPhase.config;
+    notifyListeners();
+  }
+
   void updateConfig(
       {String? difficulty,
       int? quizCount,
@@ -244,6 +247,7 @@ class CreateContentProvider with ChangeNotifier {
     _generatedFolderId = '';
     _isCancelled = false;
     _cuDeducted = false;
+    _limitReached = false;
     _selectedQuestionTypes = ['Multiple Choice'];
     _selectedArchetype = StudyArchetype.architect;
     _extractionResult = null;
@@ -398,34 +402,15 @@ class CreateContentProvider with ChangeNotifier {
     final textToProcess = _textContent;
     final folderIdToUse = _preSelectedFolderId ?? const Uuid().v4();
 
-    // 1. Save note first to prevent data loss if generation fails or is blocked
-    if (_saveAsNote) {
-      try {
-        developer.log('Pre-saving study note to prevent data loss', name: 'CreateContentProvider');
-        final note = LocalNote(
-          id: const Uuid().v4(),
-          userId: userId,
-          title: title,
-          content: textToProcess,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-          folderId: folderIdToUse,
-          tags: [],
-          isSynced: false,
-        );
-        await _localDb.saveNote(note);
-      } catch (e) {
-        developer.log('Pre-saving note failed: $e', name: 'CreateContentProvider');
-      }
-    }
-
-    // 2. Gated Usage / Credit Unit Check (Pre-generation)
+    // 1. Gated Usage / Credit Unit Check (Pre-generation)
     final usageService = UsageService();
     try {
       final canProceed = await usageService.canPerformAction(userId, 'generate');
       if (!canProceed) {
-        _errorMessage = "Neural capacity depleted. Please try again later!";
-        _phase = CreationPhase.error;
+        developer.log('Limit reached for synthesis', name: 'CreateContentProvider');
+        _limitReached = true;
+        // Don't show error view, revert to previous view so user can upgrade and retry
+        _phase = _extractionResult != null ? CreationPhase.extractionReview : CreationPhase.source;
         _stopTipRotation();
         notifyListeners();
         return;
@@ -524,6 +509,16 @@ class CreateContentProvider with ChangeNotifier {
     } catch (e) {
       _handleError(e, cancelToken);
     }
+  }
+
+  bool _limitReached = false;
+  
+  bool get isProcessing => _phase == CreationPhase.processing;
+  bool get limitReached => _limitReached;
+
+  void clearLimitReached() {
+    _limitReached = false;
+    notifyListeners();
   }
 
   void _handleError(dynamic e, CancellationToken cancelToken) {
