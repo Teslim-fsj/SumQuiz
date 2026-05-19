@@ -246,7 +246,6 @@ class CreateContentProvider with ChangeNotifier {
     _errorMessage = '';
     _generatedFolderId = '';
     _isCancelled = false;
-    _cuDeducted = false;
     _limitReached = false;
     _selectedQuestionTypes = ['Multiple Choice'];
     _selectedArchetype = StudyArchetype.architect;

@@ -688,70 +688,122 @@ class _QuizViewState extends State<QuizView> {
       int index, LocalQuizQuestion question, ThemeData theme, bool isMobile) {
     bool isSelected = _selectedAnswerIndex == index;
     bool isCorrect = question.options[index] == question.correctAnswer;
+    final colorScheme = theme.colorScheme;
 
-    Color borderColor = Colors.transparent;
+    Color borderColor = theme.dividerColor.withValues(alpha: 0.1);
     Color backgroundColor = theme.cardColor.withValues(alpha: 0.6);
     IconData icon = Icons.circle_outlined;
     Color iconColor = theme.disabledColor;
+    Color textColor = theme.colorScheme.onSurface;
+
+    // Convert index to option letter (A, B, C, D)
+    final String optionLetter = String.fromCharCode(65 + index);
 
     if (_answerWasSelected) {
       if (isCorrect) {
         borderColor = Colors.green;
-        backgroundColor = Colors.green.withValues(alpha: 0.15);
+        backgroundColor = Colors.green.withValues(alpha: 0.08);
         icon = Icons.check_circle_rounded;
         iconColor = Colors.green;
+        textColor = Colors.green.shade700;
       } else if (isSelected) {
         borderColor = Colors.red;
-        backgroundColor = Colors.red.withValues(alpha: 0.15);
+        backgroundColor = Colors.red.withValues(alpha: 0.08);
         icon = Icons.cancel_rounded;
         iconColor = Colors.red;
+        textColor = Colors.red.shade700;
       } else {
-        backgroundColor = theme.cardColor.withValues(alpha: 0.3);
+        backgroundColor = theme.cardColor.withValues(alpha: 0.25);
+        textColor = theme.colorScheme.onSurface.withValues(alpha: 0.4);
       }
+    } else if (isSelected) {
+      borderColor = colorScheme.primary;
+      backgroundColor = colorScheme.primary.withValues(alpha: 0.05);
+      iconColor = colorScheme.primary;
     }
 
     return GestureDetector(
       onTap: () => _onAnswerSelected(index),
       child: AnimatedContainer(
-        duration: 300.ms,
+        duration: 250.ms,
+        curve: Curves.easeInOut,
         padding:
-            EdgeInsets.symmetric(horizontal: 20, vertical: isMobile ? 18 : 24),
+            EdgeInsets.symmetric(horizontal: 20, vertical: isMobile ? 16 : 20),
         decoration: BoxDecoration(
             color: backgroundColor,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: _answerWasSelected && (isCorrect || isSelected)
-                  ? borderColor
-                  : theme.dividerColor.withValues(alpha: 0.2),
-              width: 2.0,
+              color: borderColor,
+              width: 1.5,
             ),
             boxShadow: [
-              if (isSelected || (_answerWasSelected && isCorrect))
+              if (isSelected && !_answerWasSelected)
                 BoxShadow(
-                  color: (isCorrect ? Colors.green : Colors.red).withValues(alpha: 0.1),
+                  color: colorScheme.primary.withValues(alpha: 0.1),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
+                ),
+              if (_answerWasSelected && (isCorrect || isSelected))
+                BoxShadow(
+                  color: (isCorrect ? Colors.green : Colors.red).withValues(alpha: 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
             ]),
         child: Row(
           children: [
-            Icon(icon, color: iconColor, size: isMobile ? 22 : 28)
-                .animate(
-                    target:
-                        _answerWasSelected && (isCorrect || isSelected) ? 1 : 0)
-                .scale(duration: 400.ms, curve: Curves.easeOutBack),
+            // Neat Academic Letter Badge (A, B, C, D)
+            Container(
+              width: isMobile ? 32 : 36,
+              height: isMobile ? 32 : 36,
+              decoration: BoxDecoration(
+                color: _answerWasSelected
+                    ? (isCorrect
+                        ? Colors.green.withValues(alpha: 0.15)
+                        : (isSelected
+                            ? Colors.red.withValues(alpha: 0.15)
+                            : theme.disabledColor.withValues(alpha: 0.05)))
+                    : (isSelected
+                        ? colorScheme.primary.withValues(alpha: 0.15)
+                        : theme.dividerColor.withValues(alpha: 0.05)),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: _answerWasSelected
+                      ? (isCorrect
+                          ? Colors.green
+                          : (isSelected ? Colors.red : Colors.transparent))
+                      : (isSelected ? colorScheme.primary : theme.dividerColor.withValues(alpha: 0.1)),
+                  width: 1.5,
+                ),
+              ),
+              child: Center(
+                child: _answerWasSelected && (isCorrect || isSelected)
+                    ? Icon(icon, color: iconColor, size: isMobile ? 18 : 20)
+                    : Text(
+                        optionLetter,
+                        style: GoogleFonts.outfit(
+                          fontWeight: FontWeight.bold,
+                          fontSize: isMobile ? 14 : 15,
+                          color: _answerWasSelected
+                              ? (isCorrect
+                                  ? Colors.green.shade700
+                                  : (isSelected ? Colors.red.shade700 : theme.hintColor))
+                              : (isSelected ? colorScheme.primary : theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                        ),
+                      ),
+              ),
+            ),
             SizedBox(width: isMobile ? 16 : 20),
             Expanded(
               child: Text(
                 question.options[index],
-                style: (isMobile
-                        ? theme.textTheme.titleMedium
-                        : theme.textTheme.titleLarge)
-                    ?.copyWith(
-                  color: theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.w700,
-                  fontSize: isMobile ? 16 : 18,
-                  height: 1.2,
+                style: GoogleFonts.inter(
+                  color: textColor,
+                  fontWeight: (isSelected || (_answerWasSelected && isCorrect))
+                      ? FontWeight.w700
+                      : FontWeight.w500,
+                  fontSize: isMobile ? 15 : 17,
+                  height: 1.3,
                 ),
               ),
             ),
@@ -768,14 +820,14 @@ class _QuizViewState extends State<QuizView> {
     return Container(
       padding: padding ?? const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: theme.cardColor.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.05)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 30,
-            offset: const Offset(0, 10),
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),

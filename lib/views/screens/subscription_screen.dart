@@ -18,7 +18,7 @@ class SubscriptionScreen extends StatefulWidget {
 }
 
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
-  bool _isYearly = true;
+  bool _isYearly = false;
   final PageController _pageController =
       PageController(viewportFraction: 0.85, initialPage: 1);
   int _currentPage = 1;
@@ -44,7 +44,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       'id': 'sumquiz_pro_monthly',
       'title': 'Student Pro',
       'price': r'$15',
-      'yearlyPrice': r'$149.99',
       'label': 'MOST CHOSEN',
       'color': WebColors.purplePrimary,
       'description': 'Become a consistent top-performing student.',
@@ -61,7 +60,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       'id': 'sumquiz_pro_elite',
       'title': 'Power Pro',
       'price': r'$30',
-      'yearlyPrice': r'$299.99',
       'label': 'ELITE STUDENT',
       'color': Colors.orange,
       'description': 'Unlock 100% of your revision potential.',
@@ -174,8 +172,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           ),
           const SizedBox(height: 20),
           _buildActiveSubscriptionBanner(),
-          const SizedBox(height: 20),
-          _buildToggles(),
           const SizedBox(height: 60),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -193,8 +189,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             ),
           ),
           const SizedBox(height: 100),
-          _buildSatisfactionSection(),
-          const SizedBox(height: 80),
           _buildSatisfactionSection(),
           const SizedBox(height: 60),
         ],
@@ -236,8 +230,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           ),
           const SizedBox(height: 16),
           _buildActiveSubscriptionBanner(),
-          const SizedBox(height: 16),
-          _buildToggles(),
           const SizedBox(height: 40),
           SizedBox(
             height: 520,
@@ -258,8 +250,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           _buildPageIndicator(_allTiers.length),
           const SizedBox(height: 60),
           _buildSecurePaymentSection(),
-          const SizedBox(height: 20),
-          _buildRegionalPricingSection(),
           const SizedBox(height: 40),
         ],
       ),
