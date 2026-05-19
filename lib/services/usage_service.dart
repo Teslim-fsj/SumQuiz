@@ -64,7 +64,7 @@ class UsageService {
 
       // Safety: If user is Pro but tier is unknown or 'free', treat as 'standard_pro'
       String tier = user.tier ?? 'free';
-      if (user.isPro && !UsageConfig.heavyQuota.containsKey(tier)) {
+      if (user.isPro && (tier == 'free' || !UsageConfig.heavyQuota.containsKey(tier))) {
         tier = 'standard_pro';
         developer.log('UsageService: Auto-promoting active Pro user to standard_pro for quota check (tier: ${user.tier}).', name: 'UsageService');
       }
@@ -104,7 +104,18 @@ class UsageService {
       double approximateCost = _calculateInternalCost(actionType, 
           isHeavy: effectivelyHeavy, isYoutube: isYoutube, isMultimodal: isMultimodal);
 
-      if (user.computeUnits < approximateCost) {
+      double computeUnits = user.computeUnits;
+      if (user.isPro && computeUnits < approximateCost) {
+        double tierCap = UsageConfig.capStandardPro;
+        if (tier == 'power_pro') tierCap = UsageConfig.capPowerPro;
+        if (tier == 'creator') tierCap = UsageConfig.capCreator;
+        
+        computeUnits = tierCap;
+        developer.log('UsageService: Auto-refilling active Pro user compute units to tier cap: $tierCap.', name: 'UsageService');
+        _db.collection('users').doc(uid).update({'computeUnits': tierCap});
+      }
+
+      if (computeUnits < approximateCost) {
         developer.log('Neural capacity depleted (Hidden CU) for user: $uid', name: 'UsageService');
         return false;
       }
@@ -155,6 +166,12 @@ class UsageService {
         final now = TimeSyncService.now;
         final lastAction = user.lastDeckGenerationDate;
 
+        // Safety tier promote
+        String tier = user.tier ?? 'free';
+        if (user.isPro && (tier == 'free' || !UsageConfig.heavyQuota.containsKey(tier))) {
+          tier = 'standard_pro';
+        }
+
         // Reset if new day
         bool isNewDay = lastAction == null || 
             now.day != lastAction.day || 
@@ -164,8 +181,16 @@ class UsageService {
         int newHeavy = isNewDay ? 0 : user.dailyHeavyActions;
         int newLight = isNewDay ? 0 : user.dailyLightActions;
         
+        double computeUnits = user.computeUnits;
+        if (user.isPro && computeUnits < cost) {
+          double tierCap = UsageConfig.capStandardPro;
+          if (tier == 'power_pro') tierCap = UsageConfig.capPowerPro;
+          if (tier == 'creator') tierCap = UsageConfig.capCreator;
+          computeUnits = tierCap;
+        }
+
         transaction.update(userRef, {
-          'computeUnits': (user.computeUnits - cost).clamp(0.0, 10000.0),
+          'computeUnits': (computeUnits - cost).clamp(0.0, 10000.0),
           if (effectivelyHeavy) 'dailyHeavyActions': newHeavy + 1
           else 'dailyLightActions': newLight + 1,
           'totalDecksGenerated': user.totalDecksGenerated + 1,

@@ -8,7 +8,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../theme/web_theme.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/local_database_service.dart';
 import '../../../services/spaced_repetition_service.dart';
@@ -657,7 +656,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
     final theme = Theme.of(context);
     final streak = user?.missionCompletionStreak ?? 0;
     final accuracyPct = (_accuracy * 100).toInt();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -674,16 +673,19 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
             const SizedBox(width: 24),
             if (streak > 0)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF59E0B).withOpacity(0.08),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.2)),
+                  border: Border.all(
+                      color: const Color(0xFFF59E0B).withOpacity(0.2)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.local_fire_department_rounded, color: Color(0xFFF59E0B), size: 18),
+                    const Icon(Icons.local_fire_department_rounded,
+                        color: Color(0xFFF59E0B), size: 18),
                     const SizedBox(width: 8),
                     Text(
                       '$streak Day Streak',
@@ -808,7 +810,8 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                         color: Colors.white.withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                            color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+                            color: theme.colorScheme.outline
+                                .withValues(alpha: 0.1)),
                         boxShadow: [
                           BoxShadow(
                               color: Colors.black.withValues(alpha: 0.05),

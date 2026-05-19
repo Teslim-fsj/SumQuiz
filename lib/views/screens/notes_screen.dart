@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -55,9 +54,11 @@ class _NotesScreenState extends State<NotesScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.lock_outline_rounded, size: 64, color: theme.hintColor),
+              Icon(Icons.lock_outline_rounded,
+                  size: 64, color: theme.hintColor),
               const SizedBox(height: 16),
-              Text('Please log in to view notes', style: GoogleFonts.inter(color: theme.hintColor)),
+              Text('Please log in to view notes',
+                  style: GoogleFonts.inter(color: theme.hintColor)),
             ],
           ),
         ),
@@ -127,7 +128,8 @@ class _NotesScreenState extends State<NotesScreen> {
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
         icon: const Icon(Icons.add_rounded),
-        label: Text('New Note', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+        label: Text('New Note',
+            style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
       ).animate().scale(delay: 400.ms),
     );
   }
@@ -155,7 +157,8 @@ class _NotesScreenState extends State<NotesScreen> {
           decoration: InputDecoration(
             hintText: 'Search through your insights...',
             hintStyle: GoogleFonts.inter(color: theme.hintColor, fontSize: 14),
-            prefixIcon: Icon(Icons.search_rounded, color: theme.hintColor, size: 20),
+            prefixIcon:
+                Icon(Icons.search_rounded, color: theme.hintColor, size: 20),
             border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(vertical: 14),
           ),
@@ -164,9 +167,10 @@ class _NotesScreenState extends State<NotesScreen> {
     ).animate().fadeIn().slideY(begin: -0.1);
   }
 
-  Widget _buildNoteCard(LocalNote note, ThemeData theme, NoteProvider provider) {
+  Widget _buildNoteCard(
+      LocalNote note, ThemeData theme, NoteProvider provider) {
     final colorScheme = theme.colorScheme;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -195,20 +199,25 @@ class _NotesScreenState extends State<NotesScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        note.title.isEmpty ? 'Untitled Perspective' : note.title,
+                        note.title.isEmpty
+                            ? 'Untitled Perspective'
+                            : note.title,
                         style: GoogleFonts.inter(
-                          fontWeight: FontWeight.bold, 
+                          fontWeight: FontWeight.bold,
                           fontSize: 16,
                           color: theme.textTheme.displayLarge?.color,
                         ),
                       ),
                     ),
-                    Icon(Icons.chevron_right_rounded, size: 20, color: theme.hintColor),
+                    Icon(Icons.chevron_right_rounded,
+                        size: 20, color: theme.hintColor),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  note.content.isEmpty ? 'Start capturing your thoughts...' : note.content,
+                  note.content.isEmpty
+                      ? 'Start capturing your thoughts...'
+                      : note.content,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
@@ -220,7 +229,8 @@ class _NotesScreenState extends State<NotesScreen> {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Icon(Icons.schedule_rounded, size: 14, color: colorScheme.primary.withOpacity(0.5)),
+                    Icon(Icons.schedule_rounded,
+                        size: 14, color: colorScheme.primary.withOpacity(0.5)),
                     const SizedBox(width: 6),
                     Text(
                       DateFormat('MMM d, yyyy').format(note.updatedAt),
@@ -233,7 +243,8 @@ class _NotesScreenState extends State<NotesScreen> {
                     const Spacer(),
                     if (note.tags.isNotEmpty)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: colorScheme.primary.withOpacity(0.05),
                           borderRadius: BorderRadius.circular(8),
@@ -241,10 +252,9 @@ class _NotesScreenState extends State<NotesScreen> {
                         child: Text(
                           '#${note.tags.first}',
                           style: GoogleFonts.inter(
-                            fontSize: 10, 
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.primary
-                          ),
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.primary),
                         ),
                       ),
                     IconButton(
@@ -263,12 +273,15 @@ class _NotesScreenState extends State<NotesScreen> {
     );
   }
 
-  void _confirmDelete(BuildContext context, LocalNote note, NoteProvider provider) {
+  void _confirmDelete(
+      BuildContext context, LocalNote note, NoteProvider provider) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete Note?', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-        content: Text('This action cannot be undone.', style: GoogleFonts.inter()),
+        title: Text('Delete Note?',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        content:
+            Text('This action cannot be undone.', style: GoogleFonts.inter()),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -279,7 +292,9 @@ class _NotesScreenState extends State<NotesScreen> {
               provider.deleteNote(note.id);
               Navigator.pop(context);
             },
-            child: Text('Delete', style: GoogleFonts.inter(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+            child: Text('Delete',
+                style: GoogleFonts.inter(
+                    color: Colors.redAccent, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -291,7 +306,8 @@ class _NotesScreenState extends State<NotesScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.edit_note_rounded, size: 100, color: theme.dividerColor.withOpacity(0.1)),
+          Icon(Icons.edit_note_rounded,
+              size: 100, color: theme.dividerColor.withOpacity(0.1)),
           const SizedBox(height: 24),
           Text(
             'Your digital brain is empty',

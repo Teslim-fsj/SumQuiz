@@ -193,7 +193,7 @@ class NoteProvider with ChangeNotifier {
         }
       }
     });
-    notifyListeners();
+    // Removed notifyListeners() to prevent rebuilding the editor and parent screen on every keystroke.
   }
 
   Future<void> deleteNote(String noteId) async {

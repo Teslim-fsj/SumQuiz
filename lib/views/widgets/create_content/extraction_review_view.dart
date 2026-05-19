@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/create_content_provider.dart';
+import '../../../models/user_model.dart';
+import '../../../utils/youtube_pro_gate.dart';
 import '../../../widgets/sumi_mascot.dart';
 import '../../../models/sumi_emotion.dart';
 
@@ -15,6 +17,7 @@ class ExtractionReviewView extends StatefulWidget {
 class _ExtractionReviewViewState extends State<ExtractionReviewView> {
   late TextEditingController _textController;
   late TextEditingController _titleController;
+  bool _isSavingNote = false;
 
   @override
   void initState() {
@@ -24,8 +27,12 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
     _titleController =
         TextEditingController(text: provider.fileName ?? 'Untitled Creation');
 
+    // Keep provider in sync as the user edits
     _textController.addListener(() {
       provider.updateExtractedText(_textController.text);
+    });
+    _titleController.addListener(() {
+      provider.updateTitle(_titleController.text);
     });
   }
 
@@ -36,21 +43,63 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
     super.dispose();
   }
 
+  Future<void> _onContinue(BuildContext context) async {
+    final provider = Provider.of<CreateContentProvider>(context, listen: false);
+    final user = Provider.of<UserModel?>(context, listen: false);
+
+    // Flush any pending title edit to the provider
+    provider.updateTitle(_titleController.text.trim().isEmpty
+        ? 'Untitled Study Pack'
+        : _titleController.text.trim());
+
+    // Save the note immediately if the toggle is on —
+    // this guarantees the note is stored regardless of generation outcome.
+    if (provider.saveAsNote) {
+      setState(() => _isSavingNote = true);
+      try {
+        await provider.saveNoteNow();
+      } catch (_) {
+        // Non-fatal — log but continue to generation
+      } finally {
+        if (mounted) setState(() => _isSavingNote = false);
+      }
+    }
+
+    if (!mounted) return;
+
+    // Skip the config step and go straight to generation.
+    if (user != null) {
+      provider.startGeneration(
+        user.uid,
+        allowYouTubeImport: userMayImportFromYouTube(user),
+        allowPdfImport: userMayImportFromPdf(user),
+        allowWebImport: userMayImportFromWeb(user),
+      );
+    } else {
+      // Fallback: proceed to config if user is somehow null
+      provider.proceedToConfig();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final provider = Provider.of<CreateContentProvider>(context);
 
+    final bool isBusy =
+        _isSavingNote || provider.progressMessage.isNotEmpty;
+
     return Container(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // ── Header ────────────────────────────────────────────────────────
           Row(
             children: [
               const SumiMascot(
-                state: SumiState.idle,
+                state: SumiState.focused,
                 size: 60,
               ),
               const SizedBox(width: 16),
@@ -59,7 +108,7 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Review Neural Extraction',
+                      'Review Extracted Content',
                       style: GoogleFonts.outfit(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
@@ -67,17 +116,19 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
                       ),
                     ),
                     Text(
-                      'AI extracted this from your source. Review and edit if needed.',
+                      'Edit the text if needed, then continue to generate your study pack.',
                       style: GoogleFonts.outfit(
-                        fontSize: 14,
+                        fontSize: 13,
                         color: colorScheme.onSurfaceVariant,
+                        height: 1.4,
                       ),
                     ),
                   ],
                 ),
               ),
+              // AI clean-up button
               IconButton.filledTonal(
-                onPressed: provider.progressMessage.isNotEmpty
+                onPressed: isBusy
                     ? null
                     : () => provider.refineExtractedText(),
                 icon: provider.progressMessage.contains('cleaning')
@@ -90,11 +141,14 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+
+          const SizedBox(height: 20),
+
+          // ── Title field ───────────────────────────────────────────────────
           Text(
-            'Source Title',
+            'Study Pack Title',
             style: GoogleFonts.outfit(
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
               color: colorScheme.onSurface,
             ),
@@ -116,38 +170,45 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: colorScheme.outlineVariant),
               ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: colorScheme.outlineVariant),
+              ),
             ),
           ),
-          const SizedBox(height: 24),
+
+          const SizedBox(height: 16),
+
+          // ── Extracted text ────────────────────────────────────────────────
           Expanded(
             child: Container(
               decoration: BoxDecoration(
                 color: theme.cardColor,
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: colorScheme.outlineVariant),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(20),
                 child: TextField(
                   controller: _textController,
                   maxLines: null,
                   expands: true,
                   textAlignVertical: TextAlignVertical.top,
                   style: GoogleFonts.outfit(
-                    fontSize: 16,
+                    fontSize: 15,
                     height: 1.6,
                     color: colorScheme.onSurface,
                   ),
                   decoration: InputDecoration(
                     hintText: 'No text extracted...',
-                    contentPadding: const EdgeInsets.all(24),
+                    contentPadding: const EdgeInsets.all(20),
                     border: InputBorder.none,
                     filled: true,
                     fillColor: theme.cardColor,
@@ -156,15 +217,17 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
               ),
             ),
           ),
-          const SizedBox(height: 24),
 
-          // --- OPTIONS ---
+          const SizedBox(height: 20),
+
+          // ── Save-as-note toggle ───────────────────────────────────────────
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: colorScheme.primary.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: colorScheme.primary.withValues(alpha: 0.1)),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                  color: colorScheme.primary.withValues(alpha: 0.12)),
             ),
             child: Row(
               children: [
@@ -178,13 +241,13 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
                       Text(
                         'Save as Study Note',
                         style: GoogleFonts.outfit(
-                          fontSize: 15,
+                          fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: colorScheme.onSurface,
                         ),
                       ),
                       Text(
-                        'Add this to your library for future reference',
+                        'Keeps the extracted text in your library for later',
                         style: GoogleFonts.outfit(
                           fontSize: 12,
                           color: colorScheme.onSurfaceVariant,
@@ -202,12 +265,11 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
             ),
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
+
+          // ── Continue button ───────────────────────────────────────────────
           ElevatedButton(
-            onPressed: () {
-              provider.updateTitle(_titleController.text);
-              provider.proceedToConfig();
-            },
+            onPressed: isBusy ? null : () => _onContinue(context),
             style: ElevatedButton.styleFrom(
               backgroundColor: colorScheme.primary,
               foregroundColor: Colors.white,
@@ -216,25 +278,45 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
                   borderRadius: BorderRadius.circular(20)),
               elevation: 4,
               shadowColor: colorScheme.primary.withValues(alpha: 0.3),
+              disabledBackgroundColor: colorScheme.primary.withValues(alpha: 0.4),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Confirm & Continue',
-                  style: GoogleFonts.outfit(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
+            child: isBusy
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white)),
+                      const SizedBox(width: 12),
+                      Text(
+                        _isSavingNote ? 'Saving note...' : 'Preparing...',
+                        style: GoogleFonts.outfit(
+                            fontSize: 17, fontWeight: FontWeight.w800),
+                      ),
+                    ],
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.auto_awesome_rounded, size: 18),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Generate Study Pack',
+                        style: GoogleFonts.outfit(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 12),
-                const Icon(Icons.arrow_forward_rounded, size: 20),
-              ],
-            ),
           ),
-          const SizedBox(height: 16),
+
+          const SizedBox(height: 12),
+
           TextButton(
-            onPressed: provider.backToSource,
+            onPressed: isBusy ? null : provider.backToSource,
             child: Text(
               'Discard & Change Source',
               style: GoogleFonts.outfit(
@@ -244,6 +326,8 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
               ),
             ),
           ),
+
+          const SizedBox(height: 8),
         ],
       ),
     );

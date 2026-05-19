@@ -13,6 +13,7 @@ import '../../models/sumi_message.dart';
 import '../../services/recording_service.dart';
 import '../widgets/aura_orb.dart';
 import '../widgets/aura_alert_banner.dart';
+import '../widgets/upgrade_dialog.dart';
 
 class SumiLiveScreen extends StatefulWidget {
   final String? groundingSource;
@@ -77,7 +78,17 @@ class _SumiLiveScreenState extends State<SumiLiveScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final sumi = context.watch<SumiProvider>();
-    
+
+    // Show upgrade sheet whenever the limit flag is triggered
+    if (sumi.limitReached) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          sumi.clearLimitReached();
+          UpgradeDialog.show(context, featureName: 'Sumi Live Tutoring');
+        }
+      });
+    }
+
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: Stack(

@@ -38,9 +38,11 @@ class _HandwritingCanvasState extends State<HandwritingCanvas> {
 
   void _onPanEnd(DragEndDetails details) {
     if (_currentPoints.isNotEmpty) {
+      final theme = Theme.of(context);
+      final drawColor = theme.colorScheme.primary;
       final stroke = LocalDrawingStroke(
         points: List.from(_currentPoints),
-        colorValue: widget.isEraserMode ? Colors.transparent.toARGB32() : Colors.white.toARGB32(),
+        colorValue: widget.isEraserMode ? Colors.transparent.toARGB32() : drawColor.toARGB32(),
         strokeWidth: widget.isEraserMode ? 20.0 : 3.0,
         timestamp: DateTime.now(),
         audioTimestamp: widget.currentAudioTime,
@@ -54,6 +56,8 @@ class _HandwritingCanvasState extends State<HandwritingCanvas> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final drawColor = theme.colorScheme.primary;
     return GestureDetector(
       onPanStart: _onPanStart,
       onPanUpdate: _onPanUpdate,
@@ -66,6 +70,7 @@ class _HandwritingCanvasState extends State<HandwritingCanvas> {
         painter: StrokePainter(
           strokes: widget.strokes,
           currentPoints: _currentPoints,
+          activeColor: drawColor,
         ),
         size: Size.infinite,
       ),
@@ -91,8 +96,9 @@ class _HandwritingCanvasState extends State<HandwritingCanvas> {
 class StrokePainter extends CustomPainter {
   final List<LocalDrawingStroke> strokes;
   final List<Offset> currentPoints;
+  final Color activeColor;
 
-  StrokePainter({required this.strokes, required this.currentPoints});
+  StrokePainter({required this.strokes, required this.currentPoints, required this.activeColor});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -116,7 +122,7 @@ class StrokePainter extends CustomPainter {
 
     // Draw current stroke
     if (currentPoints.isNotEmpty) {
-      paint.color = Colors.white;
+      paint.color = activeColor;
       paint.blendMode = BlendMode.srcOver;
       paint.strokeWidth = 3.0;
       _drawPoints(canvas, currentPoints, paint);

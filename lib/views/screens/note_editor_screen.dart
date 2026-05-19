@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' as io;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:provider/provider.dart';
@@ -455,33 +457,37 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
       color: colorScheme.surface,
       child: Stack(
         children: [
-          quill.QuillEditor.basic(
-            controller: _controller,
-            scrollController: _scrollController,
-            config: quill.QuillEditorConfig(
-              autoFocus: true,
-              padding: const EdgeInsets.all(40),
-              placeholder: 'Start typing, recording, or sketching...',
-              customStyles: quill.DefaultStyles(
-                paragraph: quill.DefaultListBlockStyle(
-                  GoogleFonts.inter(
-                    fontSize: 16, 
-                    height: 1.8, 
-                    color: colorScheme.onSurface
+          Positioned.fill(
+            child: quill.QuillEditor.basic(
+              controller: _controller,
+              scrollController: _scrollController,
+              config: quill.QuillEditorConfig(
+                autoFocus: true,
+                padding: const EdgeInsets.all(40),
+                placeholder: 'Start typing, recording, or sketching...',
+                embedBuilders: [
+                  ImageEmbedBuilder(),
+                ],
+                customStyles: quill.DefaultStyles(
+                  paragraph: quill.DefaultTextBlockStyle(
+                    GoogleFonts.inter(
+                      fontSize: 16, 
+                      height: 1.8, 
+                      color: colorScheme.onSurface
+                    ),
+                    const quill.HorizontalSpacing(0, 0),
+                    const quill.VerticalSpacing(0, 0),
+                    const quill.VerticalSpacing(0, 0),
+                    null,
                   ),
-                  const quill.HorizontalSpacing(0, 0),
-                  const quill.VerticalSpacing(0, 0),
-                  const quill.VerticalSpacing(0, 0),
-                  null,
-                  null,
-                ),
-                h1: quill.DefaultTextBlockStyle(
-                  GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
-                  const quill.HorizontalSpacing(0, 0), const quill.VerticalSpacing(16, 0), const quill.VerticalSpacing(0, 0), null,
-                ),
-                h2: quill.DefaultTextBlockStyle(
-                  GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
-                  const quill.HorizontalSpacing(0, 0), const quill.VerticalSpacing(12, 0), const quill.VerticalSpacing(0, 0), null,
+                  h1: quill.DefaultTextBlockStyle(
+                    GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
+                    const quill.HorizontalSpacing(0, 0), const quill.VerticalSpacing(16, 0), const quill.VerticalSpacing(0, 0), null,
+                  ),
+                  h2: quill.DefaultTextBlockStyle(
+                    GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
+                    const quill.HorizontalSpacing(0, 0), const quill.VerticalSpacing(12, 0), const quill.VerticalSpacing(0, 0), null,
+                  ),
                 ),
               ),
             ),
@@ -670,5 +676,48 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         ],
       ),
     );
+  }
+}
+
+class ImageEmbedBuilder extends quill.EmbedBuilder {
+  @override
+  String get key => 'image';
+
+  @override
+  Widget build(
+    BuildContext context,
+    quill.EmbedContext embedContext,
+  ) {
+    final imageUrl = embedContext.node.value.data;
+    if (imageUrl == null || imageUrl.toString().isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
+    final String urlStr = imageUrl.toString();
+    if (kIsWeb || urlStr.startsWith('http') || urlStr.startsWith('blob:')) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.network(
+            urlStr,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 50, color: Colors.red),
+          ),
+        ),
+      );
+    } else {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.file(
+            io.File(urlStr),
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 50, color: Colors.red),
+          ),
+        ),
+      );
+    }
   }
 }

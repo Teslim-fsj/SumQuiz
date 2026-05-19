@@ -107,6 +107,15 @@ class SumiProvider extends ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
+  bool _limitReached = false;
+  bool get limitReached => _limitReached;
+
+  void clearLimitReached() {
+    _limitReached = false;
+    _errorMessage = null;
+    notifyListeners();
+  }
+
   List<SumiMessage> _messages = [];
   List<SumiMessage> get messages => List.unmodifiable(_messages);
 
@@ -157,9 +166,9 @@ class SumiProvider extends ChangeNotifier {
     if (uid != null && _usageService != null) {
       final canProceed = await _usageService.canPerformAction(uid, 'tutor');
       if (!canProceed) {
-        _errorMessage = "Neural capacity depleted. Try again later!";
-        _dialogue = "Neural capacity depleted. Try again later!";
+        _limitReached = true;
         _currentState = SumiState.tired;
+        _dialogue = "I've reached my limit — let's power up your plan!";
         notifyListeners();
         return;
       }
@@ -308,8 +317,9 @@ class SumiProvider extends ChangeNotifier {
     if (uid != null && _usageService != null) {
       final canProceed = await _usageService.canPerformAction(uid, 'tutor');
       if (!canProceed) {
+        _limitReached = true;
         _currentState = SumiState.tired;
-        _dialogue = "Neural capacity depleted. Please try again later!";
+        _dialogue = "I've reached my limit — let's power up your plan!";
         notifyListeners();
         return;
       }
@@ -421,8 +431,8 @@ class SumiProvider extends ChangeNotifier {
     if (uid != null && _usageService != null) {
       final canProceed = await _usageService.canPerformAction(uid, 'tutor_session');
       if (!canProceed) {
-        _errorMessage = "Neural capacity too low for live sync. Use chat instead!";
-        _dialogue = "Neural capacity too low for live sync. Use chat instead!";
+        _limitReached = true;
+        _dialogue = "I've reached my limit — let's power up your plan!";
         _currentState = SumiState.tired;
         notifyListeners();
         return;

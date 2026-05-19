@@ -10,7 +10,6 @@ import 'package:uuid/uuid.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 
 import '../../models/user_model.dart';
 import '../../services/local_database_service.dart';
@@ -21,7 +20,6 @@ import '../widgets/upgrade_dialog.dart';
 import '../../models/public_deck.dart';
 import '../../services/firestore_service.dart';
 import '../../services/mastery_service.dart';
-import '../../services/export_service.dart';
 import '../../services/notification_integration.dart';
 
 enum ScreenState { initial, loading, error, success }
@@ -293,14 +291,18 @@ class SummaryScreenState extends State<SummaryScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Publish Deck', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        title: Text('Publish Deck',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Title: $_summaryTitle', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            Text('Title: $_summaryTitle',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
             const SizedBox(height: 12),
-            Text('Includes:', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13)),
+            Text('Includes:',
+                style: GoogleFonts.inter(
+                    fontWeight: FontWeight.bold, fontSize: 13)),
             const SizedBox(height: 4),
             _buildIncludedItem('Summary', true),
             _buildIncludedItem('Quiz', relatedQuiz != null),
@@ -313,11 +315,15 @@ class SummaryScreenState extends State<SummaryScreen> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: Text('Cancel', style: GoogleFonts.inter(color: Colors.grey))),
+              child:
+                  Text('Cancel', style: GoogleFonts.inter(color: Colors.grey))),
           ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
-              child: Text('Publish', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold))),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0D9488)),
+              child: Text('Publish',
+                  style: GoogleFonts.inter(
+                      color: Colors.white, fontWeight: FontWeight.bold))),
         ],
       ),
     );
@@ -385,11 +391,13 @@ class SummaryScreenState extends State<SummaryScreen> {
       showDialog(
           context: context,
           builder: (context) => AlertDialog(
-                title: Text('Published Successfully!', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+                title: Text('Published Successfully!',
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.check_circle_rounded, color: Color(0xFF0D9488), size: 64),
+                    const Icon(Icons.check_circle_rounded,
+                        color: Color(0xFF0D9488), size: 64),
                     const SizedBox(height: 24),
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -400,10 +408,17 @@ class SummaryScreenState extends State<SummaryScreen> {
                       ),
                       child: SelectableText(shareUrl,
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF0D9488), fontWeight: FontWeight.bold)),
+                          style: GoogleFonts.inter(
+                              fontSize: 13,
+                              color: const Color(0xFF0D9488),
+                              fontWeight: FontWeight.bold)),
                     ),
                     const SizedBox(height: 16),
-                    Text('Share Code', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+                    Text('Share Code',
+                        style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey)),
                     const SizedBox(height: 4),
                     SelectableText(shareCode,
                         style: GoogleFonts.outfit(
@@ -424,7 +439,9 @@ class SummaryScreenState extends State<SummaryScreen> {
                       child: Text('Copy Details', style: GoogleFonts.inter())),
                   TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: Text('Close', style: GoogleFonts.inter(fontWeight: FontWeight.bold))),
+                      child: Text('Close',
+                          style:
+                              GoogleFonts.inter(fontWeight: FontWeight.bold))),
                 ],
               ));
     } catch (e) {
@@ -438,11 +455,13 @@ class SummaryScreenState extends State<SummaryScreen> {
   Widget _buildIncludedItem(String label, bool isIncluded) {
     return Row(
       children: [
-        Icon(isIncluded ? Icons.check_circle_rounded : Icons.cancel_rounded, 
-             size: 14, 
-             color: isIncluded ? const Color(0xFF0D9488) : Colors.grey),
+        Icon(isIncluded ? Icons.check_circle_rounded : Icons.cancel_rounded,
+            size: 14,
+            color: isIncluded ? const Color(0xFF0D9488) : Colors.grey),
         const SizedBox(width: 8),
-        Text(label, style: GoogleFonts.inter(fontSize: 13, color: isIncluded ? Colors.black : Colors.grey)),
+        Text(label,
+            style: GoogleFonts.inter(
+                fontSize: 13, color: isIncluded ? Colors.black : Colors.grey)),
       ],
     );
   }
@@ -497,7 +516,8 @@ class SummaryScreenState extends State<SummaryScreen> {
               if (user != null && _state == ScreenState.success) {
                 final isStudent = user.role == UserRole.student;
                 return IconButton(
-                  icon: Icon(isStudent ? Icons.share_rounded : Icons.public_rounded),
+                  icon: Icon(
+                      isStudent ? Icons.share_rounded : Icons.public_rounded),
                   tooltip: isStudent ? 'Share with Friends' : 'Publish Deck',
                   onPressed: _publishDeck,
                 );
@@ -575,9 +595,13 @@ class SummaryScreenState extends State<SummaryScreen> {
                 decoration: BoxDecoration(
                   color: theme.cardColor,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+                  border:
+                      Border.all(color: theme.dividerColor.withOpacity(0.1)),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.02),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4)),
                   ],
                 ),
                 child: TextField(
@@ -586,7 +610,8 @@ class SummaryScreenState extends State<SummaryScreen> {
                   style: GoogleFonts.inter(fontSize: 15, height: 1.6),
                   decoration: InputDecoration(
                     hintText: 'Paste your insights or research notes here...',
-                    hintStyle: GoogleFonts.inter(color: theme.hintColor.withOpacity(0.5)),
+                    hintStyle: GoogleFonts.inter(
+                        color: theme.hintColor.withOpacity(0.5)),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.all(24),
                   ),
@@ -603,17 +628,25 @@ class SummaryScreenState extends State<SummaryScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         decoration: BoxDecoration(
-                          color: _pdfFileName != null ? const Color(0xFF0D9488).withOpacity(0.05) : theme.cardColor,
+                          color: _pdfFileName != null
+                              ? const Color(0xFF0D9488).withOpacity(0.05)
+                              : theme.cardColor,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: _pdfFileName != null ? const Color(0xFF0D9488) : theme.dividerColor.withOpacity(0.1),
+                            color: _pdfFileName != null
+                                ? const Color(0xFF0D9488)
+                                : theme.dividerColor.withOpacity(0.1),
                             width: 1.5,
                           ),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.description_rounded, size: 20, color: _pdfFileName != null ? const Color(0xFF0D9488) : theme.hintColor),
+                            Icon(Icons.description_rounded,
+                                size: 20,
+                                color: _pdfFileName != null
+                                    ? const Color(0xFF0D9488)
+                                    : theme.hintColor),
                             const SizedBox(width: 12),
                             Flexible(
                               child: Text(
@@ -621,7 +654,9 @@ class SummaryScreenState extends State<SummaryScreen> {
                                 style: GoogleFonts.inter(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 13,
-                                  color: _pdfFileName != null ? const Color(0xFF0D9488) : theme.hintColor,
+                                  color: _pdfFileName != null
+                                      ? const Color(0xFF0D9488)
+                                      : theme.hintColor,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -634,9 +669,11 @@ class SummaryScreenState extends State<SummaryScreen> {
                   if (_pdfFileName != null) ...[
                     const SizedBox(width: 12),
                     IconButton.filledTonal(
-                        onPressed: () => setState(() => _pdfFileName = null),
-                        icon: const Icon(Icons.close_rounded, size: 18),
-                        style: IconButton.styleFrom(backgroundColor: Colors.redAccent.withOpacity(0.1), foregroundColor: Colors.redAccent),
+                      onPressed: () => setState(() => _pdfFileName = null),
+                      icon: const Icon(Icons.close_rounded, size: 18),
+                      style: IconButton.styleFrom(
+                          backgroundColor: Colors.redAccent.withOpacity(0.1),
+                          foregroundColor: Colors.redAccent),
                     )
                   ]
                 ],
@@ -649,7 +686,8 @@ class SummaryScreenState extends State<SummaryScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0D9488),
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
                     elevation: 0,
                   ),
                   child: Row(
@@ -657,7 +695,9 @@ class SummaryScreenState extends State<SummaryScreen> {
                     children: [
                       const Icon(Icons.auto_awesome_rounded, size: 20),
                       const SizedBox(width: 12),
-                      Text('Synthesize Knowledge', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text('Synthesize Knowledge',
+                          style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.bold, fontSize: 16)),
                     ],
                   ),
                 ),
@@ -676,10 +716,12 @@ class SummaryScreenState extends State<SummaryScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 64),
+            const Icon(Icons.error_outline_rounded,
+                color: Colors.redAccent, size: 64),
             const SizedBox(height: 24),
             Text('Synthesis Interrupted',
-                style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold),
+                style: GoogleFonts.outfit(
+                    fontSize: 22, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center),
             const SizedBox(height: 12),
             Text(_errorMessage,
@@ -690,10 +732,13 @@ class SummaryScreenState extends State<SummaryScreen> {
               onPressed: _retry,
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.colorScheme.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
-              child: Text('Try Again', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+              child: Text('Try Again',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -733,7 +778,8 @@ class SummaryScreenState extends State<SummaryScreen> {
                   runSpacing: 8,
                   children: _summaryTags.map((tag) {
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: const Color(0xFF0D9488).withOpacity(0.08),
                         borderRadius: BorderRadius.circular(10),
@@ -750,7 +796,7 @@ class SummaryScreenState extends State<SummaryScreen> {
                   }).toList(),
                 ).animate().fadeIn(delay: 100.ms),
               const SizedBox(height: 32),
-              
+
               // Content Card
               Container(
                 width: double.infinity,
@@ -758,25 +804,37 @@ class SummaryScreenState extends State<SummaryScreen> {
                 decoration: BoxDecoration(
                   color: theme.cardColor,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+                  border:
+                      Border.all(color: theme.dividerColor.withOpacity(0.1)),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.02),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4)),
                   ],
                 ),
                 child: MarkdownBody(
                   data: _summaryContent,
                   styleSheet: MarkdownStyleSheet(
-                    p: GoogleFonts.inter(fontSize: 15, height: 1.7, color: theme.textTheme.bodyMedium?.color?.withOpacity(0.8)),
-                    h1: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold, height: 2),
-                    h2: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, height: 1.8),
-                    h3: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, height: 1.6),
-                    listBullet: GoogleFonts.inter(fontSize: 15, color: const Color(0xFF0D9488)),
+                    p: GoogleFonts.inter(
+                        fontSize: 15,
+                        height: 1.7,
+                        color: theme.textTheme.bodyMedium?.color
+                            ?.withOpacity(0.8)),
+                    h1: GoogleFonts.outfit(
+                        fontSize: 24, fontWeight: FontWeight.bold, height: 2),
+                    h2: GoogleFonts.outfit(
+                        fontSize: 20, fontWeight: FontWeight.bold, height: 1.8),
+                    h3: GoogleFonts.outfit(
+                        fontSize: 18, fontWeight: FontWeight.bold, height: 1.6),
+                    listBullet: GoogleFonts.inter(
+                        fontSize: 15, color: const Color(0xFF0D9488)),
                   ),
                 ),
               ).animate().fadeIn(delay: 200.ms),
-              
+
               const SizedBox(height: 32),
-              
+
               // Action Row
               Row(
                 children: [
@@ -805,14 +863,21 @@ class SummaryScreenState extends State<SummaryScreen> {
                     child: ElevatedButton.icon(
                       onPressed: _isGeneratingQuiz ? null : _generateQuiz,
                       icon: _isGeneratingQuiz
-                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white))
                           : const Icon(Icons.quiz_rounded, size: 18),
-                      label: Text('Practice Quiz', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                      label: Text('Practice Quiz',
+                          style:
+                              GoogleFonts.inter(fontWeight: FontWeight.bold)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFF59E0B),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
                         elevation: 0,
                       ),
                     ),
@@ -826,7 +891,11 @@ class SummaryScreenState extends State<SummaryScreen> {
     );
   }
 
-  Widget _buildActionButton({required IconData icon, required String label, required VoidCallback onTap, required ThemeData theme}) {
+  Widget _buildActionButton(
+      {required IconData icon,
+      required String label,
+      required VoidCallback onTap,
+      required ThemeData theme}) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -842,7 +911,11 @@ class SummaryScreenState extends State<SummaryScreen> {
           children: [
             Icon(icon, size: 18, color: theme.hintColor),
             const SizedBox(width: 8),
-            Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: theme.hintColor)),
+            Text(label,
+                style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: theme.hintColor)),
           ],
         ),
       ),

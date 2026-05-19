@@ -11,7 +11,7 @@ class LearningMomentumCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     final completed = user?.itemsCompletedToday ?? 0;
     final goal = user?.dailyGoal ?? 5;
     final progress = (completed / goal).clamp(0.0, 1.0);
@@ -41,7 +41,8 @@ class LearningMomentumCard extends StatelessWidget {
                   color: const Color(0xFFF59E0B).withOpacity(0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.bolt_rounded, color: Color(0xFFF59E0B), size: 22),
+                child: const Icon(Icons.bolt_rounded,
+                    color: Color(0xFFF59E0B), size: 22),
               ),
               const SizedBox(width: 16),
               Column(
@@ -58,21 +59,23 @@ class LearningMomentumCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     'Consistency is key',
-                    style: GoogleFonts.inter(fontSize: 12, color: theme.hintColor),
+                    style:
+                        GoogleFonts.inter(fontSize: 12, color: theme.hintColor),
                   ),
                 ],
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primary.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  '${user?.currentMomentum?.toStringAsFixed(0) ?? 0} XP',
+                  '${user?.currentMomentum.toStringAsFixed(0) ?? 0} XP',
                   style: GoogleFonts.jetBrainsMono(
-                    fontWeight: FontWeight.bold, 
+                    fontWeight: FontWeight.bold,
                     fontSize: 12,
                     color: theme.colorScheme.primary,
                   ),
@@ -86,11 +89,17 @@ class LearningMomentumCard extends StatelessWidget {
             children: [
               Text(
                 'Mission Progress',
-                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: theme.hintColor),
+                style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: theme.hintColor),
               ),
               Text(
                 '$completed / $goal items',
-                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary),
               ),
             ],
           ),
@@ -113,7 +122,11 @@ class LearningMomentumCard extends StatelessWidget {
                     color: theme.colorScheme.primary,
                     borderRadius: BorderRadius.circular(6),
                   ),
-                ).animate().fadeIn().scaleX(begin: 0, alignment: Alignment.centerLeft, duration: 800.ms, curve: Curves.easeOutCubic),
+                ).animate().fadeIn().scaleX(
+                    begin: 0,
+                    alignment: Alignment.centerLeft,
+                    duration: 800.ms,
+                    curve: Curves.easeOutCubic),
               ),
             ],
           ),

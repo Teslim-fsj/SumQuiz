@@ -10,6 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../providers/sumi_provider.dart';
 import '../../models/sumi_message.dart';
 import '../../services/content_extraction_service.dart';
+import 'upgrade_dialog.dart';
 
 
 class SumiChatView extends StatefulWidget {
@@ -49,6 +50,19 @@ class _SumiChatViewState extends State<SumiChatView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final sumiProvider = context.watch<SumiProvider>();
+
+    // Show upgrade sheet once when the limit flag fires
+    if (sumiProvider.limitReached) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          sumiProvider.clearLimitReached();
+          UpgradeDialog.show(context, featureName: 'Sumi Tutoring');
+        }
+      });
+    }
+
+    // Auto-scroll when new messages arrive
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
 
     return Column(
       children: [

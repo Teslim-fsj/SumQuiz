@@ -156,9 +156,35 @@ class CreateContentProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void proceedToConfig() {
-    _phase = CreationPhase.config;
-    notifyListeners();
+  /// Immediately persists the extracted text as a note in the local database.
+  /// Called by the UI at the moment the user confirms extraction review,
+  /// before generation begins — ensuring the note is saved even if generation
+  /// fails or is blocked by a usage limit.
+  Future<void> saveNoteNow() async {
+    if (!_saveAsNote) return;
+    final title = _fileName ?? _extractionResult?.suggestedTitle ?? 'Untitled Note';
+    final text = _textContent;
+    if (text.trim().isEmpty) return;
+
+    try {
+      developer.log('saveNoteNow: saving note "$title"', name: 'CreateContentProvider');
+      final note = LocalNote(
+        id: const Uuid().v4(),
+        userId: '', // Will be replaced by the caller if needed; stored locally
+        title: title,
+        content: text,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        folderId: _preSelectedFolderId,
+        tags: [],
+        isSynced: false,
+      );
+      await _localDb.saveNote(note);
+      developer.log('saveNoteNow: success', name: 'CreateContentProvider');
+    } catch (e) {
+      developer.log('saveNoteNow failed: $e', name: 'CreateContentProvider');
+      rethrow;
+    }
   }
 
   void updateConfig(

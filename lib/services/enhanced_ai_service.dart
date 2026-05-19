@@ -12,7 +12,6 @@ import 'package:sumquiz/models/local_flashcard_set.dart';
 import 'package:sumquiz/models/local_quiz.dart';
 import 'package:sumquiz/models/local_summary.dart';
 import 'package:sumquiz/services/iap_service.dart';
-import 'package:sumquiz/services/usage_service.dart' as usage;
 import 'package:sumquiz/services/local_database_service.dart';
 import 'package:sumquiz/models/extraction_result.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
@@ -41,7 +40,7 @@ class EnhancedAIService {
   final GeneratorAIService _generatorService = GeneratorAIService();
   late final MasteryService _masteryService;
   late final SyncService _syncService;
-  
+
   GeneratorAIService get generatorService => _generatorService;
 
   EnhancedAIService({
@@ -80,30 +79,35 @@ class EnhancedAIService {
   }
 
   Future<void> _orchestrateCompute(String userId, {bool isHeavy = true}) async {
-    developer.log('_orchestrateCompute called with userId: $userId', name: 'EnhancedAIService');
+    developer.log('_orchestrateCompute called with userId: $userId',
+        name: 'EnhancedAIService');
     try {
       final computeManager = ComputeManager();
-      
+
       // Attempt to orchestrate the action
       final canProceed = await computeManager.orchestrateAction(
-        userId, 
+        userId,
         'standard', // Generic type for heavy generation
         isHeavy: isHeavy,
       );
 
       if (!canProceed) {
-        developer.log('Compute orchestration BLOCKED for user: $userId', name: 'EnhancedAIService');
+        developer.log('Compute orchestration BLOCKED for user: $userId',
+            name: 'EnhancedAIService');
         throw EnhancedAIServiceException(
-          'Your neural momentum is currently stabilizing! Sumi suggests a quick break to integrate what you\'ve learned.',
-          code: 'CAPACITY_STABILIZING'
-        );
+            'Your neural momentum is currently stabilizing! Sumi suggests a quick break to integrate what you\'ve learned.',
+            code: 'CAPACITY_STABILIZING');
       }
-      
-      developer.log('Compute orchestration SUCCESS for user: $userId', name: 'EnhancedAIService');
+
+      developer.log('Compute orchestration SUCCESS for user: $userId',
+          name: 'EnhancedAIService');
     } catch (e, stack) {
       if (e is EnhancedAIServiceException) rethrow;
-      developer.log('Error in compute orchestration', name: 'EnhancedAIService', error: e, stackTrace: stack);
-      throw EnhancedAIServiceException('Neural pathway initialization failed: $e', code: 'COMPUTE_ERROR');
+      developer.log('Error in compute orchestration',
+          name: 'EnhancedAIService', error: e, stackTrace: stack);
+      throw EnhancedAIServiceException(
+          'Neural pathway initialization failed: $e',
+          code: 'COMPUTE_ERROR');
     }
   }
 
@@ -488,7 +492,8 @@ class EnhancedAIService {
         SpacedRepetitionService(localDb.getSpacedRepetitionBox());
 
     // Optimize: Fetch user state once
-    final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
     final isPro = userDoc.exists && (userDoc.data()?['isPro'] ?? false);
 
     int completed = 0;
@@ -664,7 +669,8 @@ class EnhancedAIService {
     await initialize();
 
     String? folderId;
-    final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
     final isPro = userDoc.exists && (userDoc.data()?['isPro'] ?? false);
 
     onProgress?.call('Generating comprehensive study materials...');

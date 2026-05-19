@@ -467,25 +467,26 @@ class _MyAppState extends State<MyApp> {
                       home: const UpdateBlockerScreen(),
                     );
                   }
+              });
 
-                  return NotificationNavigator(
-                    child: MaterialApp.router(
-                      title: 'SumQuiz',
-                      theme: themeProvider.getTheme(),
-                      darkTheme: themeProvider.getTheme(),
-                      themeMode: themeProvider.themeMode,
-                      routerConfig: _router,
-                      debugShowCheckedModeBanner: false,
-                      localizationsDelegates: const [
-                        GlobalMaterialLocalizations.delegate,
-                        GlobalCupertinoLocalizations.delegate,
-                        GlobalWidgetsLocalizations.delegate,
-                        FlutterQuillLocalizations.delegate,
-                      ],
-                      supportedLocales: const [
-                        Locale('en', ''),
-                      ],
-                    ),
+              return NotificationNavigator(
+                child: MaterialApp.router(
+                  title: 'SumQuiz',
+                  theme: themeProvider.getTheme(),
+                  darkTheme: themeProvider.getTheme(),
+                  themeMode: themeProvider.themeMode,
+                  routerConfig: _router,
+                  debugShowCheckedModeBanner: false,
+                  localizationsDelegates: const [
+                    GlobalMaterialLocalizations.delegate,
+                    GlobalCupertinoLocalizations.delegate,
+                    GlobalWidgetsLocalizations.delegate,
+                    FlutterQuillLocalizations.delegate,
+                  ],
+                  supportedLocales: const [
+                    Locale('en', ''),
+                  ],
+                ),
                   );
                 },
               );

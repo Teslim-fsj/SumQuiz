@@ -134,7 +134,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       backgroundColor: Colors.transparent,
       elevation: 0,
       leading: IconButton(
-        icon: Icon(Icons.arrow_back, color: Theme.of(context).textTheme.bodyLarge?.color),
+        icon: Icon(Icons.arrow_back,
+            color: Theme.of(context).textTheme.bodyLarge?.color),
         onPressed: () => context.pop(),
       ),
       centerTitle: !kIsWeb,
@@ -181,10 +182,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: _allTiers
-                  .asMap()
-                  .entries
-                  .map((entry) {
+              children: _allTiers.asMap().entries.map((entry) {
                 return Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -318,7 +316,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-
   Widget _buildBillingToggle() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -328,14 +325,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           style: GoogleFonts.inter(
             fontSize: 14,
             fontWeight: _isYearly ? FontWeight.w500 : FontWeight.bold,
-            color: _isYearly ? Theme.of(context).textTheme.bodySmall?.color : Theme.of(context).colorScheme.primary,
+            color: _isYearly
+                ? Theme.of(context).textTheme.bodySmall?.color
+                : Theme.of(context).colorScheme.primary,
           ),
         ),
         const SizedBox(width: 12),
         Switch(
           value: _isYearly,
           onChanged: (val) => setState(() => _isYearly = val),
-          activeColor: WebColors.purplePrimary,
+          activeThumbColor: WebColors.purplePrimary,
         ),
         const SizedBox(width: 12),
         Row(
@@ -345,7 +344,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: _isYearly ? FontWeight.bold : FontWeight.w500,
-                color: _isYearly ? Theme.of(context).colorScheme.primary : Theme.of(context).textTheme.bodySmall?.color,
+                color: _isYearly
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).textTheme.bodySmall?.color,
               ),
             ),
             const SizedBox(width: 8),
@@ -370,11 +371,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-
   Widget _buildTierCard(Map<String, dynamic> tier, int index,
       {required bool isWeb}) {
     bool isFeatured = tier['label'] == 'MOST CHOSEN';
-    Color tierColor = tier['color'] == WebColors.purplePrimary ? Theme.of(context).colorScheme.primary : tier['color'];
+    Color tierColor = tier['color'] == WebColors.purplePrimary
+        ? Theme.of(context).colorScheme.primary
+        : tier['color'];
     final user = context.watch<UserModel?>();
     final subProvider = context.watch<SubscriptionProvider>();
 
@@ -397,7 +399,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isFeatured ? Theme.of(context).colorScheme.primary : Theme.of(context).dividerColor,
+          color: isFeatured
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).dividerColor,
           width: isFeatured ? 2 : 1,
         ),
         boxShadow: [
@@ -454,8 +458,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    _isYearly && tier['yearlyPrice'] != null 
-                        ? tier['yearlyPrice'] 
+                    _isYearly && tier['yearlyPrice'] != null
+                        ? tier['yearlyPrice']
                         : displayPrice,
                     style: GoogleFonts.outfit(
                       fontSize: 40,
@@ -497,7 +501,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                                 f,
                                 style: GoogleFonts.inter(
                                   fontSize: 15,
-                                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.color,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -753,7 +760,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       ],
     );
   }
-
 
   Widget _buildMobileBottomNav() {
     return Container(
