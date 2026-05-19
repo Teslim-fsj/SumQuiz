@@ -8,13 +8,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../models/user_model.dart';
 import '../../models/library_item.dart';
 import '../../models/folder.dart';
-import 'package:cloud_firestore/cloud_firestore.dart' show Timestamp;
-import '../../models/editable_content.dart';
-import '../../models/quiz_question.dart';
-import '../../models/flashcard.dart';
-import 'edit_summary_screen.dart';
-import 'edit_quiz_screen.dart';
-import 'edit_flashcards_screen.dart';
 import '../../services/firestore_service.dart';
 import '../../services/local_database_service.dart';
 import '../../services/sync_service.dart';
@@ -55,16 +48,15 @@ class LibraryScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.cloud_off_rounded, size: 80, color: theme.colorScheme.primary.withValues(alpha: 0.2)),
+              Icon(Icons.cloud_off_rounded,
+                  size: 80,
+                  color: theme.colorScheme.primary.withValues(alpha: 0.2)),
               const SizedBox(height: 24),
-              Text(
-                'Please Log In',
-                style: GoogleFonts.outfit(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary
-                )
-              ),
+              Text('Please Log In',
+                  style: GoogleFonts.outfit(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.primary)),
               const SizedBox(height: 12),
               Text(
                 'Log in to access your synchronized library across all your devices.',
@@ -86,7 +78,8 @@ class _LibraryView extends StatefulWidget {
   _LibraryViewState createState() => _LibraryViewState();
 }
 
-class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixin {
+class _LibraryViewState extends State<_LibraryView>
+    with TickerProviderStateMixin {
   late TabController _mainTabController;
   late TabController _folderTabController;
   final TextEditingController _searchController = TextEditingController();
@@ -124,7 +117,8 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
           ? FloatingActionButton.extended(
               onPressed: () => _showAddContentOptions(context, viewModel),
               icon: const Icon(Icons.add_rounded),
-              label: Text('Add Content', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+              label: Text('Add Content',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.onPrimary,
             ).animate().scale()
@@ -142,8 +136,8 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
                     controller: _mainTabController,
                     children: [
                       _buildContentList(viewModel.allItems$, theme, viewModel),
-                      _buildContentList(viewModel.allNotes$, theme, viewModel),
                       _buildFolderList(viewModel, theme),
+                      _buildContentList(viewModel.allNotes$, theme, viewModel),
                       _buildContentList(viewModel.allExams$, theme, viewModel),
                     ],
                   );
@@ -151,9 +145,18 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
                   return TabBarView(
                     controller: _folderTabController,
                     children: [
-                      _buildContentList(viewModel.getFolderStudyPackStream(selectedFolder.id), theme, viewModel),
-                      _buildContentList(viewModel.getFolderNotesStream(selectedFolder.id), theme, viewModel),
-                      _buildContentList(viewModel.getFolderExamsStream(selectedFolder.id), theme, viewModel),
+                      _buildContentList(
+                          viewModel.getFolderStudyPackStream(selectedFolder.id),
+                          theme,
+                          viewModel),
+                      _buildContentList(
+                          viewModel.getFolderNotesStream(selectedFolder.id),
+                          theme,
+                          viewModel),
+                      _buildContentList(
+                          viewModel.getFolderExamsStream(selectedFolder.id),
+                          theme,
+                          viewModel),
                     ],
                   );
                 }
@@ -165,7 +168,8 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
     );
   }
 
-  AppBar _buildAppBar(BuildContext context, ThemeData theme, LibraryViewModel viewModel) {
+  AppBar _buildAppBar(
+      BuildContext context, ThemeData theme, LibraryViewModel viewModel) {
     final selectedFolder = viewModel.selectedFolder;
     return AppBar(
       backgroundColor: Colors.transparent,
@@ -179,10 +183,9 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
       title: Text(
         selectedFolder?.name ?? 'Library',
         style: GoogleFonts.outfit(
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary,
-          fontSize: 22
-        ),
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.primary,
+            fontSize: 22),
       ),
       centerTitle: true,
       actions: [
@@ -196,15 +199,16 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
           )
         else
           IconButton(
-              icon: const Icon(Icons.sync_rounded), 
-              onPressed: viewModel.syncAllData,
-              tooltip: 'Sync data',
+            icon: const Icon(Icons.sync_rounded),
+            onPressed: viewModel.syncAllData,
+            tooltip: 'Sync data',
           ),
       ],
     );
   }
 
-  Widget _buildHeader(BuildContext context, ThemeData theme, LibraryViewModel viewModel) {
+  Widget _buildHeader(
+      BuildContext context, ThemeData theme, LibraryViewModel viewModel) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
       child: Column(
@@ -216,7 +220,8 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
                   decoration: BoxDecoration(
                     color: theme.cardColor,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: theme.dividerColor.withValues(alpha: 0.05)),
+                    border: Border.all(
+                        color: theme.dividerColor.withValues(alpha: 0.05)),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.03),
@@ -230,8 +235,10 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
                     style: GoogleFonts.inter(fontSize: 14),
                     decoration: InputDecoration(
                       hintText: 'Search through your library...',
-                      hintStyle: GoogleFonts.inter(color: theme.hintColor, fontSize: 14),
-                      prefixIcon: Icon(Icons.search_rounded, color: theme.hintColor, size: 20),
+                      hintStyle: GoogleFonts.inter(
+                          color: theme.hintColor, fontSize: 14),
+                      prefixIcon: Icon(Icons.search_rounded,
+                          color: theme.hintColor, size: 20),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(vertical: 14),
                     ),
@@ -241,7 +248,7 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
               const SizedBox(width: 12),
               IconButton.filledTonal(
                 onPressed: () {
-                   showDialog(
+                  showDialog(
                     context: context,
                     builder: (_) => const EnterCodeDialog(),
                   );
@@ -249,7 +256,8 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
                 icon: const Icon(Icons.add_link_rounded, size: 20),
                 style: IconButton.styleFrom(
                   padding: const EdgeInsets.all(12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
                 ),
               ),
             ],
@@ -261,22 +269,26 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
     );
   }
 
-  Widget _buildTabBar(BuildContext context, ThemeData theme, LibraryViewModel viewModel) {
+  Widget _buildTabBar(
+      BuildContext context, ThemeData theme, LibraryViewModel viewModel) {
     final selectedFolder = viewModel.selectedFolder;
     final colorScheme = theme.colorScheme;
 
     return SizedBox(
       height: 48,
       child: TabBar(
-        controller: selectedFolder == null ? _mainTabController : _folderTabController,
+        controller:
+            selectedFolder == null ? _mainTabController : _folderTabController,
         isScrollable: true,
         indicator: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
           color: colorScheme.primary,
         ),
         indicatorSize: TabBarIndicatorSize.tab,
-        labelStyle: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
-        unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 13),
+        labelStyle:
+            GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
+        unselectedLabelStyle:
+            GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 13),
         labelColor: colorScheme.onPrimary,
         unselectedLabelColor: theme.hintColor,
         dividerColor: Colors.transparent,
@@ -286,8 +298,8 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
         tabs: selectedFolder == null
             ? const [
                 Tab(text: '  All Content  '),
-                Tab(text: '  Notes  '),
                 Tab(text: '  Study Packs  '),
+                Tab(text: '  Observations  '),
                 Tab(text: '  Exams  '),
               ]
             : const [
@@ -303,11 +315,14 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
     return StreamBuilder<List<Folder>>(
       stream: viewModel.allFolders$,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}', style: GoogleFonts.inter()));
+          return Center(
+              child:
+                  Text('Error: ${snapshot.error}', style: GoogleFonts.inter()));
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return _buildNoContentState('folders', theme);
@@ -316,7 +331,10 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
         final folders = snapshot.data!;
         final filteredFolders = _searchQuery.isEmpty
             ? folders
-            : folders.where((folder) => folder.name.toLowerCase().contains(_searchQuery)).toList();
+            : folders
+                .where((folder) =>
+                    folder.name.toLowerCase().contains(_searchQuery))
+                .toList();
 
         if (filteredFolders.isEmpty && _searchQuery.isNotEmpty) {
           return _buildNoSearchResultsState(theme);
@@ -334,25 +352,34 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
               iconColor: Colors.deepPurpleAccent,
               theme: theme,
               onTap: () => viewModel.selectFolder(folder),
-            ).animate().fadeIn(delay: (index * 50).ms).slideY(begin: 0.1, end: 0);
+            )
+                .animate()
+                .fadeIn(delay: (index * 50).ms)
+                .slideY(begin: 0.1, end: 0);
           },
         );
       },
     );
   }
 
-  Widget _buildContentList(Stream<List<LibraryItem>> stream, ThemeData theme, LibraryViewModel viewModel) {
+  Widget _buildContentList(Stream<List<LibraryItem>> stream, ThemeData theme,
+      LibraryViewModel viewModel) {
     return StreamBuilder<List<LibraryItem>>(
       stream: stream,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}', style: GoogleFonts.inter()));
+          return Center(
+              child:
+                  Text('Error: ${snapshot.error}', style: GoogleFonts.inter()));
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return _buildNoContentState(viewModel.selectedFolder == null ? 'content' : 'folder content', theme);
+          return _buildNoContentState(
+              viewModel.selectedFolder == null ? 'content' : 'folder content',
+              theme);
         }
 
         final items = snapshot.data!
@@ -378,7 +405,10 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
                 theme: theme,
                 trailing: _buildItemActions(context, item, viewModel, theme),
                 onTap: () => _navigateToContent(context, item, viewModel),
-              ).animate().fadeIn(delay: (index * 50).ms).slideY(begin: 0.1, end: 0);
+              )
+                  .animate()
+                  .fadeIn(delay: (index * 50).ms)
+                  .slideY(begin: 0.1, end: 0);
             },
           ),
         );
@@ -445,16 +475,19 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
                       Text(
                         subtitle,
                         style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: theme.hintColor,
-                          letterSpacing: 0.5
-                        ),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: theme.hintColor,
+                            letterSpacing: 0.5),
                       ),
                     ],
                   ),
                 ),
-                if (trailing != null) trailing else Icon(Icons.chevron_right_rounded, color: theme.hintColor, size: 20),
+                if (trailing != null)
+                  trailing
+                else
+                  Icon(Icons.chevron_right_rounded,
+                      color: theme.hintColor, size: 20),
               ],
             ),
           ),
@@ -463,7 +496,8 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
     );
   }
 
-  Widget _buildItemActions(BuildContext context, LibraryItem item, LibraryViewModel viewModel, ThemeData theme) {
+  Widget _buildItemActions(BuildContext context, LibraryItem item,
+      LibraryViewModel viewModel, ThemeData theme) {
     return PopupMenuButton<String>(
       icon: Icon(Icons.more_vert_rounded, color: theme.hintColor, size: 20),
       padding: EdgeInsets.zero,
@@ -506,9 +540,12 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
           value: 'delete',
           child: Row(
             children: [
-              const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.redAccent),
+              const Icon(Icons.delete_outline_rounded,
+                  size: 18, color: Colors.redAccent),
               const SizedBox(width: 12),
-              Text('Delete', style: GoogleFonts.inter(fontSize: 14, color: Colors.redAccent)),
+              Text('Delete',
+                  style:
+                      GoogleFonts.inter(fontSize: 14, color: Colors.redAccent)),
             ],
           ),
         ),
@@ -516,12 +553,15 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
     );
   }
 
-  void _confirmDelete(BuildContext context, LibraryItem item, LibraryViewModel viewModel) {
+  void _confirmDelete(
+      BuildContext context, LibraryItem item, LibraryViewModel viewModel) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete Item?', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-        content: Text('Are you sure you want to remove "${item.title}"?', style: GoogleFonts.inter()),
+        title: Text('Delete Item?',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        content: Text('Are you sure you want to remove "${item.title}"?',
+            style: GoogleFonts.inter()),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -532,7 +572,9 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
               viewModel.deleteItem(item);
               Navigator.pop(context);
             },
-            child: Text('Delete', style: GoogleFonts.inter(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+            child: Text('Delete',
+                style: GoogleFonts.inter(
+                    color: Colors.redAccent, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -541,29 +583,36 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
 
   IconData _getIconForType(LibraryItemType type) {
     switch (type) {
-      case LibraryItemType.summary: return Icons.article_rounded;
-      case LibraryItemType.quiz: return Icons.quiz_rounded;
-      case LibraryItemType.flashcards: return Icons.style_rounded;
-      case LibraryItemType.exam: return Icons.assignment_rounded;
-      case LibraryItemType.note: return Icons.edit_note_rounded;
-      case LibraryItemType.folder: return Icons.folder_copy_rounded;
-      default: return Icons.folder_copy_rounded;
+      case LibraryItemType.summary:
+        return Icons.article_rounded;
+      case LibraryItemType.quiz:
+        return Icons.quiz_rounded;
+      case LibraryItemType.flashcards:
+        return Icons.style_rounded;
+      case LibraryItemType.exam:
+        return Icons.assignment_rounded;
+      case LibraryItemType.note:
+        return Icons.edit_note_rounded;
     }
   }
 
   Color _getColorForType(LibraryItemType type) {
     switch (type) {
-      case LibraryItemType.summary: return const Color(0xFF0D9488);
-      case LibraryItemType.quiz: return const Color(0xFFF59E0B);
-      case LibraryItemType.flashcards: return const Color(0xFFEC4899);
-      case LibraryItemType.exam: return const Color(0xFF6366F1);
-      case LibraryItemType.note: return const Color(0xFF8B5CF6);
-      case LibraryItemType.folder: return Colors.deepPurpleAccent;
-      default: return Colors.deepPurpleAccent;
+      case LibraryItemType.summary:
+        return const Color(0xFF0D9488);
+      case LibraryItemType.quiz:
+        return const Color(0xFFF59E0B);
+      case LibraryItemType.flashcards:
+        return const Color(0xFFEC4899);
+      case LibraryItemType.exam:
+        return const Color(0xFF6366F1);
+      case LibraryItemType.note:
+        return const Color(0xFF8B5CF6);
     }
   }
 
-  void _showAddContentOptions(BuildContext context, LibraryViewModel viewModel) {
+  void _showAddContentOptions(
+      BuildContext context, LibraryViewModel viewModel) {
     // Show options to add content to a folder
   }
 
@@ -578,13 +627,17 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
             const SizedBox(height: 24),
             Text(
               'Your library is quiet',
-              style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: theme.hintColor),
+              style: GoogleFonts.outfit(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: theme.hintColor),
             ),
             const SizedBox(height: 12),
             Text(
               'Start by creating a new Study Pack or Note to fill this space.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(color: theme.hintColor.withValues(alpha: 0.7)),
+              style: GoogleFonts.inter(
+                  color: theme.hintColor.withValues(alpha: 0.7)),
             ),
           ],
         ),
@@ -597,11 +650,13 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.search_off_rounded, size: 64, color: theme.hintColor.withValues(alpha: 0.2)),
+          Icon(Icons.search_off_rounded,
+              size: 64, color: theme.hintColor.withValues(alpha: 0.2)),
           const SizedBox(height: 16),
           Text(
             'No results for "$_searchQuery"',
-            style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: theme.hintColor),
+            style: GoogleFonts.inter(
+                fontWeight: FontWeight.bold, color: theme.hintColor),
           ),
         ],
       ),
@@ -609,140 +664,16 @@ class _LibraryViewState extends State<_LibraryView> with TickerProviderStateMixi
   }
 
   // Navigation methods
-  void _navigateToContent(BuildContext context, LibraryItem item, LibraryViewModel viewModel) {
+  void _navigateToContent(
+      BuildContext context, LibraryItem item, LibraryViewModel viewModel) {
     if (item.type == LibraryItemType.note) {
       context.push('/notes/${item.id}');
-    } else if (item.type == LibraryItemType.folder) {
-      viewModel.selectFolder(Folder(
-        id: item.id,
-        name: item.title,
-        userId: item.userId ?? '',
-        createdAt: item.timestamp.toDate(),
-        updatedAt: item.timestamp.toDate(),
-      ));
-    } else if (item.type == LibraryItemType.summary) {
-      context.pushNamed('library-summary', pathParameters: {'id': item.id});
-    } else if (item.type == LibraryItemType.quiz) {
-      context.pushNamed('library-quiz', pathParameters: {'id': item.id});
-    } else if (item.type == LibraryItemType.flashcards) {
-      context.pushNamed('library-flashcards', pathParameters: {'id': item.id});
-    } else if (item.type == LibraryItemType.exam) {
-      context.pushNamed('library-quiz', pathParameters: {'id': item.id});
+    } else {
+      // Handle other types
     }
   }
 
-  void _navigateToEdit(BuildContext context, LibraryItem item) async {
-    final db = LocalDatabaseService();
-    if (item.type == LibraryItemType.summary) {
-      final localSummary = await db.getSummary(item.id);
-      if (localSummary != null && context.mounted) {
-        final editable = EditableContent.fromSummary(
-          localSummary.id,
-          localSummary.title,
-          localSummary.content,
-          localSummary.tags,
-          Timestamp.fromDate(localSummary.timestamp),
-        );
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => EditSummaryScreen(content: editable)),
-        );
-      }
-    } else if (item.type == LibraryItemType.quiz || item.type == LibraryItemType.exam) {
-      final localQuiz = await db.getQuiz(item.id);
-      if (localQuiz != null && context.mounted) {
-        final questions = localQuiz.questions.map((q) => QuizQuestion(
-          question: q.question,
-          options: q.options,
-          correctAnswer: q.correctAnswer,
-          explanation: q.explanation,
-          questionType: q.questionType,
-        )).toList();
-        final editable = EditableContent.fromQuiz(
-          localQuiz.id,
-          localQuiz.title,
-          questions,
-          Timestamp.fromDate(localQuiz.timestamp),
-        );
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => EditQuizScreen(content: editable)),
-        );
-      }
-    } else if (item.type == LibraryItemType.flashcards) {
-      final localSet = await db.getFlashcardSet(item.id);
-      if (localSet != null && context.mounted) {
-        final flashcards = localSet.flashcards.map((f) => Flashcard(
-          id: f.id,
-          question: f.question,
-          answer: f.answer,
-        )).toList();
-        final editable = EditableContent.fromFlashcardSet(
-          localSet.id,
-          localSet.title,
-          flashcards,
-          Timestamp.fromDate(localSet.timestamp),
-        );
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => EditFlashcardsScreen(content: editable)),
-        );
-      }
-    } else if (item.type == LibraryItemType.note) {
-      context.push('/notes/${item.id}');
-    } else if (item.type == LibraryItemType.folder) {
-      _showRenameFolderDialog(context, item);
-    }
-  }
-
-  void _showRenameFolderDialog(BuildContext context, LibraryItem item) {
-    final controller = TextEditingController(text: item.title);
-    final theme = Theme.of(context);
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Rename Study Pack', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: InputDecoration(
-              hintText: 'Enter name...',
-              labelText: 'Name',
-              labelStyle: TextStyle(color: theme.colorScheme.primary),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                final newName = controller.text.trim();
-                if (newName.isNotEmpty) {
-                  final db = LocalDatabaseService();
-                  final folder = Folder(
-                    id: item.id,
-                    name: newName,
-                    userId: item.userId ?? '',
-                    createdAt: item.timestamp.toDate(),
-                    updatedAt: DateTime.now(),
-                  );
-                  await db.saveFolder(folder);
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Study pack renamed successfully!')),
-                    );
-                  }
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
+  void _navigateToEdit(BuildContext context, LibraryItem item) {
+    // Handle editing
   }
 }

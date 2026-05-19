@@ -43,7 +43,6 @@ abstract class AIBaseService {
   GenerativeModel? _visionModel;
   GenerativeModel? _youtubeModel;
   GenerativeModel? _educatorModel;
-  GenerativeModel? _conversationalModel;
   GenerativeModel? _extractorModel;
 
   bool _initialized = false;
@@ -120,13 +119,6 @@ abstract class AIBaseService {
         model: AIConfig.primaryModel,
         apiKey: apiKey,
         generationConfig: defaultConfig,
-        systemInstruction: eduInstruction,
-      );
-
-      _conversationalModel = GenerativeModel(
-        model: AIConfig.primaryModel,
-        apiKey: apiKey,
-        generationConfig: AIConfig.conversationalGenerationConfig,
         systemInstruction: eduInstruction,
       );
 
@@ -232,7 +224,6 @@ abstract class AIBaseService {
   GenerativeModel get visionModel => _visionModel!;
   GenerativeModel get youtubeModel => _youtubeModel!;
   GenerativeModel get educatorModel => _educatorModel!;
-  GenerativeModel get conversationalModel => _conversationalModel!;
   GenerativeModel get extractorModel => _extractorModel!;
   String? get initializationError => _initializationError;
 
@@ -273,7 +264,9 @@ abstract class AIBaseService {
   }
 
   Future<String> generateConversational(String prompt,
-      {GenerativeModel? customModel, bool isPro = false, CancellationToken? cancelToken}) async {
+      {GenerativeModel? customModel,
+      bool isPro = false,
+      CancellationToken? cancelToken}) async {
     return generateMultimodal([TextPart(prompt)],
         customModel: customModel,
         generationConfig: AIConfig.conversationalGenerationConfig,
@@ -281,8 +274,11 @@ abstract class AIBaseService {
         cancelToken: cancelToken);
   }
 
-  Future<String> generateConversationalWithData(String prompt, Uint8List data, String mimeType,
-      {GenerativeModel? customModel, bool isPro = false, CancellationToken? cancelToken}) async {
+  Future<String> generateConversationalWithData(
+      String prompt, Uint8List data, String mimeType,
+      {GenerativeModel? customModel,
+      bool isPro = false,
+      CancellationToken? cancelToken}) async {
     return generateMultimodal(
       [
         TextPart(_sanitizeInput(prompt)),
@@ -328,7 +324,8 @@ abstract class AIBaseService {
 
     // --- 2026 Neural Orchestration (Invisible Economy) ---
     if (AIConfig.shouldHardLimit) {
-      developer.log('NEURAL CAPACITY DEPLETED: Blocking request silently.', name: 'AIBaseService', level: 1000);
+      developer.log('NEURAL CAPACITY DEPLETED: Blocking request silently.',
+          name: 'AIBaseService', level: 1000);
       throw AIServiceException(
           'Your neural momentum is stabilizing. Sumi suggests a short focus break to integrate what you\'ve learned.',
           code: 'CAPACITY_DEPLETED');
@@ -336,7 +333,7 @@ abstract class AIBaseService {
 
     // Model cascade (2026 Adaptive Edition)
     List<GenerativeModel> modelChain = [];
-    
+
     if (customModel != null && !AIConfig.shouldDegradeModel) {
       modelChain.add(customModel);
     }
@@ -366,31 +363,33 @@ abstract class AIBaseService {
         _tertiaryModel,
         _fallbackModel,
       ].whereType<GenerativeModel>());
-      
+
       // Reduce max output but preserve MIME and Temperature
       generationConfig = GenerationConfig(
           maxOutputTokens: 2048,
-          temperature: baseConfig?.temperature,
-          responseMimeType: baseConfig?.responseMimeType);
+          temperature: baseConfig.temperature,
+          responseMimeType: baseConfig.responseMimeType);
     } else {
       // Exhausted: Survival Mode (Fallback Lite only)
       modelChain.addAll([
         _tertiaryModel,
         _fallbackModel,
       ].whereType<GenerativeModel>());
-      
+
       // Strict truncation but preserve MIME and Temperature
       generationConfig = GenerationConfig(
           maxOutputTokens: 512,
-          temperature: baseConfig?.temperature,
-          responseMimeType: baseConfig?.responseMimeType);
+          temperature: baseConfig.temperature,
+          responseMimeType: baseConfig.responseMimeType);
     }
 
     if (modelChain.isEmpty) {
-      throw AIServiceException('Neural pathways saturated.', code: 'MODEL_NOT_AVAILABLE');
+      throw AIServiceException('Neural pathways saturated.',
+          code: 'MODEL_NOT_AVAILABLE');
     }
 
-    developer.log('Adaptive Model Chain: ${modelChain.length} model(s) in state ${AIConfig.currentNeuralState}',
+    developer.log(
+        'Adaptive Model Chain: ${modelChain.length} model(s) in state ${AIConfig.currentNeuralState}',
         name: 'AIBaseService');
 
     // 2026 Stability Update: Allowing cascade for all users.
@@ -539,12 +538,15 @@ abstract class AIBaseService {
 
     if (AIConfig.currentNeuralState == NeuralState.highEnergy) {
       if (isPro) {
-        modelChain.addAll([_proModel, _model, _secondaryModel].whereType<GenerativeModel>());
+        modelChain.addAll(
+            [_proModel, _model, _secondaryModel].whereType<GenerativeModel>());
       } else {
-        modelChain.addAll([_model, _secondaryModel, _tertiaryModel].whereType<GenerativeModel>());
+        modelChain.addAll([_model, _secondaryModel, _tertiaryModel]
+            .whereType<GenerativeModel>());
       }
     } else {
-      modelChain.addAll([_secondaryModel, _tertiaryModel, _fallbackModel].whereType<GenerativeModel>());
+      modelChain.addAll([_secondaryModel, _tertiaryModel, _fallbackModel]
+          .whereType<GenerativeModel>());
     }
 
     if (modelChain.isEmpty) modelChain = [_model!];
@@ -567,12 +569,14 @@ abstract class AIBaseService {
         }
         success = true;
       } catch (e) {
-        developer.log('Streaming failed on model $currentModelIndex: $e', name: 'AIBaseService');
+        developer.log('Streaming failed on model $currentModelIndex: $e',
+            name: 'AIBaseService');
         currentModelIndex++;
         if (currentModelIndex >= modelChain.length) {
           rethrow;
         }
-        developer.log('Cascading streaming to next model...', name: 'AIBaseService');
+        developer.log('Cascading streaming to next model...',
+            name: 'AIBaseService');
       }
     }
   }
@@ -608,7 +612,7 @@ abstract class AIBaseService {
   Map<String, dynamic> safeJsonDecode(String jsonStr,
       {List<String>? requiredKeys, Map<String, dynamic> fallback = const {}}) {
     if (jsonStr.isEmpty) return fallback;
-    
+
     try {
       final decoded = json.decode(jsonStr);
       Map<String, dynamic> data;
@@ -617,7 +621,9 @@ abstract class AIBaseService {
         data = decoded;
       } else if (decoded is Map) {
         data = Map<String, dynamic>.from(decoded);
-      } else if (decoded is List && decoded.isNotEmpty && decoded.first is Map) {
+      } else if (decoded is List &&
+          decoded.isNotEmpty &&
+          decoded.first is Map) {
         // Handle cases where the model returns a list containing the object
         data = Map<String, dynamic>.from(decoded.first);
       } else {
@@ -635,7 +641,7 @@ abstract class AIBaseService {
         if (missingKeys.isNotEmpty) {
           developer.log('Missing required JSON keys: $missingKeys',
               name: 'AIBaseService', level: 1000);
-          
+
           // Attempt to find keys in nested structures if they are missing at top level
           bool foundAllInNested = true;
           for (final key in missingKeys) {

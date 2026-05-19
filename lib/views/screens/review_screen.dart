@@ -6,14 +6,12 @@ import 'package:go_router/go_router.dart';
 import '../../services/auth_service.dart';
 import '../../providers/sync_provider.dart';
 import '../../services/local_database_service.dart';
-import '../../models/flashcard.dart';
 import '../../models/flashcard_set.dart';
 import '../../models/user_model.dart';
 import '../../models/daily_mission.dart';
 import '../../services/mission_service.dart';
 import '../../services/user_service.dart';
 import 'flashcards_screen.dart';
-import '../../services/spaced_repetition_service.dart';
 import 'package:sumquiz/view_models/mastery_view_model.dart';
 
 import '../widgets/dashboard/retention_health_card.dart';
@@ -50,7 +48,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   Future<void> _loadDashboardData() async {
     if (!mounted) return;
-    
+
     final localDb = Provider.of<LocalDatabaseService>(context, listen: false);
     await localDb.init();
 
@@ -78,7 +76,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
     }
 
     try {
-      final missionService = Provider.of<MissionService>(context, listen: false);
+      final missionService =
+          Provider.of<MissionService>(context, listen: false);
       final mission = await missionService.generateDailyMission(userId);
       setState(() {
         _dailyMission = mission;
@@ -94,9 +93,12 @@ class _ReviewScreenState extends State<ReviewScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final userId = Provider.of<AuthService>(context, listen: false).currentUser?.uid;
-      final missionService = Provider.of<MissionService>(context, listen: false);
-      final cards = await missionService.fetchMissionCards(userId!, _dailyMission!.flashcardIds);
+      final userId =
+          Provider.of<AuthService>(context, listen: false).currentUser?.uid;
+      final missionService =
+          Provider.of<MissionService>(context, listen: false);
+      final cards = await missionService.fetchMissionCards(
+          userId!, _dailyMission!.flashcardIds);
 
       if (cards.isEmpty) {
         if (mounted) {
@@ -146,19 +148,14 @@ class _ReviewScreenState extends State<ReviewScreen> {
       appBar: AppBar(
         title: Text(
           'Dashboard',
-          style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          style: theme.textTheme.headlineSmall
+              ?.copyWith(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.psychology_outlined, color: Colors.purpleAccent),
-            tooltip: 'Neural Debug',
-            onPressed: () => context.push('/settings/neural-debug'),
-          ),
-          IconButton(
             icon: const Icon(Icons.settings_outlined),
-            tooltip: 'Settings',
             onPressed: () => context.push('/settings'),
           ),
         ],
@@ -176,7 +173,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
               },
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -239,7 +237,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.local_fire_department_rounded, color: Colors.orange, size: 20),
+              const Icon(Icons.local_fire_department_rounded,
+                  color: Colors.orange, size: 20),
               const SizedBox(width: 4),
               Text(
                 '${user?.missionCompletionStreak ?? 0}',
