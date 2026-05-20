@@ -99,6 +99,12 @@ dev_dependencies:
   mocktail: ^1.0.5
   clock: ^1.1.2
 
+dependency_overrides:
+  flutter_quill:
+    git:
+      url: https://github.com/singerdmx/flutter-quill.git
+      ref: master
+
 flutter:
   uses-material-design: true
   assets:
