@@ -707,7 +707,7 @@ class _ExtractionViewScreenState extends State<ExtractionViewScreen> {
             ),
           ),
           GestureDetector(
-            onTap: () => context.push('/subscription'),
+            onTap: () => context.push('/settings/subscription'),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(

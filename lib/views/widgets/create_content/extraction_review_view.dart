@@ -54,10 +54,10 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
 
     // Save the note immediately if the toggle is on —
     // this guarantees the note is stored regardless of generation outcome.
-    if (provider.saveAsNote) {
+    if (provider.saveAsNote && user != null) {
       setState(() => _isSavingNote = true);
       try {
-        await provider.saveNoteNow();
+        await provider.saveNoteNow(user.uid);
       } catch (_) {
         // Non-fatal — log but continue to generation
       } finally {

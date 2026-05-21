@@ -83,7 +83,7 @@ class AiToolsScreen extends StatelessWidget {
                           title: 'Quiz from PDF & Images',
                           subtitle:
                               'Upgrade to Pro to unlock generation from documents and photos.',
-                          onTap: () => context.push('/subscription'),
+                          onTap: () => context.push('/settings/subscription'),
                         ),
                       ],
                     ),

@@ -167,7 +167,7 @@ class UpgradeDialog extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).pop();
-                    context.push('/subscription');
+                    context.push('/settings/subscription');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: cs.primary,

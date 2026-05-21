@@ -228,16 +228,32 @@ class _CreateContentScreenState extends State<CreateContentScreen> {
                 title: 'PDF Library',
                 description: 'Analyze local documents',
                 icon: Icons.picture_as_pdf_rounded,
-                onTap: () => _pickFile(context, provider, user,
-                    ['pdf', 'doc', 'docx', 'txt'], 'pdf'),
+                onTap: () {
+                  if (!userMayImportFromPdf(user)) {
+                    UpgradeDialog.show(context,
+                        featureName: 'PDF import');
+                    return;
+                  }
+                  _pickFile(context, provider, user,
+                      ['pdf', 'doc', 'docx', 'txt'], 'pdf');
+                },
                 color: const Color(0xFFEF4444),
+                isPro: true,
               ),
               SourceChoiceCard(
                 title: 'Web Intel',
                 description: 'Import from any URL',
                 icon: Icons.link_rounded,
-                onTap: () => _showUrlInputDialog(context, provider),
+                onTap: () {
+                  if (!userMayImportFromWeb(user)) {
+                    UpgradeDialog.show(context,
+                        featureName: 'Web import');
+                    return;
+                  }
+                  _showUrlInputDialog(context, provider);
+                },
                 color: const Color(0xFF10B981),
+                isPro: true,
               ),
               SourceChoiceCard(
                 title: 'Video Sync',

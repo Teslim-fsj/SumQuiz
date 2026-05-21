@@ -11,6 +11,9 @@ class SpeechService {
   /// Whether the service is currently in an active listening session.
   bool get isActive => _isActive;
 
+  /// Whether the platform speech recognizer initialized successfully.
+  bool get isAvailable => _isInitialized;
+
   final _transcriptController = StreamController<String>.broadcast();
   final _partialController = StreamController<String>.broadcast();
   final _errorController = StreamController<String>.broadcast();
@@ -28,7 +31,7 @@ class SpeechService {
 
   Future<bool> init() async {
     if (_isInitialized) return true;
-    _isInitialized = await _speech.initialize(
+    final ok = await _speech.initialize(
       onError: (error) {
         developer.log('Speech Error: ${error.errorMsg}', name: 'SpeechService');
         if (error.permanent) {
@@ -41,6 +44,11 @@ class SpeechService {
         _handleStatusChange(status);
       },
     );
+    _isInitialized = ok;
+    if (!ok) {
+      developer.log('Speech recognizer failed to initialize',
+          name: 'SpeechService');
+    }
     return _isInitialized;
   }
 

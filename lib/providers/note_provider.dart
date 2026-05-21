@@ -13,6 +13,7 @@ import '../services/recording_service.dart';
 import '../services/speech_service.dart';
 import '../services/usage_service.dart';
 import '../services/transcript_recovery_service.dart';
+import 'package:audio_session/audio_session.dart';
 
 enum NoteProcessingState { idle, recording, transcribing, generating, error }
 
@@ -27,6 +28,13 @@ class NoteProvider with ChangeNotifier {
   StreamSubscription? _speechErrorSub;
   final _transcriptChunkController = StreamController<String>.broadcast();
   Stream<String> get transcriptChunkStream => _transcriptChunkController.stream;
+
+  final _partialTranscriptController = StreamController<String>.broadcast();
+  Stream<String> get partialTranscriptStream =>
+      _partialTranscriptController.stream;
+
+  bool _speechAvailable = true;
+  bool get speechAvailable => _speechAvailable;
 
   /// Debounce timer for auto-saving content changes.
   Timer? _saveDebounce;
@@ -104,6 +112,28 @@ class NoteProvider with ChangeNotifier {
       _errorMessage = "Microphone Issue: $error";
       notifyListeners();
     });
+  }
+
+  Future<void> _configureAudioSession() async {
+    final session = await AudioSession.instance;
+    await session.configure(AudioSessionConfiguration(
+      avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+      avAudioSessionCategoryOptions:
+          AVAudioSessionCategoryOptions.allowBluetooth |
+              AVAudioSessionCategoryOptions.defaultToSpeaker,
+      avAudioSessionMode: AVAudioSessionMode.spokenAudio,
+      avAudioSessionRouteSharingPolicy:
+          AVAudioSessionRouteSharingPolicy.defaultPolicy,
+      avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.none,
+      androidAudioAttributes: AndroidAudioAttributes(
+        contentType: AndroidAudioContentType.speech,
+        flags: AndroidAudioFlags.none,
+        usage: AndroidAudioUsage.voiceCommunication,
+      ),
+      androidAudioFocusGainType: AndroidAudioFocusGainType.gainTransient,
+      androidWillPauseWhenDucked: true,
+    ));
+    await session.setActive(true);
   }
 
   // --- ACTIONS ---
@@ -294,20 +324,23 @@ class NoteProvider with ChangeNotifier {
       _errorMessage = '';
       _liveInsights.clear();
       _livePartialTranscript = '';
+      _speechAvailable = true;
       notifyListeners();
 
-      await _recordingService.startRecording(userId);
-      await _speechService.init();
+      // Speech + file recording both need the mic — configure session and
+      // start STT before the file recorder to maximize platform compatibility.
+      await _configureAudioSession();
 
       _speechSub?.cancel();
+      _partialSub?.cancel();
       _speechSub = _speechService.transcriptStream.listen((text) {
         if (text.trim().isEmpty) return;
 
         _liveInsights.add(text);
         _transcriptChunkController.add(text);
-        _livePartialTranscript = ''; // Clear partial when committed
+        _livePartialTranscript = '';
+        _partialTranscriptController.add('');
 
-        // Save for recovery
         if (_currentNote != null) {
           TranscriptRecoveryService()
               .savePendingTranscript(_currentNote!.id, _liveInsights.join(" "));
@@ -320,12 +353,25 @@ class NoteProvider with ChangeNotifier {
 
       _partialSub = _speechService.partialStream.listen((text) {
         _livePartialTranscript = text;
+        _partialTranscriptController.add(text);
         notifyListeners();
       }, onError: (e) {
         developer.log('Partial speech stream error: $e', name: 'NoteProvider');
       });
 
-      await _speechService.startListening();
+      final speechReady = await _speechService.init();
+      _speechAvailable = speechReady;
+      if (speechReady) {
+        await _speechService.startListening();
+      } else {
+        developer.log('STT unavailable — audio-only lecture capture',
+            name: 'NoteProvider');
+        _errorMessage =
+            'Live transcript unavailable on this device. Audio is still being saved.';
+        notifyListeners();
+      }
+
+      await _recordingService.startRecording(userId);
       developer.log('Lecture recording session started', name: 'NoteProvider');
     } catch (e) {
       developer.log('Failed to start recording: $e', name: 'NoteProvider');
@@ -341,6 +387,12 @@ class NoteProvider with ChangeNotifier {
     _livePartialTranscript = '';
     _speechSub?.cancel();
     _partialSub?.cancel();
+    _partialTranscriptController.add('');
+    unawaited(
+      AudioSession.instance
+          .then((s) => s.setActive(false))
+          .catchError((_) => false),
+    );
   }
 
   Future<void> stopRecording() async {
@@ -380,6 +432,11 @@ class NoteProvider with ChangeNotifier {
       _state = NoteProcessingState.idle;
       _recordingDuration = Duration.zero;
       _liveInsights.clear();
+      _partialTranscriptController.add('');
+      try {
+        final session = await AudioSession.instance;
+        await session.setActive(false);
+      } catch (_) {}
       notifyListeners();
     } catch (e) {
       developer.log('Error stopping recording: $e', name: 'NoteProvider');
@@ -422,10 +479,12 @@ class NoteProvider with ChangeNotifier {
   Future<String?> generateStudyMaterials(String userId) async {
     if (_currentNote == null || _currentNote!.content.isEmpty) return null;
 
+    // Usage gating is handled inside generateAndStoreOutputs via _orchestrateCompute.
+    // We do a lightweight pre-check here only to surface quota errors early.
     if (_usageService != null) {
       try {
         final canProceed =
-            await _usageService!.canPerformAction(userId, 'generate');
+            await _usageService!.canPerformAction(userId, 'quiz');
         if (!canProceed) {
           developer.log('Limit reached for synthesis', name: 'NoteProvider');
           _limitReached = true;
@@ -434,7 +493,8 @@ class NoteProvider with ChangeNotifier {
           return null;
         }
       } catch (e) {
-        developer.log('Usage check failed: $e', name: 'NoteProvider');
+        // Non-fatal: allow generation to proceed even if the pre-check fails
+        developer.log('Pre-check failed (non-fatal): $e', name: 'NoteProvider');
       }
     }
 
@@ -473,11 +533,8 @@ class NoteProvider with ChangeNotifier {
           developer.log('Generation progress: $msg', name: 'NoteProvider');
         },
       );
-      // Record usage after successful generation
-      final usage = _usageService;
-      if (usage != null) {
-        await usage.recordAction(userId, 'generate');
-      }
+      // NOTE: Usage is already recorded inside generateAndStoreOutputs via
+      // _orchestrateCompute → orchestrateAction. Do NOT record again here.
 
       _state = NoteProcessingState.idle;
       notifyListeners();
@@ -576,6 +633,7 @@ class NoteProvider with ChangeNotifier {
     _partialSub?.cancel();
     _speechErrorSub?.cancel();
     _transcriptChunkController.close();
+    _partialTranscriptController.close();
     super.dispose();
   }
 }

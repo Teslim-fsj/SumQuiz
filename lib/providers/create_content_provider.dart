@@ -6,7 +6,7 @@ import 'package:sumquiz/models/extraction_result.dart';
 import 'package:sumquiz/services/content_extraction_service.dart';
 import 'package:sumquiz/services/enhanced_ai_service.dart';
 import 'package:sumquiz/services/local_database_service.dart';
-import 'package:sumquiz/services/usage_service.dart';
+import 'package:sumquiz/services/compute_manager.dart';
 import 'package:sumquiz/utils/cancellation_token.dart';
 import 'package:sumquiz/utils/youtube_pro_gate.dart';
 import 'package:uuid/uuid.dart';
@@ -100,6 +100,8 @@ class CreateContentProvider with ChangeNotifier {
   bool _saveAsNote = true;
   bool get saveAsNote => _saveAsNote;
 
+  String? _savedNoteId;
+
   bool _isCancelled = false;
   CancellationToken? _cancelToken;
   String? _preSelectedFolderId;
@@ -158,8 +160,8 @@ class CreateContentProvider with ChangeNotifier {
   /// Called by the UI at the moment the user confirms extraction review,
   /// before generation begins — ensuring the note is saved even if generation
   /// fails or is blocked by a usage limit.
-  Future<void> saveNoteNow() async {
-    if (!_saveAsNote) return;
+  Future<void> saveNoteNow(String userId) async {
+    if (!_saveAsNote || userId.isEmpty) return;
     final title =
         _fileName ?? _extractionResult?.suggestedTitle ?? 'Untitled Note';
     final text = _textContent;
@@ -169,8 +171,8 @@ class CreateContentProvider with ChangeNotifier {
       developer.log('saveNoteNow: saving note "$title"',
           name: 'CreateContentProvider');
       final note = LocalNote(
-        id: const Uuid().v4(),
-        userId: '', // Will be replaced by the caller if needed; stored locally
+        id: _savedNoteId ?? const Uuid().v4(),
+        userId: userId,
         title: title,
         content: text,
         createdAt: DateTime.now(),
@@ -180,10 +182,57 @@ class CreateContentProvider with ChangeNotifier {
         isSynced: false,
       );
       await _localDb.saveNote(note);
-      developer.log('saveNoteNow: success', name: 'CreateContentProvider');
+      _savedNoteId = note.id;
+      if (_preSelectedFolderId != null) {
+        await _localDb.assignContentToFolder(
+          note.id,
+          _preSelectedFolderId!,
+          'note',
+          userId,
+        );
+      }
+      developer.log('saveNoteNow: success (${note.id})',
+          name: 'CreateContentProvider');
     } catch (e) {
       developer.log('saveNoteNow failed: $e', name: 'CreateContentProvider');
       rethrow;
+    }
+  }
+
+  Future<void> _linkSavedNoteToFolder(String userId, String folderId) async {
+    if (!_saveAsNote || _savedNoteId == null) return;
+    final existing = await _localDb.getNote(_savedNoteId!);
+    if (existing == null) return;
+    await _localDb.saveNote(existing.copyWith(
+      folderId: folderId,
+      updatedAt: DateTime.now(),
+    ));
+    await _localDb.assignContentToFolder(
+      _savedNoteId!,
+      folderId,
+      'note',
+      userId,
+    );
+  }
+
+  bool get _isYoutubeSource => _selectedSourceType == 'youtube';
+
+  bool get _isMultimodalSource =>
+      _selectedSourceType == 'pdf' ||
+      _selectedSourceType == 'image' ||
+      _selectedSourceType == 'audio';
+
+  Future<void> _orchestrateExtraction(String userId) async {
+    final canProceed = await ComputeManager().orchestrateAction(
+      userId,
+      'summary',
+      isHeavy: false,
+      isYoutube: _isYoutubeSource,
+      isMultimodal: _isMultimodalSource,
+    );
+    if (!canProceed) {
+      _limitReached = true;
+      throw Exception('CAPACITY_STABILIZING');
     }
   }
 
@@ -254,6 +303,7 @@ class CreateContentProvider with ChangeNotifier {
     _extractionResult = null;
     _saveAsNote = true;
     _preSelectedFolderId = null;
+    _savedNoteId = null;
     _stopTipRotation();
     notifyListeners();
   }
@@ -310,6 +360,8 @@ class CreateContentProvider with ChangeNotifier {
     final cancelToken = _cancelToken!;
 
     try {
+      await _orchestrateExtraction(userId);
+
       if (_selectedSourceType == 'youtube' && !allowYouTubeImport) {
         throw Exception(kYoutubeProRequiredMessage);
       }
@@ -384,6 +436,9 @@ class CreateContentProvider with ChangeNotifier {
       _stopTipRotation();
       notifyListeners();
     } catch (e) {
+      if (e.toString().contains('CAPACITY_STABILIZING')) {
+        _phase = CreationPhase.source;
+      }
       _handleError(e, cancelToken);
     }
   }
@@ -403,27 +458,6 @@ class CreateContentProvider with ChangeNotifier {
         _fileName ?? _extractionResult?.suggestedTitle ?? 'Study Deck';
     final textToProcess = _textContent;
     final folderIdToUse = _preSelectedFolderId ?? const Uuid().v4();
-
-    // 1. Gated Usage / Credit Unit Check (Pre-generation)
-    final usageService = UsageService();
-    try {
-      final canProceed =
-          await usageService.canPerformAction(userId, 'generate');
-      if (!canProceed) {
-        developer.log('Limit reached for synthesis',
-            name: 'CreateContentProvider');
-        _limitReached = true;
-        // Don't show error view, revert to previous view so user can upgrade and retry
-        _phase = _extractionResult != null
-            ? CreationPhase.extractionReview
-            : CreationPhase.source;
-        _stopTipRotation();
-        notifyListeners();
-        return;
-      }
-    } catch (e) {
-      developer.log('Usage check failed: $e', name: 'CreateContentProvider');
-    }
 
     final startTime = DateTime.now();
     try {
@@ -450,15 +484,7 @@ class CreateContentProvider with ChangeNotifier {
         );
         _phase = CreationPhase.success;
         _stopTipRotation();
-
-        // Record usage on success
-        try {
-          await usageService.recordAction(userId, 'generate');
-        } catch (e) {
-          developer.log('Error recording topic generation usage: $e',
-              name: 'CreateContentProvider');
-        }
-
+        await _linkSavedNoteToFolder(userId, _generatedFolderId);
         notifyListeners();
         return;
       }
@@ -471,10 +497,13 @@ class CreateContentProvider with ChangeNotifier {
         userId: userId,
         localDb: _localDb,
         difficulty: _selectedDifficulty,
+        archetype: _selectedArchetype,
         questionCount: _quizCount,
         cardCount: _flashcardCount,
         questionTypes: _selectedQuestionTypes,
         existingFolderId: folderIdToUse,
+        isYoutube: _isYoutubeSource,
+        isMultimodal: _isMultimodalSource,
         onProgress: (msg) {
           _progressMessage = msg;
           notifyListeners();
@@ -492,13 +521,7 @@ class CreateContentProvider with ChangeNotifier {
             'Generation completed but artifacts were not stored correctly.');
       }
 
-      // Record usage on successful standard generation
-      try {
-        await usageService.recordAction(userId, 'generate');
-      } catch (e) {
-        developer.log('Error recording generation usage: $e',
-            name: 'CreateContentProvider');
-      }
+      await _linkSavedNoteToFolder(userId, _generatedFolderId);
 
       final duration = DateTime.now().difference(startTime);
       developer.log('Study pack generation SUCCESS in ${duration.inSeconds}s',
@@ -548,6 +571,7 @@ class CreateContentProvider with ChangeNotifier {
           errorStr.contains('CAPACITY_DEPLETED')) {
         developer.log('Blocking generation: Capacity limits hit.',
             name: 'CreateContentProvider');
+        _limitReached = true;
         _errorMessage =
             "Your neural momentum is currently stabilizing! Sumi suggests a quick 5-minute break while your learning circuits reset.";
         NotificationIntegration.coreOnUsageLimitHit(

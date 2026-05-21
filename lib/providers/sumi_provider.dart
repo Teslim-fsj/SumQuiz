@@ -103,8 +103,8 @@ class SumiProvider extends ChangeNotifier {
   Timer? _vadTimer;
   int _silenceCount = 0;
   bool _hasSpeaked = false;
-  static const int silenceThreshold = 15; // ~1.5s (100ms * 15)
-  static const double amplitudeThreshold = -30.0; // dB
+  static const int silenceThreshold = 12; // ~1.2s (100ms * 12)
+  static const double amplitudeThreshold = -45.0; // dB — sensitive for quiet mics
 
   SumiState _currentState = SumiState.idle;
   SumiState get currentState => _currentState;
@@ -395,7 +395,11 @@ class SumiProvider extends ChangeNotifier {
       if (respMatch != null) {
         response = respMatch.group(1)!.trim();
       } else if (transMatch == null) {
-        response = rawResponse;
+        response = rawResponse.trim();
+      }
+
+      if (response.isEmpty) {
+        response = rawResponse.trim();
       }
 
       _isStreaming = false;
@@ -411,7 +415,7 @@ class SumiProvider extends ChangeNotifier {
       _currentState = SumiState.analytical;
       notifyListeners();
 
-      if (_isLiveSession) {
+      if (_isLiveSession && response.isNotEmpty) {
         await _speakResponse(response);
       }
     } catch (e) {

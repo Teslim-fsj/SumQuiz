@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart' show Timestamp;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +9,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../models/user_model.dart';
 import '../../models/library_item.dart';
 import '../../models/folder.dart';
+import '../../models/editable_content.dart';
+import '../../models/quiz_question.dart';
+import '../../models/flashcard.dart';
 import '../../services/firestore_service.dart';
 import '../../services/local_database_service.dart';
 import '../../services/sync_service.dart';
@@ -16,6 +20,9 @@ import '../widgets/enter_code_dialog.dart';
 import '../../utils/library_share_helper.dart';
 import '../../widgets/sumi_mascot.dart';
 import '../../models/sumi_emotion.dart';
+import 'edit_summary_screen.dart';
+import 'edit_quiz_screen.dart';
+import 'edit_flashcards_screen.dart';
 
 class LibraryScreen extends StatelessWidget {
   const LibraryScreen({super.key});
@@ -668,16 +675,184 @@ class _LibraryViewState extends State<_LibraryView>
   }
 
   // Navigation methods
-  void _navigateToContent(
-      BuildContext context, LibraryItem item, LibraryViewModel viewModel) {
-    if (item.type == LibraryItemType.note) {
-      context.push('/notes/${item.id}');
-    } else {
-      // Handle other types
+  Future<void> _navigateToContent(BuildContext context, LibraryItem item,
+      LibraryViewModel viewModel) async {
+    switch (item.type) {
+      case LibraryItemType.folder:
+        viewModel.selectFolder(Folder(
+          id: item.id,
+          name: item.title,
+          userId: item.userId ?? viewModel.userId,
+          createdAt: item.timestamp.toDate(),
+          updatedAt: item.timestamp.toDate(),
+        ));
+        return;
+      case LibraryItemType.note:
+        context.push('/notes/${item.id}');
+        return;
+      case LibraryItemType.summary:
+      case LibraryItemType.quiz:
+      case LibraryItemType.flashcards:
+      case LibraryItemType.exam:
+        break;
+    }
+
+    final db = context.read<LocalDatabaseService>();
+    final parentFolderId = await db.getParentFolderId(item.id);
+
+    if (parentFolderId != null) {
+      final tab = switch (item.type) {
+        LibraryItemType.summary => 0,
+        LibraryItemType.quiz || LibraryItemType.exam => 1,
+        LibraryItemType.flashcards => 2,
+        _ => 0,
+      };
+      context.pushNamed(
+        'results-view',
+        pathParameters: {'folderId': parentFolderId},
+        queryParameters: {'tab': tab.toString()},
+      );
+      return;
+    }
+
+    switch (item.type) {
+      case LibraryItemType.summary:
+        context.push('/library/summary/${item.id}');
+        break;
+      case LibraryItemType.quiz:
+      case LibraryItemType.exam:
+        context.push('/library/quiz/${item.id}');
+        break;
+      case LibraryItemType.flashcards:
+        context.push('/library/flashcards/${item.id}');
+        break;
+      default:
+        break;
     }
   }
 
-  void _navigateToEdit(BuildContext context, LibraryItem item) {
-    // Handle editing
+  Future<void> _navigateToEdit(BuildContext context, LibraryItem item) async {
+    final db = context.read<LocalDatabaseService>();
+
+    switch (item.type) {
+      case LibraryItemType.summary:
+        final localSummary = await db.getSummary(item.id);
+        if (localSummary == null || !context.mounted) return;
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => EditSummaryScreen(
+              content: EditableContent.fromSummary(
+                localSummary.id,
+                localSummary.title,
+                localSummary.content,
+                localSummary.tags,
+                Timestamp.fromDate(localSummary.timestamp),
+              ),
+            ),
+          ),
+        );
+        break;
+      case LibraryItemType.quiz:
+      case LibraryItemType.exam:
+        final localQuiz = await db.getQuiz(item.id);
+        if (localQuiz == null || !context.mounted) return;
+        final questions = localQuiz.questions
+            .map((q) => QuizQuestion(
+                  question: q.question,
+                  options: q.options,
+                  correctAnswer: q.correctAnswer,
+                  explanation: q.explanation,
+                  questionType: q.questionType,
+                ))
+            .toList();
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => EditQuizScreen(
+              content: EditableContent.fromQuiz(
+                localQuiz.id,
+                localQuiz.title,
+                questions,
+                Timestamp.fromDate(localQuiz.timestamp),
+              ),
+            ),
+          ),
+        );
+        break;
+      case LibraryItemType.flashcards:
+        final localSet = await db.getFlashcardSet(item.id);
+        if (localSet == null || !context.mounted) return;
+        final cards = localSet.flashcards
+            .map((f) => Flashcard(
+                  id: f.id,
+                  question: f.question,
+                  answer: f.answer,
+                ))
+            .toList();
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => EditFlashcardsScreen(
+              content: EditableContent.fromFlashcardSet(
+                localSet.id,
+                localSet.title,
+                cards,
+                Timestamp.fromDate(localSet.timestamp),
+              ),
+            ),
+          ),
+        );
+        break;
+      case LibraryItemType.note:
+        if (context.mounted) context.push('/notes/${item.id}');
+        break;
+      case LibraryItemType.folder:
+        if (!context.mounted) return;
+        _showRenameFolderDialog(context, item);
+        break;
+    }
+  }
+
+  void _showRenameFolderDialog(BuildContext context, LibraryItem item) {
+    final controller = TextEditingController(text: item.title);
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Rename Study Pack',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Enter name...',
+            labelText: 'Name',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final newName = controller.text.trim();
+              if (newName.isEmpty) return;
+              final user = context.read<UserModel?>();
+              final folder = Folder(
+                id: item.id,
+                name: newName,
+                userId: item.userId ?? user?.uid ?? '',
+                createdAt: item.timestamp.toDate(),
+                updatedAt: DateTime.now(),
+              );
+              await context.read<LocalDatabaseService>().saveFolder(folder);
+              if (dialogContext.mounted) Navigator.pop(dialogContext);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
   }
 }

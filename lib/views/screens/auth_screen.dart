@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:sumquiz/services/auth_service.dart';
 import 'package:provider/provider.dart';
@@ -223,6 +224,13 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Widget _buildAuthPanel(ThemeData theme, {required bool isMobile}) {
     final cs = theme.colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+    final cardBg = isDark
+        ? Colors.white.withValues(alpha: 0.05)
+        : cs.surfaceContainerHighest.withValues(alpha: 0.3);
+    final cardBorder = isDark
+        ? Colors.white.withValues(alpha: 0.1)
+        : cs.outline.withValues(alpha: 0.1);
 
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 480),
@@ -247,25 +255,31 @@ class _AuthScreenState extends State<AuthScreen> {
           ],
 
           // Auth Card
-          Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(32),
-              border: Border.all(color: cs.outline.withValues(alpha: 0.1)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 30,
-                  offset: const Offset(0, 10),
-                )
-              ],
-            ),
-            child: AnimatedSwitcher(
-              duration: 400.ms,
-              child: _authMode == AuthMode.login
-                  ? _buildLoginForm(theme)
-                  : _buildSignUpForm(theme),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(32),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+              child: Container(
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(32),
+                  border: Border.all(color: cardBorder),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 30,
+                      offset: const Offset(0, 10),
+                    )
+                  ],
+                ),
+                child: AnimatedSwitcher(
+                  duration: 400.ms,
+                  child: _authMode == AuthMode.login
+                      ? _buildLoginForm(theme)
+                      : _buildSignUpForm(theme),
+                ),
+              ),
             ),
           ).animate().fadeIn().scale(begin: const Offset(0.95, 0.95)),
         ],
@@ -387,6 +401,11 @@ class _AuthScreenState extends State<AuthScreen> {
     TextInputType? keyboardType,
   }) {
     final cs = theme.colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+    final fill = isDark
+        ? Colors.black.withValues(alpha: 0.2)
+        : Colors.white.withValues(alpha: 0.5);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -394,8 +413,8 @@ class _AuthScreenState extends State<AuthScreen> {
           label,
           style: GoogleFonts.outfit(
             fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: cs.onSurface.withValues(alpha: 0.7),
+            fontWeight: FontWeight.w600,
+            color: cs.onSurface.withValues(alpha: 0.8),
           ),
         ),
         const SizedBox(height: 8),
@@ -403,22 +422,24 @@ class _AuthScreenState extends State<AuthScreen> {
           controller: controller,
           obscureText: obscureText,
           keyboardType: keyboardType,
-          style: GoogleFonts.outfit(color: cs.onSurface),
+          style: GoogleFonts.outfit(
+              color: cs.onSurface, fontWeight: FontWeight.w500),
           decoration: InputDecoration(
             prefixIcon: Icon(icon, size: 20, color: cs.primary),
             filled: true,
-            fillColor: cs.surface,
+            fillColor: fill,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.1)),
+              borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.1)),
+              borderSide: BorderSide.none,
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: cs.primary, width: 2),
+              borderSide: BorderSide(
+                  color: cs.primary.withValues(alpha: 0.5), width: 2),
             ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -430,12 +451,16 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Widget _buildRoleSelector(ThemeData theme) {
     final cs = theme.colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+    final bg = isDark
+        ? Colors.black.withValues(alpha: 0.2)
+        : Colors.white.withValues(alpha: 0.5);
+
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: cs.surface,
+        color: bg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outline.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
@@ -591,37 +616,71 @@ class _AuthBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = colorScheme.brightness == Brightness.dark;
+    final baseColor =
+        isDark ? const Color(0xFF09090B) : const Color(0xFFF8FAFC);
+    final glow1 = isDark
+        ? colorScheme.primary.withValues(alpha: 0.15)
+        : colorScheme.primary.withValues(alpha: 0.1);
+    final glow2 = isDark
+        ? colorScheme.tertiary.withValues(alpha: 0.15)
+        : colorScheme.tertiary.withValues(alpha: 0.1);
+
     return Stack(
       children: [
+        // Base
+        Container(color: baseColor),
+
+        // Animated Orbs
         Positioned(
           top: -150,
           left: -150,
           child: Container(
-            width: 400,
-            height: 400,
+            width: 500,
+            height: 500,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: colorScheme.primary.withValues(alpha: 0.03),
+              color: glow1,
             ),
-          ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(
-              begin: const Offset(1, 1),
-              end: const Offset(1.2, 1.2),
-              duration: 6.seconds),
+          )
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .scale(
+                  begin: const Offset(1, 1),
+                  end: const Offset(1.2, 1.2),
+                  duration: 8.seconds)
+              .move(
+                  begin: const Offset(-20, -20),
+                  end: const Offset(20, 20),
+                  duration: 10.seconds),
         ),
         Positioned(
-          bottom: -100,
-          right: -100,
+          bottom: -150,
+          right: -150,
           child: Container(
-            width: 350,
-            height: 350,
+            width: 500,
+            height: 500,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: colorScheme.tertiary.withValues(alpha: 0.03),
+              color: glow2,
             ),
-          ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(
-              begin: const Offset(1, 1),
-              end: const Offset(1.1, 1.1),
-              duration: 8.seconds),
+          )
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .scale(
+                  begin: const Offset(1, 1),
+                  end: const Offset(1.1, 1.1),
+                  duration: 10.seconds)
+              .move(
+                  begin: const Offset(20, 20),
+                  end: const Offset(-20, -20),
+                  duration: 12.seconds),
+        ),
+
+        // Global Glassmorphism Blur Layer
+        Positioned.fill(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
+            child: Container(color: Colors.transparent),
+          ),
         ),
       ],
     );

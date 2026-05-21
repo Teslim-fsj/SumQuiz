@@ -46,26 +46,42 @@ class ComputeManager {
     try {
       // 1. Fetch latest user state
       final userDoc = await _db.collection('users').doc(uid).get();
-      if (!userDoc.exists) return false;
+      if (!userDoc.exists) {
+        developer.log(
+            'User doc not found for $uid — allowing action (non-blocking)',
+            name: 'ComputeManager');
+        return true; // Don't hard-block if user doc is missing; let AI service handle auth
+      }
       final user = UserModel.fromFirestore(userDoc);
 
       // 2. Sync routing config
       await syncNeuralState(user);
 
-      // 3. Pre-check capacity & burst
-      final canProceed =
-          await _usageService.canStartStudySession(uid, actionType);
+      // 3. Pre-check capacity & burst — pass isHeavy so check uses same
+      //    heavy/light classification as the subsequent record call.
+      final canProceed = await _usageService.canStartStudySession(
+        uid,
+        actionType,
+        isHeavy: isHeavy,
+        isYoutube: isYoutube,
+        isMultimodal: isMultimodal,
+      );
       if (!canProceed) return false;
 
-      // 4. Update usage (Silent deduction)
+      // 4. Update usage (silent deduction)
       await _usageService.recordStudySession(uid, actionType,
           isHeavy: isHeavy, isYoutube: isYoutube, isMultimodal: isMultimodal);
 
       return true;
     } catch (e) {
-      developer.log('Compute orchestration failed',
-          name: 'ComputeManager', error: e);
-      return false;
+      developer.log(
+          'Compute orchestration error — allowing action through (non-blocking)',
+          name: 'ComputeManager',
+          error: e);
+      // On unexpected errors (network, Firestore timeout, etc.) we allow the
+      // action through rather than silently blocking the user. Real quota
+      // enforcement is also done server-side.
+      return true;
     }
   }
 

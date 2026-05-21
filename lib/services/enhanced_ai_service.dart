@@ -78,7 +78,13 @@ class EnhancedAIService {
     return await _generatorService.isServiceHealthy();
   }
 
-  Future<void> _orchestrateCompute(String userId, {bool isHeavy = true}) async {
+  Future<void> _orchestrateCompute(
+    String userId, {
+    bool isHeavy = true,
+    String actionType = 'generate',
+    bool isYoutube = false,
+    bool isMultimodal = false,
+  }) async {
     developer.log('_orchestrateCompute called with userId: $userId',
         name: 'EnhancedAIService');
     try {
@@ -87,8 +93,10 @@ class EnhancedAIService {
       // Attempt to orchestrate the action
       final canProceed = await computeManager.orchestrateAction(
         userId,
-        'standard', // Generic type for heavy generation
+        actionType,
         isHeavy: isHeavy,
+        isYoutube: isYoutube,
+        isMultimodal: isMultimodal,
       );
 
       if (!canProceed) {
@@ -458,6 +466,8 @@ class EnhancedAIService {
     List<String>? questionTypes,
     CancellationToken? cancelToken,
     String? existingFolderId,
+    bool isYoutube = false,
+    bool isMultimodal = false,
   }) async {
     developer.log(
         'EnhancedAIService.generateAndStoreOutputs called with title: $title, userId: $userId, outputs: $requestedOutputs',
@@ -465,8 +475,14 @@ class EnhancedAIService {
     developer.log('Text length: ${text.length} chars',
         name: 'EnhancedAIService');
 
-    // 1. Orchestrate compute before starting
-    await _orchestrateCompute(userId, isHeavy: true);
+    // 1. Orchestrate compute before starting (single CU charge for the pack)
+    await _orchestrateCompute(
+      userId,
+      isHeavy: true,
+      actionType: 'generate',
+      isYoutube: isYoutube,
+      isMultimodal: isMultimodal,
+    );
 
     // 2. Ensure all services are initialized
     await initialize();
@@ -543,13 +559,29 @@ class EnhancedAIService {
               break;
 
             case 'quiz':
-              final quiz = await _generatorService.generateQuiz(text,
-                  userId: userId,
-                  questionCount: questionCount,
-                  difficulty: difficulty,
-                  questionTypes: questionTypes,
-                  isPro: isPro,
-                  cancelToken: cancelToken);
+              LocalQuiz quiz;
+              try {
+                quiz = await _generatorService.generateQuiz(text,
+                    userId: userId,
+                    questionCount: questionCount,
+                    difficulty: difficulty,
+                    questionTypes: questionTypes,
+                    isPro: isPro,
+                    cancelToken: cancelToken);
+              } catch (firstError) {
+                developer.log('Quiz generation failed, retrying once: $firstError',
+                    name: 'EnhancedAIService');
+                onProgress('Quiz retry — neural pathways recalibrating...');
+                cancelToken?.throwIfCancelled();
+                await Future.delayed(const Duration(seconds: 2));
+                quiz = await _generatorService.generateQuiz(text,
+                    userId: userId,
+                    questionCount: questionCount,
+                    difficulty: difficulty,
+                    questionTypes: questionTypes,
+                    isPro: isPro,
+                    cancelToken: cancelToken);
+              }
               if (quiz.id.isEmpty) {
                 quiz.id = const Uuid().v4();
               }
@@ -617,6 +649,12 @@ class EnhancedAIService {
       if (failures.isNotEmpty) {
         onProgress(
             'Done! ${failures.length} item(s) failed: ${failures.join(", ")}');
+        if (requestedOutputs.contains('quiz') && failures.contains('quiz')) {
+          throw EnhancedAIServiceException(
+            'Quiz generation failed. Summary and flashcards may still be in your library.',
+            code: 'QUIZ_GENERATION_FAILED',
+          );
+        }
       } else {
         onProgress('All done! 🎉');
       }

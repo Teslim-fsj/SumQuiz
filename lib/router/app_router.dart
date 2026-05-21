@@ -293,7 +293,8 @@ GoRouter createRouter(AuthService authService) {
                       final tabParam = state.uri.queryParameters['tab'];
                       final initialTab = int.tryParse(tabParam ?? '') ?? 0;
                       return ResponsiveView(
-                        mobile: ResultsViewScreen(folderId: folderId!),
+                        mobile: ResultsViewScreen(
+                            folderId: folderId!, initialTab: initialTab),
                         desktop: ResultsViewScreenWeb(
                             folderId: folderId, initialTab: initialTab),
                       );

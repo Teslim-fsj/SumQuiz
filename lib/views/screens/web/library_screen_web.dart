@@ -674,21 +674,10 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
         return;
       }
 
-      debugPrint('🚀 Navigating to results view screen...');
-      int tab = 0;
+      final db = LocalDatabaseService();
       switch (item.type) {
-        case LibraryItemType.summary:
-          tab = 0;
-          break;
-        case LibraryItemType.quiz:
-        case LibraryItemType.exam:
-          tab = 1;
-          break;
-        case LibraryItemType.flashcards:
-          tab = 2;
-          break;
         case LibraryItemType.note:
-          context.push('/note/${item.id}');
+          context.push('/notes/${item.id}');
           return;
         case LibraryItemType.folder:
           _viewModel?.selectFolder(Folder(
@@ -699,13 +688,44 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
             updatedAt: item.timestamp.toDate(),
           ));
           return;
+        case LibraryItemType.summary:
+        case LibraryItemType.quiz:
+        case LibraryItemType.exam:
+        case LibraryItemType.flashcards:
+          break;
       }
 
-      context.pushNamed(
-        'results-view',
-        pathParameters: {'folderId': item.id},
-        queryParameters: {'tab': tab.toString()},
-      );
+      final tab = switch (item.type) {
+        LibraryItemType.summary => 0,
+        LibraryItemType.quiz || LibraryItemType.exam => 1,
+        LibraryItemType.flashcards => 2,
+        _ => 0,
+      };
+
+      final parentFolderId = await db.getParentFolderId(item.id);
+      if (parentFolderId != null) {
+        context.pushNamed(
+          'results-view',
+          pathParameters: {'folderId': parentFolderId},
+          queryParameters: {'tab': tab.toString()},
+        );
+        return;
+      }
+
+      switch (item.type) {
+        case LibraryItemType.summary:
+          context.push('/library/summary/${item.id}');
+          break;
+        case LibraryItemType.quiz:
+        case LibraryItemType.exam:
+          context.push('/library/quiz/${item.id}');
+          break;
+        case LibraryItemType.flashcards:
+          context.push('/library/flashcards/${item.id}');
+          break;
+        default:
+          break;
+      }
     } catch (e) {
       debugPrint('❌ Navigation error: $e');
       if (mounted) {
@@ -786,7 +806,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
         );
       }
     } else if (item.type == LibraryItemType.note) {
-      context.push('/note/${item.id}');
+      context.push('/notes/${item.id}');
     } else if (item.type == LibraryItemType.folder) {
       _showRenameFolderDialog(item);
     }

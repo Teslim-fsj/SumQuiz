@@ -24,10 +24,12 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ResultsViewScreen extends StatefulWidget {
   final String folderId;
+  final int initialTab;
 
   const ResultsViewScreen({
     super.key,
     required this.folderId,
+    this.initialTab = 0,
   });
 
   @override
@@ -55,14 +57,28 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedTab = widget.initialTab;
     _loadData();
   }
 
   Future<void> _loadData() async {
     try {
       final db = context.read<LocalDatabaseService>();
-      final contents = await db.getFolderContents(widget.folderId);
+      var targetFolderId = widget.folderId;
 
+      final folder = await db.getFolder(targetFolderId);
+      if (folder == null) {
+        final parentId = await db.getParentFolderId(targetFolderId);
+        if (parentId != null) targetFolderId = parentId;
+      }
+
+      var contents = await db.getFolderContents(targetFolderId);
+
+      if (contents.isEmpty) {
+        _summary = await db.getSummary(targetFolderId);
+        _quiz = await db.getQuiz(targetFolderId);
+        _flashcardSet = await db.getFlashcardSet(targetFolderId);
+      } else {
       for (var content in contents) {
         if (content.contentType == 'summary') {
           _summary = await db.getSummary(content.contentId);
@@ -72,8 +88,10 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
           _flashcardSet = await db.getFlashcardSet(content.contentId);
         }
       }
+      }
 
       _updateAvailableTabs();
+      _applyInitialTab();
     } catch (e) {
       _errorMessage = 'Failed to synchronize results: $e';
     } finally {
@@ -92,6 +110,14 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
     if (_selectedTab >= _availableTabs.length) {
       _selectedTab = 0;
     }
+  }
+
+  void _applyInitialTab() {
+    if (_availableTabs.isEmpty) return;
+    const tabNames = ['Synthesis', 'Practice', 'Flashcards'];
+    final preferred = widget.initialTab.clamp(0, tabNames.length - 1);
+    final idx = _availableTabs.indexOf(tabNames[preferred]);
+    if (idx >= 0) _selectedTab = idx;
   }
 
   Future<void> _publishDeck() async {

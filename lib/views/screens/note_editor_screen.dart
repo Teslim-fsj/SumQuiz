@@ -36,10 +36,13 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
 
   bool _isDrawingMode = false;
   bool _isInitialized = false;
-  bool _showSidebar = true;
+  bool _showSidebar = false;
   Offset? _lensPosition;
 
   StreamSubscription<String>? _transcriptSub;
+  StreamSubscription<String>? _partialTranscriptSub;
+  int? _partialDocStart;
+  int _partialDocLen = 0;
 
   @override
   void initState() {
@@ -73,9 +76,38 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
 
     _transcriptSub = noteProvider.transcriptChunkStream.listen((text) {
       if (mounted && text.isNotEmpty) {
+        _clearPartialInEditor();
         _appendLiveText(text);
       }
     });
+
+    _partialTranscriptSub = noteProvider.partialTranscriptStream.listen((text) {
+      if (mounted) {
+        _updatePartialInEditor(text);
+      }
+    });
+  }
+
+  void _updatePartialInEditor(String partial) {
+    _clearPartialInEditor();
+    if (partial.trim().isEmpty) return;
+
+    final length = _controller.document.length;
+    final insertionIndex = length > 0 ? length - 1 : 0;
+    _partialDocStart = insertionIndex;
+    _partialDocLen = partial.length;
+    _controller.document.insert(insertionIndex, partial);
+  }
+
+  void _clearPartialInEditor() {
+    if (_partialDocStart == null || _partialDocLen <= 0) {
+      _partialDocStart = null;
+      _partialDocLen = 0;
+      return;
+    }
+    _controller.document.delete(_partialDocStart!, _partialDocLen);
+    _partialDocStart = null;
+    _partialDocLen = 0;
   }
 
   void _handleSelectionChanged(TextSelection selection) {
@@ -243,6 +275,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     _scrollController.dispose();
     _editorFocusNode.dispose();
     _transcriptSub?.cancel();
+    _partialTranscriptSub?.cancel();
     super.dispose();
   }
 
@@ -287,21 +320,40 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                 onAction: () => noteProvider.clearError(),
               ),
             _buildTopBar(noteProvider, isRecording, user, theme),
+            if (!_isDrawingMode) _buildQuillToolbar(theme),
             Expanded(
-              child: Row(
+              child: Stack(
+                clipBehavior: Clip.none,
                 children: [
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        _buildEditorArea(noteProvider, theme),
-                      ],
-                    ),
+                  Positioned.fill(
+                    child: _buildEditorArea(noteProvider, theme, isRecording),
                   ),
-                  if (_showSidebar) _buildRightSidebar(noteProvider, theme),
+                  if (isRecording)
+                    const Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: RecordingBarWidget(),
+                    ),
+                  if (_showSidebar) ...[
+                    Positioned.fill(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _showSidebar = false),
+                        child: Container(
+                          color: Colors.black.withValues(alpha: 0.18),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: _buildRightSidebar(noteProvider, theme),
+                    ),
+                  ],
                 ],
               ),
             ),
-            const RecordingBarWidget(),
           ],
         ),
       ),
@@ -383,6 +435,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           const SizedBox(width: 12),
           IconButton(
             onPressed: () => setState(() => _showSidebar = !_showSidebar),
+            tooltip: _showSidebar ? 'Hide context panel' : 'Topics & recordings',
             icon: Icon(
                 _showSidebar
                     ? Icons.arrow_forward_ios_rounded
@@ -429,6 +482,40 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     );
   }
 
+  Widget _buildQuillToolbar(ThemeData theme) {
+    final colorScheme = theme.colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLowest,
+        border: Border(
+          bottom:
+              BorderSide(color: colorScheme.outline.withValues(alpha: 0.08)),
+        ),
+      ),
+      child: quill.QuillSimpleToolbar(
+        controller: _controller,
+        config: quill.QuillSimpleToolbarConfig(
+          showFontFamily: false,
+          showFontSize: false,
+          showBackgroundColorButton: false,
+          showClearFormat: true,
+          showColorButton: true,
+          showCodeBlock: false,
+          showInlineCode: false,
+          showSubscript: false,
+          showSuperscript: false,
+          showHeaderStyle: true,
+          showListCheck: true,
+          showQuote: true,
+          showIndent: true,
+          showLink: false,
+          showSearchButton: false,
+          toolbarSize: 44,
+        ),
+      ),
+    );
+  }
+
   Widget _buildTopAction(
       IconData icon, String? label, VoidCallback onTap, ThemeData theme,
       {bool isActive = false, Color? activeColor}) {
@@ -471,8 +558,10 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     );
   }
 
-  Widget _buildEditorArea(NoteProvider provider, ThemeData theme) {
+  Widget _buildEditorArea(NoteProvider provider, ThemeData theme,
+      [bool isRecording = false]) {
     final colorScheme = theme.colorScheme;
+    const recordingBarInset = 88.0;
 
     return Container(
       color: colorScheme.surface,
@@ -484,7 +573,12 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
               scrollController: _scrollController,
               config: quill.QuillEditorConfig(
                 autoFocus: true,
-                padding: const EdgeInsets.all(40),
+                padding: EdgeInsets.fromLTRB(
+                  40,
+                  40,
+                  40,
+                  isRecording ? recordingBarInset : 40,
+                ),
                 placeholder: 'Start typing, recording, or sketching...',
                 embedBuilders: [
                   ImageEmbedBuilder(),
@@ -542,40 +636,113 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     final note = provider.currentNote;
     final colorScheme = theme.colorScheme;
 
-    return Container(
-      width: 320,
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLowest,
-        border: Border(
-            left:
-                BorderSide(color: colorScheme.outline.withValues(alpha: 0.1))),
-      ),
-      child: ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          _buildSidebarSection(
-              'TOPICS & ENTITIES', note?.topicNames ?? [], theme),
-          const SizedBox(height: 32),
-          _buildRecordingsList(provider, theme),
-        ],
+    return Material(
+      elevation: 12,
+      shadowColor: Colors.black.withValues(alpha: 0.2),
+      child: Container(
+        width: 300,
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerLowest,
+          border: Border(
+              left: BorderSide(
+                  color: colorScheme.outline.withValues(alpha: 0.12))),
+        ),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          children: [
+            _buildCollapsibleSidebarSection(
+              theme: theme,
+              title: 'TOPICS & ENTITIES',
+              child: _buildTopicsContent(note?.topicNames ?? [], theme),
+            ),
+            const SizedBox(height: 4),
+            _buildCollapsibleSidebarSection(
+              theme: theme,
+              title: 'AUDIO SESSIONS',
+              child: _buildRecordingsContent(provider, theme),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildRecordingsList(NoteProvider provider, ThemeData theme) {
+  Widget _buildCollapsibleSidebarSection({
+    required ThemeData theme,
+    required String title,
+    required Widget child,
+  }) {
+    final colorScheme = theme.colorScheme;
+    return Theme(
+      data: theme.copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        initiallyExpanded: false,
+        tilePadding: EdgeInsets.zero,
+        childrenPadding: const EdgeInsets.only(bottom: 8),
+        iconColor: colorScheme.onSurfaceVariant,
+        collapsedIconColor: colorScheme.onSurfaceVariant,
+        title: Text(
+          title,
+          style: GoogleFonts.jetBrainsMono(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurfaceVariant,
+            letterSpacing: 1.2,
+          ),
+        ),
+        children: [child],
+      ),
+    );
+  }
+
+  Widget _buildTopicsContent(List<String> items, ThemeData theme) {
+    final colorScheme = theme.colorScheme;
+    if (items.isEmpty) {
+      return Text(
+        'Extracting context...',
+        style: GoogleFonts.inter(
+          fontSize: 13,
+          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+          fontStyle: FontStyle.italic,
+        ),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: items
+          .map((item) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: colorScheme.tertiaryContainer,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.tag_rounded,
+                          size: 10, color: colorScheme.tertiary),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        item,
+                        style: GoogleFonts.inter(
+                            fontSize: 14, color: colorScheme.onSurface),
+                      ),
+                    ),
+                  ],
+                ),
+              ))
+          .toList(),
+    );
+  }
+
+  Widget _buildRecordingsContent(NoteProvider provider, ThemeData theme) {
     final colorScheme = theme.colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'AUDIO SESSIONS',
-          style: GoogleFonts.jetBrainsMono(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurfaceVariant,
-              letterSpacing: 1.2),
-        ),
-        const SizedBox(height: 16),
         if (provider.currentNoteRecordings.isEmpty)
           Text('No recordings yet.',
               style: GoogleFonts.inter(
@@ -635,52 +802,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                     onPressed: () => provider.deleteRecording(rec.id),
                     color: colorScheme.error.withValues(alpha: 0.8),
                   ),
-                ],
-              ),
-            )),
-      ],
-    );
-  }
-
-  Widget _buildSidebarSection(
-      String title, List<String> items, ThemeData theme) {
-    final colorScheme = theme.colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: GoogleFonts.jetBrainsMono(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurfaceVariant,
-              letterSpacing: 1.2),
-        ),
-        const SizedBox(height: 16),
-        if (items.isEmpty)
-          Text('Extracting context...',
-              style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                  fontStyle: FontStyle.italic)),
-        ...items.map((item) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: colorScheme.tertiaryContainer,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.tag_rounded,
-                        size: 10, color: colorScheme.tertiary),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                      child: Text(item,
-                          style: GoogleFonts.inter(
-                              fontSize: 14, color: colorScheme.onSurface))),
                 ],
               ),
             )),

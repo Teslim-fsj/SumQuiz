@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../providers/note_provider.dart';
 import '../../models/user_model.dart';
 import '../../widgets/pro_gate.dart';
+import 'upgrade_dialog.dart';
 
 class RecordingBarWidget extends StatelessWidget {
   const RecordingBarWidget({super.key});
@@ -22,9 +23,9 @@ class RecordingBarWidget extends StatelessWidget {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 15,
-            offset: const Offset(0, -5),
+            color: Colors.black.withValues(alpha: 0.14),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
           ),
         ],
         border: Border(
@@ -66,11 +67,21 @@ class RecordingBarWidget extends StatelessWidget {
                       fontSize: 16,
                       color: Colors.redAccent),
                 ),
-                Text('Capturing lecture audio...',
-                    style: GoogleFonts.inter(
-                        fontSize: 11,
-                        color: theme.hintColor,
-                        fontWeight: FontWeight.w500)),
+                Text(
+                  provider.speechAvailable
+                      ? (provider.liveTranscript.isNotEmpty
+                          ? provider.liveTranscript
+                          : 'Listening — transcript will appear in your note…')
+                      : 'Saving audio (transcript unavailable)',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: provider.liveTranscript.isNotEmpty
+                          ? theme.colorScheme.onSurface
+                          : theme.hintColor,
+                      fontWeight: FontWeight.w500),
+                ),
               ],
             ),
           ),
@@ -143,7 +154,7 @@ class RecordingBarWidget extends StatelessWidget {
         const Spacer(),
         TextButton(
           onPressed: () {
-            // Trigger upgrade flow
+            UpgradeDialog.show(context, featureName: 'Lecture Recording');
           },
           child: Text('Upgrade',
               style: GoogleFonts.inter(fontWeight: FontWeight.bold)),

@@ -62,6 +62,7 @@ class WebSourceSelection extends StatelessWidget {
                   buttonText: 'UPLOAD FILES',
                   accentColor: const Color(0xFF3300FF),
                   onPressed: onUploadFiles,
+                  showProBadge: true,
                 ),
               ),
               const SizedBox(width: 16),
@@ -87,6 +88,7 @@ class WebSourceSelection extends StatelessWidget {
                   accentColor: const Color(0xFF4A90E2),
                   onPressed: onImportUrl,
                   showVideoPreview: true,
+                  showProBadge: true,
                 ),
               ),
             ],
@@ -107,6 +109,7 @@ class WebSourceSelection extends StatelessWidget {
                   buttonText: 'SCAN PAGE',
                   accentColor: const Color(0xFF7C4DFF),
                   onPressed: onScanPage,
+                  showProBadge: true,
                 ),
               ),
               const SizedBox(width: 16),
@@ -119,6 +122,7 @@ class WebSourceSelection extends StatelessWidget {
                   buttonText: 'LISTEN & LEARN',
                   accentColor: const Color(0xFF7C4DFF),
                   onPressed: onListenAndLearn,
+                  showProBadge: true,
                 ),
               ),
               const SizedBox(width: 16),
@@ -183,6 +187,7 @@ class _SourceCard extends StatefulWidget {
   final Color accentColor;
   final VoidCallback onPressed;
   final bool showVideoPreview;
+  final bool showProBadge;
 
   const _SourceCard({
     required this.title,
@@ -192,6 +197,7 @@ class _SourceCard extends StatefulWidget {
     required this.accentColor,
     required this.onPressed,
     this.showVideoPreview = false,
+    this.showProBadge = false,
   });
 
   @override
@@ -243,13 +249,39 @@ class _SourceCardState extends State<_SourceCard> {
                 child: Icon(widget.icon, color: widget.accentColor, size: 22),
               ),
               const SizedBox(height: 16),
-              Text(
-                widget.title,
-                style: GoogleFonts.outfit(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF1A1A1A),
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.title,
+                      style: GoogleFonts.outfit(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF1A1A1A),
+                      ),
+                    ),
+                  ),
+                  if (widget.showProBadge)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                            color: Colors.amber.withValues(alpha: 0.35)),
+                      ),
+                      child: Text(
+                        'PRO',
+                        style: GoogleFonts.outfit(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.amber.shade800,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(height: 10),
               Text(

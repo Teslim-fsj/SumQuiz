@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../../models/user_model.dart';
 import '../../../utils/youtube_pro_gate.dart';
 import '../../../providers/create_content_provider.dart';
+import '../../widgets/create_content/extraction_review_view.dart';
 import '../../widgets/create_content/creation_progress_indicator.dart';
 import '../../widgets/create_content/creation_success_view.dart';
 import '../../widgets/create_content/web_source_selection.dart';
@@ -85,7 +86,7 @@ class _CreateContentScreenWebState extends State<CreateContentScreenWeb> {
       case CreationPhase.processing:
         return CreationProgressIndicator(message: provider.progressMessage);
       case CreationPhase.extractionReview:
-        return const SizedBox.shrink();
+        return const ExtractionReviewView();
       case CreationPhase.success:
         return CreationSuccessView(
           title: provider.fileName ??

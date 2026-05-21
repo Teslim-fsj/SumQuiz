@@ -77,7 +77,7 @@ class PublicScaffoldWeb extends StatelessWidget {
                     _navLink(isEducatorRoute ? 'Solutions' : 'How it Works'),
                     const SizedBox(width: 32),
                     _navLink('Pricing',
-                        onTap: () => context.push('/subscription')),
+                        onTap: () => context.push('/settings/subscription')),
                     if (isEducatorRoute) ...[
                       const SizedBox(width: 32),
                       _navLink('Resources'),

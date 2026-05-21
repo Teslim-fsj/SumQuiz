@@ -94,19 +94,21 @@ class UsageService {
           ['lecture', 'tutor_session', 'exam'].contains(actionType);
 
       // 1. Quota Check (Visible Limits)
-      if (effectivelyHeavy) {
-        final int limit = UsageConfig.heavyQuota[tier] ?? 1;
-        if (currentHeavy >= limit) {
-          developer.log('Heavy quota exceeded for $tier user: $uid',
-              name: 'UsageService');
-          return false;
-        }
-      } else {
-        final int limit = UsageConfig.lightQuota[tier] ?? 5;
-        if (currentLight >= limit) {
-          developer.log('Light quota exceeded for $tier user: $uid',
-              name: 'UsageService');
-          return false;
+      if (!user.isPro) {
+        if (effectivelyHeavy) {
+          final int limit = UsageConfig.heavyQuota[tier] ?? 1;
+          if (currentHeavy >= limit) {
+            developer.log('Heavy quota exceeded for $tier user: $uid',
+                name: 'UsageService');
+            return false;
+          }
+        } else {
+          final int limit = UsageConfig.lightQuota[tier] ?? 5;
+          if (currentLight >= limit) {
+            developer.log('Light quota exceeded for $tier user: $uid',
+                name: 'UsageService');
+            return false;
+          }
         }
       }
 
@@ -239,6 +241,9 @@ class UsageService {
 
     if (actionType == 'summary' || actionType == 'note')
       base = UsageConfig.cuMicro;
+    if (actionType == 'generate' || actionType == 'quiz') {
+      base = UsageConfig.cuMacro;
+    }
     if (actionType == 'exam') base = UsageConfig.cuMacro;
     if (actionType == 'lecture') base = UsageConfig.cuExtreme;
     if (actionType == 'tutor') base = UsageConfig.cuTutor;

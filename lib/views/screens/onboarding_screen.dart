@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -138,6 +139,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildTopBar(ColorScheme cs) {
+    final isDark = cs.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : cs.onSurface;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
@@ -160,7 +164,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 style: GoogleFonts.outfit(
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
-                  color: Colors.white,
+                  color: textColor,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -171,7 +175,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: Text(
               'Skip',
               style: GoogleFonts.outfit(
-                color: Colors.white.withValues(alpha: 0.5),
+                color: textColor.withValues(alpha: 0.5),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -183,6 +187,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildBottomControls(ColorScheme cs) {
     final isLastPage = _currentPage == _totalPages - 1;
+    final isDark = cs.brightness == Brightness.dark;
+    final dotActive = cs.primary;
+    final dotInactive = isDark
+        ? Colors.white.withValues(alpha: 0.2)
+        : cs.onSurface.withValues(alpha: 0.1);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -196,32 +205,32 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               (i) => AnimatedContainer(
                 duration: 300.ms,
                 margin: const EdgeInsets.symmetric(horizontal: 4),
-                height: 4,
+                height: 6,
                 width: _currentPage == i ? 24 : 8,
                 decoration: BoxDecoration(
-                  color: _currentPage == i
-                      ? Colors.cyanAccent
-                      : Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(2),
+                  color: _currentPage == i ? dotActive : dotInactive,
+                  borderRadius: BorderRadius.circular(3),
                 ),
               ),
             ),
           ),
 
           // Action Button
-          Container(
+          AnimatedContainer(
+            duration: 400.ms,
+            curve: Curves.easeOutCubic,
             height: 56,
             width: isLastPage ? 200 : 120,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Colors.cyanAccent, Colors.purpleAccent],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
+              gradient: LinearGradient(
+                colors: [cs.primary, cs.tertiary],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(28),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.cyanAccent.withValues(alpha: 0.3),
+                  color: cs.primary.withValues(alpha: 0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 )
@@ -244,13 +253,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     style: GoogleFonts.outfit(
                       fontWeight: FontWeight.w800,
                       fontSize: 16,
-                      color: const Color(0xFF0F172A),
+                      color: cs.onPrimary,
                     ),
                   ),
                   if (!isLastPage) ...[
                     const SizedBox(width: 8),
-                    const Icon(Icons.arrow_forward,
-                        color: Color(0xFF0F172A), size: 20),
+                    Icon(Icons.arrow_forward_rounded,
+                        color: cs.onPrimary, size: 20),
                   ],
                 ],
               ),
@@ -328,8 +337,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       {'icon': Icons.camera_alt_rounded, 'label': 'Textbooks'},
     ];
 
+    final isDark = cs.brightness == Brightness.dark;
+    final cardBg = isDark
+        ? Colors.white.withValues(alpha: 0.05)
+        : cs.surfaceContainerHighest.withValues(alpha: 0.3);
+    final cardBorder = isDark
+        ? Colors.white.withValues(alpha: 0.1)
+        : cs.outline.withValues(alpha: 0.1);
+
     return Padding(
-      padding: const EdgeInsets.only(top: 24),
+      padding: const EdgeInsets.only(top: 32),
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
@@ -342,28 +359,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         itemCount: features.length,
         itemBuilder: (context, index) {
           final f = features[index];
-          return Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(f['icon'] as IconData, color: Colors.cyanAccent, size: 24),
-                const SizedBox(height: 8),
-                Text(
-                  f['label'] as String,
-                  style: GoogleFonts.inter(
-                    color: Colors.white70,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: cardBorder),
                 ),
-              ],
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(f['icon'] as IconData, color: cs.primary, size: 26),
+                    const SizedBox(height: 8),
+                    Text(
+                      f['label'] as String,
+                      style: GoogleFonts.inter(
+                        color: isDark ? Colors.white : cs.onSurface,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          );
+          ).animate().fadeIn(delay: (300 + index * 100).ms).slideY(begin: 0.2);
         },
       ),
     );
@@ -371,14 +394,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildStatsGrid(ColorScheme cs) {
     return Padding(
-      padding: const EdgeInsets.only(top: 24),
+      padding: const EdgeInsets.only(top: 32),
       child: Row(
         children: [
           Expanded(
             child: _buildStatCard(
               'CURRENT STREAK',
               '0 Days',
-              Colors.cyanAccent,
+              cs.primary,
               cs,
             ),
           ),
@@ -387,46 +410,60 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: _buildStatCard(
               'GROWTH LEVEL',
               'Seedling',
-              Colors.purpleAccent,
+              cs.tertiary,
               cs,
             ),
           ),
         ],
-      ),
+      ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2),
     );
   }
 
   Widget _buildStatCard(
       String label, String value, Color color, ColorScheme cs) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              color: Colors.white38,
-              letterSpacing: 1,
-            ),
+    final isDark = cs.brightness == Brightness.dark;
+    final cardBg = isDark
+        ? Colors.white.withValues(alpha: 0.05)
+        : cs.surfaceContainerHighest.withValues(alpha: 0.3);
+    final cardBorder = isDark
+        ? Colors.white.withValues(alpha: 0.1)
+        : cs.outline.withValues(alpha: 0.1);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: cardBg,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: cardBorder),
           ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: GoogleFonts.outfit(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? Colors.white54 : cs.onSurfaceVariant,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                value,
+                style: GoogleFonts.outfit(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w900,
+                  color: color,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -464,6 +501,12 @@ class _OnboardingContentPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = colorScheme.brightness == Brightness.dark;
+    final primaryText = isDark ? Colors.white : colorScheme.onSurface;
+    final secondaryText =
+        isDark ? Colors.white70 : colorScheme.onSurfaceVariant;
+    final highlight = colorScheme.primary;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Column(
@@ -478,8 +521,9 @@ class _OnboardingContentPage extends StatelessWidget {
                   style: GoogleFonts.outfit(
                     fontSize: 42,
                     fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    letterSpacing: -1,
+                    color: primaryText,
+                    letterSpacing: -1.2,
+                    height: 1.1,
                   ),
                 ),
                 TextSpan(
@@ -487,24 +531,29 @@ class _OnboardingContentPage extends StatelessWidget {
                   style: GoogleFonts.outfit(
                     fontSize: 42,
                     fontWeight: FontWeight.w800,
-                    color: Colors.cyanAccent,
-                    letterSpacing: -1,
+                    color: highlight,
+                    letterSpacing: -1.2,
+                    height: 1.1,
                   ),
                 ),
               ],
             ),
-          ).animate().fadeIn().slideY(begin: 0.1),
-          const SizedBox(height: 20),
+          )
+              .animate()
+              .fadeIn(duration: 600.ms)
+              .slideY(begin: 0.1, curve: Curves.easeOutCubic),
+          const SizedBox(height: 24),
           Text(
             subtitle,
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: 16,
-              color: Colors.white.withValues(alpha: 0.6),
-              height: 1.5,
-              fontWeight: FontWeight.w500,
+              color: secondaryText,
+              height: 1.6,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 0.2,
             ),
-          ).animate(delay: 200.ms).fadeIn(),
+          ).animate(delay: 200.ms).fadeIn(duration: 600.ms),
           if (extra != null) extra!,
         ],
       ),
@@ -644,29 +693,49 @@ class _OnboardingBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = colorScheme.brightness == Brightness.dark;
+
+    // Select colors based on theme
+    final baseColor =
+        isDark ? const Color(0xFF09090B) : const Color(0xFFF8FAFC);
+    final glow1 = isDark
+        ? Colors.blueAccent.withValues(alpha: 0.15)
+        : Colors.blue.withValues(alpha: 0.1);
+    final glow2 = isDark
+        ? Colors.purpleAccent.withValues(alpha: 0.15)
+        : Colors.purple.withValues(alpha: 0.1);
+    final glow3 = isDark
+        ? Colors.cyanAccent.withValues(alpha: 0.1)
+        : Colors.teal.withValues(alpha: 0.1);
+
     return Stack(
       children: [
-        // Dark Base
-        Container(color: const Color(0xFF0F172A)),
+        // Base
+        Container(color: baseColor),
 
-        // Radial Glows
+        // Animated Orbs
         Positioned(
           top: -150,
           right: -100,
-          child: _GlowNode(
-              color: Colors.blueAccent.withValues(alpha: 0.15), size: 400),
+          child: _GlowNode(color: glow1, size: 500),
         ),
         Positioned(
-          bottom: -100,
+          bottom: -150,
           left: -100,
-          child: _GlowNode(
-              color: Colors.purpleAccent.withValues(alpha: 0.15), size: 400),
+          child: _GlowNode(color: glow2, size: 500),
         ),
         Positioned(
-          top: MediaQuery.of(context).size.height * 0.3,
+          top: MediaQuery.of(context).size.height * 0.4,
           left: -50,
-          child: _GlowNode(
-              color: Colors.cyanAccent.withValues(alpha: 0.1), size: 300),
+          child: _GlowNode(color: glow3, size: 400),
+        ),
+
+        // Global Glassmorphism Blur Layer
+        Positioned.fill(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
+            child: Container(color: Colors.transparent),
+          ),
         ),
       ],
     );
@@ -685,16 +754,17 @@ class _GlowNode extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [color, Colors.transparent],
-        ),
+        color: color,
       ),
     )
         .animate(onPlay: (c) => c.repeat(reverse: true))
         .scale(
             begin: const Offset(1, 1),
             end: const Offset(1.3, 1.3),
-            duration: 4.seconds)
-        .blur(begin: const Offset(10, 10), end: const Offset(30, 30));
+            duration: 8.seconds)
+        .move(
+            begin: const Offset(-20, -20),
+            end: const Offset(20, 20),
+            duration: 10.seconds);
   }
 }
