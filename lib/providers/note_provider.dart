@@ -13,6 +13,7 @@ import '../services/recording_service.dart';
 import '../services/speech_service.dart';
 import '../services/usage_service.dart';
 import '../services/transcript_recovery_service.dart';
+import '../services/deepgram_live_transcription_service.dart';
 import 'package:audio_session/audio_session.dart';
 
 enum NoteProcessingState { idle, recording, transcribing, generating, error }
@@ -22,6 +23,10 @@ class NoteProvider with ChangeNotifier {
   final EnhancedAIService _aiService;
   final RecordingService _recordingService;
   final SpeechService _speechService;
+  final DeepgramLiveTranscriptionService _deepgramService = DeepgramLiveTranscriptionService();
+
+  bool get isDeepgramEnabled =>
+      const String.fromEnvironment('DEEPGRAM_API_KEY').isNotEmpty;
 
   StreamSubscription? _speechSub;
   StreamSubscription? _partialSub;
@@ -333,46 +338,78 @@ class NoteProvider with ChangeNotifier {
 
       _speechSub?.cancel();
       _partialSub?.cancel();
-      _speechSub = _speechService.transcriptStream.listen((text) {
-        if (text.trim().isEmpty) return;
 
-        _liveInsights.add(text);
-        _transcriptChunkController.add(text);
-        _livePartialTranscript = '';
-        _partialTranscriptController.add('');
+      if (isDeepgramEnabled) {
+        _speechSub = _deepgramService.transcriptStream.listen((text) {
+          if (text.trim().isEmpty) return;
 
-        if (_currentNote != null) {
-          TranscriptRecoveryService()
-              .savePendingTranscript(_currentNote!.id, _liveInsights.join(" "));
+          _liveInsights.add(text);
+          _transcriptChunkController.add(text);
+          _livePartialTranscript = '';
+          _partialTranscriptController.add('');
+
+          if (_currentNote != null) {
+            TranscriptRecoveryService()
+                .savePendingTranscript(_currentNote!.id, _liveInsights.join(" "));
+          }
+
+          notifyListeners();
+        }, onError: (e) {
+          developer.log('Deepgram stream error: $e', name: 'NoteProvider');
+        });
+
+        _partialSub = _deepgramService.partialStream.listen((text) {
+          _livePartialTranscript = text;
+          _partialTranscriptController.add(text);
+          notifyListeners();
+        }, onError: (e) {
+          developer.log('Deepgram partial stream error: $e', name: 'NoteProvider');
+        });
+
+        await _deepgramService.start();
+        developer.log('Deepgram live transcription session started', name: 'NoteProvider');
+      } else {
+        _speechSub = _speechService.transcriptStream.listen((text) {
+          if (text.trim().isEmpty) return;
+
+          _liveInsights.add(text);
+          _transcriptChunkController.add(text);
+          _livePartialTranscript = '';
+          _partialTranscriptController.add('');
+
+          if (_currentNote != null) {
+            TranscriptRecoveryService()
+                .savePendingTranscript(_currentNote!.id, _liveInsights.join(" "));
+          }
+
+          notifyListeners();
+        }, onError: (e) {
+          developer.log('Speech stream error: $e', name: 'NoteProvider');
+        });
+
+        _partialSub = _speechService.partialStream.listen((text) {
+          _livePartialTranscript = text;
+          _partialTranscriptController.add(text);
+          notifyListeners();
+        }, onError: (e) {
+          developer.log('Partial speech stream error: $e', name: 'NoteProvider');
+        });
+
+        final speechReady = await _speechService.init();
+        _speechAvailable = speechReady;
+        if (speechReady) {
+          await _speechService.startListening();
+        } else {
+          developer.log('STT unavailable — audio-only lecture capture',
+              name: 'NoteProvider');
+          _errorMessage =
+              'Live transcript unavailable on this device. Audio is still being saved.';
+          notifyListeners();
         }
 
-        notifyListeners();
-      }, onError: (e) {
-        developer.log('Speech stream error: $e', name: 'NoteProvider');
-      });
-
-      _partialSub = _speechService.partialStream.listen((text) {
-        _livePartialTranscript = text;
-        _partialTranscriptController.add(text);
-        notifyListeners();
-      }, onError: (e) {
-        developer.log('Partial speech stream error: $e', name: 'NoteProvider');
-      });
-
-      final speechReady = await _speechService.init();
-      _speechAvailable = speechReady;
-      if (speechReady) {
-        await _speechService.startListening();
-      } else {
-        developer.log('STT unavailable — audio-only lecture capture',
-            name: 'NoteProvider');
-        _errorMessage =
-            'Live transcript unavailable on this device. Audio is still being saved.';
-        notifyListeners();
+        await _recordingService.startRecording(userId);
+        developer.log('Lecture recording session started', name: 'NoteProvider');
       }
-
-      await _recordingService.startRecording(userId);
-      developer.log('Lecture recording session started', name: 'NoteProvider');
     } catch (e) {
       developer.log('Failed to start recording: $e', name: 'NoteProvider');
       _errorMessage = "Could not access microphone. Please check permissions.";
@@ -400,22 +437,34 @@ class NoteProvider with ChangeNotifier {
 
     try {
       developer.log('Stopping lecture recording...', name: 'NoteProvider');
-      await _speechService.stopListening();
+      if (isDeepgramEnabled) {
+        await _deepgramService.stop();
+      } else {
+        await _speechService.stopListening();
+      }
       _speechSub?.cancel();
       _partialSub?.cancel();
       _livePartialTranscript = '';
 
-      final path = await _recordingService.stopRecording();
-      if (path != null && _currentNote != null) {
-        final recording = LocalRecording(
-          id: const Uuid().v4(),
-          userId: _currentNote!.userId,
-          noteId: _currentNote!.id,
-          filePath: path,
-          durationSeconds: _recordingDuration.inSeconds,
-          createdAt: DateTime.now(),
-        );
-        await _localDb.saveRecording(recording);
+      final String? path;
+      if (isDeepgramEnabled) {
+        path = null;
+      } else {
+        path = await _recordingService.stopRecording();
+      }
+
+      if (_currentNote != null) {
+        if (path != null) {
+          final recording = LocalRecording(
+            id: const Uuid().v4(),
+            userId: _currentNote!.userId,
+            noteId: _currentNote!.id,
+            filePath: path,
+            durationSeconds: _recordingDuration.inSeconds,
+            createdAt: DateTime.now(),
+          );
+          await _localDb.saveRecording(recording);
+        }
 
         // Clear recovery data on success
         await TranscriptRecoveryService().clearRecovery(_currentNote!.id);
@@ -425,8 +474,10 @@ class NoteProvider with ChangeNotifier {
         if (usage != null) {
           await usage.recordAction(_currentNote!.userId, 'lecture');
         }
-        developer.log('Recording saved successfully: $path',
-            name: 'NoteProvider');
+        if (path != null) {
+          developer.log('Recording saved successfully: $path',
+              name: 'NoteProvider');
+        }
       }
 
       _state = NoteProcessingState.idle;
@@ -634,6 +685,7 @@ class NoteProvider with ChangeNotifier {
     _speechErrorSub?.cancel();
     _transcriptChunkController.close();
     _partialTranscriptController.close();
+    _deepgramService.dispose();
     super.dispose();
   }
 }

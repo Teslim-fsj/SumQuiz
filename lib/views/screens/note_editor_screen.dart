@@ -40,9 +40,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   Offset? _lensPosition;
 
   StreamSubscription<String>? _transcriptSub;
-  StreamSubscription<String>? _partialTranscriptSub;
-  int? _partialDocStart;
-  int _partialDocLen = 0;
 
   @override
   void initState() {
@@ -76,38 +73,9 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
 
     _transcriptSub = noteProvider.transcriptChunkStream.listen((text) {
       if (mounted && text.isNotEmpty) {
-        _clearPartialInEditor();
         _appendLiveText(text);
       }
     });
-
-    _partialTranscriptSub = noteProvider.partialTranscriptStream.listen((text) {
-      if (mounted) {
-        _updatePartialInEditor(text);
-      }
-    });
-  }
-
-  void _updatePartialInEditor(String partial) {
-    _clearPartialInEditor();
-    if (partial.trim().isEmpty) return;
-
-    final length = _controller.document.length;
-    final insertionIndex = length > 0 ? length - 1 : 0;
-    _partialDocStart = insertionIndex;
-    _partialDocLen = partial.length;
-    _controller.document.insert(insertionIndex, partial);
-  }
-
-  void _clearPartialInEditor() {
-    if (_partialDocStart == null || _partialDocLen <= 0) {
-      _partialDocStart = null;
-      _partialDocLen = 0;
-      return;
-    }
-    _controller.document.delete(_partialDocStart!, _partialDocLen);
-    _partialDocStart = null;
-    _partialDocLen = 0;
   }
 
   void _handleSelectionChanged(TextSelection selection) {
@@ -275,7 +243,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     _scrollController.dispose();
     _editorFocusNode.dispose();
     _transcriptSub?.cancel();
-    _partialTranscriptSub?.cancel();
     super.dispose();
   }
 
@@ -306,55 +273,66 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
               child: CircularProgressIndicator(color: colorScheme.primary)));
     }
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: SafeArea(
-        child: Column(
-          children: [
-            if (noteProvider.errorMessage.isNotEmpty)
-              AuraAlertBanner(
-                title: "Neural Disruption",
-                description: noteProvider.errorMessage,
-                onIgnore: () => noteProvider.clearError(),
-                actionLabel: "DISMISS",
-                onAction: () => noteProvider.clearError(),
-              ),
-            _buildTopBar(noteProvider, isRecording, user, theme),
-            if (!_isDrawingMode) _buildQuillToolbar(theme),
-            Expanded(
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Positioned.fill(
-                    child: _buildEditorArea(noteProvider, theme, isRecording),
-                  ),
-                  if (isRecording)
-                    const Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: RecordingBarWidget(),
-                    ),
-                  if (_showSidebar) ...[
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) {
+          final noteProv = context.read<NoteProvider>();
+          if (noteProv.state == NoteProcessingState.recording) {
+            await noteProv.stopRecording();
+          }
+        }
+      },
+      child: Scaffold(
+        backgroundColor: colorScheme.surface,
+        body: SafeArea(
+          child: Column(
+            children: [
+              if (noteProvider.errorMessage.isNotEmpty)
+                AuraAlertBanner(
+                  title: "Neural Disruption",
+                  description: noteProvider.errorMessage,
+                  onIgnore: () => noteProvider.clearError(),
+                  actionLabel: "DISMISS",
+                  onAction: () => noteProvider.clearError(),
+                ),
+              _buildTopBar(noteProvider, isRecording, user, theme),
+              if (!_isDrawingMode) _buildQuillToolbar(theme),
+              Expanded(
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
                     Positioned.fill(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _showSidebar = false),
-                        child: Container(
-                          color: Colors.black.withValues(alpha: 0.18),
+                      child: _buildEditorArea(noteProvider, theme, isRecording),
+                    ),
+                    if (isRecording)
+                      const Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: RecordingBarWidget(),
+                      ),
+                    if (_showSidebar) ...[
+                      Positioned.fill(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _showSidebar = false),
+                          child: Container(
+                            color: Colors.black.withValues(alpha: 0.18),
+                          ),
                         ),
                       ),
-                    ),
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: _buildRightSidebar(noteProvider, theme),
-                    ),
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: _buildRightSidebar(noteProvider, theme),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -418,6 +396,16 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                 ? 'Processing...'
                 : 'Synthesize',
             () async {
+              if (isRecording) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                        'Please stop recording before synthesizing study materials.'),
+                    backgroundColor: Colors.orangeAccent,
+                  ),
+                );
+                return;
+              }
               if (user != null &&
                   noteProvider.state != NoteProcessingState.generating) {
                 final folderId =
@@ -435,7 +423,8 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           const SizedBox(width: 12),
           IconButton(
             onPressed: () => setState(() => _showSidebar = !_showSidebar),
-            tooltip: _showSidebar ? 'Hide context panel' : 'Topics & recordings',
+            tooltip:
+                _showSidebar ? 'Hide context panel' : 'Topics & recordings',
             icon: Icon(
                 _showSidebar
                     ? Icons.arrow_forward_ios_rounded

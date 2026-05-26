@@ -692,7 +692,7 @@ Text: $text''';
   Future<String> getConversationalResponseWithAudio({
     required String prompt,
     required Uint8List audioBytes,
-    String mimeType = 'audio/m4a',
+    String mimeType = 'audio/mp4',
     String? context,
     String? userName,
     CancellationToken? cancelToken,

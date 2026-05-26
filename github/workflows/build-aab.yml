@@ -18,6 +18,7 @@ jobs:
       - name: Create .env file
         run: |
           echo "API_KEY=${{ secrets.API_KEY }}" > .env
+          echo "DEEPGRAM_API_KEY=${{ secrets.DEEPGRAM_API_KEY }}" >> .env
 
       - name: Install dependencies
         run: flutter pub get
@@ -27,7 +28,11 @@ jobs:
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Build app bundle
-        run: flutter build appbundle --release
+        run: |
+          flutter build appbundle \
+            --release \
+            --dart-define=API_KEY=${{ secrets.API_KEY }} \
+            --dart-define=DEEPGRAM_API_KEY=${{ secrets.DEEPGRAM_API_KEY }}
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4

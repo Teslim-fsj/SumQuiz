@@ -18,6 +18,7 @@ class ScaffoldWithNavBar extends StatefulWidget {
 
 class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
   bool _isExpanded = true;
+  bool _sidebarInitialized = false;
 
   int _branchToIndex(int branch, bool isTeacher) {
     if (isTeacher) {
@@ -65,119 +66,108 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        // Auto-initialize sidebar expansion based on screen width
+        if (!_sidebarInitialized) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() {
+                _isExpanded = constraints.maxWidth >= 1200;
+                _sidebarInitialized = true;
+              });
+            }
+          });
+        }
+
         if (constraints.maxWidth < 900) {
           final currentIdx =
               _branchToIndex(widget.navigationShell.currentIndex, isTeacher);
           return Scaffold(
             backgroundColor: theme.scaffoldBackgroundColor,
+            extendBody: true,
+            // Center Create FAB in the notched bottom bar
+            floatingActionButton: SizedBox(
+              width: 48,
+              height: 48,
+              child: FloatingActionButton(
+                onPressed: () {
+                  if (isTeacher) {
+                    _showCreateOptions(context, theme);
+                  } else {
+                    context.go('/create-content');
+                  }
+                },
+                backgroundColor: WebColors.purplePrimary,
+                elevation: 4,
+                shape: const CircleBorder(),
+                child: const Icon(Icons.add, color: Colors.white, size: 24),
+              ).animate().scale(
+                  delay: 100.ms,
+                  duration: 300.ms,
+                  curve: Curves.easeOutBack),
+            ),
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerDocked,
             body: Stack(
               children: [
                 widget.navigationShell,
-                // Floating Action Sidebar (Sumi Orb & Create FAB stacked vertically)
+                // Floating Sumi Tutor Orb (bottom-right)
                 Positioned(
-                  right: 20,
-                  bottom: 96,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Floating Sumi Tutor Orb
-                      GestureDetector(
-                        onTap: () {
-                          showGeneralDialog(
-                            context: context,
-                            barrierDismissible: true,
-                            barrierLabel: "Sumi Tutor",
-                            pageBuilder: (context, _, __) =>
-                                const SumiLiveSandboxOverlay(),
-                          );
-                        },
-                        child: Container(
-                          width: 64,
-                          height: 64,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: theme.colorScheme.surface,
-                            boxShadow: [
-                              BoxShadow(
-                                color: theme.colorScheme.primary
-                                    .withValues(alpha: 0.3),
-                                blurRadius: 15,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                            border: Border.all(
-                              color: theme.colorScheme.primary
-                                  .withValues(alpha: 0.5),
-                              width: 2,
-                            ),
+                  right: 16,
+                  bottom: 88,
+                  child: GestureDetector(
+                    onTap: () {
+                      showGeneralDialog(
+                        context: context,
+                        barrierDismissible: true,
+                        barrierLabel: "Sumi Tutor",
+                        pageBuilder: (context, _, __) =>
+                            const SumiLiveSandboxOverlay(),
+                      );
+                    },
+                    child: Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: theme.colorScheme.surface,
+                        boxShadow: [
+                          BoxShadow(
+                            color: theme.colorScheme.primary
+                                .withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            spreadRadius: 1,
                           ),
-                          child: ClipOval(
-                            child: Image.asset(
-                              'assets/images/sumi.png',
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Icon(Icons.face_retouching_natural,
-                                      color: theme.colorScheme.primary),
-                            ),
-                          ),
-                        ).animate(onPlay: (c) => c.repeat(reverse: true)).moveY(
-                            begin: 0,
-                            end: -8,
-                            duration: 2.seconds,
-                            curve: Curves.easeInOut),
-                      ),
-                      const SizedBox(height: 16),
-                      // Create + FAB (Slightly larger, beautiful, matches Sumi orb)
-                      GestureDetector(
-                        onTap: () {
-                          if (isTeacher) {
-                            _showCreateOptions(context, theme);
-                          } else {
-                            context.go('/create-content');
-                          }
-                        },
-                        child: Container(
-                          width: 64,
-                          height: 64,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: WebColors.purplePrimary,
-                            boxShadow: [
-                              BoxShadow(
-                                color: WebColors.purplePrimary
-                                    .withValues(alpha: 0.4),
-                                blurRadius: 15,
-                                spreadRadius: 1,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.add,
-                            color: Colors.white,
-                            size: 32,
-                          ),
+                        ],
+                        border: Border.all(
+                          color: theme.colorScheme.primary
+                              .withValues(alpha: 0.4),
+                          width: 1.5,
                         ),
-                      ).animate().scale(
-                          delay: 200.ms,
-                          duration: 300.ms,
-                          curve: Curves.easeOutBack),
-                    ],
+                      ),
+                      child: ClipOval(
+                        child: Image.asset(
+                          'assets/images/sumi.png',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Icon(Icons.face_retouching_natural,
+                                  color: theme.colorScheme.primary, size: 20),
+                        ),
+                      ),
+                    ).animate(onPlay: (c) => c.repeat(reverse: true)).moveY(
+                        begin: 0,
+                        end: -6,
+                        duration: 2.seconds,
+                        curve: Curves.easeInOut),
                   ),
                 ),
               ],
             ),
-            bottomNavigationBar: Container(
-              height: 72,
-              decoration: BoxDecoration(
-                color: theme.cardColor.withValues(alpha: 0.95),
-                border: Border(
-                  top: BorderSide(
-                    color: theme.dividerColor.withValues(alpha: 0.1),
-                    width: 1,
-                  ),
-                ),
-              ),
+            bottomNavigationBar: BottomAppBar(
+              height: 64,
+              color: theme.cardColor.withValues(alpha: 0.97),
+              elevation: 8,
+              notchMargin: 6,
+              shape: const CircularNotchedRectangle(),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
@@ -195,6 +185,8 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                     isActive: currentIdx == 1,
                     onTap: () => _onTap(1, isTeacher),
                   ),
+                  // Center gap for FAB
+                  const SizedBox(width: 56),
                   _buildMobileNavItem(
                     icon: Icons.book_outlined,
                     activeIcon: Icons.book_rounded,
@@ -221,7 +213,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.fastOutSlowIn,
-                  width: _isExpanded ? 280 : 80,
+                  width: _isExpanded ? 260 : 72,
                   decoration: BoxDecoration(
                     color: isDark
                         ? const Color(0xFF0F172A)

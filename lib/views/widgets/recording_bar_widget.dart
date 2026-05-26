@@ -70,17 +70,23 @@ class RecordingBarWidget extends StatelessWidget {
                 Text(
                   provider.speechAvailable
                       ? (provider.liveTranscript.isNotEmpty
-                          ? provider.liveTranscript
-                          : 'Listening — transcript will appear in your note…')
-                      : 'Saving audio (transcript unavailable)',
+                          ? '"${provider.liveTranscript}"'
+                          : 'Listening — transcribing lecture in real-time…')
+                      : 'Saving audio (transcript offline)',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
-                      fontSize: 11,
+                      fontSize: 12,
+                      height: 1.4,
                       color: provider.liveTranscript.isNotEmpty
-                          ? theme.colorScheme.onSurface
-                          : theme.hintColor,
-                      fontWeight: FontWeight.w500),
+                          ? theme.colorScheme.onSurface.withValues(alpha: 0.85)
+                          : theme.hintColor.withValues(alpha: 0.60),
+                      fontStyle: provider.liveTranscript.isNotEmpty
+                          ? FontStyle.italic
+                          : FontStyle.normal,
+                      fontWeight: provider.liveTranscript.isNotEmpty
+                          ? FontWeight.w500
+                          : FontWeight.w400),
                 ),
               ],
             ),
