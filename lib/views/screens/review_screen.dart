@@ -13,7 +13,7 @@ import '../../services/mission_service.dart';
 import '../../services/user_service.dart';
 import 'spaced_repetition_screen.dart';
 import 'package:sumquiz/view_models/mastery_view_model.dart';
-
+import 'flashcards_screen.dart';
 import '../widgets/dashboard/retention_health_card.dart';
 import '../widgets/dashboard/live_tutor_card.dart';
 import '../widgets/dashboard/learning_momentum_card.dart';
