@@ -19,7 +19,7 @@ class RetentionHealthCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(28),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: theme.cardColor,
           borderRadius: BorderRadius.circular(32),
@@ -44,7 +44,7 @@ class RetentionHealthCard extends StatelessWidget {
                     Text(
                       'Retention Mastery',
                       style: GoogleFonts.outfit(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: theme.textTheme.displayLarge?.color,
                       ),
@@ -53,14 +53,14 @@ class RetentionHealthCard extends StatelessWidget {
                     Text(
                       'Long-term memory stability',
                       style: GoogleFonts.inter(
-                        fontSize: 12,
+                        fontSize: 11,
                         color: theme.hintColor,
                       ),
                     ),
                   ],
                 ),
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.primary.withOpacity(0.08),
                     shape: BoxShape.circle,
@@ -73,14 +73,14 @@ class RetentionHealthCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
                   (score * 100).toStringAsFixed(0),
                   style: GoogleFonts.outfit(
-                    fontSize: 72,
+                    fontSize: 48,
                     fontWeight: FontWeight.w900,
                     height: 1,
                     color: theme.colorScheme.onSurface,
@@ -88,11 +88,11 @@ class RetentionHealthCard extends StatelessWidget {
                 ).animate().scale(
                     begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack),
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0, left: 6),
+                  padding: const EdgeInsets.only(bottom: 6.0, left: 4),
                   child: Text(
                     '%',
                     style: GoogleFonts.outfit(
-                      fontSize: 28,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.primary,
                     ),
@@ -100,21 +100,21 @@ class RetentionHealthCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
             Stack(
               children: [
                 Container(
-                  height: 12,
+                  height: 8,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: theme.colorScheme.primary.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(4),
                   ),
                 ),
                 FractionallySizedBox(
                   widthFactor: score.clamp(0.0, 1.0),
                   child: Container(
-                    height: 12,
+                    height: 8,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -122,7 +122,7 @@ class RetentionHealthCard extends StatelessWidget {
                           theme.colorScheme.primary.withOpacity(0.8),
                         ],
                       ),
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(4),
                       boxShadow: [
                         BoxShadow(
                           color: theme.colorScheme.primary.withOpacity(0.2),

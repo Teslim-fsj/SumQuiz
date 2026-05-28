@@ -11,11 +11,10 @@ import '../../models/user_model.dart';
 import '../../models/daily_mission.dart';
 import '../../services/mission_service.dart';
 import '../../services/user_service.dart';
-import 'flashcards_screen.dart';
+import 'spaced_repetition_screen.dart';
 import 'package:sumquiz/view_models/mastery_view_model.dart';
 
 import '../widgets/dashboard/retention_health_card.dart';
-import '../widgets/dashboard/focus_areas_card.dart';
 import '../widgets/dashboard/live_tutor_card.dart';
 import '../widgets/dashboard/learning_momentum_card.dart';
 import '../widgets/dashboard/daily_mission_card.dart';
@@ -155,6 +154,16 @@ class _ReviewScreenState extends State<ReviewScreen> {
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.psychology_outlined),
+            tooltip: 'Neural Weak Topic Detector',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const SpacedRepetitionScreen(),
+              ),
+            ),
+          ),
+          IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => context.push('/settings'),
           ),
@@ -184,8 +193,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
                       score: masteryVm.overallMastery,
                       onTap: () {},
                     ),
-                    const SizedBox(height: 24),
-                    FocusAreasCard(topics: masteryVm.highRiskTopics),
                     const SizedBox(height: 24),
                     DailyMissionCard(
                       mission: _dailyMission,

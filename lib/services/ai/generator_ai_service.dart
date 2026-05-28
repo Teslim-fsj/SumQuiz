@@ -289,6 +289,51 @@ Text: $text''';
     }
   }
 
+  Future<List<dynamic>> cleanUpLectureNotes(String rawText,
+      {CancellationToken? cancelToken}) async {
+    developer.log('Cleaning up lecture notes of length: ${rawText.length}',
+        name: 'GeneratorAIService');
+
+    final prompt = '''You are an expert study guide editor.
+Take the following raw lecture transcript and clean it up.
+1. Fix obvious typos and remove filler words (e.g., "um", "uh", "so yeah").
+2. Structure the text logically with Headers, sub-headers, and bullet points.
+3. Highlight key terms by bolding them.
+4. IMPORTANT: Your output MUST be EXACTLY in the format of a Quill Delta JSON array. Do not return Markdown or plain text. 
+
+A Quill Delta JSON array looks like this:
+[
+  {"insert": "Topic Title\\n", "attributes": {"header": 1}},
+  {"insert": "Key Concept: ", "attributes": {"bold": true}},
+  {"insert": "The definition.\\n"},
+  {"insert": "Detail 1\\n", "attributes": {"list": "bullet"}},
+  {"insert": "Detail 2\\n", "attributes": {"list": "bullet"}}
+]
+
+Return ONLY the JSON array.
+
+RAW TRANSCRIPT:
+$rawText''';
+
+    try {
+      final response = await generateWithRetry(prompt,
+          customModel: educatorModel,
+          generationConfig: AIConfig.defaultGenerationConfig,
+          cancelToken: cancelToken);
+      final jsonStr = extractJson(response);
+      final decoded = json.decode(jsonStr);
+      if (decoded is List) {
+        return decoded;
+      } else {
+        throw Exception('AI did not return a valid JSON array');
+      }
+    } catch (e, stack) {
+      developer.log('Cleanup generation failed',
+          name: 'GeneratorAIService', error: e, stackTrace: stack);
+      rethrow;
+    }
+  }
+
   Future<Map<String, dynamic>> generateFromTopic({
     required String topic,
     String depth = 'intermediate',

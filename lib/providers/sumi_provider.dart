@@ -9,6 +9,7 @@ import '../services/local_database_service.dart';
 import '../services/recording_service.dart';
 import 'dart:io';
 import 'package:flutter_tts/flutter_tts.dart';
+import '../services/deepgram_tts_service.dart';
 import '../services/usage_service.dart';
 import '../services/auth_service.dart';
 import 'package:audio_session/audio_session.dart';
@@ -23,7 +24,11 @@ class SumiProvider extends ChangeNotifier {
 
   final UsageService? _usageService;
   final AuthService _authService;
-  final FlutterTts _tts = FlutterTts();
+
+  // TTS — Deepgram Aura when key is present, flutter_tts as fallback
+  final DeepgramTTSService? _deepgramTts =
+      DeepgramTTSService.isAvailable ? DeepgramTTSService() : null;
+  final FlutterTts _fallbackTts = FlutterTts();
 
   SumiProvider({
     required GeneratorAIService aiService,
@@ -60,18 +65,38 @@ class SumiProvider extends ChangeNotifier {
   }
 
   void _initTts() async {
-    await _tts.setLanguage("en-US");
-    await _tts.setSpeechRate(0.5);
-    await _tts.setVolume(1.0);
-    await _tts.setPitch(1.0);
+    if (_deepgramTts != null) {
+      developer.log('SumiProvider: Using Deepgram Aura TTS', name: 'SumiProvider');
+      // Deepgram handles its own playback completion internally.
+      // Listen to the speaking stream to mirror isSumiSpeaking state.
+      _deepgramTts.speakingStream.listen((speaking) {
+        _isSumiSpeaking = speaking;
+        if (!speaking) {
+          _cancelTtsWatchdog();
+          _currentState = SumiState.idle;
+        }
+        notifyListeners();
+      });
+      _deepgramTts.errorStream.listen((err) {
+        developer.log('Deepgram TTS error: $err', name: 'SumiProvider');
+      });
+      return;
+    }
 
-    _tts.setCompletionHandler(() {
+    // Fallback: flutter_tts
+    developer.log('SumiProvider: Using flutter_tts fallback', name: 'SumiProvider');
+    await _fallbackTts.setLanguage("en-US");
+    await _fallbackTts.setSpeechRate(0.5);
+    await _fallbackTts.setVolume(1.0);
+    await _fallbackTts.setPitch(1.0);
+
+    _fallbackTts.setCompletionHandler(() {
       developer.log("TTS completed a sentence", name: "SumiProvider");
       _cancelTtsWatchdog();
       _speakNextInQueue();
     });
 
-    _tts.setErrorHandler((msg) {
+    _fallbackTts.setErrorHandler((msg) {
       developer.log("TTS Error: $msg", name: "SumiProvider");
       _cancelTtsWatchdog();
       _speakNextInQueue();
@@ -446,7 +471,10 @@ class SumiProvider extends ChangeNotifier {
 
     if (_ttsQueue.isEmpty) {
       _isTtsActive = false;
-      _isSumiSpeaking = false;
+      if (_deepgramTts == null) {
+        // Deepgram updates isSumiSpeaking via its stream; only set here for fallback
+        _isSumiSpeaking = false;
+      }
       _currentState = SumiState.idle;
       notifyListeners();
       return;
@@ -458,18 +486,32 @@ class SumiProvider extends ChangeNotifier {
     notifyListeners();
 
     final text = _ttsQueue.removeAt(0);
-    try {
-      final cleanText = text.replaceAll(RegExp(r'[*_#]'), '').trim();
-      if (cleanText.isNotEmpty) {
-        developer.log("Speaking from queue: $cleanText", name: "SumiProvider");
+    final cleanText = text.replaceAll(RegExp(r'[*_#]'), '').trim();
+    if (cleanText.isEmpty) {
+      _speakNextInQueue();
+      return;
+    }
+
+    developer.log('Speaking from queue: $cleanText', name: 'SumiProvider');
+
+    if (_deepgramTts != null) {
+      // Deepgram: enqueue — it handles sequential playback internally
+      _deepgramTts.enqueueSentence(cleanText);
+      _startTtsWatchdog(cleanText);
+      // Drain remaining queue items into Deepgram directly
+      while (_ttsQueue.isNotEmpty) {
+        final next = _ttsQueue.removeAt(0).replaceAll(RegExp(r'[*_#]'), '').trim();
+        if (next.isNotEmpty) _deepgramTts.enqueueSentence(next);
+      }
+      _isTtsActive = false; // Deepgram manages its own state
+    } else {
+      try {
         _startTtsWatchdog(cleanText);
-        await _tts.speak(cleanText);
-      } else {
+        await _fallbackTts.speak(cleanText);
+      } catch (e) {
+        developer.log('TTS Queue speak error: $e', name: 'SumiProvider');
         _speakNextInQueue();
       }
-    } catch (e) {
-      developer.log("TTS Queue speak error: $e", name: "SumiProvider");
-      _speakNextInQueue();
     }
   }
 
@@ -486,12 +528,27 @@ class SumiProvider extends ChangeNotifier {
   }
 
   Future<void> _speakResponse(String text) async {
+    // Stop any in-progress TTS before speaking a fresh response
+    if (_deepgramTts != null) {
+      await _deepgramTts.stop();
+    } else {
+      await _fallbackTts.stop();
+    }
     _ttsQueue.clear();
     _isTtsActive = false;
     _enqueueSentence(text);
 
-    while (_isTtsActive) {
-      await Future.delayed(const Duration(milliseconds: 100));
+    // Wait for Deepgram to finish (its stream drives isSumiSpeaking)
+    if (_deepgramTts != null) {
+      // Give it a moment to start
+      await Future.delayed(const Duration(milliseconds: 300));
+      while (_deepgramTts.isSpeaking) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+    } else {
+      while (_isTtsActive) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
     }
   }
 
@@ -537,12 +594,16 @@ class SumiProvider extends ChangeNotifier {
     try {
       await _recordingService.stopRecording();
       await _recordingService.stopPlayer();
-      await _tts.stop();
+      if (_deepgramTts != null) {
+        await _deepgramTts.stop();
+      } else {
+        await _fallbackTts.stop();
+      }
       final session = await AudioSession.instance;
       await session.setActive(false);
     } catch (e) {
-      developer.log("Error tearing down voice session: $e",
-          name: "SumiProvider");
+      developer.log('Error tearing down voice session: $e',
+          name: 'SumiProvider');
     }
     _isVoiceRecording = false;
     _isSumiSpeaking = false;
@@ -724,6 +785,8 @@ class SumiProvider extends ChangeNotifier {
     _focusTimer?.cancel();
     _cancelTtsWatchdog();
     _ttsQueue.clear();
+    _deepgramTts?.dispose();
+    _fallbackTts.stop();
     super.dispose();
   }
 }

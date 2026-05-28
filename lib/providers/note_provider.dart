@@ -16,7 +16,7 @@ import '../services/transcript_recovery_service.dart';
 import '../services/deepgram_live_transcription_service.dart';
 import 'package:audio_session/audio_session.dart';
 
-enum NoteProcessingState { idle, recording, transcribing, generating, error }
+enum NoteProcessingState { idle, recording, transcribing, generating, cleaning_up, error }
 
 class NoteProvider with ChangeNotifier {
   final LocalDatabaseService _localDb;
@@ -37,6 +37,9 @@ class NoteProvider with ChangeNotifier {
   final _partialTranscriptController = StreamController<String>.broadcast();
   Stream<String> get partialTranscriptStream =>
       _partialTranscriptController.stream;
+
+  final _cleanupController = StreamController<String>.broadcast();
+  Stream<String> get cleanedUpNotesStream => _cleanupController.stream;
 
   bool _speechAvailable = true;
   bool get speechAvailable => _speechAvailable;
@@ -478,9 +481,13 @@ class NoteProvider with ChangeNotifier {
           developer.log('Recording saved successfully: $path',
               name: 'NoteProvider');
         }
+
+        // Trigger AI Cleanup
+        _triggerNoteCleanup(_currentNote!);
+      } else {
+        _state = NoteProcessingState.idle;
       }
 
-      _state = NoteProcessingState.idle;
       _recordingDuration = Duration.zero;
       _liveInsights.clear();
       _partialTranscriptController.add('');
@@ -600,6 +607,52 @@ class NoteProvider with ChangeNotifier {
     }
   }
 
+  /// Triggers AI cleanup of the raw lecture transcript.
+  Future<void> _triggerNoteCleanup(LocalNote note) async {
+    _state = NoteProcessingState.cleaning_up;
+    notifyListeners();
+
+    try {
+      // Decode the raw text from the note content (Delta JSON)
+      String plainText = '';
+      try {
+        final decoded = jsonDecode(note.content);
+        final doc = quill.Document.fromJson(decoded as List);
+        plainText = doc.toPlainText().trim();
+      } catch (_) {
+        plainText = note.content.trim();
+      }
+
+      if (plainText.isNotEmpty) {
+        final cleanedDelta = await _aiService.cleanUpLectureNotes(
+          rawText: plainText,
+          userId: note.userId,
+        );
+
+        // Save the cleaned delta back to the note
+        _currentNote = note.copyWith(
+          content: jsonEncode(cleanedDelta),
+          updatedAt: DateTime.now(),
+        );
+        await _localDb.saveNote(_currentNote!);
+        
+        // Let UI know to refresh its quill controller
+        // We emit a special update via a controller if needed, but since we update _currentNote
+        // and call notifyListeners(), the UI will need to re-init its controller or listen to it.
+        // Actually, NoteEditorScreen doesn't auto-rebuild the QuillController from _currentNote.
+        // We will add a stream to notify NoteEditorScreen.
+        _cleanupController.add(jsonEncode(cleanedDelta));
+      }
+    } catch (e) {
+      developer.log('Note cleanup failed: $e', name: 'NoteProvider');
+      // We don't want to show a hard error modal for a failed cleanup, 
+      // just fall back to idle so they keep the raw text.
+    }
+
+    _state = NoteProcessingState.idle;
+    notifyListeners();
+  }
+
   // --- AUDIO ACTIONS ---
 
   /// Seek to a specific position during recording playback.
@@ -685,6 +738,7 @@ class NoteProvider with ChangeNotifier {
     _speechErrorSub?.cancel();
     _transcriptChunkController.close();
     _partialTranscriptController.close();
+    _cleanupController.close();
     _deepgramService.dispose();
     super.dispose();
   }

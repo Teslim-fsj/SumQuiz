@@ -142,6 +142,22 @@ class EnhancedAIService {
     return _generatorService.refineContent(rawText, cancelToken: cancelToken);
   }
 
+  Future<List<dynamic>> cleanUpLectureNotes({
+    required String rawText,
+    required String userId,
+    CancellationToken? cancelToken,
+  }) async {
+    // Orchestrate compute (gated usage)
+    await _orchestrateCompute(
+      userId,
+      isHeavy: false, // Not a full deck generation, but still requires quota check if we want
+      actionType: 'generate', // Uses generation credits
+    );
+    await initialize();
+    
+    return _generatorService.cleanUpLectureNotes(rawText, cancelToken: cancelToken);
+  }
+
   Future<LocalSummary> generateSummary({
     required String text,
     required String userId,

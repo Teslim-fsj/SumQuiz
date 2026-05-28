@@ -17,7 +17,6 @@ import '../widgets/handwriting_canvas.dart';
 import '../../services/transcript_recovery_service.dart';
 import '../widgets/recording_bar_widget.dart';
 import '../widgets/aura_alert_banner.dart';
-import '../widgets/upgrade_dialog.dart';
 
 class NoteEditorScreen extends StatefulWidget {
   final String noteId;
@@ -40,6 +39,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   Offset? _lensPosition;
 
   StreamSubscription<String>? _transcriptSub;
+  StreamSubscription<String>? _cleanupSub;
 
   @override
   void initState() {
@@ -74,6 +74,32 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     _transcriptSub = noteProvider.transcriptChunkStream.listen((text) {
       if (mounted && text.isNotEmpty) {
         _appendLiveText(text);
+      }
+    });
+
+    _cleanupSub = noteProvider.cleanedUpNotesStream.listen((deltaJson) {
+      if (mounted) {
+        try {
+          final doc = quill.Document.fromJson(jsonDecode(deltaJson));
+          setState(() {
+            final oldController = _controller;
+            _controller = quill.QuillController(
+              document: doc,
+              selection: const TextSelection.collapsed(offset: 0),
+            );
+            _controller.addListener(_onContentChanged);
+            _controller.onSelectionChanged = _handleSelectionChanged;
+            oldController.dispose();
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Sumi organized your lecture notes! ✨'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } catch (e) {
+          debugPrint('Failed to apply cleaned notes: $e');
+        }
       }
     });
   }
@@ -243,6 +269,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     _scrollController.dispose();
     _editorFocusNode.dispose();
     _transcriptSub?.cancel();
+    _cleanupSub?.cancel();
     super.dispose();
   }
 
@@ -254,14 +281,12 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     final user = Provider.of<UserModel?>(context);
     final isRecording = noteProvider.state == NoteProcessingState.recording;
 
-    // Show upgrade dialog if limit reached
+    // Show subscription screen if limit reached
     if (noteProvider.limitReached) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          noteProvider
-              .clearError(); // resets limitReached to false so it doesn't infinite loop
-          UpgradeDialog.show(context,
-              featureName: 'Advanced Synthesis & Recordings');
+          noteProvider.clearError(); // resets limitReached to false
+          context.push('/settings/subscription');
         }
       });
     }
@@ -389,12 +414,14 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
               _insertImage, theme),
           const SizedBox(width: 12),
           _buildTopAction(
-            noteProvider.state == NoteProcessingState.generating
+            noteProvider.state == NoteProcessingState.generating || noteProvider.state == NoteProcessingState.cleaning_up
                 ? Icons.hourglass_empty_rounded
                 : Icons.auto_awesome_rounded,
             noteProvider.state == NoteProcessingState.generating
                 ? 'Processing...'
-                : 'Synthesize',
+                : noteProvider.state == NoteProcessingState.cleaning_up 
+                    ? 'Organizing...' 
+                    : 'Synthesize',
             () async {
               if (isRecording) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -417,7 +444,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
               }
             },
             theme,
-            isActive: noteProvider.state == NoteProcessingState.generating,
+            isActive: noteProvider.state == NoteProcessingState.generating || noteProvider.state == NoteProcessingState.cleaning_up,
             activeColor: colorScheme.tertiary,
           ),
           const SizedBox(width: 12),
