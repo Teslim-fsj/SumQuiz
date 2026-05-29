@@ -47,41 +47,52 @@ class NotificationService {
     tz.initializeTimeZones();
 
     // Set local time zone
-    final String timeZoneName = (await FlutterTimezone.getLocalTimezone()).toString();
-    tz.setLocalLocation(tz.getLocation(timeZoneName));
+    try {
+      if (kIsWeb) {
+        tz.setLocalLocation(tz.getLocation('UTC'));
+      } else {
+        final String timeZoneName = await FlutterTimezone.getLocalTimezone();
+        tz.setLocalLocation(tz.getLocation(timeZoneName));
+      }
+    } catch (e) {
+      debugPrint('Timezone init error: $e');
+      tz.setLocalLocation(tz.getLocation('UTC'));
+    }
 
     await _loadNotificationTemplates();
 
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    if (!kIsWeb) {
+      const AndroidInitializationSettings initializationSettingsAndroid =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    final DarwinInitializationSettings initializationSettingsIOS =
-        DarwinInitializationSettings(
-      requestAlertPermission: false,
-      requestBadgePermission: false,
-      requestSoundPermission: false,
-    );
+      final DarwinInitializationSettings initializationSettingsIOS =
+          DarwinInitializationSettings(
+        requestAlertPermission: false,
+        requestBadgePermission: false,
+        requestSoundPermission: false,
+      );
 
-    final InitializationSettings initializationSettings =
-        InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
+      final InitializationSettings initializationSettings =
+          InitializationSettings(
+        android: initializationSettingsAndroid,
+        iOS: initializationSettingsIOS,
+      );
 
-    await _localNotifications.initialize(
-      initializationSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse response) {
-        _handleNotificationResponse(response);
-      },
-    );
+      await _localNotifications.initialize(
+        initializationSettings,
+        onDidReceiveNotificationResponse: (NotificationResponse response) {
+          _handleNotificationResponse(response);
+        },
+      );
 
-    // Handle initial notification if app was closed
-    final NotificationAppLaunchDetails? notificationAppLaunchDetails =
-        await _localNotifications.getNotificationAppLaunchDetails();
-    if (notificationAppLaunchDetails?.didNotificationLaunchApp ?? false) {
-      final response = notificationAppLaunchDetails!.notificationResponse;
-      if (response != null) {
-        _handleNotificationResponse(response);
+      // Handle initial notification if app was closed
+      final NotificationAppLaunchDetails? notificationAppLaunchDetails =
+          await _localNotifications.getNotificationAppLaunchDetails();
+      if (notificationAppLaunchDetails?.didNotificationLaunchApp ?? false) {
+        final response = notificationAppLaunchDetails!.notificationResponse;
+        if (response != null) {
+          _handleNotificationResponse(response);
+        }
       }
     }
 
@@ -155,8 +166,10 @@ class NotificationService {
   }
 
   Future<void> cancelNotification(int id) async {
-    await _localNotifications.cancel(id);
-    debugPrint('🚫 Cancelled notification: $id');
+    if (!kIsWeb) {
+      await _localNotifications.cancel(id);
+      debugPrint('🚫 Cancelled notification: $id');
+    }
   }
 
   Future<void> cancelWorkManagerTask(String tag) async {
@@ -230,23 +243,25 @@ class NotificationService {
   Future<void> requestPermissions() async {
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getBool(notificationEnabledKey) ?? true) {
-      // Request Android notification permission (required for Android 13+)
-      final androidPlugin =
-          _localNotifications.resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
-      if (androidPlugin != null) {
-        await androidPlugin.requestNotificationsPermission();
-      }
+      if (!kIsWeb) {
+        // Request Android notification permission (required for Android 13+)
+        final androidPlugin =
+            _localNotifications.resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>();
+        if (androidPlugin != null) {
+          await androidPlugin.requestNotificationsPermission();
+        }
 
-      // Request iOS notification permissions
-      await _localNotifications
-          .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>()
-          ?.requestPermissions(
-            alert: true,
-            badge: true,
-            sound: true,
-          );
+        // Request iOS notification permissions
+        await _localNotifications
+            .resolvePlatformSpecificImplementation<
+                IOSFlutterLocalNotificationsPlugin>()
+            ?.requestPermissions(
+              alert: true,
+              badge: true,
+              sound: true,
+            );
+      }
 
       // Request Firebase Messaging permissions (for push notifications)
       await _firebaseMessaging.requestPermission(
@@ -265,7 +280,7 @@ class NotificationService {
     RemoteNotification? notification = message.notification;
     AndroidNotification? android = message.notification?.android;
 
-    if (notification != null && android != null) {
+    if (notification != null && android != null && !kIsWeb) {
       _localNotifications.show(
         notification.hashCode,
         notification.title,
@@ -341,6 +356,7 @@ class NotificationService {
     required String payload,
     required String category,
   }) async {
+    if (kIsWeb) return;
     String channelId = 'system_updates';
     if (category.contains('brain') ||
         category.contains('alps') ||
@@ -414,7 +430,7 @@ class NotificationService {
   Future<void> toggleNotifications(bool enabled) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(notificationEnabledKey, enabled);
-    if (!enabled) {
+    if (!enabled && !kIsWeb) {
       await _localNotifications.cancelAll();
     }
   }

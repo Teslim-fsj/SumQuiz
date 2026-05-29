@@ -98,12 +98,23 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  if (!kIsWeb) {
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
 
-  PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-    return true;
-  };
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+  } else {
+    FlutterError.onError = (FlutterErrorDetails details) {
+      FlutterError.presentError(details);
+      debugPrint('Flutter Error: ${details.exception}');
+    };
+    PlatformDispatcher.instance.onError = (error, stack) {
+      debugPrint('Platform Error: $error\n$stack');
+      return true;
+    };
+  }
 
   try {
     await LocalDatabaseService().init();
@@ -134,8 +145,8 @@ void main() async {
   });
 
   ErrorWidget.builder = (FlutterErrorDetails details) {
-    // Log to Crashlytics in release mode
-    if (!kDebugMode) {
+    // Log to Crashlytics in release mode (non-web only)
+    if (!kDebugMode && !kIsWeb) {
       FirebaseCrashlytics.instance.recordFlutterError(details);
     }
     return MaterialApp(
