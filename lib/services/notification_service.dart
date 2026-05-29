@@ -87,7 +87,7 @@ class NotificationService {
 
     await _setupPushNotifications();
     await _createNotificationChannels();
-    await requestPermissions();
+    requestPermissions(); // Do not await to avoid blocking runApp and hanging on splash screen
   }
 
   Future<void> _createNotificationChannels() async {

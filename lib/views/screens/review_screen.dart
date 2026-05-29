@@ -170,9 +170,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
         ],
       ),
       body: SafeArea(
-        child: Consumer<MasteryViewModel>(
+        child: Consumer<MasteryViewModel?>(
           builder: (context, masteryVm, _) {
-            if (masteryVm.isLoading) {
+            if (masteryVm == null || masteryVm.isLoading) {
               return const Center(child: CircularProgressIndicator());
             }
 

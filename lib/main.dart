@@ -138,9 +138,11 @@ void main() async {
     if (!kDebugMode) {
       FirebaseCrashlytics.instance.recordFlutterError(details);
     }
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      body: Center(
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        backgroundColor: const Color(0xFFF5F5F5),
+        body: Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Column(
@@ -184,6 +186,7 @@ void main() async {
             ],
           ),
         ),
+      ),
       ),
     );
   };
