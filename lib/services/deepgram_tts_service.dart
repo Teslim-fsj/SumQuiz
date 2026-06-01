@@ -26,6 +26,7 @@ class DeepgramTTSService {
 
   bool _isSpeaking = false;
   bool get isSpeaking => _isSpeaking;
+  bool get isBusy => _isSpeaking || _isProcessingQueue || _queue.isNotEmpty;
 
   final _speakingController = StreamController<bool>.broadcast();
   Stream<bool> get speakingStream => _speakingController.stream;
@@ -180,8 +181,7 @@ class DeepgramTTSService {
     }
   }
 
-  String _cleanText(String raw) =>
-      raw.replaceAll(RegExp(r'[*_#`]'), '').trim();
+  String _cleanText(String raw) => raw.replaceAll(RegExp(r'[*_#`]'), '').trim();
 
   /// Minimal JSON string escaping — avoids a full JSON encode dependency.
   String _jsonString(String s) {

@@ -10,6 +10,7 @@ import '../../models/flashcard_set.dart';
 import '../../models/user_model.dart';
 import '../../models/daily_mission.dart';
 import '../../services/mission_service.dart';
+import '../../services/mastery/sumi_tutor_service.dart';
 import '../../services/user_service.dart';
 import 'spaced_repetition_screen.dart';
 import 'package:sumquiz/view_models/mastery_view_model.dart';
@@ -18,6 +19,7 @@ import '../widgets/dashboard/retention_health_card.dart';
 import '../widgets/dashboard/live_tutor_card.dart';
 import '../widgets/dashboard/learning_momentum_card.dart';
 import '../widgets/dashboard/daily_mission_card.dart';
+import '../widgets/dashboard/focus_areas_card.dart';
 
 class ReviewScreen extends StatefulWidget {
   final bool autoStartMission;
@@ -128,6 +130,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
       if (result != null && result is double && mounted) {
         await missionService.completeMission(userId, _dailyMission!, result);
+        if (mounted) {
+          await context
+              .read<SumiTutorService>()
+              .checkAndScheduleRetentionAlert(userId);
+        }
         final userService = UserService();
         await userService.incrementItemsCompleted(userId);
         _loadDashboardData();
@@ -190,9 +197,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     _buildHeader(user, theme),
                     const SizedBox(height: 24),
                     RetentionHealthCard(
-                      score: masteryVm.overallMastery,
+                      score: masteryVm.retentionHealth,
                       onTap: () {},
                     ),
+                    const SizedBox(height: 24),
+                    FocusAreasCard(topics: masteryVm.priorityTopics),
                     const SizedBox(height: 24),
                     DailyMissionCard(
                       mission: _dailyMission,

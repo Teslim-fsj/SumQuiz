@@ -7,6 +7,7 @@ import '../models/sumi_message.dart';
 import '../services/ai/generator_ai_service.dart';
 import '../services/local_database_service.dart';
 import '../services/recording_service.dart';
+import '../services/deepgram_live_transcription_service.dart';
 import 'dart:io';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../services/deepgram_tts_service.dart';
@@ -21,9 +22,14 @@ class SumiProvider extends ChangeNotifier {
   final SumiEmotionEngine _engine = SumiEmotionEngine();
 
   final RecordingService _recordingService = RecordingService();
+  final DeepgramLiveTranscriptionService _deepgramTranscription =
+      DeepgramLiveTranscriptionService();
 
   final UsageService? _usageService;
   final AuthService _authService;
+
+  bool get _isDeepgramLiveEnabled =>
+      const String.fromEnvironment('DEEPGRAM_API_KEY').isNotEmpty;
 
   // TTS — Deepgram Aura when key is present, flutter_tts as fallback
   final DeepgramTTSService? _deepgramTts =
@@ -66,7 +72,8 @@ class SumiProvider extends ChangeNotifier {
 
   void _initTts() async {
     if (_deepgramTts != null) {
-      developer.log('SumiProvider: Using Deepgram Aura TTS', name: 'SumiProvider');
+      developer.log('SumiProvider: Using Deepgram Aura TTS',
+          name: 'SumiProvider');
       // Deepgram handles its own playback completion internally.
       // Listen to the speaking stream to mirror isSumiSpeaking state.
       _deepgramTts.speakingStream.listen((speaking) {
@@ -84,7 +91,8 @@ class SumiProvider extends ChangeNotifier {
     }
 
     // Fallback: flutter_tts
-    developer.log('SumiProvider: Using flutter_tts fallback', name: 'SumiProvider');
+    developer.log('SumiProvider: Using flutter_tts fallback',
+        name: 'SumiProvider');
     await _fallbackTts.setLanguage("en-US");
     await _fallbackTts.setSpeechRate(0.5);
     await _fallbackTts.setVolume(1.0);
@@ -113,6 +121,9 @@ class SumiProvider extends ChangeNotifier {
   Duration get recordingDuration => _recordingDuration;
 
   StreamSubscription? _recordingSub;
+  StreamSubscription<String>? _deepgramTranscriptSub;
+  StreamSubscription<String>? _deepgramPartialSub;
+  StreamSubscription<String>? _deepgramErrorSub;
 
   bool _isLiveSession = false;
   bool get isLiveSession => _isLiveSession;
@@ -129,7 +140,8 @@ class SumiProvider extends ChangeNotifier {
   int _silenceCount = 0;
   bool _hasSpeaked = false;
   static const int silenceThreshold = 12; // ~1.2s (100ms * 12)
-  static const double amplitudeThreshold = -45.0; // dB — sensitive for quiet mics
+  static const double amplitudeThreshold =
+      -45.0; // dB — sensitive for quiet mics
 
   SumiState _currentState = SumiState.idle;
   SumiState get currentState => _currentState;
@@ -500,7 +512,8 @@ class SumiProvider extends ChangeNotifier {
       _startTtsWatchdog(cleanText);
       // Drain remaining queue items into Deepgram directly
       while (_ttsQueue.isNotEmpty) {
-        final next = _ttsQueue.removeAt(0).replaceAll(RegExp(r'[*_#]'), '').trim();
+        final next =
+            _ttsQueue.removeAt(0).replaceAll(RegExp(r'[*_#]'), '').trim();
         if (next.isNotEmpty) _deepgramTts.enqueueSentence(next);
       }
       _isTtsActive = false; // Deepgram manages its own state
@@ -542,7 +555,7 @@ class SumiProvider extends ChangeNotifier {
     if (_deepgramTts != null) {
       // Give it a moment to start
       await Future.delayed(const Duration(milliseconds: 300));
-      while (_deepgramTts.isSpeaking) {
+      while (_deepgramTts.isBusy) {
         await Future.delayed(const Duration(milliseconds: 100));
       }
     } else {
@@ -578,16 +591,22 @@ class SumiProvider extends ChangeNotifier {
     }
 
     _isLiveSession = true;
+    _errorMessage = null;
     _currentState = SumiState.idle;
     notifyListeners();
 
-    await _runLiveLoop(context: context);
+    if (_isDeepgramLiveEnabled) {
+      await _startDeepgramLiveLoop(context: context);
+    } else {
+      await _runLiveLoop(context: context);
+    }
   }
 
   Future<void> stopLiveSession() async {
     _isLiveSession = false;
     _vadTimer?.cancel();
     _recordingSub?.cancel();
+    await _stopDeepgramLiveLoop();
     _cancelTtsWatchdog();
     _ttsQueue.clear();
     _isTtsActive = false;
@@ -609,6 +628,85 @@ class SumiProvider extends ChangeNotifier {
     _isSumiSpeaking = false;
     _currentState = SumiState.idle;
     notifyListeners();
+  }
+
+  Future<void> _startDeepgramLiveLoop({String? context}) async {
+    await _stopDeepgramLiveLoop();
+
+    _deepgramTranscriptSub =
+        _deepgramTranscription.transcriptStream.listen((text) async {
+      final transcript = text.trim();
+      if (transcript.isEmpty || !_isLiveSession) return;
+      if (_isProcessingVoice || _isSumiSpeaking || _isStreaming) return;
+
+      _isVoiceRecording = false;
+      _isProcessingVoice = true;
+      _currentState = SumiState.thinking;
+      _dialogue = transcript;
+      notifyListeners();
+
+      await _deepgramTranscription.stop();
+
+      try {
+        await askSumi(transcript, context: context);
+      } finally {
+        _isProcessingVoice = false;
+        if (_isLiveSession) {
+          await Future.delayed(const Duration(milliseconds: 800));
+          if (_isLiveSession && !_isSumiSpeaking && !_isStreaming) {
+            try {
+              await _deepgramTranscription.start();
+              _isVoiceRecording = true;
+              _currentState = SumiState.idle;
+              notifyListeners();
+            } catch (e) {
+              developer.log('Deepgram live tutor restart failed: $e',
+                  name: 'SumiProvider');
+              _errorMessage = 'Deepgram live voice could not restart.';
+              _isVoiceRecording = false;
+              notifyListeners();
+            }
+          }
+        }
+      }
+    });
+
+    _deepgramPartialSub = _deepgramTranscription.partialStream.listen((text) {
+      if (!_isLiveSession || _isProcessingVoice || _isSumiSpeaking) return;
+      final partial = text.trim();
+      _dialogue = partial.isEmpty ? "I'm listening..." : partial;
+      notifyListeners();
+    });
+
+    _deepgramErrorSub = _deepgramTranscription.errorStream.listen((message) {
+      developer.log(message, name: 'SumiProvider');
+      _errorMessage = message;
+      _isVoiceRecording = false;
+      notifyListeners();
+    });
+
+    try {
+      await _deepgramTranscription.start();
+      _isVoiceRecording = true;
+      _dialogue = "I'm listening...";
+      notifyListeners();
+    } catch (e) {
+      developer.log('Deepgram live tutor start failed: $e',
+          name: 'SumiProvider');
+      _errorMessage = 'Deepgram live voice could not start.';
+      _isVoiceRecording = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _stopDeepgramLiveLoop() async {
+    await _deepgramTranscriptSub?.cancel();
+    await _deepgramPartialSub?.cancel();
+    await _deepgramErrorSub?.cancel();
+    _deepgramTranscriptSub = null;
+    _deepgramPartialSub = null;
+    _deepgramErrorSub = null;
+    await _deepgramTranscription.stop();
   }
 
   Future<void> _runLiveLoop({String? context}) async {
@@ -786,6 +884,7 @@ class SumiProvider extends ChangeNotifier {
     _cancelTtsWatchdog();
     _ttsQueue.clear();
     _deepgramTts?.dispose();
+    _deepgramTranscription.dispose();
     _fallbackTts.stop();
     super.dispose();
   }

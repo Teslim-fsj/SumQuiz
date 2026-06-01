@@ -6,6 +6,7 @@ import 'package:sumquiz/services/notification_manager.dart';
 import 'package:sumquiz/services/local_database_service.dart';
 import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/services/auth_service.dart';
+import 'package:sumquiz/services/mastery/sumi_tutor_service.dart';
 
 /// Centralized notification integration helper
 /// Call these methods at appropriate points in your app
@@ -36,6 +37,9 @@ class NotificationIntegration {
 
       // Schedule all recurring notifications
       await notificationManager.scheduleAllNotifications(user);
+      await context
+          .read<SumiTutorService>()
+          .checkAndScheduleRetentionAlert(user.uid);
 
       debugPrint('✅ Notifications scheduled for new user: ${user.displayName}');
     } catch (e) {
@@ -285,6 +289,9 @@ class NotificationIntegration {
 
       // Schedule all appropriate notifications
       await notificationManager.scheduleAllNotifications(user);
+      await context
+          .read<SumiTutorService>()
+          .checkAndScheduleRetentionAlert(user.uid);
 
       debugPrint('✅ All notifications scheduled on app launch');
     } catch (e) {

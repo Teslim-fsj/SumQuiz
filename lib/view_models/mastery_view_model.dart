@@ -19,11 +19,16 @@ class MasteryViewModel extends ChangeNotifier {
 
   double get overallMastery => _masteryService.getAverageMastery(userId);
 
+  double get retentionHealth => _masteryService.getRetentionHealthScore(userId);
+
   List<TopicNode> get weakZones => _masteryService.getWeakZones(userId);
 
   List<TopicNode> get highRiskTopics =>
       _topics.where((t) => t.forgettingRisk > 0.6).toList()
         ..sort((a, b) => b.forgettingRisk.compareTo(a.forgettingRisk));
+
+  List<TopicNode> get priorityTopics =>
+      _masteryService.getPriorityTopics(userId, limit: 3);
 
   void _onMasteryServiceChanged() {
     _loadMasteryData();

@@ -5,6 +5,7 @@ import '../models/flashcard.dart';
 import '../models/user_model.dart';
 import 'firestore_service.dart';
 import 'local_database_service.dart';
+import 'mastery_service.dart';
 import 'spaced_repetition_service.dart';
 import 'notification_service.dart';
 
@@ -12,16 +13,19 @@ class MissionService {
   final FirestoreService _firestoreService;
   final LocalDatabaseService _localDb;
   final SpacedRepetitionService _srs;
+  final MasteryService _masteryService;
   final NotificationService? _notificationService;
 
   MissionService({
     required FirestoreService firestoreService,
     required LocalDatabaseService localDb,
     required SpacedRepetitionService srs,
+    required MasteryService masteryService,
     NotificationService? notificationService,
   })  : _firestoreService = firestoreService,
         _localDb = localDb,
         _srs = srs,
+        _masteryService = masteryService,
         _notificationService = notificationService;
 
   String _getMissionId(DateTime date) {
@@ -86,9 +90,16 @@ class MissionService {
       momentumReward = 150;
     }
 
-    // Combine and prioritize failed cards first, then due cards
-    final List<String> combinedPool =
-        <String>{...failedCardIds, ...dueCardIds}.toList();
+    final priorityTopicCards =
+        _masteryService.getPriorityFlashcardIds(userId, topicLimit: 5);
+    final priorityTopics = _masteryService.getPriorityTopics(userId, limit: 1);
+
+    // Combine and prioritize ALPS topic cards, then failed cards, then due cards
+    final List<String> combinedPool = <String>{
+      ...priorityTopicCards,
+      ...failedCardIds,
+      ...dueCardIds
+    }.toList();
     selectedFlashcards = combinedPool.take(targetCount).toList();
 
     // FALLBACK: If we don't have enough cards in the pool, pick random ones
@@ -124,7 +135,8 @@ class MissionService {
       difficultyLevel: difficulty,
       completionScore: 0.0,
       title: 'Daily Mission ${now.day}/${now.month}',
-      miniQuizTopic: null,
+      miniQuizTopic:
+          priorityTopics.isNotEmpty ? priorityTopics.first.name : null,
     );
 
     // 4. Save to both Local and Firestore

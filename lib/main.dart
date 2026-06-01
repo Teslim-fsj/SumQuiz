@@ -154,50 +154,50 @@ void main() async {
       home: Scaffold(
         backgroundColor: const Color(0xFFF5F5F5),
         body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline_rounded,
-                  size: 56, color: Color(0xFFE57373)),
-              const SizedBox(height: 16),
-              const Text(
-                'Something went wrong',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF333333),
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Please go back and try again.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Color(0xFF666666)),
-              ),
-              if (kDebugMode) ...[
-                const SizedBox(height: 24),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFEBEE),
-                    borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline_rounded,
+                    size: 56, color: Color(0xFFE57373)),
+                const SizedBox(height: 16),
+                const Text(
+                  'Something went wrong',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF333333),
                   ),
-                  child: SingleChildScrollView(
-                    child: Text(
-                      details.exceptionAsString(),
-                      style: const TextStyle(
-                          color: Color(0xFFC62828), fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Please go back and try again.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: Color(0xFF666666)),
+                ),
+                if (kDebugMode) ...[
+                  const SizedBox(height: 24),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFEBEE),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: SingleChildScrollView(
+                      child: Text(
+                        details.exceptionAsString(),
+                        style: const TextStyle(
+                            color: Color(0xFFC62828), fontSize: 12),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
-      ),
       ),
     );
   };
@@ -365,14 +365,20 @@ class _MyAppState extends State<MyApp> {
             return ReferralService();
           },
         ),
-        ProxyProvider4<FirestoreService, LocalDatabaseService,
-            SpacedRepetitionService, NotificationService, MissionService>(
-          update: (context, firestore, localDb, srs, notificationService,
-                  previous) =>
+        ProxyProvider5<
+            FirestoreService,
+            LocalDatabaseService,
+            SpacedRepetitionService,
+            MasteryService,
+            NotificationService,
+            MissionService>(
+          update: (context, firestore, localDb, srs, masteryService,
+                  notificationService, previous) =>
               MissionService(
             firestoreService: firestore,
             localDb: localDb,
             srs: srs,
+            masteryService: masteryService,
             notificationService: notificationService,
           ),
         ),

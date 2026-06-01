@@ -150,12 +150,14 @@ class EnhancedAIService {
     // Orchestrate compute (gated usage)
     await _orchestrateCompute(
       userId,
-      isHeavy: false, // Not a full deck generation, but still requires quota check if we want
+      isHeavy:
+          false, // Not a full deck generation, but still requires quota check if we want
       actionType: 'generate', // Uses generation credits
     );
     await initialize();
-    
-    return _generatorService.cleanUpLectureNotes(rawText, cancelToken: cancelToken);
+
+    return _generatorService.cleanUpLectureNotes(rawText,
+        cancelToken: cancelToken);
   }
 
   Future<LocalSummary> generateSummary({
@@ -572,6 +574,12 @@ class EnhancedAIService {
               summary.topicIds = summaryTopicIds;
 
               await localDb.saveSummary(summary, folderId);
+              await _masteryService.linkContentToTopics(
+                userId: userId,
+                topicIds: summaryTopicIds,
+                contentId: summary.id,
+                contentType: 'summary',
+              );
               break;
 
             case 'quiz':
@@ -585,7 +593,8 @@ class EnhancedAIService {
                     isPro: isPro,
                     cancelToken: cancelToken);
               } catch (firstError) {
-                developer.log('Quiz generation failed, retrying once: $firstError',
+                developer.log(
+                    'Quiz generation failed, retrying once: $firstError',
                     name: 'EnhancedAIService');
                 onProgress('Quiz retry — neural pathways recalibrating...');
                 cancelToken?.throwIfCancelled();
@@ -612,6 +621,12 @@ class EnhancedAIService {
               quiz.topicIds = quizTopicIds;
 
               await localDb.saveQuiz(quiz, folderId);
+              await _masteryService.linkContentToTopics(
+                userId: userId,
+                topicIds: quizTopicIds,
+                contentId: quiz.id,
+                contentType: 'quiz',
+              );
               break;
 
             case 'flashcards':
@@ -635,6 +650,20 @@ class EnhancedAIService {
               set.topicIds = setTopicIds;
 
               await localDb.saveFlashcardSet(set, folderId);
+              await _masteryService.linkContentToTopics(
+                userId: userId,
+                topicIds: setTopicIds,
+                contentId: set.id,
+                contentType: 'flashcard_set',
+              );
+              for (final card in set.flashcards) {
+                await _masteryService.linkContentToTopics(
+                  userId: userId,
+                  topicIds: setTopicIds,
+                  contentId: card.id,
+                  contentType: 'flashcard',
+                );
+              }
               for (final card in set.flashcards) {
                 await srsService.scheduleReview(card.id, userId);
               }
@@ -792,6 +821,12 @@ class EnhancedAIService {
         topicNames: [rootTopic.name],
       );
       await localDb.saveSummary(summary, folderId);
+      await _masteryService.linkContentToTopics(
+        userId: userId,
+        topicIds: commonTopicIds,
+        contentId: summary.id,
+        contentType: 'summary',
+      );
 
       // Save Quiz
       onProgress?.call('Saving quiz...');
@@ -816,6 +851,12 @@ class EnhancedAIService {
         topicNames: [rootTopic.name],
       );
       await localDb.saveQuiz(quiz, folderId);
+      await _masteryService.linkContentToTopics(
+        userId: userId,
+        topicIds: commonTopicIds,
+        contentId: quiz.id,
+        contentType: 'quiz',
+      );
 
       // Save Flashcards
       onProgress?.call('Saving flashcards...');
@@ -843,6 +884,20 @@ class EnhancedAIService {
         topicNames: [rootTopic.name],
       );
       await localDb.saveFlashcardSet(flashcardSet, folderId);
+      await _masteryService.linkContentToTopics(
+        userId: userId,
+        topicIds: commonTopicIds,
+        contentId: flashcardSet.id,
+        contentType: 'flashcard_set',
+      );
+      for (final card in flashcards) {
+        await _masteryService.linkContentToTopics(
+          userId: userId,
+          topicIds: commonTopicIds,
+          contentId: card.id,
+          contentType: 'flashcard',
+        );
+      }
 
       // Schedule SRS (non-fatal — don't crash if this fails)
       try {

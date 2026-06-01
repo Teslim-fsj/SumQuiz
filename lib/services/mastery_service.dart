@@ -219,6 +219,30 @@ class MasteryService extends ChangeNotifier {
     return topic?.masteryScore ?? 0.0;
   }
 
+  /// Link generated or reviewed content back to its TopicNodes.
+  Future<void> linkContentToTopics({
+    required String userId,
+    required List<String> topicIds,
+    required String contentId,
+    required String contentType,
+  }) async {
+    for (final topicId in topicIds) {
+      final topic = _topicBox.get(topicId);
+      if (topic == null || topic.userId != userId) continue;
+
+      if (!topic.contentIds.contains(contentId)) {
+        topic.contentIds = [...topic.contentIds, contentId];
+      }
+      topic.contentTypes = {
+        ...topic.contentTypes,
+        contentId: contentType,
+      };
+      await topic.save();
+    }
+
+    if (topicIds.isNotEmpty) notifyListeners();
+  }
+
   /// Calculates the Adaptive Learning Priority Score (ALPS) for a topic.
   /// Result is between 0.0 and 1.0, where 1.0 is highest priority.
   double calculateALPS(TopicNode topic) {
@@ -251,6 +275,57 @@ class MasteryService extends ChangeNotifier {
 
     filtered.sort((a, b) => calculateALPS(b).compareTo(calculateALPS(a)));
     return filtered.take(limit).toList();
+  }
+
+  /// Cards connected to the highest-priority topics, ordered by ALPS.
+  List<String> getPriorityFlashcardIds(String userId, {int topicLimit = 5}) {
+    final priorityTopics = getPriorityTopics(userId, limit: topicLimit);
+    final seen = <String>{};
+    final ids = <String>[];
+
+    for (final topic in priorityTopics) {
+      for (final contentId in topic.contentIds) {
+        if (topic.contentTypes[contentId] == 'flashcard' &&
+            seen.add(contentId)) {
+          ids.add(contentId);
+        }
+      }
+    }
+
+    return ids;
+  }
+
+  /// Blended dashboard score for long-term retention health.
+  double getRetentionHealthScore(String userId) {
+    final topics = getUserTopics(userId);
+    final userSrs = _srsBox.values.where((item) => item.userId == userId);
+
+    if (topics.isEmpty && userSrs.isEmpty) return 0.0;
+
+    final topicRetention = topics.isEmpty
+        ? 0.0
+        : topics.map((t) => t.retentionEstimate).reduce((a, b) => a + b) /
+            topics.length;
+
+    final alpsHealth = topics.isEmpty
+        ? 0.0
+        : 1.0 -
+            (topics.map(calculateALPS).reduce((a, b) => a + b) / topics.length);
+
+    final now = DateTime.now().toUtc();
+    final srsList = userSrs.toList();
+    final srsHealth = srsList.isEmpty
+        ? topicRetention
+        : 1.0 -
+            (srsList
+                    .where((item) =>
+                        item.nextReviewDate.isBefore(now) ||
+                        item.nextReviewDate.isAtSameMomentAs(now))
+                    .length /
+                srsList.length);
+
+    return ((topicRetention * 0.45) + (alpsHealth * 0.35) + (srsHealth * 0.20))
+        .clamp(0.0, 1.0);
   }
 
   /// Get weak zones for a user
