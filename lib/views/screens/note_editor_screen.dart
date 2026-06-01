@@ -18,6 +18,8 @@ import '../../services/transcript_recovery_service.dart';
 import '../widgets/recording_bar_widget.dart';
 import '../widgets/aura_alert_banner.dart';
 
+enum NoteEditorMode { write, capture, draw, generate }
+
 class NoteEditorScreen extends StatefulWidget {
   final String noteId;
   final String? folderId;
@@ -33,7 +35,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   final TextEditingController _titleController = TextEditingController();
   final FocusNode _editorFocusNode = FocusNode();
 
-  bool _isDrawingMode = false;
+  NoteEditorMode _mode = NoteEditorMode.write;
   bool _isInitialized = false;
   bool _showSidebar = false;
   Offset? _lensPosition;
@@ -321,8 +323,8 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                   actionLabel: "DISMISS",
                   onAction: () => noteProvider.clearError(),
                 ),
-              _buildTopBar(noteProvider, isRecording, user, theme),
-              if (!_isDrawingMode) _buildQuillToolbar(theme),
+              _buildTopBar(isRecording, theme),
+              if (_mode == NoteEditorMode.write) _buildQuillToolbar(theme),
               Expanded(
                 child: Stack(
                   clipBehavior: Clip.none,
@@ -337,6 +339,12 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                         bottom: 0,
                         child: RecordingBarWidget(),
                       ),
+                    Positioned(
+                      left: 16,
+                      right: 16,
+                      bottom: isRecording ? 96 : 16,
+                      child: _buildWorkspaceDock(noteProvider, user, theme),
+                    ),
                     if (_showSidebar) ...[
                       Positioned.fill(
                         child: GestureDetector(
@@ -363,8 +371,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     );
   }
 
-  Widget _buildTopBar(NoteProvider noteProvider, bool isRecording,
-      UserModel? user, ThemeData theme) {
+  Widget _buildTopBar(bool isRecording, ThemeData theme) {
     final colorScheme = theme.colorScheme;
 
     return Container(
@@ -406,48 +413,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           ),
           if (isRecording) _buildCaptureBadge(theme),
           const SizedBox(width: 16),
-          _buildTopAction(Icons.draw_rounded, 'Sketch', () {
-            setState(() => _isDrawingMode = !_isDrawingMode);
-          }, theme, isActive: _isDrawingMode),
-          const SizedBox(width: 12),
-          _buildTopAction(Icons.add_photo_alternate_rounded, 'Diagram',
-              _insertImage, theme),
-          const SizedBox(width: 12),
-          _buildTopAction(
-            noteProvider.state == NoteProcessingState.generating || noteProvider.state == NoteProcessingState.cleaning_up
-                ? Icons.hourglass_empty_rounded
-                : Icons.auto_awesome_rounded,
-            noteProvider.state == NoteProcessingState.generating
-                ? 'Processing...'
-                : noteProvider.state == NoteProcessingState.cleaning_up 
-                    ? 'Organizing...' 
-                    : 'Synthesize',
-            () async {
-              if (isRecording) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                        'Please stop recording before synthesizing study materials.'),
-                    backgroundColor: Colors.orangeAccent,
-                  ),
-                );
-                return;
-              }
-              if (user != null &&
-                  noteProvider.state != NoteProcessingState.generating) {
-                final folderId =
-                    await noteProvider.generateStudyMaterials(user.uid);
-                if (folderId != null && mounted) {
-                  context.pushNamed('results-view',
-                      pathParameters: {'folderId': folderId});
-                }
-              }
-            },
-            theme,
-            isActive: noteProvider.state == NoteProcessingState.generating || noteProvider.state == NoteProcessingState.cleaning_up,
-            activeColor: colorScheme.tertiary,
-          ),
-          const SizedBox(width: 12),
           IconButton(
             onPressed: () => setState(() => _showSidebar = !_showSidebar),
             tooltip:
@@ -464,6 +429,338 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildWorkspaceDock(
+      NoteProvider noteProvider, UserModel? user, ThemeData theme) {
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          child: _buildModePanel(noteProvider, user, theme),
+        ),
+        const SizedBox(height: 10),
+        Material(
+          elevation: 12,
+          shadowColor: Colors.black.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(24),
+          color: colorScheme.surface.withValues(alpha: 0.96),
+          child: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                  color: colorScheme.outline.withValues(alpha: 0.08)),
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final showLabels = constraints.maxWidth >= 360;
+                return Row(
+                  children: [
+                    _buildModeButton(
+                      mode: NoteEditorMode.write,
+                      icon: Icons.edit_note_rounded,
+                      label: 'Write',
+                      theme: theme,
+                      showLabel: showLabels,
+                    ),
+                    _buildModeButton(
+                      mode: NoteEditorMode.capture,
+                      icon: Icons.mic_rounded,
+                      label: 'Capture',
+                      theme: theme,
+                      showLabel: showLabels,
+                    ),
+                    _buildModeButton(
+                      mode: NoteEditorMode.draw,
+                      icon: Icons.draw_rounded,
+                      label: 'Draw',
+                      theme: theme,
+                      showLabel: showLabels,
+                    ),
+                    _buildModeButton(
+                      mode: NoteEditorMode.generate,
+                      icon: Icons.auto_awesome_rounded,
+                      label: 'Generate',
+                      theme: theme,
+                      showLabel: showLabels,
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildModeButton({
+    required NoteEditorMode mode,
+    required IconData icon,
+    required String label,
+    required ThemeData theme,
+    required bool showLabel,
+  }) {
+    final colorScheme = theme.colorScheme;
+    final isActive = _mode == mode;
+
+    return Expanded(
+      child: Tooltip(
+        message: label,
+        child: InkWell(
+          onTap: () => setState(() => _mode = mode),
+          borderRadius: BorderRadius.circular(18),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            height: 48,
+            decoration: BoxDecoration(
+              color:
+                  isActive ? colorScheme.primaryContainer : Colors.transparent,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 20,
+                  color: isActive
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
+                ),
+                if (showLabel) ...[
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      label,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: isActive
+                            ? colorScheme.primary
+                            : colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModePanel(
+      NoteProvider noteProvider, UserModel? user, ThemeData theme) {
+    switch (_mode) {
+      case NoteEditorMode.capture:
+        return _buildCapturePanel(noteProvider, user, theme);
+      case NoteEditorMode.draw:
+        return _buildDrawPanel(noteProvider, theme);
+      case NoteEditorMode.generate:
+        return _buildGeneratePanel(noteProvider, user, theme);
+      case NoteEditorMode.write:
+        return const SizedBox.shrink();
+    }
+  }
+
+  Widget _buildCapturePanel(
+      NoteProvider provider, UserModel? user, ThemeData theme) {
+    final colorScheme = theme.colorScheme;
+    final isRecording = provider.state == NoteProcessingState.recording;
+
+    return _buildFloatingPanel(
+      theme: theme,
+      child: Row(
+        children: [
+          Icon(
+            isRecording ? Icons.hearing_rounded : Icons.graphic_eq_rounded,
+            color: isRecording ? colorScheme.error : colorScheme.primary,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              isRecording
+                  ? (provider.liveTranscript.isNotEmpty
+                      ? provider.liveTranscript
+                      : 'Listening for lecture audio...')
+                  : 'Capture lecture speech, upload diagrams, or add an image.',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          IconButton.filledTonal(
+            tooltip: 'Upload diagram',
+            onPressed: _insertImage,
+            icon: const Icon(Icons.add_photo_alternate_rounded),
+          ),
+          const SizedBox(width: 8),
+          IconButton.filled(
+            tooltip: isRecording ? 'Stop recording' : 'Start live lecture',
+            onPressed: () {
+              if (isRecording) {
+                provider.stopRecording();
+              } else {
+                provider.startRecording(user?.uid ?? '');
+              }
+            },
+            icon: Icon(isRecording ? Icons.stop_rounded : Icons.mic_rounded),
+            style: IconButton.styleFrom(
+              backgroundColor:
+                  isRecording ? colorScheme.error : colorScheme.primary,
+              foregroundColor:
+                  isRecording ? colorScheme.onError : colorScheme.onPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawPanel(NoteProvider provider, ThemeData theme) {
+    final colorScheme = theme.colorScheme;
+
+    return _buildFloatingPanel(
+      theme: theme,
+      child: Row(
+        children: [
+          Icon(Icons.gesture_rounded, color: colorScheme.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Draw directly over this note. Strokes can stay synced to lecture time.',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          IconButton.filledTonal(
+            tooltip: 'Undo drawing stroke',
+            onPressed: provider.drawingStrokes.isEmpty
+                ? null
+                : () => provider.undoLastStroke(),
+            icon: const Icon(Icons.undo_rounded),
+          ),
+          const SizedBox(width: 8),
+          IconButton.filledTonal(
+            tooltip: 'Clear drawing',
+            onPressed: provider.drawingStrokes.isEmpty
+                ? null
+                : () => provider.clearStrokes(),
+            icon: const Icon(Icons.delete_sweep_rounded),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGeneratePanel(
+      NoteProvider provider, UserModel? user, ThemeData theme) {
+    final colorScheme = theme.colorScheme;
+    final isGenerating = provider.state == NoteProcessingState.generating;
+    final isCleaning = provider.state == NoteProcessingState.cleaning_up;
+
+    return _buildFloatingPanel(
+      theme: theme,
+      child: Row(
+        children: [
+          Icon(Icons.auto_awesome_rounded, color: colorScheme.tertiary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              isCleaning
+                  ? 'Organizing your lecture notes...'
+                  : isGenerating
+                      ? 'Building your study pack...'
+                      : 'Create summary, quiz, and flashcards from this note.',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          FilledButton.icon(
+            onPressed: user == null || isGenerating || isCleaning
+                ? null
+                : () async {
+                    if (provider.state == NoteProcessingState.recording) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                              'Please stop recording before synthesizing study materials.'),
+                          backgroundColor: Colors.orangeAccent,
+                        ),
+                      );
+                      return;
+                    }
+
+                    final folderId =
+                        await provider.generateStudyMaterials(user.uid);
+                    if (folderId != null && mounted) {
+                      context.pushNamed('results-view',
+                          pathParameters: {'folderId': folderId});
+                    }
+                  },
+            icon: isGenerating || isCleaning
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.bolt_rounded),
+            label: Text(isCleaning
+                ? 'Organizing'
+                : isGenerating
+                    ? 'Generating'
+                    : 'Generate'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFloatingPanel({
+    required ThemeData theme,
+    required Widget child,
+  }) {
+    final colorScheme = theme.colorScheme;
+    return Material(
+      elevation: 12,
+      shadowColor: Colors.black.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(24),
+      color: colorScheme.surface.withValues(alpha: 0.98),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 64),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          border:
+              Border.all(color: colorScheme.outline.withValues(alpha: 0.08)),
+        ),
+        child: child,
       ),
     );
   }
@@ -532,52 +829,13 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     );
   }
 
-  Widget _buildTopAction(
-      IconData icon, String? label, VoidCallback onTap, ThemeData theme,
-      {bool isActive = false, Color? activeColor}) {
-    final colorScheme = theme.colorScheme;
-    final color = activeColor ?? colorScheme.primary;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(100),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: isActive
-              ? color.withValues(alpha: 0.1)
-              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(100),
-          border: Border.all(
-            color: isActive ? color.withValues(alpha: 0.5) : Colors.transparent,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(icon,
-                size: 18,
-                color: isActive ? color : colorScheme.onSurfaceVariant),
-            if (label != null) ...[
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isActive ? color : colorScheme.onSurfaceVariant),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildEditorArea(NoteProvider provider, ThemeData theme,
       [bool isRecording = false]) {
     final colorScheme = theme.colorScheme;
-    const recordingBarInset = 88.0;
+    final bottomInset = switch (_mode) {
+      NoteEditorMode.write => isRecording ? 172.0 : 112.0,
+      _ => isRecording ? 244.0 : 172.0,
+    };
 
     return Container(
       color: colorScheme.surface,
@@ -593,7 +851,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                   40,
                   40,
                   40,
-                  isRecording ? recordingBarInset : 40,
+                  bottomInset,
                 ),
                 placeholder: 'Start typing, recording, or sketching...',
                 embedBuilders: [
@@ -634,7 +892,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
               ),
             ),
           ),
-          if (_isDrawingMode)
+          if (_mode == NoteEditorMode.draw)
             Positioned.fill(
               child: HandwritingCanvas(
                 strokes: provider.drawingStrokes,
