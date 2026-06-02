@@ -4,6 +4,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:flutter/services.dart';
 import '../../models/user_model.dart';
 import '../../models/local_note.dart';
 import '../../providers/note_provider.dart';
@@ -258,6 +260,20 @@ class _NotesScreenState extends State<NotesScreen> {
                         ),
                       ),
                     IconButton(
+                      icon: const Icon(Icons.share_rounded, size: 18),
+                      onPressed: () => _shareNote(context, note),
+                      visualDensity: VisualDensity.compact,
+                      color: colorScheme.primary.withOpacity(0.7),
+                      tooltip: 'Share note',
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.copy_rounded, size: 18),
+                      onPressed: () => _copyNoteContent(context, note),
+                      visualDensity: VisualDensity.compact,
+                      color: colorScheme.secondary.withOpacity(0.7),
+                      tooltip: 'Copy text',
+                    ),
+                    IconButton(
                       icon: const Icon(Icons.delete_outline_rounded, size: 18),
                       onPressed: () => _confirmDelete(context, note, provider),
                       visualDensity: VisualDensity.compact,
@@ -299,6 +315,37 @@ class _NotesScreenState extends State<NotesScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _shareNote(BuildContext context, LocalNote note) async {
+    final theme = Theme.of(context);
+    final shareText = '''
+📝 ${note.title.isEmpty ? 'Untitled Note' : note.title}
+
+${note.plainText}
+
+---
+Shared via SumQuiz
+''';
+
+    await Share.share(shareText, subject: note.title.isEmpty ? 'My Note' : note.title);
+  }
+
+  Future<void> _copyNoteContent(BuildContext context, LocalNote note) async {
+    final copyText = note.plainText.isEmpty ? note.title : '${note.title}\n\n${note.plainText}';
+    
+    await Clipboard.setData(ClipboardData(text: copyText));
+    
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Note copied to clipboard'),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
   }
 
   Widget _buildEmptyState(ThemeData theme) {

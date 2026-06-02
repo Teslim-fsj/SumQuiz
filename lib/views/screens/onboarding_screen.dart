@@ -5,8 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/user_model.dart';
-import '../../widgets/sumi_mascot.dart';
-import '../../models/sumi_emotion.dart';
+
+/// SumQuiz AI Study OS - Premium Onboarding Experience
+/// Emphasizes the core pillars: Notes, Lectures, Quizzes, Flashcards, and AI Tutoring
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -18,9 +19,44 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  UserRole? _selectedRole;
 
-  static const int _totalPages = 4;
+  static const List<OnboardingPageData> _pages = [
+    OnboardingPageData(
+      title: 'AI Study OS',
+      subtitle: 'Your Complete Learning Intelligence Platform',
+      description: 'Transform any content into personalized study materials with AI. Notes, lectures, textbooks — SumQuiz handles it all.',
+      icon: Icons.brain,
+      gradientColors: [Color(0xFF1E3A8A), Color(0xFF0D9488)],
+    ),
+    OnboardingPageData(
+      title: 'Smart Notes',
+      subtitle: 'Capture & Organize Everything',
+      description: 'Import PDFs, paste text, or record lectures. Our AI extracts key concepts and creates structured, searchable notes instantly.',
+      icon: Icons.note_alt_rounded,
+      gradientColors: [Color(0xFF0D9488), Color(0xFFF59E0B)],
+    ),
+    OnboardingPageData(
+      title: 'Auto Quizzes',
+      subtitle: 'Test Your Knowledge',
+      description: 'Generate challenging quizzes from any study material. Multiple choice, theory, and essay questions — all AI-crafted to maximize retention.',
+      icon: Icons.quiz_rounded,
+      gradientColors: [Color(0xFFF59E0B), Color(0xFF1E3A8A)],
+    ),
+    OnboardingPageData(
+      title: 'Flashcards + SRS',
+      subtitle: 'Never Forget Again',
+      description: 'Smart flashcards with spaced repetition scheduling. Our algorithm knows when you\'re about to forget and brings cards back at the perfect time.',
+      icon: Icons.memory_rounded,
+      gradientColors: [Color(0xFF1E3A8A), Color(0xFF0D9488)],
+    ),
+    OnboardingPageData(
+      title: 'AI Tutor',
+      subtitle: 'Personal 24/7 Tutoring',
+      description: 'Get instant explanations, Socratic hints, and personalized guidance. Your AI tutor adapts to your learning style and pace.',
+      icon: Icons.school_rounded,
+      gradientColors: [Color(0xFF0D9488), Color(0xFFF59E0B)],
+    ),
+  ];
 
   @override
   void dispose() {
@@ -30,20 +66,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _onPageChanged(int page) => setState(() => _currentPage = page);
 
-  void _finishOnboarding() async {
+  Future<void> _finishOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('hasSeenOnboarding', true);
-    if (_selectedRole != null) {
-      await prefs.setString('intended_role', _selectedRole!.name);
-    }
     if (mounted) context.go('/auth');
   }
 
   void _next() {
-    if (_currentPage < _totalPages - 1) {
+    if (_currentPage < _pages.length - 1) {
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 600),
-        curve: Curves.easeOutQuart,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOutCubic,
       );
     } else {
       _finishOnboarding();
@@ -53,8 +86,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _prev() {
     if (_currentPage > 0) {
       _pageController.previousPage(
-        duration: const Duration(milliseconds: 600),
-        curve: Curves.easeOutQuart,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOutCubic,
       );
     }
   }
@@ -63,85 +96,47 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: cs.surface,
+      backgroundColor: isDark ? const Color(0xFF09090B) : const Color(0xFFF8FAFC),
       body: Stack(
         children: [
-          // Background Aesthetic
-          _OnboardingBackground(colorScheme: cs),
+          // Animated Background
+          _OnboardingBackground(isDark: isDark),
 
-          // Main Onboarding Flow
-          Column(
-            children: [
-              SizedBox(height: MediaQuery.of(context).padding.top + 20),
-              // Top Bar
-              _buildTopBar(cs),
+          SafeArea(
+            child: Column(
+              children: [
+                // Top Bar
+                _buildTopBar(cs, isDark),
 
-              // Central Mascot Area
-              Expanded(
-                flex: 4,
-                child: Center(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 500),
-                    transitionBuilder: (child, animation) {
-                      return FadeTransition(
-                        opacity: animation,
-                        child: ScaleTransition(scale: animation, child: child),
-                      );
+                const SizedBox(height: 24),
+
+                // Main Content
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: _onPageChanged,
+                    itemCount: _pages.length,
+                    itemBuilder: (context, index) {
+                      return _buildPage(_pages[index], cs, isDark, index);
                     },
-                    child: KeyedSubtree(
-                      key: ValueKey('mascot_$_currentPage'),
-                      child: SumiMascot(
-                        state: _getSumiStateForPage(_currentPage),
-                        size: 280,
-                        showBubble: false,
-                      ),
-                    ),
                   ),
                 ),
-              ),
 
-              // Dynamic Content Area
-              Expanded(
-                flex: 5,
-                child: PageView(
-                  controller: _pageController,
-                  onPageChanged: _onPageChanged,
-                  physics:
-                      const NeverScrollableScrollPhysics(), // Force button navigation for narrative
-                  children: [
-                    _buildIntroPage(cs),
-                    _buildSmartPage(cs),
-                    _buildInputPage(cs),
-                    _buildMasteryPage(cs),
-                  ],
-                ),
-              ),
-
-              // Bottom Controls
-              _buildBottomControls(cs),
-              SizedBox(height: MediaQuery.of(context).padding.bottom + 10),
-              Text(
-                'Step ${_currentPage + 1} of $_totalPages${_getPageSuffix(_currentPage)}',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: cs.onSurface.withValues(alpha: 0.4),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              SizedBox(height: MediaQuery.of(context).padding.bottom + 10),
-            ],
+                // Bottom Controls
+                _buildBottomControls(cs, isDark),
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTopBar(ColorScheme cs) {
-    final isDark = cs.brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : cs.onSurface;
-
+  Widget _buildTopBar(ColorScheme cs, bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
@@ -149,22 +144,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         children: [
           Row(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.asset(
-                  'assets/images/sumquiz_logo.png',
-                  height: 32,
-                  width: 32,
-                  fit: BoxFit.cover,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [cs.primary, cs.secondary],
+                  ),
+                  borderRadius: BorderRadius.circular(10),
                 ),
+                child: const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
               Text(
                 'SumQuiz',
                 style: GoogleFonts.outfit(
-                  fontSize: 20,
+                  fontSize: 22,
                   fontWeight: FontWeight.w900,
-                  color: textColor,
+                  color: isDark ? Colors.white : cs.onSurface,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -174,8 +170,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             onPressed: _finishOnboarding,
             child: Text(
               'Skip',
-              style: GoogleFonts.outfit(
-                color: textColor.withValues(alpha: 0.5),
+              style: GoogleFonts.inter(
+                color: isDark ? Colors.white54 : cs.onSurface.withOpacity(0.6),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -185,55 +181,142 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildBottomControls(ColorScheme cs) {
-    final isLastPage = _currentPage == _totalPages - 1;
-    final isDark = cs.brightness == Brightness.dark;
-    final dotActive = cs.primary;
-    final dotInactive = isDark
-        ? Colors.white.withValues(alpha: 0.2)
-        : cs.onSurface.withValues(alpha: 0.1);
+  Widget _buildPage(OnboardingPageData page, ColorScheme cs, bool isDark, int index) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Icon with gradient background
+          Container(
+            width: 140,
+            height: 140,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: page.gradientColors,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(35),
+              boxShadow: [
+                BoxShadow(
+                  color: page.gradientColors[0].withOpacity(0.3),
+                  blurRadius: 30,
+                  offset: const Offset(0, 15),
+                ),
+              ],
+            ),
+            child: Icon(
+              page.icon,
+              size: 64,
+              color: Colors.white,
+            ),
+          )
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .scale(
+                begin: const Offset(0.95, 0.95),
+                end: const Offset(1.05, 1.05),
+                duration: 3.seconds,
+              ),
+
+          const SizedBox(height: 40),
+
+          // Title
+          Text(
+            page.title,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.outfit(
+              fontSize: 38,
+              fontWeight: FontWeight.w900,
+              color: isDark ? Colors.white : cs.onSurface,
+              letterSpacing: -1,
+              height: 1.1,
+            ),
+          )
+              .animate()
+              .fadeIn(duration: 600.ms)
+              .slideY(begin: 0.2),
+
+          const SizedBox(height: 12),
+
+          // Subtitle
+          Text(
+            page.subtitle,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.outfit(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: cs.primary,
+              letterSpacing: 0.5,
+            ),
+          )
+              .animate(delay: 150.ms)
+              .fadeIn(duration: 600.ms)
+              .slideY(begin: 0.2),
+
+          const SizedBox(height: 24),
+
+          // Description
+          Text(
+            page.description,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              color: isDark ? Colors.white70 : cs.onSurface.withOpacity(0.7),
+              height: 1.6,
+            ),
+          )
+              .animate(delay: 300.ms)
+              .fadeIn(duration: 600.ms)
+              .slideY(begin: 0.2),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomControls(ColorScheme cs, bool isDark) {
+    final isLastPage = _currentPage == _pages.length - 1;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Dots
+          // Page indicator dots
           Row(
             children: List.generate(
-              _totalPages,
+              _pages.length,
               (i) => AnimatedContainer(
                 duration: 300.ms,
                 margin: const EdgeInsets.symmetric(horizontal: 4),
                 height: 6,
-                width: _currentPage == i ? 24 : 8,
+                width: _currentPage == i ? 28 : 8,
                 decoration: BoxDecoration(
-                  color: _currentPage == i ? dotActive : dotInactive,
+                  color: _currentPage == i
+                      ? cs.primary
+                      : (isDark ? Colors.white24 : cs.onSurface.withOpacity(0.15)),
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
             ),
           ),
 
-          // Action Button
-          AnimatedContainer(
-            duration: 400.ms,
-            curve: Curves.easeOutCubic,
+          // Next/Get Started button
+          Container(
             height: 56,
-            width: isLastPage ? 200 : 120,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [cs.primary, cs.tertiary],
+                colors: [cs.primary, cs.secondary],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(28),
               boxShadow: [
                 BoxShadow(
-                  color: cs.primary.withValues(alpha: 0.3),
+                  color: cs.primary.withOpacity(0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
-                )
+                ),
               ],
             ),
             child: ElevatedButton(
@@ -246,494 +329,90 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    isLastPage ? 'Start Learning' : 'Next',
+                    isLastPage ? 'Get Started' : 'Next',
                     style: GoogleFonts.outfit(
                       fontWeight: FontWeight.w800,
                       fontSize: 16,
-                      color: cs.onPrimary,
+                      color: Colors.white,
                     ),
                   ),
-                  if (!isLastPage) ...[
-                    const SizedBox(width: 8),
-                    Icon(Icons.arrow_forward_rounded,
-                        color: cs.onPrimary, size: 20),
-                  ],
+                  const SizedBox(width: 8),
+                  Icon(
+                    isLastPage ? Icons.arrow_forward_rounded : Icons.arrow_forward_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ],
               ),
             ),
-          )
-              .animate(target: isLastPage ? 1 : 0)
-              .shimmer(delay: 2.seconds, duration: 1.seconds),
-        ],
-      ),
-    );
-  }
-
-  String _getPageSuffix(int page) {
-    switch (page) {
-      case 0:
-        return ' — Intro';
-      case 1:
-        return ' — Smart';
-      case 2:
-        return ' — Input';
-      case 3:
-        return ' — Mastery';
-      default:
-        return '';
-    }
-  }
-
-  Widget _buildIntroPage(ColorScheme cs) {
-    return _OnboardingContentPage(
-      title: "Your Learning ",
-      highlightedTitle: "Brain.",
-      subtitle:
-          "Turn messy notes, PDFs, lectures, and videos into personalized learning instantly.",
-      colorScheme: cs,
-    );
-  }
-
-  Widget _buildSmartPage(ColorScheme cs) {
-    return _OnboardingContentPage(
-      title: "Study Smarter, ",
-      highlightedTitle: "Not Longer.",
-      subtitle:
-          "Sumi adapts to your strengths, weaknesses, and forgetting patterns automatically.",
-      colorScheme: cs,
-    );
-  }
-
-  Widget _buildInputPage(ColorScheme cs) {
-    return _OnboardingContentPage(
-      title: "Learn From ",
-      highlightedTitle: "Anything.",
-      subtitle:
-          "Upload notes, record lectures, paste YouTube links, or scan textbooks — Sumi handles the rest.",
-      colorScheme: cs,
-      extra: _buildFeatureGrid(cs),
-    );
-  }
-
-  Widget _buildMasteryPage(ColorScheme cs) {
-    return _OnboardingContentPage(
-      title: "Built for ",
-      highlightedTitle: "Mastery",
-      subtitle:
-          "Stay consistent, beat burnout, and grow into the smartest version of yourself.",
-      colorScheme: cs,
-      extra: _buildStatsGrid(cs),
-    );
-  }
-
-  Widget _buildFeatureGrid(ColorScheme cs) {
-    final features = [
-      {'icon': Icons.picture_as_pdf_rounded, 'label': 'PDFs'},
-      {'icon': Icons.play_circle_fill_rounded, 'label': 'YouTube'},
-      {'icon': Icons.mic_rounded, 'label': 'Voice'},
-      {'icon': Icons.camera_alt_rounded, 'label': 'Textbooks'},
-    ];
-
-    final isDark = cs.brightness == Brightness.dark;
-    final cardBg = isDark
-        ? Colors.white.withValues(alpha: 0.05)
-        : cs.surfaceContainerHighest.withValues(alpha: 0.3);
-    final cardBorder = isDark
-        ? Colors.white.withValues(alpha: 0.1)
-        : cs.outline.withValues(alpha: 0.1);
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 32),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.8,
-        ),
-        itemCount: features.length,
-        itemBuilder: (context, index) {
-          final f = features[index];
-          return ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: cardBg,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: cardBorder),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(f['icon'] as IconData, color: cs.primary, size: 26),
-                    const SizedBox(height: 8),
-                    Text(
-                      f['label'] as String,
-                      style: GoogleFonts.inter(
-                        color: isDark ? Colors.white : cs.onSurface,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ).animate().fadeIn(delay: (300 + index * 100).ms).slideY(begin: 0.2);
-        },
-      ),
-    );
-  }
-
-  Widget _buildStatsGrid(ColorScheme cs) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 32),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildStatCard(
-              'CURRENT STREAK',
-              '0 Days',
-              cs.primary,
-              cs,
-            ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: _buildStatCard(
-              'GROWTH LEVEL',
-              'Seedling',
-              cs.tertiary,
-              cs,
-            ),
-          ),
-        ],
-      ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2),
-    );
-  }
-
-  Widget _buildStatCard(
-      String label, String value, Color color, ColorScheme cs) {
-    final isDark = cs.brightness == Brightness.dark;
-    final cardBg = isDark
-        ? Colors.white.withValues(alpha: 0.05)
-        : cs.surfaceContainerHighest.withValues(alpha: 0.3);
-    final cardBorder = isDark
-        ? Colors.white.withValues(alpha: 0.1)
-        : cs.outline.withValues(alpha: 0.1);
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: cardBg,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: cardBorder),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: isDark ? Colors.white54 : cs.onSurfaceVariant,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                value,
-                style: GoogleFonts.outfit(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
-                  color: color,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  SumiState _getSumiStateForPage(int page) {
-    switch (page) {
-      case 0:
-        return SumiState.idle;
-      case 1:
-        return SumiState.analytical;
-      case 2:
-        return SumiState.focused;
-      case 3:
-        return SumiState.celebrating;
-      default:
-        return SumiState.idle;
-    }
-  }
-}
-
-class _OnboardingContentPage extends StatelessWidget {
-  final String title;
-  final String highlightedTitle;
-  final String subtitle;
-  final Widget? extra;
-  final ColorScheme colorScheme;
-
-  const _OnboardingContentPage({
-    required this.title,
-    required this.highlightedTitle,
-    required this.subtitle,
-    this.extra,
-    required this.colorScheme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = colorScheme.brightness == Brightness.dark;
-    final primaryText = isDark ? Colors.white : colorScheme.onSurface;
-    final secondaryText =
-        isDark ? Colors.white70 : colorScheme.onSurfaceVariant;
-    final highlight = colorScheme.primary;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          RichText(
-            textAlign: TextAlign.center,
-            text: TextSpan(
-              children: [
-                TextSpan(
-                  text: title,
-                  style: GoogleFonts.outfit(
-                    fontSize: 42,
-                    fontWeight: FontWeight.w800,
-                    color: primaryText,
-                    letterSpacing: -1.2,
-                    height: 1.1,
-                  ),
-                ),
-                TextSpan(
-                  text: highlightedTitle,
-                  style: GoogleFonts.outfit(
-                    fontSize: 42,
-                    fontWeight: FontWeight.w800,
-                    color: highlight,
-                    letterSpacing: -1.2,
-                    height: 1.1,
-                  ),
-                ),
-              ],
-            ),
-          )
-              .animate()
-              .fadeIn(duration: 600.ms)
-              .slideY(begin: 0.1, curve: Curves.easeOutCubic),
-          const SizedBox(height: 24),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              color: secondaryText,
-              height: 1.6,
-              fontWeight: FontWeight.w400,
-              letterSpacing: 0.2,
-            ),
-          ).animate(delay: 200.ms).fadeIn(duration: 600.ms),
-          if (extra != null) extra!,
         ],
       ),
     );
   }
 }
 
-class _FeatureBadge extends StatelessWidget {
-  final String text;
-  final ColorScheme colorScheme;
-
-  const _FeatureBadge({required this.text, required this.colorScheme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: colorScheme.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.2)),
-      ),
-      child: Text(
-        text,
-        style: GoogleFonts.jetBrainsMono(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: colorScheme.primary,
-        ),
-      ),
-    );
-  }
-}
-
-class _RoleOption extends StatelessWidget {
-  final UserRole role;
+class OnboardingPageData {
   final String title;
   final String subtitle;
+  final String description;
   final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-  final ColorScheme colorScheme;
+  final List<Color> gradientColors;
 
-  const _RoleOption({
-    required this.role,
+  const OnboardingPageData({
     required this.title,
     required this.subtitle,
+    required this.description,
     required this.icon,
-    required this.isSelected,
-    required this.onTap,
-    required this.colorScheme,
+    required this.gradientColors,
   });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: 300.ms,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? colorScheme.primary
-              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isSelected
-                ? colorScheme.primary
-                : colorScheme.outline.withValues(alpha: 0.1),
-            width: 2,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.3),
-                    blurRadius: 15,
-                    offset: const Offset(0, 8),
-                  )
-                ]
-              : [],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? colorScheme.onPrimary.withValues(alpha: 0.2)
-                    : colorScheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(
-                icon,
-                color: isSelected ? colorScheme.onPrimary : colorScheme.primary,
-                size: 28,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.outfit(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected
-                          ? colorScheme.onPrimary
-                          : colorScheme.onSurface,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: GoogleFonts.outfit(
-                      fontSize: 14,
-                      color: isSelected
-                          ? colorScheme.onPrimary.withValues(alpha: 0.8)
-                          : colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (isSelected)
-              Icon(Icons.check_circle_rounded, color: colorScheme.onPrimary),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _OnboardingBackground extends StatelessWidget {
-  final ColorScheme colorScheme;
-  const _OnboardingBackground({required this.colorScheme});
+  final bool isDark;
+
+  const _OnboardingBackground({required this.isDark});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = colorScheme.brightness == Brightness.dark;
-
-    // Select colors based on theme
-    final baseColor =
-        isDark ? const Color(0xFF09090B) : const Color(0xFFF8FAFC);
     final glow1 = isDark
-        ? Colors.blueAccent.withValues(alpha: 0.15)
-        : Colors.blue.withValues(alpha: 0.1);
+        ? const Color(0xFF1E3A8A).withOpacity(0.15)
+        : const Color(0xFF1E3A8A).withOpacity(0.08);
     final glow2 = isDark
-        ? Colors.purpleAccent.withValues(alpha: 0.15)
-        : Colors.purple.withValues(alpha: 0.1);
+        ? const Color(0xFF0D9488).withOpacity(0.15)
+        : const Color(0xFF0D9488).withOpacity(0.08);
     final glow3 = isDark
-        ? Colors.cyanAccent.withValues(alpha: 0.1)
-        : Colors.teal.withValues(alpha: 0.1);
+        ? const Color(0xFFF59E0B).withOpacity(0.1)
+        : const Color(0xFFF59E0B).withOpacity(0.06);
 
     return Stack(
       children: [
-        // Base
-        Container(color: baseColor),
+        Container(color: isDark ? const Color(0xFF09090B) : const Color(0xFFF8FAFC)),
 
-        // Animated Orbs
+        // Animated glow orbs
         Positioned(
-          top: -150,
+          top: -100,
           right: -100,
-          child: _GlowNode(color: glow1, size: 500),
+          child: _GlowOrb(color: glow1, size: 400),
         ),
         Positioned(
-          bottom: -150,
+          bottom: -100,
           left: -100,
-          child: _GlowNode(color: glow2, size: 500),
+          child: _GlowOrb(color: glow2, size: 350),
         ),
         Positioned(
-          top: MediaQuery.of(context).size.height * 0.4,
-          left: -50,
-          child: _GlowNode(color: glow3, size: 400),
+          top: MediaQuery.of(context).size.height * 0.5,
+          right: -50,
+          child: _GlowOrb(color: glow3, size: 300),
         ),
 
-        // Global Glassmorphism Blur Layer
+        // Subtle blur overlay
         Positioned.fill(
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
+            filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
             child: Container(color: Colors.transparent),
           ),
         ),
@@ -742,10 +421,11 @@ class _OnboardingBackground extends StatelessWidget {
   }
 }
 
-class _GlowNode extends StatelessWidget {
+class _GlowOrb extends StatelessWidget {
   final Color color;
   final double size;
-  const _GlowNode({required this.color, required this.size});
+
+  const _GlowOrb({required this.color, required this.size});
 
   @override
   Widget build(BuildContext context) {
@@ -759,12 +439,14 @@ class _GlowNode extends StatelessWidget {
     )
         .animate(onPlay: (c) => c.repeat(reverse: true))
         .scale(
-            begin: const Offset(1, 1),
-            end: const Offset(1.3, 1.3),
-            duration: 8.seconds)
+          begin: const Offset(1, 1),
+          end: const Offset(1.2, 1.2),
+          duration: 8.seconds,
+        )
         .move(
-            begin: const Offset(-20, -20),
-            end: const Offset(20, 20),
-            duration: 10.seconds);
+          begin: const Offset(-15, -15),
+          end: const Offset(15, 15),
+          duration: 12.seconds,
+        );
   }
 }

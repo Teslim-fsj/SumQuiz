@@ -10,8 +10,7 @@ import 'package:sumquiz/models/user_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sumquiz/utils/auth_error_messages.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sumquiz/widgets/sumi_mascot.dart';
-import 'package:sumquiz/models/sumi_emotion.dart';
+// Removed Sumi mascot for a more professional auth experience
 
 enum AuthMode { login, signUp }
 
@@ -180,43 +179,32 @@ class _AuthScreenState extends State<AuthScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Mascot interaction
-          SumiMascot(
-            state: _authMode == AuthMode.login
-                ? SumiState.idle
-                : SumiState.celebrating,
-            size: 320,
-            showBubble: true,
-            dialogue: _authMode == AuthMode.login
-                ? "Welcome back! Ready to dive back in?"
-                : "New adventure? Let's get you set up!",
-          ).animate().scale(duration: 600.ms, curve: Curves.easeOutBack),
-
-          const SizedBox(height: 48),
-
+          // Clean branding area (logo + concise value prop)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.asset('assets/images/sumquiz_logo.png',
+                height: 56, width: 56, fit: BoxFit.cover),
+          ),
+          const SizedBox(height: 20),
           Text(
-            _authMode == AuthMode.login
-                ? 'Your neural pathways\nare waiting.'
-                : 'Begin your journey\nto complete mastery.',
+            _authMode == AuthMode.login ? 'Welcome back' : 'Create your account',
             style: GoogleFonts.outfit(
-              fontSize: 48,
+              fontSize: 36,
               fontWeight: FontWeight.w900,
-              height: 1.1,
+              height: 1.05,
               color: cs.onSurface,
-              letterSpacing: -1.5,
+              letterSpacing: -1.2,
             ),
-          ).animate().fadeIn(duration: 800.ms).slideX(begin: -0.1),
-
-          const SizedBox(height: 24),
-
+          ),
+          const SizedBox(height: 12),
           Text(
-            'SumQuiz leverages advanced AI to transform any content into a personalized learning experience.',
-            style: GoogleFonts.outfit(
-              fontSize: 18,
-              color: cs.onSurface.withValues(alpha: 0.6),
-              height: 1.5,
+            'Secure, modern authentication — get access to personalized quizzes and streak boosters.',
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              color: cs.onSurface.withValues(alpha: 0.65),
+              height: 1.4,
             ),
-          ).animate(delay: 200.ms).fadeIn(),
+          ),
         ],
       ),
     );
@@ -240,48 +228,30 @@ class _AuthScreenState extends State<AuthScreen> {
         children: [
           if (isMobile) ...[
             Center(
-              child: SumiMascot(
-                state: _authMode == AuthMode.login
-                    ? SumiState.idle
-                    : SumiState.celebrating,
-                size: 160,
-                showBubble: true,
-                dialogue: _authMode == AuthMode.login
-                    ? "Welcome back!"
-                    : "Let's join!",
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset('assets/images/sumquiz_logo.png',
+                    height: 120, width: 120, fit: BoxFit.cover),
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 28),
           ],
 
-          // Auth Card
-          ClipRRect(
-            borderRadius: BorderRadius.circular(32),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-              child: Container(
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  color: cardBg,
-                  borderRadius: BorderRadius.circular(32),
-                  border: Border.all(color: cardBorder),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 30,
-                      offset: const Offset(0, 10),
-                    )
-                  ],
-                ),
-                child: AnimatedSwitcher(
-                  duration: 400.ms,
-                  child: _authMode == AuthMode.login
-                      ? _buildLoginForm(theme)
-                      : _buildSignUpForm(theme),
-                ),
+          // Clean Auth Panel (professional, non-frosted)
+          Material(
+            elevation: 2,
+            color: cardBg,
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: AnimatedSwitcher(
+                duration: 300.ms,
+                child: _authMode == AuthMode.login
+                    ? _buildLoginForm(theme)
+                    : _buildSignUpForm(theme),
               ),
             ),
-          ).animate().fadeIn().scale(begin: const Offset(0.95, 0.95)),
+          ).animate().fadeIn(),
         ],
       ),
     );

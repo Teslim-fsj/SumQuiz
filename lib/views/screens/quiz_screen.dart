@@ -425,102 +425,117 @@ class _QuizScreenState extends State<QuizScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const ExamCreationScreen()),
-          );
-        },
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
-        icon: const Icon(Icons.school_rounded),
-        label: Text('Create Exam',
-            style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
-      ).animate().scale(delay: 200.ms),
-      appBar: AppBar(
-        title: Text(
-          widget.quiz == null ? 'Create Quiz' : 'Quiz Playground',
-          style: GoogleFonts.outfit(
-            fontWeight: FontWeight.w800,
-            color: colorScheme.primary,
-            fontSize: 22,
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: BackButton(color: theme.colorScheme.onSurface),
-        actions: [
-          if (_state == QuizState.inProgress)
-            IconButton(
-              icon: const Icon(Icons.bookmark_add_outlined),
-              onPressed: _saveInProgress,
-              tooltip: 'Save Progress',
-            ),
-          if (_state != QuizState.creation && _state != QuizState.loading)
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf),
-              tooltip: 'Export PDF',
+      floatingActionButton: _state == QuizState.creation
+          ? FloatingActionButton.extended(
               onPressed: () {
-                final user = context.read<UserModel?>();
-                if (user != null && !user.isPro) {
-                  showDialog(
-                    context: context,
-                    builder: (context) =>
-                        const UpgradeDialog(featureName: 'PDF Export'),
-                  );
-                  return;
-                }
-
-                if (_quizId == null) return;
-
-                final quizToExport = LocalQuiz(
-                  id: _quizId!,
-                  userId: user?.uid ?? '',
-                  title: _titleController.text,
-                  questions: _questions,
-                  timestamp: DateTime.now(),
-                  scores: widget.quiz?.scores ?? [],
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ExamCreationScreen()),
                 );
-
-                ExportService().exportPdf(context, quiz: quizToExport);
               },
-            ),
-        ],
-        bottom: widget.quiz?.creatorName != null
-            ? PreferredSize(
-                preferredSize: const Size.fromHeight(40),
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.person_outline_rounded,
-                            size: 14, color: colorScheme.primary),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Created by ${widget.quiz!.creatorName}',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              icon: const Icon(Icons.school_rounded),
+              label: Text('Create Exam',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+            ).animate().scale(delay: 200.ms)
+          : null,
+      appBar: _state == QuizState.inProgress
+          ? _buildMinimalAppBar(theme, colorScheme)
+          : AppBar(
+              title: Text(
+                widget.quiz == null ? 'Create Quiz' : 'Quiz Playground',
+                style: GoogleFonts.outfit(
+                  fontWeight: FontWeight.w800,
+                  color: colorScheme.primary,
+                  fontSize: 22,
                 ),
-              )
-            : null,
-      ),
+              ),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: BackButton(color: theme.colorScheme.onSurface),
+            ),
       body: _buildContent(theme),
+    );
+  }
+
+  PreferredSizeWidget _buildMinimalAppBar(ThemeData theme, ColorScheme colorScheme) {
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.close_rounded),
+        onPressed: () => _saveFinalScoreAndExit(navigateToResults: false),
+        color: theme.colorScheme.onSurface,
+      ),
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _titleController.text.isEmpty ? 'Quiz' : _titleController.text,
+            style: GoogleFonts.outfit(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+              fontSize: 14,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.local_fire_department_rounded,
+                  size: 14, color: Colors.orange),
+              const SizedBox(width: 4),
+              Text(
+                'Streak: $_score',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                  color: Colors.orange,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.bookmark_add_outlined),
+          onPressed: _saveInProgress,
+          tooltip: 'Save Progress',
+          color: theme.colorScheme.primary,
+        ),
+        IconButton(
+          icon: const Icon(Icons.picture_as_pdf),
+          tooltip: 'Export PDF',
+          onPressed: () {
+            final user = context.read<UserModel?>();
+            if (user != null && !user.isPro) {
+              showDialog(
+                context: context,
+                builder: (context) =>
+                    const UpgradeDialog(featureName: 'PDF Export'),
+              );
+              return;
+            }
+
+            if (_quizId == null) return;
+
+            final quizToExport = LocalQuiz(
+              id: _quizId!,
+              userId: user?.uid ?? '',
+              title: _titleController.text,
+              questions: _questions,
+              timestamp: DateTime.now(),
+              scores: widget.quiz?.scores ?? [],
+            );
+
+            ExportService().exportPdf(context, quiz: quizToExport);
+          },
+          color: theme.colorScheme.primary,
+        ),
+      ],
     );
   }
 
