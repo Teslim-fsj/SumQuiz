@@ -25,7 +25,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: 'AI Study OS',
       subtitle: 'Your Complete Learning Intelligence Platform',
       description: 'Transform any content into personalized study materials with AI. Notes, lectures, textbooks — SumQuiz handles it all.',
-      icon: Icons.brain,
+      icon: Icons.psychology_rounded,
       gradientColors: [Color(0xFF1E3A8A), Color(0xFF0D9488)],
     ),
     OnboardingPageData(
