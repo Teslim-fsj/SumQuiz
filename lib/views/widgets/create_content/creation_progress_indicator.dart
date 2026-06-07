@@ -92,7 +92,7 @@ class CreationProgressIndicator extends StatelessWidget {
                     // D. Detailed Status
                     Text(
                       message,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                         fontSize: 14,
                         color:
                             theme.colorScheme.onSurface.withValues(alpha: 0.5),
@@ -119,7 +119,7 @@ class CreationProgressIndicator extends StatelessWidget {
                         child: Text(
                           tip!,
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.poppins(
                             fontSize: 13,
                             fontStyle: FontStyle.italic,
                             color: theme.colorScheme.primary,
@@ -256,7 +256,7 @@ class CreationProgressIndicator extends StatelessWidget {
       children: [
         Text(
           'SumQuiz AI is working',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.poppins(
             fontSize: 26,
             fontWeight: FontWeight.w900,
             color: theme.colorScheme.onSurface,
@@ -317,7 +317,7 @@ class CreationProgressIndicator extends StatelessWidget {
           const SizedBox(width: 16),
           Text(
             label,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
               fontSize: 15,
               fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
               color: isActive

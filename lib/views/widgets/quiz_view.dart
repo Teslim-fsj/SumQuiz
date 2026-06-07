@@ -257,52 +257,28 @@ class _QuizViewState extends State<QuizView> {
 
   Widget _buildTopBar(double progress, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Column(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.title,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.primary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (_isEssay)
-                      Text(
-                        'Essay / Theory',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.secondary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                  ],
-                ),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: progress,
+                backgroundColor: const Color(0xFFE2E8F0),
+                valueColor:
+                    const AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+                minHeight: 8,
               ),
-              if (widget.showSaveButton && widget.onSaveProgress != null)
-                IconButton(
-                  icon: Icon(Icons.save_alt, color: theme.colorScheme.primary),
-                  onPressed: widget.onSaveProgress,
-                ).animate().scale(),
-            ],
+            ),
           ),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: theme.disabledColor.withValues(alpha: 0.2),
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
-              minHeight: 8,
+          const SizedBox(width: 16),
+          Text(
+            '${_currentQuestionIndex + 1}/${widget.questions.length}',
+            style: GoogleFonts.inter(
+              color: const Color(0xFF64748B),
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
             ),
           ),
         ],
@@ -311,68 +287,26 @@ class _QuizViewState extends State<QuizView> {
   }
 
   Widget _buildQuestionCard(ThemeData theme, bool isMobile) {
-    return _buildGlassContainer(
-      theme: theme,
-      padding: EdgeInsets.all(isMobile ? 24 : 40),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'QUESTION ${_currentQuestionIndex + 1} OF ${widget.questions.length}',
-                style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 2.0),
-              ),
-              if (_currentQuestion.questionType != null)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _isEssay
-                        ? theme.colorScheme.secondary.withValues(alpha: 0.15)
-                        : theme.colorScheme.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  child: Text(
-                    _currentQuestion.questionType!.toUpperCase(),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: _isEssay
-                          ? theme.colorScheme.secondary
-                          : theme.colorScheme.primary,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 10,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-            ],
+    return Padding(
+      padding:
+          EdgeInsets.symmetric(horizontal: isMobile ? 8 : 16, vertical: 16),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          _currentQuestion.question,
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF0F172A),
+            fontSize: isMobile ? 20 : 22,
+            height: 1.3,
           ),
-          SizedBox(height: isMobile ? 24 : 32),
-          Text(
-            _currentQuestion.question,
-            style: (isMobile
-                    ? theme.textTheme.headlineSmall
-                    : theme.textTheme.headlineLarge)
-                ?.copyWith(
-              fontWeight: FontWeight.w900,
-              color: theme.colorScheme.onSurface,
-              height: 1.2,
-              letterSpacing: -0.5,
-            ),
-            textAlign: TextAlign.center,
-          )
-              .animate(key: ValueKey(_currentQuestionIndex))
-              .fadeIn(duration: 400.ms)
-              .scale(begin: const Offset(0.98, 0.98), curve: Curves.easeOut),
-        ],
+          textAlign: TextAlign.left,
+        )
+            .animate(key: ValueKey(_currentQuestionIndex))
+            .fadeIn(duration: 400.ms)
+            .slideX(begin: 0.05, end: 0, curve: Curves.easeOut),
       ),
-    )
-        .animate()
-        .slideY(begin: 0.05, end: 0, duration: 500.ms, curve: Curves.easeOut)
-        .fade();
+    );
   }
 
   Widget _buildEssayInput(ThemeData theme) {
@@ -602,89 +536,40 @@ class _QuizViewState extends State<QuizView> {
 
   Widget _buildBottomBar(ThemeData theme, bool isMobile) {
     final bool canProceed = _answerWasSelected;
+    final primaryColor = const Color(0xFF3B82F6); // Blue
 
     return Container(
       padding:
-          EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: 12),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        border: Border(top: BorderSide(color: theme.dividerColor)),
+          EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: 16),
+      decoration: const BoxDecoration(
+        color: Colors.white,
       ),
-      child: Row(
-        children: [
-          // Back Button
-          if (_currentQuestionIndex > 0)
-            Padding(
-              padding: const EdgeInsets.only(right: 12.0),
-              child: SizedBox(
-                height: 48,
-                child: OutlinedButton(
-                  onPressed: _handlePreviousQuestion,
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(
-                        color: WebColors.primary.withValues(alpha: 0.3)),
-                    padding:
-                        EdgeInsets.symmetric(horizontal: isMobile ? 12 : 20),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.arrow_back_rounded,
-                          color: WebColors.primary, size: 20),
-                      if (!isMobile) ...[
-                        const SizedBox(width: 8),
-                        const Text('Back',
-                            style: TextStyle(color: WebColors.primary)),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
+      child: SizedBox(
+        height: 56,
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: canProceed ? _handleNextQuestion : null,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryColor,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
-
-          // Main Action Button (Next/Finish)
-          Expanded(
-            child: SizedBox(
-              height: 48,
-              child: ElevatedButton(
-                onPressed: canProceed ? _handleNextQuestion : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: WebColors.primary,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  disabledBackgroundColor: WebColors.border,
-                  disabledForegroundColor: WebColors.textTertiary,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      _currentQuestionIndex < widget.questions.length - 1
-                          ? (isMobile ? 'Next' : 'Next Question')
-                          : 'Finish Quiz',
-                      style: GoogleFonts.outfit(
-                        fontWeight: FontWeight.w700,
-                        fontSize: isMobile ? 15 : 16,
-                        color:
-                            canProceed ? Colors.white : WebColors.textTertiary,
-                      ),
-                    ),
-                    if (_currentQuestionIndex <
-                        widget.questions.length - 1) ...[
-                      const SizedBox(width: 8),
-                      const Icon(Icons.arrow_forward_rounded, size: 20),
-                    ],
-                  ],
-                ),
-              ),
+            disabledBackgroundColor: const Color(0xFF94A3B8),
+            disabledForegroundColor: Colors.white,
+          ),
+          child: Text(
+            _currentQuestionIndex < widget.questions.length - 1
+                ? 'Next'
+                : 'Finish Quiz',
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              color: Colors.white,
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -693,39 +578,35 @@ class _QuizViewState extends State<QuizView> {
       int index, LocalQuizQuestion question, ThemeData theme, bool isMobile) {
     bool isSelected = _selectedAnswerIndex == index;
     bool isCorrect = question.options[index] == question.correctAnswer;
-    final colorScheme = theme.colorScheme;
+    final primaryColor = const Color(0xFF3B82F6); // Blue
 
-    Color borderColor = theme.dividerColor.withValues(alpha: 0.1);
-    Color backgroundColor = theme.cardColor.withValues(alpha: 0.6);
-    IconData icon = Icons.circle_outlined;
-    Color iconColor = theme.disabledColor;
-    Color textColor = theme.colorScheme.onSurface;
-
-    // Convert index to option letter (A, B, C, D)
-    final String optionLetter = String.fromCharCode(65 + index);
+    Color borderColor = Colors.white;
+    Color backgroundColor = Colors.white;
+    Color badgeColor = const Color(0xFFF1F5F9); // Light Grey
+    Color badgeTextColor = const Color(0xFF334155); // Dark Grey
+    Color textColor = const Color(0xFF0F172A);
 
     if (_answerWasSelected) {
       if (isCorrect) {
         borderColor = Colors.green;
-        backgroundColor = Colors.green.withValues(alpha: 0.08);
-        icon = Icons.check_circle_rounded;
-        iconColor = Colors.green;
-        textColor = Colors.green.shade700;
+        backgroundColor = Colors.green.withValues(alpha: 0.05);
+        badgeColor = Colors.green;
+        badgeTextColor = Colors.white;
       } else if (isSelected) {
         borderColor = Colors.red;
-        backgroundColor = Colors.red.withValues(alpha: 0.08);
-        icon = Icons.cancel_rounded;
-        iconColor = Colors.red;
-        textColor = Colors.red.shade700;
-      } else {
-        backgroundColor = theme.cardColor.withValues(alpha: 0.25);
-        textColor = theme.colorScheme.onSurface.withValues(alpha: 0.4);
+        backgroundColor = Colors.red.withValues(alpha: 0.05);
+        badgeColor = Colors.red;
+        badgeTextColor = Colors.white;
       }
     } else if (isSelected) {
-      borderColor = colorScheme.primary;
-      backgroundColor = colorScheme.primary.withValues(alpha: 0.05);
-      iconColor = colorScheme.primary;
+      borderColor = primaryColor;
+      backgroundColor = primaryColor.withValues(alpha: 0.05);
+      badgeColor = primaryColor;
+      badgeTextColor = Colors.white;
+      textColor = primaryColor;
     }
+
+    final String optionLetter = String.fromCharCode(65 + index);
 
     return GestureDetector(
       onTap: () => _onAnswerSelected(index),
@@ -735,91 +616,88 @@ class _QuizViewState extends State<QuizView> {
         padding:
             EdgeInsets.symmetric(horizontal: 20, vertical: isMobile ? 16 : 20),
         decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: borderColor,
-              width: 1.5,
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color:
+                isSelected || (_answerWasSelected && (isCorrect || isSelected))
+                    ? borderColor
+                    : const Color(0xFFF1F5F9),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            boxShadow: [
-              if (isSelected && !_answerWasSelected)
-                BoxShadow(
-                  color: colorScheme.primary.withValues(alpha: 0.1),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              if (_answerWasSelected && (isCorrect || isSelected))
-                BoxShadow(
-                  color: (isCorrect ? Colors.green : Colors.red)
-                      .withValues(alpha: 0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-            ]),
+          ],
+        ),
         child: Row(
           children: [
-            // Neat Academic Letter Badge (A, B, C, D)
             Container(
-              width: isMobile ? 32 : 36,
-              height: isMobile ? 32 : 36,
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
-                color: _answerWasSelected
-                    ? (isCorrect
-                        ? Colors.green.withValues(alpha: 0.15)
-                        : (isSelected
-                            ? Colors.red.withValues(alpha: 0.15)
-                            : theme.disabledColor.withValues(alpha: 0.05)))
-                    : (isSelected
-                        ? colorScheme.primary.withValues(alpha: 0.15)
-                        : theme.dividerColor.withValues(alpha: 0.05)),
+                color: badgeColor,
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: _answerWasSelected
-                      ? (isCorrect
-                          ? Colors.green
-                          : (isSelected ? Colors.red : Colors.transparent))
-                      : (isSelected
-                          ? colorScheme.primary
-                          : theme.dividerColor.withValues(alpha: 0.1)),
-                  width: 1.5,
-                ),
               ),
               child: Center(
-                child: _answerWasSelected && (isCorrect || isSelected)
-                    ? Icon(icon, color: iconColor, size: isMobile ? 18 : 20)
-                    : Text(
-                        optionLetter,
-                        style: GoogleFonts.outfit(
-                          fontWeight: FontWeight.bold,
-                          fontSize: isMobile ? 14 : 15,
-                          color: _answerWasSelected
-                              ? (isCorrect
-                                  ? Colors.green.shade700
-                                  : (isSelected
-                                      ? Colors.red.shade700
-                                      : theme.hintColor))
-                              : (isSelected
-                                  ? colorScheme.primary
-                                  : theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.6)),
-                        ),
-                      ),
+                child: Text(
+                  optionLetter,
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: badgeTextColor,
+                  ),
+                ),
               ),
             ),
-            SizedBox(width: isMobile ? 16 : 20),
+            const SizedBox(width: 16),
             Expanded(
               child: Text(
                 question.options[index],
                 style: GoogleFonts.inter(
                   color: textColor,
-                  fontWeight: (isSelected || (_answerWasSelected && isCorrect))
-                      ? FontWeight.w700
-                      : FontWeight.w500,
-                  fontSize: isMobile ? 15 : 17,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
                   height: 1.3,
                 ),
               ),
             ),
+            if (isSelected && !_answerWasSelected)
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: primaryColor,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check_rounded,
+                    color: Colors.white, size: 16),
+              ),
+            if (_answerWasSelected && isCorrect)
+              Container(
+                width: 24,
+                height: 24,
+                decoration: const BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check_rounded,
+                    color: Colors.white, size: 16),
+              ),
+            if (_answerWasSelected && isSelected && !isCorrect)
+              Container(
+                width: 24,
+                height: 24,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close_rounded,
+                    color: Colors.white, size: 16),
+              ),
           ],
         ),
       ),

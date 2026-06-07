@@ -10,13 +10,13 @@ class SharedTeacherWidgets {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
                 fontSize: isMobile ? 22 : 26,
                 fontWeight: FontWeight.w900,
                 color: WebColors.textPrimary)),
         const SizedBox(height: 4),
         Text(subtitle,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.lato(
                 fontSize: isMobile ? 12 : 14, color: WebColors.textSecondary)),
       ],
     );
@@ -39,7 +39,7 @@ class SharedTeacherWidgets {
               Icon(icon, size: 18, color: WebColors.textSecondary),
               const SizedBox(width: 10),
               Text(title,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
                       color: WebColors.textPrimary)),
@@ -63,7 +63,7 @@ class SharedTeacherWidgets {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(label,
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.poppins(
               fontSize: 10, fontWeight: FontWeight.w800, color: color)),
     );
   }
@@ -72,7 +72,7 @@ class SharedTeacherWidgets {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Text(text,
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.lato(
               fontSize: 13,
               color: WebColors.textTertiary,
               fontStyle: FontStyle.italic)),
@@ -94,11 +94,11 @@ class SharedTeacherWidgets {
               size: 48, color: WebColors.textTertiary),
           const SizedBox(height: 16),
           Text(title,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                   fontSize: 18, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
           Text(subtitle,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.lato(
                   fontSize: 14, color: WebColors.textSecondary),
               textAlign: TextAlign.center),
         ],
@@ -119,7 +119,7 @@ class SharedTeacherWidgets {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text('${score.toStringAsFixed(0)}%',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.poppins(
               fontSize: 12, fontWeight: FontWeight.w800, color: color)),
     );
   }

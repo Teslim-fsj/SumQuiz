@@ -28,7 +28,7 @@ class WebConfiguration extends StatelessWidget {
               children: [
                 Text(
                   'Configure Your Study Pack',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
                     color: const Color(0xFF1A1A1A),
@@ -37,7 +37,7 @@ class WebConfiguration extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(
                   'Tailor your learning experience. Our AI will curate content based on your difficulty preference and study archetype.',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                     fontSize: 15,
                     fontWeight: FontWeight.w400,
                     color: const Color(0xFF666666),
@@ -182,7 +182,7 @@ class WebConfiguration extends StatelessWidget {
                             children: [
                               Text(
                                 'Generate Study Pack',
-                                style: GoogleFonts.outfit(
+                                style: GoogleFonts.poppins(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w800,
                                   color: Colors.white,
@@ -220,7 +220,7 @@ class WebConfiguration extends StatelessWidget {
               children: [
                 Text(
                   'Summary Preview',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: const Color(0xFF1A1A1A),
@@ -268,7 +268,7 @@ class WebConfiguration extends StatelessWidget {
                           const SizedBox(width: 8),
                           Text(
                             'AI ESTIMATE',
-                            style: GoogleFonts.outfit(
+                            style: GoogleFonts.poppins(
                               fontSize: 12,
                               fontWeight: FontWeight.w900,
                               color: const Color(0xFF3300FF),
@@ -280,7 +280,7 @@ class WebConfiguration extends StatelessWidget {
                       const SizedBox(height: 12),
                       Text(
                         'Estimated study time: 45-60 mins. This pack will focus heavily on conceptual logic and structural definitions.',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                           color: const Color(0xFF444444),
@@ -309,7 +309,7 @@ class WebConfiguration extends StatelessWidget {
                     child: Text(
                       'YOUR LEARNING\nSPACE IS READY',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w900,
                         color: Colors.white,
@@ -348,7 +348,7 @@ class WebConfiguration extends StatelessWidget {
         const SizedBox(height: 12),
         Text(
           title,
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.poppins(
             fontSize: 12,
             fontWeight: FontWeight.w900,
             color: const Color(0xFF3300FF),
@@ -408,7 +408,7 @@ class _DifficultyCard extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 label,
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
                   color: isSelected ? Colors.white : const Color(0xFF1A1A1A),
@@ -446,7 +446,7 @@ class _CountSelector extends StatelessWidget {
               onSelected: (_) => onChanged(v),
               selectedColor: const Color(0xFFBDC7FF),
               backgroundColor: const Color(0xFFF4F6FF),
-              labelStyle: GoogleFonts.outfit(
+              labelStyle: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
                 color: selectedValue == v
                     ? const Color(0xFF3300FF)
@@ -463,7 +463,7 @@ class _CountSelector extends StatelessWidget {
             selected: true,
             onSelected: (_) {},
             selectedColor: const Color(0xFF3300FF),
-            labelStyle: GoogleFonts.outfit(
+            labelStyle: GoogleFonts.poppins(
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
@@ -479,7 +479,7 @@ class _CountSelector extends StatelessWidget {
           style: TextButton.styleFrom(
             foregroundColor: const Color(0xFF666666),
             textStyle:
-                GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.bold),
+                GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold),
             backgroundColor: const Color(0xFFF4F6FF),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             shape:
@@ -582,13 +582,13 @@ class _ArchetypeCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
                           color: const Color(0xFF1A1A1A))),
                   const SizedBox(height: 8),
                   Text(description,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                           color: const Color(0xFF666666),
@@ -655,14 +655,14 @@ class _PreviewItem extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 10,
                       fontWeight: FontWeight.w900,
                       color: const Color(0xFF999999),
                       letterSpacing: 1.0)),
               const SizedBox(height: 2),
               Text(value,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: const Color(0xFF1A1A1A))),

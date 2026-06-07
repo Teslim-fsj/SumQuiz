@@ -34,7 +34,7 @@ import 'package:sumquiz/views/screens/web/results_view_screen_web.dart';
 import 'package:sumquiz/views/screens/web/teacher_dashboard_web.dart';
 import 'package:sumquiz/views/screens/web/public_scaffold_web.dart';
 import 'package:sumquiz/views/screens/web/student_landing_view.dart';
-import 'package:sumquiz/views/screens/web/creator_tab_view.dart';
+import 'package:sumquiz/views/screens/web/educator_landing_view.dart';
 import 'package:sumquiz/views/screens/exam_creation_screen.dart';
 import 'package:sumquiz/views/screens/web/review_screen_web.dart';
 import 'package:sumquiz/views/screens/web/exam_creation_screen_web.dart';
@@ -170,7 +170,7 @@ GoRouter createRouter(AuthService authService) {
         path: '/Educators',
         builder: (context, state) => const PublicScaffoldWeb(
           isEducatorRoute: true,
-          child: CreatorTabView(),
+          child: EducatorLandingView(),
         ),
       ),
       GoRoute(

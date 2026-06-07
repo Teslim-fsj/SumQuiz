@@ -29,7 +29,7 @@ class WebSourceSelection extends StatelessWidget {
           const SizedBox(height: 20),
           Text(
             'Choose Your Knowledge Source',
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
               fontSize: 28,
               fontWeight: FontWeight.w800,
               color: const Color(0xFF1A1A1A),
@@ -40,7 +40,7 @@ class WebSourceSelection extends StatelessWidget {
           Text(
             'Transform any information into mastery. Select your material to begin\nthe generation process.',
             textAlign: TextAlign.center,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
               fontSize: 15,
               fontWeight: FontWeight.w400,
               color: const Color(0xFF666666),
@@ -155,7 +155,7 @@ class WebSourceSelection extends StatelessWidget {
                 const SizedBox(width: 12),
                 Text(
                   'AI Engine Status: ',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: const Color(0xFF666666),
@@ -163,7 +163,7 @@ class WebSourceSelection extends StatelessWidget {
                 ),
                 Text(
                   'Ready to ingest new data',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: const Color(0xFF3300FF),
@@ -254,7 +254,7 @@ class _SourceCardState extends State<_SourceCard> {
                   Expanded(
                     child: Text(
                       widget.title,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
                         color: const Color(0xFF1A1A1A),
@@ -273,7 +273,7 @@ class _SourceCardState extends State<_SourceCard> {
                       ),
                       child: Text(
                         'PRO',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                           fontSize: 10,
                           fontWeight: FontWeight.w900,
                           color: Colors.amber.shade800,
@@ -286,7 +286,7 @@ class _SourceCardState extends State<_SourceCard> {
               const SizedBox(height: 10),
               Text(
                 widget.description,
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.poppins(
                   fontSize: 13,
                   height: 1.4,
                   fontWeight: FontWeight.w400,
@@ -328,7 +328,7 @@ class _SourceCardState extends State<_SourceCard> {
                   children: [
                     Text(
                       widget.buttonText,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
                         color: widget.accentColor,

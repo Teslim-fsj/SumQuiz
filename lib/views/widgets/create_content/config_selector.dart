@@ -57,7 +57,7 @@ class ConfigSelector extends StatelessWidget {
   Widget _buildSectionTitle(BuildContext context, String title) {
     return Text(
       title.toUpperCase(),
-      style: GoogleFonts.outfit(
+      style: GoogleFonts.poppins(
         fontSize: 11,
         fontWeight: FontWeight.w900,
         color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
@@ -112,7 +112,7 @@ class ConfigSelector extends StatelessWidget {
                       size: 22),
                   const SizedBox(height: 8),
                   Text(opt.$2,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
                           color: isSelected
@@ -135,7 +135,7 @@ class ConfigSelector extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('QUIZ ITEMS',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       color: Colors.grey)),
@@ -151,7 +151,7 @@ class ConfigSelector extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('FLASHCARDS',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       color: Colors.grey)),
@@ -184,14 +184,14 @@ class ConfigSelector extends StatelessWidget {
         child: DropdownButton<int>(
           value: values.contains(selected) ? selected : null,
           hint: Text('$selected',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                   fontWeight: FontWeight.bold,
                   color: theme.colorScheme.primary)),
           items: [
             ...values.map((v) => DropdownMenuItem(
                 value: v,
                 child: Text('$v',
-                    style: GoogleFonts.outfit(fontWeight: FontWeight.bold)))),
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold)))),
             DropdownMenuItem(
               value: -1,
               child: Row(
@@ -199,7 +199,7 @@ class ConfigSelector extends StatelessWidget {
                   const Icon(Icons.edit_note_rounded, size: 18),
                   const SizedBox(width: 8),
                   Text('Custom',
-                      style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -312,7 +312,7 @@ class ConfigSelector extends StatelessWidget {
                     size: 16),
                 const SizedBox(width: 8),
                 Text(type.$1,
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.poppins(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color:
@@ -377,10 +377,10 @@ class _ArchetypeMobileCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                           fontSize: 15, fontWeight: FontWeight.bold)),
                   Text(description,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                           fontSize: 11, color: Colors.grey[600])),
                 ],
               ),

@@ -90,7 +90,7 @@ class SourceChoiceCard extends StatelessWidget {
                   const Spacer(),
                   Text(
                     title,
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.poppins(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
                       color: theme.textTheme.displayLarge?.color,
@@ -128,7 +128,7 @@ class SourceChoiceCard extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: GoogleFonts.outfit(
+        style: GoogleFonts.poppins(
           fontSize: 10,
           fontWeight: FontWeight.w900,
           color: baseColor,

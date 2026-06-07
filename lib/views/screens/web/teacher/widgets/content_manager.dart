@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sumquiz/models/public_deck.dart';
 import 'package:sumquiz/models/teacher_models.dart';
 import 'package:sumquiz/theme/web_theme.dart';
+import 'package:sumquiz/providers/theme_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
 import 'package:sumquiz/models/local_quiz_question.dart';
@@ -205,7 +206,7 @@ class _ContentManagerState extends State<ContentManager> {
                       color: Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16)),
                   child: Text('CURRICULUM INTELLIGENCE',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                           color: Colors.white70,
@@ -214,7 +215,7 @@ class _ContentManagerState extends State<ContentManager> {
                 const SizedBox(height: 16),
                 Text(
                   'Manage Content Lifecycle',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 24,
                       fontWeight: FontWeight.w900,
                       color: Colors.white,
@@ -250,7 +251,7 @@ class _ContentManagerState extends State<ContentManager> {
                             color: Colors.white.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(16)),
                         child: Text('CURRICULUM INTELLIGENCE',
-                            style: GoogleFonts.outfit(
+                            style: GoogleFonts.poppins(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white70,
@@ -259,7 +260,7 @@ class _ContentManagerState extends State<ContentManager> {
                       const SizedBox(height: 12),
                       Text(
                         'Manage Content Lifecycle',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: 22,
                             fontWeight: FontWeight.w900,
                             color: Colors.white,
@@ -268,7 +269,7 @@ class _ContentManagerState extends State<ContentManager> {
                       const SizedBox(height: 8),
                       Text(
                         'Orchestrate study pathways. Convert lectures into quizzes and exams with AI insights.',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.lato(
                             fontSize: 12, color: Colors.white70, height: 1.4),
                       ),
                     ],
@@ -301,14 +302,14 @@ class _ContentManagerState extends State<ContentManager> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                   fontSize: 9,
                   fontWeight: FontWeight.bold,
                   color: Colors.white54,
                   letterSpacing: 0.8)),
           const SizedBox(height: 4),
           Text(value,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
                   color: Colors.white)),
@@ -325,7 +326,7 @@ class _ContentManagerState extends State<ContentManager> {
         _buildSearchBar(),
         const SizedBox(height: 24),
         Text('CONTENT ENGINE',
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
                 color: Colors.grey[500],
@@ -338,7 +339,7 @@ class _ContentManagerState extends State<ContentManager> {
             () => setState(() => _showExams = true)),
         const SizedBox(height: 24),
         Text('STATUS FILTER',
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
                 color: Colors.grey[500],
@@ -364,22 +365,22 @@ class _ContentManagerState extends State<ContentManager> {
                   decoration: const BoxDecoration(
                       color: Colors.white, shape: BoxShape.circle),
                   child: const Icon(Icons.psychology,
-                      color: WebColors.purplePrimary, size: 20)),
+                      color: ThemeProvider.primaryDeepBlue, size: 20)),
               const SizedBox(height: 16),
               Text('Content Performance Insight',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 15, fontWeight: FontWeight.w800)),
               const SizedBox(height: 8),
               Text(
                   '"Recent packs show 40% higher retention rates among students."',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.lato(
                       fontSize: 12, color: Colors.grey[700], height: 1.5)),
               const SizedBox(height: 16),
               Text('VIEW ANALYSIS →',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: WebColors.purplePrimary)),
+                      color: ThemeProvider.primaryDeepBlue)),
             ],
           ),
         ),
@@ -394,16 +395,16 @@ class _ContentManagerState extends State<ContentManager> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: WebColors.border),
+        border: Border.all(color: Colors.grey[300]!),
       ),
       child: TextField(
         onChanged: (v) => setState(() => _searchQuery = v),
         decoration: InputDecoration(
           hintText: 'Search curriculum...',
           hintStyle:
-              GoogleFonts.outfit(fontSize: 14, color: WebColors.textTertiary),
+              GoogleFonts.lato(fontSize: 14, color: Colors.grey[500]),
           prefixIcon:
-              const Icon(Icons.search, size: 20, color: WebColors.textTertiary),
+              Icon(Icons.search, size: 20, color: Colors.grey[500]),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 14),
         ),
@@ -421,18 +422,18 @@ class _ContentManagerState extends State<ContentManager> {
         padding: EdgeInsets.symmetric(
             horizontal: isMobile ? 16 : 20, vertical: isMobile ? 12 : 14),
         decoration: BoxDecoration(
-          color: isActive ? WebColors.purplePrimary : Colors.white,
+          color: isActive ? ThemeProvider.primaryDeepBlue : Colors.white,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
               color:
-                  isActive ? WebColors.purplePrimary : const Color(0xFFE5E7EB)),
+                  isActive ? ThemeProvider.primaryDeepBlue : const Color(0xFFE5E7EB)),
         ),
         child: Row(
           mainAxisSize: isMobile ? MainAxisSize.min : MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(label,
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.poppins(
                     fontSize: isMobile ? 13 : 14,
                     fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
                     color: isActive ? Colors.white : const Color(0xFF1F1F1F))),
@@ -445,7 +446,7 @@ class _ContentManagerState extends State<ContentManager> {
                       : const Color(0xFFF3F4F6),
                   borderRadius: BorderRadius.circular(12)),
               child: Text('$count',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       color: isActive ? Colors.white : Colors.grey[700])),
@@ -466,14 +467,14 @@ class _ContentManagerState extends State<ContentManager> {
           child: Checkbox(
             value: isChecked,
             onChanged: onChange,
-            activeColor: WebColors.purplePrimary,
+            activeColor: ThemeProvider.primaryDeepBlue,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
           ),
         ),
         const SizedBox(width: 8),
         Text('$label ($count)',
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
                 fontSize: 13,
                 color: Colors.grey[800],
                 fontWeight: FontWeight.w500)),
@@ -494,10 +495,10 @@ class _ContentManagerState extends State<ContentManager> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(_showExams ? 'Current Exams' : 'Current Study Packs',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                           fontSize: 18, fontWeight: FontWeight.w900)),
                   Text('Managing ${displayedItems.length} active bundles',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.lato(
                           fontSize: 12, color: Colors.grey[600])),
                 ],
               ),
@@ -506,14 +507,14 @@ class _ContentManagerState extends State<ContentManager> {
                   Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                          border: Border.all(color: WebColors.border),
+                          border: Border.all(color: Colors.grey[300]!),
                           shape: BoxShape.circle),
                       child: const Icon(Icons.filter_list, size: 20)),
                   const SizedBox(width: 12),
                   Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                          border: Border.all(color: WebColors.border),
+                          border: Border.all(color: Colors.grey[300]!),
                           shape: BoxShape.circle),
                       child: const Icon(Icons.sort, size: 20)),
                 ],
@@ -555,7 +556,7 @@ class _ContentManagerState extends State<ContentManager> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: WebColors.cardShadow,
-        border: Border.all(color: WebColors.border.withValues(alpha: 0.5)),
+        border: Border.all(color: Colors.grey[300]!.withValues(alpha: 0.5)),
       ),
       padding: EdgeInsets.all(isMobile ? 12 : 16),
       child: Column(
@@ -569,7 +570,7 @@ class _ContentManagerState extends State<ContentManager> {
                 decoration: const BoxDecoration(
                     color: Color(0xFFEEF2FF), shape: BoxShape.circle),
                 child: Icon(deck.isExam ? Icons.assignment : Icons.science,
-                    color: WebColors.purplePrimary),
+                    color: ThemeProvider.primaryDeepBlue),
               ),
               Container(
                 padding:
@@ -583,7 +584,7 @@ class _ContentManagerState extends State<ContentManager> {
                     const Icon(Icons.circle, color: Color(0xFF166534), size: 6),
                     const SizedBox(width: 6),
                     Text('PUBLIC',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                             color: const Color(0xFF166534))),
@@ -594,7 +595,7 @@ class _ContentManagerState extends State<ContentManager> {
           ),
           const SizedBox(height: 16),
           Text(deck.title,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                   fontSize: isMobile ? 16 : 18,
                   fontWeight: FontWeight.w800,
                   height: 1.2),
@@ -602,7 +603,7 @@ class _ContentManagerState extends State<ContentManager> {
               overflow: TextOverflow.ellipsis),
           const SizedBox(height: 8),
           Text('Updated ${DateFormat.MMMd().format(deck.publishedAt)}',
-              style: GoogleFonts.outfit(fontSize: 12, color: Colors.grey[500])),
+              style: GoogleFonts.lato(fontSize: 12, color: Colors.grey[500])),
           if (!deck.isExam) ...[
             SizedBox(height: isMobile ? 16 : 24),
             Row(
@@ -628,13 +629,13 @@ class _ContentManagerState extends State<ContentManager> {
                   children: [
                     Text(
                         '${((widget.analytics[deck.id]?.engagementRate ?? 0) * 12).toInt()} enrollments',
-                        style: GoogleFonts.outfit(
-                            color: WebColors.purplePrimary,
+                        style: GoogleFonts.poppins(
+                            color: ThemeProvider.primaryDeepBlue,
                             fontWeight: FontWeight.bold,
                             fontSize: 11)),
                     const SizedBox(height: 2),
                     Text('Code: ${deck.shareCode}',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.lato(
                             fontSize: 10,
                             color: Colors.grey[600],
                             fontWeight: FontWeight.w600)),
@@ -652,7 +653,7 @@ class _ContentManagerState extends State<ContentManager> {
                   IconButton(
                     tooltip: 'Share Public Link',
                     icon: const Icon(Icons.share_rounded,
-                        size: 18, color: WebColors.purplePrimary),
+                        size: 18, color: ThemeProvider.primaryDeepBlue),
                     onPressed: () {
                       final slug = deck.slug;
                       final origin =
@@ -693,10 +694,10 @@ class _ContentManagerState extends State<ContentManager> {
           borderRadius: BorderRadius.circular(16)),
       child: Column(
         children: [
-          Icon(icon, size: 16, color: WebColors.purplePrimary),
+          Icon(icon, size: 16, color: ThemeProvider.primaryDeepBlue),
           const SizedBox(height: 8),
           Text(label,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
                   color: Colors.grey[700])),
@@ -732,7 +733,7 @@ class _ContentManagerState extends State<ContentManager> {
                 ? 'No matching results'
                 : 'No ${_showExams ? 'Exams' : 'Study Packs'} Created Yet',
             style:
-                GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold),
+                GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
@@ -740,7 +741,7 @@ class _ContentManagerState extends State<ContentManager> {
                 ? 'Try adjusting your search terms or filters.'
                 : 'Start building your curriculum by creating your first ${_showExams ? 'formal exam' : 'study pack'}.',
             textAlign: TextAlign.center,
-            style: GoogleFonts.outfit(fontSize: 14, color: Colors.grey[600]),
+            style: GoogleFonts.lato(fontSize: 14, color: Colors.grey[600]),
           ),
           const SizedBox(height: 32),
           ElevatedButton.icon(
@@ -748,7 +749,7 @@ class _ContentManagerState extends State<ContentManager> {
             icon: const Icon(Icons.add),
             label: Text('Create First ${_showExams ? 'Exam' : 'Pack'}'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: WebColors.purplePrimary,
+              backgroundColor: ThemeProvider.primaryDeepBlue,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
@@ -776,7 +777,7 @@ class _ContentManagerState extends State<ContentManager> {
                 color: Colors.white.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12)),
             child: Text('RECOMMENDED AI GENERATION',
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.poppins(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                     color: Colors.white70,
@@ -784,7 +785,7 @@ class _ContentManagerState extends State<ContentManager> {
           ),
           const SizedBox(height: 20),
           Text('Advanced\nMacroeconomics\nPack',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -792,7 +793,7 @@ class _ContentManagerState extends State<ContentManager> {
           const SizedBox(height: 12),
           Text(
               'Our AI has analyzed your recent lectures and synthesized a 3-part study bundle with specialized focus on Keynesian multipliers.',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.lato(
                   fontSize: 12, color: Colors.white70, height: 1.5)),
           const Spacer(),
           Row(
@@ -842,12 +843,12 @@ class _ContentManagerState extends State<ContentManager> {
           color: const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-              color: WebColors.purplePrimary.withValues(alpha: 0.3),
+              color: ThemeProvider.primaryDeepBlue.withValues(alpha: 0.3),
               style: BorderStyle.none),
         ),
         child: CustomPaint(
           painter: DashedBorderPainter(
-              color: WebColors.purplePrimary.withValues(alpha: 0.4)),
+              color: ThemeProvider.primaryDeepBlue.withValues(alpha: 0.4)),
           child: Padding(
             padding: const EdgeInsets.all(32),
             child: Column(
@@ -858,15 +859,15 @@ class _ContentManagerState extends State<ContentManager> {
                   decoration: const BoxDecoration(
                       color: Colors.white, shape: BoxShape.circle),
                   child: const Icon(Icons.add,
-                      color: WebColors.purplePrimary, size: 32),
+                      color: ThemeProvider.primaryDeepBlue, size: 32),
                 ),
                 const SizedBox(height: 24),
                 Text('Create New ${_showExams ? 'Exam' : 'Pack'}',
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.poppins(
                         fontSize: 18, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 8),
                 Text('Start from scratch or use AI generator',
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.lato(
                         fontSize: 12, color: Colors.grey[600])),
               ],
             ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:sumquiz/providers/theme_provider.dart';
 
 class WebExamConfigStep extends StatelessWidget {
   final int numberOfQuestions;
@@ -59,7 +60,7 @@ class WebExamConfigStep extends StatelessWidget {
             children: [
               Text(
                 'Advanced Exam Configuration',
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.poppins(
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
                   color: const Color(0xFF1E293B),
@@ -68,7 +69,7 @@ class WebExamConfigStep extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 'Fine-tune the intelligence engine. Define your constraints, question variety,\nand difficulty distribution for the Final Architecture exam.',
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.poppins(
                   fontSize: 13,
                   color: const Color(0xFF475569),
                   height: 1.5,
@@ -144,7 +145,7 @@ class WebExamConfigStep extends StatelessWidget {
                               radius: 16,
                               backgroundColor: const Color(0xFFE2E8F0),
                               child: Text('+12',
-                                  style: GoogleFonts.outfit(
+                                  style: GoogleFonts.poppins(
                                       fontSize: 9,
                                       fontWeight: FontWeight.bold,
                                       color: const Color(0xFF475569))),
@@ -156,7 +157,7 @@ class WebExamConfigStep extends StatelessWidget {
                     const SizedBox(width: 16),
                     Text.rich(
                       TextSpan(
-                        style: GoogleFonts.outfit(fontSize: 12),
+                        style: GoogleFonts.poppins(fontSize: 12),
                         children: [
                           TextSpan(
                               text: '14 Educators ',
@@ -178,7 +179,7 @@ class WebExamConfigStep extends StatelessWidget {
                       icon: const Icon(Icons.arrow_back, size: 18),
                       label: Text('Previous: Source Material',
                           style:
-                              GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+                              GoogleFonts.poppins(fontWeight: FontWeight.bold)),
                       style: TextButton.styleFrom(
                           foregroundColor: const Color(0xFF64748B)),
                     ),
@@ -186,7 +187,7 @@ class WebExamConfigStep extends StatelessWidget {
                     ElevatedButton(
                       onPressed: isGenerating ? null : onFinalize,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF4F46E5),
+                        backgroundColor: ThemeProvider.primaryDeepBlue,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24)),
@@ -199,7 +200,7 @@ class WebExamConfigStep extends StatelessWidget {
                             isGenerating
                                 ? 'GENERATING...'
                                 : 'Generate Draft Exam',
-                            style: GoogleFonts.outfit(
+                            style: GoogleFonts.poppins(
                                 fontSize: 14, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(width: 12),
@@ -247,7 +248,7 @@ class WebExamConfigStep extends StatelessWidget {
             children: [
               Text(
                 'TOTAL QUESTION COUNT',
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.5,
@@ -270,10 +271,10 @@ class WebExamConfigStep extends StatelessWidget {
                 child: Center(
                   child: Text(
                     numberOfQuestions.toString(),
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.poppins(
                         fontSize: 32,
                         fontWeight: FontWeight.w900,
-                        color: const Color(0xFF4F46E5)),
+                        color: ThemeProvider.primaryDeepBlue),
                   ),
                 ),
               ),
@@ -283,20 +284,20 @@ class WebExamConfigStep extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Recommended: 40 - 60',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                             color: const Color(0xFF1E293B))),
                     const SizedBox(height: 2),
                     Text('Optimal for sessions.',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: 11, color: const Color(0xFF64748B))),
                     const SizedBox(height: 16),
                     SliderTheme(
                       data: SliderThemeData(
-                        activeTrackColor: const Color(0xFF4F46E5),
+                        activeTrackColor: ThemeProvider.primaryDeepBlue,
                         inactiveTrackColor: const Color(0xFFE2E8F0),
-                        thumbColor: const Color(0xFF4F46E5),
+                        thumbColor: ThemeProvider.primaryDeepBlue,
                         trackHeight: 4,
                       ),
                       child: Slider(
@@ -323,7 +324,7 @@ class WebExamConfigStep extends StatelessWidget {
         children: [
           Text(
             'QUESTION TYPE DISTRIBUTION',
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.5,
@@ -384,7 +385,7 @@ class WebExamConfigStep extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color:
-                isSelected ? const Color(0xFF4F46E5) : const Color(0xFFE2E8F0),
+                isSelected ? ThemeProvider.primaryDeepBlue : const Color(0xFFE2E8F0),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -394,11 +395,11 @@ class WebExamConfigStep extends StatelessWidget {
               width: 24,
               height: 24,
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFF4F46E5) : Colors.white,
+                color: isSelected ? ThemeProvider.primaryDeepBlue : Colors.white,
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
                   color: isSelected
-                      ? const Color(0xFF4F46E5)
+                      ? ThemeProvider.primaryDeepBlue
                       : const Color(0xFFCBD5E1),
                 ),
               ),
@@ -412,13 +413,13 @@ class WebExamConfigStep extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                           color: const Color(0xFF1E293B))),
                   const SizedBox(height: 4),
                   Text(subtitle,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                           fontSize: 11, color: const Color(0xFF64748B))),
                 ],
               ),
@@ -436,7 +437,7 @@ class WebExamConfigStep extends StatelessWidget {
         children: [
           Text(
             'DIFFICULTY MIX ENGINE',
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.5,
@@ -456,7 +457,7 @@ class WebExamConfigStep extends StatelessWidget {
               _buildBadge(
                   '${(mediumCount / numberOfQuestions * 100).round()}% MEDIUM',
                   const Color(0xFFEEF2FF),
-                  const Color(0xFF4F46E5)),
+                  ThemeProvider.primaryDeepBlue),
               _buildBadge(
                   '${(hardCount / numberOfQuestions * 100).round()}% HARD',
                   const Color(0xFFFFE4E6),
@@ -466,7 +467,7 @@ class WebExamConfigStep extends StatelessWidget {
           const SizedBox(height: 16),
 
           Text('Easy Ratio',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                   fontSize: 12, fontWeight: FontWeight.bold)),
           SliderTheme(
             data: SliderThemeData(
@@ -480,7 +481,7 @@ class WebExamConfigStep extends StatelessWidget {
           ),
 
           Text('Hard Ratio',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                   fontSize: 12, fontWeight: FontWeight.bold)),
           SliderTheme(
             data: SliderThemeData(
@@ -511,14 +512,14 @@ class WebExamConfigStep extends StatelessWidget {
     return Column(
       children: [
         Text(label,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1,
                 color: const Color(0xFF64748B))),
         const SizedBox(height: 8),
         Text(value,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
                 color: const Color(0xFF1E293B))),
@@ -533,7 +534,7 @@ class WebExamConfigStep extends StatelessWidget {
         children: [
           Text(
             'TOPIC COVERAGE RULES',
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.5,
@@ -571,7 +572,7 @@ class WebExamConfigStep extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon,
-              color: isOn ? const Color(0xFF4F46E5) : const Color(0xFF64748B)),
+              color: isOn ? ThemeProvider.primaryDeepBlue : const Color(0xFF64748B)),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -579,11 +580,11 @@ class WebExamConfigStep extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontWeight: FontWeight.bold,
                       color: const Color(0xFF1E293B))),
               Text(subtitle,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 12, color: const Color(0xFF64748B))),
             ],
           ),
@@ -592,7 +593,7 @@ class WebExamConfigStep extends StatelessWidget {
           value: isOn,
           onChanged: onChanged,
           activeThumbColor: Colors.white,
-          activeTrackColor: const Color(0xFF4F46E5),
+          activeTrackColor: ThemeProvider.primaryDeepBlue,
           inactiveTrackColor: const Color(0xFFCBD5E1),
           inactiveThumbColor: Colors.white,
         ),
@@ -624,7 +625,7 @@ class WebExamConfigStep extends StatelessWidget {
       decoration:
           BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
       child: Text(text,
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.poppins(
               fontSize: 10, fontWeight: FontWeight.bold, color: textC)),
     );
   }

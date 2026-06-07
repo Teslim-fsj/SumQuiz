@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:sumquiz/providers/theme_provider.dart';
 
 class WebExamSetupStep extends StatelessWidget {
   final TextEditingController titleController;
@@ -40,7 +41,7 @@ class WebExamSetupStep extends StatelessWidget {
         children: [
           Text(
             'Step 1: Source & Subject Grounding',
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
               fontSize: 20,
               fontWeight: FontWeight.w900,
               color: const Color(0xFF1E293B),
@@ -49,7 +50,7 @@ class WebExamSetupStep extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             'Define the intellectual boundaries of your exam. Upload your course materials and\nestablish the academic context to ensure AI-generated questions align with your curriculum.',
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
               fontSize: 13,
               color: const Color(0xFF475569),
               height: 1.5,
@@ -79,20 +80,20 @@ class WebExamSetupStep extends StatelessWidget {
                     ? onNext
                     : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4F46E5),
+                  backgroundColor: ThemeProvider.primaryDeepBlue,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(32),
                   ),
                   elevation: 8,
-                  shadowColor: const Color(0xFF4F46E5).withValues(alpha: 0.4),
+                  shadowColor: ThemeProvider.primaryDeepBlue.withValues(alpha: 0.4),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       'Continue to Configuration',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -111,7 +112,7 @@ class WebExamSetupStep extends StatelessWidget {
               padding: const EdgeInsets.only(right: 48.0),
               child: Text(
                 'EST. TIME: 2 MINS TO COMPLETE SETUP',
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.poppins(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.5,
@@ -151,12 +152,12 @@ class WebExamSetupStep extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(Icons.cloud_upload_rounded,
-                    color: Color(0xFF4F46E5), size: 18),
+                    color: ThemeProvider.primaryDeepBlue, size: 18),
               ),
               const SizedBox(width: 16),
               Text(
                 'Source Material',
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFF1E293B),
@@ -199,7 +200,7 @@ class WebExamSetupStep extends StatelessWidget {
                         size: 24,
                         color: hasSource
                             ? const Color(0xFF22C55E)
-                            : const Color(0xFF4F46E5),
+                            : ThemeProvider.primaryDeepBlue,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -207,7 +208,7 @@ class WebExamSetupStep extends StatelessWidget {
                       hasSource
                           ? 'Source Material Processed'
                           : 'Syllabus, Textbooks, or PDF',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF1E293B),
@@ -219,7 +220,7 @@ class WebExamSetupStep extends StatelessWidget {
                           ? uploadStatusMessage
                           : 'Drag and drop your course materials here or\nclick to browse files. Supports .pdf, .docx, .txt',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                         color: const Color(0xFF64748B),
                         height: 1.5,
                       ),
@@ -249,7 +250,7 @@ class WebExamSetupStep extends StatelessWidget {
                   icon: const Icon(Icons.edit_note_rounded),
                   label: const Text('Paste Notes'),
                   style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF4F46E5),
+                    foregroundColor: ThemeProvider.primaryDeepBlue,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -283,7 +284,7 @@ class WebExamSetupStep extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             text,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
               fontSize: 12,
               fontWeight: FontWeight.bold,
               color: const Color(0xFF475569),
@@ -318,7 +319,7 @@ class WebExamSetupStep extends StatelessWidget {
               const SizedBox(width: 16),
               Text(
                 'Academic Context',
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFF1E293B),
@@ -350,7 +351,7 @@ class WebExamSetupStep extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             'ACADEMIC LEVEL',
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
               fontSize: 12,
               fontWeight: FontWeight.bold,
               letterSpacing: 1.5,
@@ -377,7 +378,7 @@ class WebExamSetupStep extends StatelessWidget {
                 isExpanded: true,
                 icon: const Icon(Icons.keyboard_arrow_down_rounded,
                     color: Color(0xFF94A3B8)),
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.poppins(
                   fontSize: 16,
                   color: const Color(0xFF1E293B),
                   fontWeight: FontWeight.w500,
@@ -421,7 +422,7 @@ class WebExamSetupStep extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.poppins(
             fontSize: 12,
             fontWeight: FontWeight.bold,
             letterSpacing: 1.5,
@@ -443,14 +444,14 @@ class WebExamSetupStep extends StatelessWidget {
           ),
           child: TextField(
             controller: controller,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
               fontSize: 14,
               color: const Color(0xFF1E293B),
               fontWeight: FontWeight.w500,
             ),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: GoogleFonts.outfit(
+              hintStyle: GoogleFonts.poppins(
                 color: const Color(0xFFCBD5E1),
               ),
               prefixIcon: prefixIcon != null

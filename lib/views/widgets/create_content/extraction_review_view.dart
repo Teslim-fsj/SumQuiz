@@ -108,7 +108,7 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
                   children: [
                     Text(
                       'Review Extracted Content',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
                         color: colorScheme.onSurface,
@@ -116,7 +116,7 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
                     ),
                     Text(
                       'Edit the text if needed, then continue to generate your study pack.',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                         fontSize: 13,
                         color: colorScheme.onSurfaceVariant,
                         height: 1.4,
@@ -144,7 +144,7 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
           // ── Title field ───────────────────────────────────────────────────
           Text(
             'Study Pack Title',
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
               fontSize: 13,
               fontWeight: FontWeight.w700,
               color: colorScheme.onSurface,
@@ -153,7 +153,7 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
           const SizedBox(height: 8),
           TextField(
             controller: _titleController,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
@@ -198,7 +198,7 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
                   maxLines: null,
                   expands: true,
                   textAlignVertical: TextAlignVertical.top,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                     fontSize: 15,
                     height: 1.6,
                     color: colorScheme.onSurface,
@@ -237,7 +237,7 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
                     children: [
                       Text(
                         'Save as Study Note',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: colorScheme.onSurface,
@@ -245,7 +245,7 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
                       ),
                       Text(
                         'Keeps the extracted text in your library for later',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                           fontSize: 12,
                           color: colorScheme.onSurfaceVariant,
                         ),
@@ -290,7 +290,7 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
                       const SizedBox(width: 12),
                       Text(
                         _isSavingNote ? 'Saving note...' : 'Preparing...',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: 17, fontWeight: FontWeight.w800),
                       ),
                     ],
@@ -302,7 +302,7 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
                       const SizedBox(width: 10),
                       Text(
                         'Generate Study Pack',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                           fontSize: 17,
                           fontWeight: FontWeight.w800,
                         ),
@@ -317,7 +317,7 @@ class _ExtractionReviewViewState extends State<ExtractionReviewView> {
             onPressed: isBusy ? null : provider.backToSource,
             child: Text(
               'Discard & Change Source',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.error,

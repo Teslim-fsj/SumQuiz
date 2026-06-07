@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sumquiz/models/local_quiz_question.dart';
+import 'package:sumquiz/providers/theme_provider.dart';
 
 class WebExamReviewStep extends StatelessWidget {
   final List<LocalQuizQuestion> questions;
@@ -49,7 +50,7 @@ class WebExamReviewStep extends StatelessWidget {
                   children: [
                     Text(
                       'Review & Edit Draft',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                         fontSize: 20,
                         fontWeight: FontWeight.w900,
                         color: const Color(0xFF1E293B),
@@ -58,7 +59,7 @@ class WebExamReviewStep extends StatelessWidget {
                     const SizedBox(height: 12),
                     Text(
                       'Fine-tune your generated assessment. Edit directly or regenerate items.',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                         fontSize: 13,
                         color: const Color(0xFF475569),
                         height: 1.5,
@@ -87,7 +88,7 @@ class WebExamReviewStep extends StatelessWidget {
                       onPdfExport),
                   const SizedBox(width: 12),
                   _buildActionButton('Publish to Class', Icons.send_rounded,
-                      const Color(0xFF4F46E5), Colors.white, onPublish),
+                      ThemeProvider.primaryDeepBlue, Colors.white, onPublish),
                 ],
               ),
             ],
@@ -103,12 +104,12 @@ class WebExamReviewStep extends StatelessWidget {
                             size: 64, color: Color(0xFFCBD5E1)),
                         const SizedBox(height: 16),
                         Text('No questions generated yet.',
-                            style: GoogleFonts.outfit(
+                            style: GoogleFonts.poppins(
                                 fontSize: 18, color: const Color(0xFF64748B))),
                         const SizedBox(height: 8),
                         Text(
                             'Try adjusting your configuration and generating again.',
-                            style: GoogleFonts.outfit(
+                            style: GoogleFonts.poppins(
                                 fontSize: 14, color: const Color(0xFF94A3B8))),
                       ],
                     ),
@@ -146,7 +147,7 @@ class WebExamReviewStep extends StatelessWidget {
       onPressed: onPressed,
       icon: Icon(icon, size: 18),
       label:
-          Text(label, style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+          Text(label, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
       style: ElevatedButton.styleFrom(
         backgroundColor: bg,
         foregroundColor: fn,
@@ -208,7 +209,7 @@ class WebExamReviewStep extends StatelessWidget {
                         color: Color(int.parse('0xFF$diffBg')),
                         borderRadius: BorderRadius.circular(12)),
                     child: Text(diffLabel,
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                             color: Color(int.parse('0xFF$diffFn')))),
@@ -221,7 +222,7 @@ class WebExamReviewStep extends StatelessWidget {
                         color: const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(12)),
                     child: Text(topicLabel,
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                             color: const Color(0xFF475569))),
@@ -232,9 +233,9 @@ class WebExamReviewStep extends StatelessWidget {
                 onPressed: () => onRegenerate(index),
                 icon: const Icon(Icons.refresh_rounded, size: 16),
                 label: Text('Regenerate',
-                    style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
                 style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF4F46E5)),
+                    foregroundColor: ThemeProvider.primaryDeepBlue),
               ),
             ],
           ),
@@ -244,7 +245,7 @@ class WebExamReviewStep extends StatelessWidget {
             children: [
               Text(
                 (index + 1).toString().padLeft(2, '0'),
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.poppins(
                     fontSize: 32,
                     fontWeight: FontWeight.w900,
                     color: const Color(0xFFE2E8F0),
@@ -257,7 +258,7 @@ class WebExamReviewStep extends StatelessWidget {
                   children: [
                     TextFormField(
                       initialValue: q.question,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF1E293B)),
@@ -320,7 +321,7 @@ class WebExamReviewStep extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text('${String.fromCharCode(65 + i)})',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontWeight: FontWeight.bold,
                       color: const Color(0xFF1E293B))),
               const SizedBox(width: 8),
@@ -329,7 +330,7 @@ class WebExamReviewStep extends StatelessWidget {
                   initialValue: q.options[i],
                   decoration: const InputDecoration(
                       border: InputBorder.none, isDense: true),
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       color: const Color(0xFF475569), fontSize: 13),
                   onChanged: (val) {
                     final newOptions = List<String>.from(q.options);
@@ -362,7 +363,7 @@ class WebExamReviewStep extends StatelessWidget {
                 child: Container(
                     height: 4,
                     decoration: BoxDecoration(
-                        color: const Color(0xFF4F46E5),
+                        color: ThemeProvider.primaryDeepBlue,
                         borderRadius: BorderRadius.circular(2))),
               ),
               Expanded(
@@ -378,7 +379,7 @@ class WebExamReviewStep extends StatelessWidget {
         }),
         const SizedBox(height: 8),
         Text('ACCURACY SCORE: 94%',
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
                 color: const Color(0xFF94A3B8))),
@@ -409,7 +410,7 @@ class WebExamReviewStep extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                    color: const Color(0xFF4F46E5),
+                    color: ThemeProvider.primaryDeepBlue,
                     borderRadius: BorderRadius.circular(12)),
                 child: const Icon(Icons.bar_chart_rounded,
                     color: Colors.white, size: 20),
@@ -419,12 +420,12 @@ class WebExamReviewStep extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Exam Summary',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: const Color(0xFF1E293B))),
                   Text('REAL-TIME METRICS',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1,
@@ -438,18 +439,18 @@ class WebExamReviewStep extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('Total Questions',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 13, color: const Color(0xFF475569))),
               Text('$total',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 24,
                       fontWeight: FontWeight.w900,
-                      color: const Color(0xFF4F46E5))),
+                      color: ThemeProvider.primaryDeepBlue)),
             ],
           ),
           const SizedBox(height: 16),
           Text('DIFFICULTY BALANCE',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                   fontSize: 9,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.5,
@@ -461,17 +462,17 @@ class WebExamReviewStep extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('EASY ($easyCount)',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 9,
                       fontWeight: FontWeight.bold,
                       color: const Color(0xFF1E293B))),
               Text('MED ($mediumCount)',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 9,
                       fontWeight: FontWeight.bold,
                       color: const Color(0xFF1E293B))),
               Text('HARD ($hardCount)',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 9,
                       fontWeight: FontWeight.bold,
                       color: const Color(0xFF1E293B))),
@@ -479,7 +480,7 @@ class WebExamReviewStep extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text('TOP TOPICS',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                   fontSize: 9,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.5,
@@ -499,14 +500,14 @@ class WebExamReviewStep extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Icon(Icons.auto_awesome,
-                    size: 16, color: Color(0xFF4F46E5)),
+                    size: 16, color: ThemeProvider.primaryDeepBlue),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'AI suggests adding 2 more Medium difficulty questions to meet your target curriculum balance.',
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: const Color(0xFF4F46E5),
+                        color: ThemeProvider.primaryDeepBlue,
                         height: 1.5),
                   ),
                 ),
@@ -551,7 +552,7 @@ class WebExamReviewStep extends StatelessWidget {
           Expanded(
               flex: 3,
               child: Text(name,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 13, color: const Color(0xFF1E293B)))),
           Expanded(
             flex: 4,
@@ -561,14 +562,14 @@ class WebExamReviewStep extends StatelessWidget {
                 value: count / total,
                 backgroundColor: const Color(0xFFF1F5F9),
                 valueColor:
-                    const AlwaysStoppedAnimation<Color>(Color(0xFF4F46E5)),
+                    const AlwaysStoppedAnimation<Color>(ThemeProvider.primaryDeepBlue),
                 minHeight: 8,
               ),
             ),
           ),
           const SizedBox(width: 16),
           Text('$count',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFF1E293B))),

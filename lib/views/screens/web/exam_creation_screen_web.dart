@@ -25,6 +25,7 @@ import 'package:sumquiz/views/widgets/upgrade_dialog.dart';
 import '../../widgets/create_content/web_exam_setup_step.dart';
 import '../../widgets/create_content/web_exam_config_step.dart';
 import '../../widgets/create_content/web_exam_review_step.dart';
+import 'package:sumquiz/providers/theme_provider.dart';
 
 class ExamCreationScreenWeb extends StatefulWidget {
   const ExamCreationScreenWeb({super.key});
@@ -466,7 +467,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
                 child: ElevatedButton(
                   onPressed: () => context.go('/library'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4F46E5),
+                    backgroundColor: ThemeProvider.primaryDeepBlue,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -489,7 +490,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text('Add YouTube Source',
-            style: GoogleFonts.outfit(fontWeight: FontWeight.w800)),
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w800)),
         content: SizedBox(
           width: 500,
           child: Column(
@@ -526,7 +527,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4F46E5),
+              backgroundColor: ThemeProvider.primaryDeepBlue,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
@@ -753,10 +754,10 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
           ),
           const SizedBox(width: 16),
           Text('Formal Exam Architect',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w900,
-                  color: const Color(0xFF4F46E5))),
+                  color: ThemeProvider.primaryDeepBlue)),
           const Spacer(),
           _stepBubble(0, 'Setup', Icons.settings),
           _stepLine(),
@@ -788,7 +789,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
             shape: BoxShape.circle,
             color: isCompleted
                 ? Colors.green
-                : (isActive ? const Color(0xFF4F46E5) : Colors.grey[200]),
+                : (isActive ? ThemeProvider.primaryDeepBlue : Colors.grey[200]),
           ),
           child: Icon(isCompleted ? Icons.check : icon,
               size: 14,
@@ -796,7 +797,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
         ),
         const SizedBox(width: 8),
         Text(label,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
                 fontSize: 12,
                 fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                 color: isActive ? Colors.black : Colors.grey[500])),
@@ -824,8 +825,8 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
             color: theme.colorScheme.surfaceContainerHighest
                 .withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-                color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+                    border: Border.all(
+                        color: ThemeProvider.primaryDeepBlue.withValues(alpha: 0.1)),
             boxShadow: [
               BoxShadow(
                   color: Colors.black.withValues(alpha: 0.08),
@@ -839,7 +840,7 @@ class _ExamCreationScreenWebState extends State<ExamCreationScreenWeb> {
               const Icon(Icons.school_rounded, size: 80),
               const SizedBox(height: 24),
               Text('Tutor Exam Pro',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 32, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               const Text(

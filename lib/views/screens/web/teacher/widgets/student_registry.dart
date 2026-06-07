@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sumquiz/models/teacher_models.dart';
 import 'package:sumquiz/theme/web_theme.dart';
+import 'package:sumquiz/providers/theme_provider.dart';
 
 class StudentRegistry extends StatefulWidget {
   final List<StudentLink> students;
@@ -39,14 +40,14 @@ class _StudentRegistryState extends State<StudentRegistry> {
           children: [
             if (isMobile) ...[
               Text('Student Roster',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 24,
                       fontWeight: FontWeight.w900,
                       color: const Color(0xFF1F1F1F),
                       letterSpacing: -0.5)),
               const SizedBox(height: 8),
               Text('Track your students performance.',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.lato(
                       fontSize: 14, color: const Color(0xFF6B7280))),
               const SizedBox(height: 20),
               _buildSearchBar(isMobile: true),
@@ -59,7 +60,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
                       icon: const Icon(Icons.person_add, size: 18),
                       label: const Text('Add Student'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: WebColors.purplePrimary,
+                        backgroundColor: ThemeProvider.primaryDeepBlue,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
@@ -78,7 +79,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Student Roster',
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.poppins(
                               fontSize: 26,
                               fontWeight: FontWeight.w900,
                               color: const Color(0xFF1F1F1F),
@@ -86,7 +87,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
                       const SizedBox(height: 4),
                       Text(
                           'Overview of all active students and their engagement trends.',
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.lato(
                               fontSize: 14, color: const Color(0xFF6B7280))),
                     ],
                   ),
@@ -98,14 +99,14 @@ class _StudentRegistryState extends State<StudentRegistry> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
-                            border: Border.all(color: WebColors.border),
+                            border: Border.all(color: Colors.grey[300]!),
                             borderRadius: BorderRadius.circular(12)),
                         child: Row(
                           children: [
                             const Icon(Icons.filter_list, size: 18),
                             const SizedBox(width: 8),
                             Text('Classes',
-                                style: GoogleFonts.outfit(
+                                style: GoogleFonts.poppins(
                                     fontWeight: FontWeight.bold, fontSize: 13)),
                           ],
                         ),
@@ -114,7 +115,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
                       Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                              border: Border.all(color: WebColors.border),
+                              border: Border.all(color: Colors.grey[300]!),
                               shape: BoxShape.circle),
                           child: const Icon(Icons.sort, size: 18)),
                       const SizedBox(width: 12),
@@ -123,7 +124,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
                         icon: const Icon(Icons.person_add, size: 18),
                         label: const Text('Add Student'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: WebColors.purplePrimary,
+                          backgroundColor: ThemeProvider.primaryDeepBlue,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 12),
@@ -150,16 +151,16 @@ class _StudentRegistryState extends State<StudentRegistry> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: WebColors.border),
+        border: Border.all(color: Colors.grey[300]!),
       ),
       child: TextField(
         onChanged: (v) => setState(() => _searchQuery = v),
         decoration: InputDecoration(
           hintText: 'Search student...',
           hintStyle:
-              GoogleFonts.outfit(fontSize: 14, color: WebColors.textTertiary),
+              GoogleFonts.lato(fontSize: 14, color: Colors.grey[500]),
           prefixIcon:
-              const Icon(Icons.search, size: 18, color: WebColors.textTertiary),
+              Icon(Icons.search, size: 18, color: Colors.grey[500]),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 14),
         ),
@@ -175,7 +176,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
         decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: WebColors.border)),
+            border: Border.all(color: Colors.grey[300]!)),
         child: const Center(child: Text('No students found.')),
       );
     }
@@ -191,7 +192,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: WebColors.border),
+        border: Border.all(color: Colors.grey[300]!),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
@@ -207,7 +208,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
                     Expanded(
                         flex: 3,
                         child: Text('STUDENT NAME',
-                            style: GoogleFonts.outfit(
+                            style: GoogleFonts.poppins(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.grey[600],
@@ -215,7 +216,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
                     Expanded(
                         flex: 2,
                         child: Text('CLASS',
-                            style: GoogleFonts.outfit(
+                            style: GoogleFonts.poppins(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.grey[600],
@@ -224,7 +225,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
                       Expanded(
                           flex: 2,
                           child: Text('LAST ACTIVE',
-                              style: GoogleFonts.outfit(
+                              style: GoogleFonts.poppins(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.grey[600],
@@ -232,7 +233,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
                     Expanded(
                         flex: 2,
                         child: Text('AVERAGE',
-                            style: GoogleFonts.outfit(
+                            style: GoogleFonts.poppins(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.grey[600],
@@ -241,7 +242,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
                       Expanded(
                           flex: 2,
                           child: Text('ACTIVITY',
-                              style: GoogleFonts.outfit(
+                              style: GoogleFonts.poppins(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.grey[600],
@@ -287,10 +288,10 @@ class _StudentRegistryState extends State<StudentRegistry> {
                     student.studentName.isNotEmpty
                         ? student.studentName[0].toUpperCase()
                         : '?',
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: WebColors.purplePrimary),
+                        color: ThemeProvider.primaryDeepBlue),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -299,13 +300,13 @@ class _StudentRegistryState extends State<StudentRegistry> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(student.studentName,
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.poppins(
                               fontSize: 14, fontWeight: FontWeight.bold)),
                       Text(
                           student.studentEmail.isNotEmpty
                               ? student.studentEmail
                               : 'No Email',
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.lato(
                               fontSize: 11, color: Colors.grey[500])),
                     ],
                   ),
@@ -335,23 +336,23 @@ class _StudentRegistryState extends State<StudentRegistry> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('AVG. SCORE',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: 9,
                             fontWeight: FontWeight.bold,
                             color: Colors.grey[500])),
                     const SizedBox(height: 4),
                     Text('${student.averageScore.toStringAsFixed(1)}%',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: 14,
                             fontWeight: FontWeight.w900,
-                            color: WebColors.purplePrimary)),
+                            color: ThemeProvider.primaryDeepBlue)),
                   ],
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text('STATUS',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: 9,
                             fontWeight: FontWeight.bold,
                             color: Colors.grey[500])),
@@ -365,7 +366,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
                               : const Color(0xFFF3F4F6),
                           borderRadius: BorderRadius.circular(20)),
                       child: Text(isActive ? 'Active' : 'Inactive',
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.poppins(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                               color: isActive
@@ -397,10 +398,10 @@ class _StudentRegistryState extends State<StudentRegistry> {
                     student.studentName.isNotEmpty
                         ? student.studentName[0].toUpperCase()
                         : '?',
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
-                        color: WebColors.purplePrimary),
+                        color: ThemeProvider.primaryDeepBlue),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -408,13 +409,13 @@ class _StudentRegistryState extends State<StudentRegistry> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(student.studentName,
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
                             color: const Color(0xFF1F1F1F))),
                     if (student.studentEmail.isNotEmpty)
                       Text(student.studentEmail,
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.lato(
                               fontSize: 11, color: Colors.grey[500])),
                   ],
                 ),
@@ -432,7 +433,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
                     color: const Color(0xFFF3F4F6),
                     borderRadius: BorderRadius.circular(12)),
                 child: Text('Default Class',
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.poppins(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         color: Colors.grey[800])),
@@ -445,7 +446,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
               student.lastActiveAt != null
                   ? DateFormat.MMMEd().format(student.lastActiveAt!)
                   : 'Never',
-              style: GoogleFonts.outfit(fontSize: 13, color: Colors.grey[700]),
+              style: GoogleFonts.lato(fontSize: 13, color: Colors.grey[700]),
             ),
           ),
           Expanded(
@@ -453,7 +454,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
             child: Row(
               children: [
                 Text('${student.averageScore.toStringAsFixed(1)}%',
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.poppins(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF1F1F1F))),
@@ -465,7 +466,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
                       value: student.averageScore / 100,
                       backgroundColor: const Color(0xFFF3F4F6),
                       valueColor:
-                          const AlwaysStoppedAnimation(WebColors.purplePrimary),
+                          const AlwaysStoppedAnimation(ThemeProvider.primaryDeepBlue),
                       minHeight: 6,
                     ),
                   ),
@@ -487,7 +488,7 @@ class _StudentRegistryState extends State<StudentRegistry> {
                         : const Color(0xFFF3F4F6),
                     borderRadius: BorderRadius.circular(12)),
                 child: Text(isActive ? 'Active Learner' : 'Inactive',
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.poppins(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                         color: isActive

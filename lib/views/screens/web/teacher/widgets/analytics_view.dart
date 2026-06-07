@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sumquiz/models/public_deck.dart';
 import 'package:sumquiz/models/teacher_models.dart';
 import 'package:sumquiz/theme/web_theme.dart';
+import 'package:sumquiz/providers/theme_provider.dart';
 import 'shared_teacher_widgets.dart';
 
 class AnalyticsView extends StatelessWidget {
@@ -71,27 +72,27 @@ class AnalyticsView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: WebColors.purplePrimary.withValues(alpha: 0.1),
+        color: ThemeProvider.primaryDeepBlue.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border:
-            Border.all(color: WebColors.purplePrimary.withValues(alpha: 0.2)),
+            Border.all(color: ThemeProvider.primaryDeepBlue.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           const Icon(Icons.person_search_rounded,
-              color: WebColors.purplePrimary, size: 20),
+              color: ThemeProvider.primaryDeepBlue, size: 20),
           const SizedBox(width: 12),
           Text(
             'Showing analytics for: ',
-            style: GoogleFonts.outfit(
-                fontSize: 14, color: WebColors.textSecondary),
+            style: GoogleFonts.lato(
+                fontSize: 14, color: Colors.grey[600]),
           ),
           Text(
             student.studentName,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
-                color: WebColors.purplePrimary),
+                color: ThemeProvider.primaryDeepBlue),
           ),
           const Spacer(),
           TextButton(
@@ -109,20 +110,20 @@ class AnalyticsView extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: WebColors.border),
+        border: Border.all(color: Colors.grey[300]!),
         boxShadow: WebColors.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Activity Trends',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
-                  color: WebColors.textPrimary)),
+                  color: Colors.grey[900])),
           Text('Total student attempts over the last 30 days',
-              style: GoogleFonts.outfit(
-                  fontSize: 13, color: WebColors.textTertiary)),
+              style: GoogleFonts.lato(
+                  fontSize: 13, color: Colors.grey[500])),
           const SizedBox(height: 24),
           SizedBox(
             height: isMobile ? 150 : 200,
@@ -198,12 +199,12 @@ class AnalyticsView extends StatelessWidget {
             SizedBox(
               width: 24,
               child: Text('#$rank',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
                       color: rank == 1
                           ? WebColors.accentOrange
-                          : WebColors.textTertiary)),
+                          : Colors.grey[500])),
             )
           else
             const SizedBox(
@@ -222,7 +223,7 @@ class AnalyticsView extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(s.studentName,
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.poppins(
                     fontSize: 13, fontWeight: FontWeight.w600),
                 overflow: TextOverflow.ellipsis),
           ),
@@ -237,10 +238,10 @@ class AnalyticsView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Content Performance',
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: WebColors.textPrimary)),
+                color: Colors.grey[900])),
         const SizedBox(height: 16),
         ...content.map((deck) {
           final a = analytics[deck.id];
@@ -258,7 +259,7 @@ class AnalyticsView extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: WebColors.border.withValues(alpha: 0.5)),
+        border: Border.all(color: Colors.grey[300]!.withValues(alpha: 0.5)),
         boxShadow: WebColors.cardShadow,
       ),
       child: isMobile
@@ -270,14 +271,14 @@ class AnalyticsView extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(deck.title,
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.poppins(
                               fontSize: 15, fontWeight: FontWeight.bold),
                           overflow: TextOverflow.ellipsis),
                     ),
                     SharedTeacherWidgets.badge(
                         deck.isExam ? 'Exam' : 'Pack',
                         deck.isExam
-                            ? WebColors.purplePrimary
+                            ? ThemeProvider.primaryDeepBlue
                             : WebColors.secondary),
                   ],
                 ),
@@ -309,13 +310,13 @@ class AnalyticsView extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(deck.title,
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.poppins(
                               fontSize: 14, fontWeight: FontWeight.w800),
                           overflow: TextOverflow.ellipsis),
                       SharedTeacherWidgets.badge(
                           deck.isExam ? 'Exam' : 'Study Pack',
                           deck.isExam
-                              ? WebColors.purplePrimary
+                              ? ThemeProvider.primaryDeepBlue
                               : WebColors.secondary),
                     ],
                   ),
@@ -343,13 +344,13 @@ class AnalyticsView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(value,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
                 fontSize: 16, fontWeight: FontWeight.w800, color: color)),
         Text(label,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
-                color: WebColors.textTertiary)),
+                color: Colors.grey[500])),
       ],
     );
   }
@@ -394,7 +395,7 @@ class _TrendPainter extends CustomPainter {
     if (values.length < 2) return;
 
     final paint = Paint()
-      ..color = WebColors.purplePrimary
+      ..color = ThemeProvider.primaryDeepBlue
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
@@ -404,8 +405,8 @@ class _TrendPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            WebColors.purplePrimary.withValues(alpha: 0.2),
-            WebColors.purplePrimary.withValues(alpha: 0.0)
+            ThemeProvider.primaryDeepBlue.withValues(alpha: 0.2),
+            ThemeProvider.primaryDeepBlue.withValues(alpha: 0.0)
           ]).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     final path = Path();
@@ -440,7 +441,7 @@ class _TrendPainter extends CustomPainter {
     canvas.drawPath(path, paint);
 
     final pointPaint = Paint()
-      ..color = WebColors.purplePrimary
+      ..color = ThemeProvider.primaryDeepBlue
       ..style = PaintingStyle.fill;
 
     final borderPaint = Paint()

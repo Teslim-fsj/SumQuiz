@@ -50,7 +50,7 @@ class CreationSuccessView extends StatelessWidget {
               Text(
                 'Neural Pack Complete!',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.poppins(
                   fontSize: 32,
                   fontWeight: FontWeight.w900,
                   color: colorScheme.onSurface,
@@ -61,7 +61,7 @@ class CreationSuccessView extends StatelessWidget {
               Text(
                 'Sumi has structured your materials for:',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurfaceVariant,
@@ -79,7 +79,7 @@ class CreationSuccessView extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                     color: colorScheme.primary,
@@ -112,7 +112,7 @@ class CreationSuccessView extends StatelessWidget {
                       const SizedBox(width: 12),
                       Text(
                         'Enter Study Mode',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
                         ),
@@ -131,7 +131,7 @@ class CreationSuccessView extends StatelessWidget {
                 ),
                 child: Text(
                   'Create Another Neural Pack',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: colorScheme.onSurfaceVariant,

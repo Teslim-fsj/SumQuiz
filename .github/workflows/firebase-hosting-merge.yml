@@ -21,6 +21,11 @@ jobs:
       - name: Run code generation
         run: dart run build_runner build --delete-conflicting-outputs
         
+      - name: Generate launcher icons and splash
+        run: |
+          dart run flutter_launcher_icons
+          dart run flutter_native_splash:create
+        
       - name: Check API Configuration
         run: |
           if [ -z "${{ secrets.API_KEY }}" ] && [ -z "${{ vars.API_KEY }}" ]; then

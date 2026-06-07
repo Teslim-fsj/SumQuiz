@@ -378,13 +378,13 @@ class _QuizScreenState extends State<QuizScreen> {
 
       if (mounted) {
         if (navigateToResults) {
-          context.push('/post-study-results', extra: {
-            'score': _score,
-            'totalQuestions': _questions.length,
-            'timeSpentSeconds': currentSessionSeconds,
-            'title': _titleController.text,
-            'type': 'quiz',
-          });
+          final folderId = await _localDbService.getParentFolderId(_quizId!);
+          if (folderId != null && mounted) {
+            context.go('/library/results-view/$folderId');
+          } else {
+            // fallback if not inside a folder
+            context.go('/library');
+          }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('Final score saved!'),
@@ -459,84 +459,90 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  PreferredSizeWidget _buildMinimalAppBar(ThemeData theme, ColorScheme colorScheme) {
+  PreferredSizeWidget _buildMinimalAppBar(
+      ThemeData theme, ColorScheme colorScheme) {
     return AppBar(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       elevation: 0,
+      centerTitle: true,
       leading: IconButton(
-        icon: const Icon(Icons.close_rounded),
+        icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF334155)),
         onPressed: () => _saveFinalScoreAndExit(navigateToResults: false),
-        color: theme.colorScheme.onSurface,
       ),
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            _titleController.text.isEmpty ? 'Quiz' : _titleController.text,
-            style: GoogleFonts.outfit(
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-              fontSize: 14,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.local_fire_department_rounded,
-                  size: 14, color: Colors.orange),
-              const SizedBox(width: 4),
-              Text(
-                'Streak: $_score',
-                style: GoogleFonts.inter(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                  color: Colors.orange,
-                ),
-              ),
-            ],
-          ),
-        ],
+      title: Text(
+        'Quiz',
+        style: GoogleFonts.inter(
+          fontWeight: FontWeight.w700,
+          color: const Color(0xFF0F172A),
+          fontSize: 18,
+        ),
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.bookmark_add_outlined),
-          onPressed: _saveInProgress,
-          tooltip: 'Save Progress',
-          color: theme.colorScheme.primary,
-        ),
-        IconButton(
-          icon: const Icon(Icons.picture_as_pdf),
-          tooltip: 'Export PDF',
+          icon: const Icon(Icons.more_horiz_rounded, color: Color(0xFF64748B)),
           onPressed: () {
-            final user = context.read<UserModel?>();
-            if (user != null && !user.isPro) {
-              showDialog(
-                context: context,
-                builder: (context) =>
-                    const UpgradeDialog(featureName: 'PDF Export'),
-              );
-              return;
-            }
-
-            if (_quizId == null) return;
-
-            final quizToExport = LocalQuiz(
-              id: _quizId!,
-              userId: user?.uid ?? '',
-              title: _titleController.text,
-              questions: _questions,
-              timestamp: DateTime.now(),
-              scores: widget.quiz?.scores ?? [],
-            );
-
-            ExportService().exportPdf(context, quiz: quizToExport);
+            // Options menu (save progress or export)
+            _showQuizOptions();
           },
-          color: theme.colorScheme.primary,
         ),
       ],
     );
+  }
+
+  void _showQuizOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.bookmark_add_outlined),
+              title: const Text('Save Progress'),
+              onTap: () {
+                Navigator.pop(context);
+                _saveInProgress();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.picture_as_pdf),
+              title: const Text('Export as PDF'),
+              onTap: () {
+                Navigator.pop(context);
+                _exportPdf();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _exportPdf() {
+    final user = context.read<UserModel?>();
+    if (user != null && !user.isPro) {
+      showDialog(
+        context: context,
+        builder: (context) => const UpgradeDialog(featureName: 'PDF Export'),
+      );
+      return;
+    }
+
+    if (_quizId == null) return;
+
+    final quizToExport = LocalQuiz(
+      id: _quizId!,
+      userId: user?.uid ?? '',
+      title: _titleController.text,
+      questions: _questions,
+      timestamp: DateTime.now(),
+      scores: widget.quiz?.scores ?? [],
+    );
+
+    ExportService().exportPdf(context, quiz: quizToExport);
   }
 
   Widget _buildContent(ThemeData theme) {
@@ -874,18 +880,6 @@ class _QuizScreenState extends State<QuizScreen> {
   Widget _buildQuizInterface() {
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 16.0),
-          child: Consumer<SumiProvider>(
-            builder: (context, sumiProvider, child) {
-              return SumiMascot(
-                state: sumiProvider.currentState,
-                size: 100,
-                dialogue: sumiProvider.dialogue,
-              );
-            },
-          ),
-        ),
         Expanded(
           child: QuizView(
             title: _titleController.text,

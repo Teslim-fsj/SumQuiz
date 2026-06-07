@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sumquiz/theme/web_theme.dart';
+import 'package:sumquiz/views/screens/web/widgets/landing_3d_card.dart';
 
 class StudentLandingView extends StatefulWidget {
   const StudentLandingView({super.key});
@@ -31,6 +32,7 @@ class _StudentLandingViewState extends State<StudentLandingView> {
             _buildStudentHeroSection(),
             _buildStepsSection(),
             _buildFeatureGridSection(),
+            _buildSumiSpotlightSection(),
             _buildReviewsSection(),
             _buildCtaSection(),
             _buildStudentFooter(),
@@ -144,7 +146,7 @@ class _StudentLandingViewState extends State<StudentLandingView> {
               const Icon(Icons.auto_awesome,
                   size: 16, color: WebColors.purplePrimary),
               const SizedBox(width: 8),
-              Text('AI-POWERED LEARNING ASSISTANT',
+              Text('THE ULTIMATE AI STUDY OS',
                   style: GoogleFonts.inter(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
@@ -164,17 +166,16 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                 height: 1.1,
                 letterSpacing: -1.5),
             children: [
-              const TextSpan(text: 'Your notes.\n'),
+              const TextSpan(text: 'Your Ultimate\n'),
               TextSpan(
-                  text: 'Your AI.\n',
+                  text: 'AI Study OS.',
                   style: GoogleFonts.outfit(color: WebColors.purplePrimary)),
-              const TextSpan(text: 'Your growth.'),
             ],
           ),
         ),
         const SizedBox(height: 24),
         Text(
-          'Transform any PDF, photo, or lecture recording into\npersonalized study guides, interactive quizzes, and\nsmart flashcards in seconds.',
+          'Upload anything—PDFs, slides, or audio—and instantly\nturn them into interactive notes, quizzes, and flashcards.',
           textAlign: isMobile ? TextAlign.center : TextAlign.start,
           style: GoogleFonts.inter(
               fontSize: 18, color: Colors.grey[600], height: 1.5),
@@ -239,7 +240,7 @@ class _StudentLandingViewState extends State<StudentLandingView> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('18,000+ Nigerian Students',
+                Text('18,000+ students use the AI Study OS',
                     style: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -414,7 +415,7 @@ class _StudentLandingViewState extends State<StudentLandingView> {
           padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 80),
           child: Column(
             children: [
-              Text('Master any subject in 3 steps',
+              Text('How the AI Study OS works',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.outfit(
                       fontSize: isMobile ? 28 : 40,
@@ -422,7 +423,7 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                       letterSpacing: -1)),
               const SizedBox(height: 16),
               Text(
-                'We\'ve distilled the complex process of learning into a seamless, high-speed journey designed for the modern student.',
+                'One unified system. Every format accepted. Every subject mastered.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                     fontSize: isMobile ? 14 : 16,
@@ -434,19 +435,19 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                   ? Column(
                       children: [
                         _buildStepItem(
-                            Icons.description,
-                            '1. Upload your content',
-                            'Drop your messy PDFs, voice notes, or lecture photos. Our AI reads and organizes everything instantly.'),
+                            Icons.upload_file,
+                            '1. Upload Anything',
+                            'Drop PDFs, slides, audio recordings, or paste a YouTube link. Our AI DeepScan engine reads and processes everything instantly.'),
                         const SizedBox(height: 32),
                         _buildStepItem(
                             Icons.auto_awesome,
-                            '2. AI Works Its Magic',
-                            'In seconds, get syllabus-aligned summaries, flashcards, and exam-standard quizzes generated just for you.'),
+                            '2. OS Generates Your Study Kit',
+                            'In seconds, receive AI-structured notes, interactive flashcards, and exam-standard quizzes—all aligned to your syllabus.'),
                         const SizedBox(height: 32),
                         _buildStepItem(
-                            Icons.verified,
-                            '3. Achieve Total Mastery',
-                            'Track your retention levels, complete daily study missions, and enter your exams with 100% confidence.'),
+                            Icons.track_changes,
+                            '3. Adaptive Learning Paths (ATLP)',
+                            'Sumi Tutor and the Retention Engine diagnose your weak spots and serve Adaptive Targeted Learning Paths to guarantee mastery.'),
                       ],
                     )
                   : Row(
@@ -454,21 +455,21 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                       children: [
                         Expanded(
                             child: _buildStepItem(
-                                Icons.description,
-                                '1. Upload your content',
-                                'Drop your messy PDFs, voice notes, or lecture photos. Our AI reads and organizes everything instantly.')),
+                                Icons.upload_file,
+                                '1. Upload Anything',
+                                'Drop PDFs, slides, audio recordings, or paste a YouTube link. Our AI DeepScan engine reads and processes everything instantly.')),
                         _buildConnector(),
                         Expanded(
                             child: _buildStepItem(
                                 Icons.auto_awesome,
-                                '2. AI Works Its Magic',
-                                'In seconds, get syllabus-aligned summaries, flashcards, and exam-standard quizzes generated just for you.')),
+                                '2. OS Generates Your Study Kit',
+                                'In seconds, receive AI-structured notes, interactive flashcards, and exam-standard quizzes—all aligned to your syllabus.')),
                         _buildConnector(),
                         Expanded(
                             child: _buildStepItem(
-                                Icons.verified,
-                                '3. Achieve Total Mastery',
-                                'Track your retention levels, complete daily study missions, and enter your exams with 100% confidence.')),
+                                Icons.track_changes,
+                                '3. Adaptive Learning Paths (ATLP)',
+                                'Sumi Tutor and the Retention Engine diagnose your weak spots and serve Adaptive Targeted Learning Paths to guarantee mastery.')),
                       ],
                     ),
             ],
@@ -522,7 +523,7 @@ class _StudentLandingViewState extends State<StudentLandingView> {
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Why Students Love SumQuiz',
+                    Text('Every feature of an\nAI Study OS',
                         style: GoogleFonts.outfit(
                             fontSize: 32,
                             fontWeight: FontWeight.w900,
@@ -530,19 +531,17 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                             height: 1.1)),
                     const SizedBox(height: 16),
                     Text(
-                        'Traditional studying is slow. SumQuiz uses neuroscience-backed AI to accelerate your learning.',
+                        'One app that replaces your notebook, tutor, flashcard deck, and exam prep—powered by AI.',
                         style: GoogleFonts.inter(
                             fontSize: 14,
                             color: Colors.grey[600],
                             height: 1.5)),
                     const SizedBox(height: 24),
-                    _buildCheckFeature(
-                        'Curated Content for Nigerian Syllabuses'),
+                    _buildCheckFeature('Smart Notes linked to flashcards & quizzes'),
                     const SizedBox(height: 12),
-                    _buildCheckFeature('AI Summary of 50-page PDFs in seconds'),
+                    _buildCheckFeature('Upload PDFs, audio, slides, or YouTube links'),
                     const SizedBox(height: 12),
-                    _buildCheckFeature(
-                        '24/7 Accessibility on all your devices'),
+                    _buildCheckFeature('AI-generated summaries, quizzes & flashcards'),
                     const SizedBox(height: 40),
                     GridView.count(
                       crossAxisCount: 2,
@@ -550,16 +549,28 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                       physics: const NeverScrollableScrollPhysics(),
                       mainAxisSpacing: 16,
                       crossAxisSpacing: 16,
-                      childAspectRatio: 1.1,
+                      childAspectRatio: 0.9,
                       children: [
-                        _buildGridCard(Icons.lock, 'Private & Secure',
-                            'Your study data is encrypted.'),
-                        _buildGridCard(Icons.update, 'Smart Spacing',
-                            'Review facts exactly when needed.'),
-                        _buildGridCard(Icons.wifi_off, 'Offline Ready',
-                            'Study anywhere, anytime.'),
-                        _buildGridCard(Icons.flag, 'Daily Missions',
-                            'Gamified challenges for motivation.'),
+                        _buildGridCard(
+                            icon: Icons.auto_stories,
+                            title: 'Smart Notes',
+                            desc: 'AI-linked notes connected to your quizzes and flashcards.',
+                            accentColor: const Color(0xFF0D9488)),
+                        _buildGridCard(
+                            imageAsset: 'assets/images/sumi.png',
+                            title: 'Sumi Tutor',
+                            desc: 'Your 24/7 personal AI tutor—ask anything, anytime.',
+                            accentColor: WebColors.purplePrimary),
+                        _buildGridCard(
+                            icon: Icons.repeat_on,
+                            title: 'Spaced Repetition',
+                            desc: 'Review facts exactly when you are about to forget them.',
+                            accentColor: const Color(0xFFF59E0B)),
+                        _buildGridCard(
+                            icon: Icons.flag,
+                            title: 'Daily Missions',
+                            desc: 'Gamified study missions to keep motivation high.',
+                            accentColor: Colors.green),
                       ],
                     ),
                   ],
@@ -572,7 +583,7 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Why Students Love\nSumQuiz',
+                          Text('Every feature of an\nAI Study OS',
                               style: GoogleFonts.outfit(
                                   fontSize: 48,
                                   fontWeight: FontWeight.w900,
@@ -580,20 +591,19 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                                   height: 1.1)),
                           const SizedBox(height: 24),
                           Text(
-                              'Traditional studying is slow. SumQuiz uses neuroscience-backed AI to accelerate your learning speed while reducing the effort required to retain information.',
+                              'One app that replaces your notebook, tutor, flashcard deck, and exam prep. SumQuiz uses neuroscience-backed AI to accelerate your learning while reducing the effort needed to retain it.',
                               style: GoogleFonts.inter(
                                   fontSize: 16,
                                   color: Colors.grey[600],
                                   height: 1.5)),
                           const SizedBox(height: 40),
-                          _buildCheckFeature(
-                              'Curated Content for Nigerian Syllabuses'),
+                          _buildCheckFeature('Smart Notes linked to flashcards & quizzes'),
                           const SizedBox(height: 16),
-                          _buildCheckFeature(
-                              'AI Summary of 50-page PDFs in seconds'),
+                          _buildCheckFeature('Upload PDFs, audio, slides, or YouTube links'),
                           const SizedBox(height: 16),
-                          _buildCheckFeature(
-                              '24/7 Accessibility on all your devices'),
+                          _buildCheckFeature('AI-generated summaries, quizzes & flashcards'),
+                          const SizedBox(height: 16),
+                          _buildCheckFeature('Retention Engine & Knowledge Graph'),
                         ],
                       ),
                     ),
@@ -606,16 +616,28 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                         physics: const NeverScrollableScrollPhysics(),
                         mainAxisSpacing: 24,
                         crossAxisSpacing: 24,
-                        childAspectRatio: 1.2,
+                        childAspectRatio: 1.05,
                         children: [
-                          _buildGridCard(Icons.lock, 'Private & Secure',
-                              'Your study data is encrypted and remains your personal property.'),
-                          _buildGridCard(Icons.update, 'Smart Spacing',
-                              'Review facts that appear exactly when you\'re about to forget.'),
-                          _buildGridCard(Icons.wifi_off, 'Offline Ready',
-                              'Study anywhere, explore areas with low connectivity.'),
-                          _buildGridCard(Icons.flag, 'Daily Missions',
-                              'Gamified challenges to keep your motivation high.'),
+                          _buildGridCard(
+                              icon: Icons.auto_stories,
+                              title: 'Smart Notes',
+                              desc: 'An AI-linked note workspace that auto-generates flashcards and quizzes from everything you write.',
+                              accentColor: const Color(0xFF0D9488)),
+                          _buildGridCard(
+                              imageAsset: 'assets/images/sumi.png',
+                              title: 'Sumi Tutor',
+                              desc: 'Your 24/7 personal AI tutor. Ask Sumi to explain any concept contextually from your own notes.',
+                              accentColor: WebColors.purplePrimary),
+                          _buildGridCard(
+                              icon: Icons.hub,
+                              title: 'Knowledge Graph',
+                              desc: 'A visual Retention Engine that maps how concepts connect—identifying your blind spots before exams.',
+                              accentColor: const Color(0xFF1E3A8A)),
+                          _buildGridCard(
+                              icon: Icons.repeat_on,
+                              title: 'Spaced Repetition',
+                              desc: 'Science-backed daily missions that ensure you review content exactly when you are about to forget it.',
+                              accentColor: const Color(0xFFF59E0B)),
                         ],
                       ),
                     )
@@ -646,37 +668,273 @@ class _StudentLandingViewState extends State<StudentLandingView> {
     );
   }
 
-  Widget _buildGridCard(IconData icon, String title, String desc) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 20,
-              offset: const Offset(0, 10))
-        ],
-      ),
+  Widget _buildGridCard({
+    IconData? icon,
+    String? imageAsset,
+    required String title,
+    required String desc,
+    Color accentColor = WebColors.purplePrimary,
+  }) {
+    return Landing3DCard(
+      depth: 10,
+      padding: const EdgeInsets.all(22),
+      backgroundColor: Colors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: WebColors.purplePrimary, size: 28),
-          const SizedBox(height: 16),
+          imageAsset != null
+              ? Image.asset(imageAsset, width: 40, height: 40, fit: BoxFit.contain)
+              : Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon!, color: accentColor, size: 24),
+                ),
+          const SizedBox(height: 14),
           Text(title,
-              style: GoogleFonts.outfit(
-                  fontSize: 18, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 8),
+              style: GoogleFonts.poppins(
+                  fontSize: 15, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 6),
           Text(desc,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.lato(
                   fontSize: 12, color: Colors.grey[600], height: 1.5)),
         ],
       ),
     );
   }
 
+  Widget _buildSumiSpotlightSection() {
+    return LayoutBuilder(builder: (context, constraints) {
+      final isMobile = constraints.maxWidth < 900;
+      return Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF0F172A), Color(0xFF1E3A8A), Color(0xFF0F172A)],
+          ),
+        ),
+        padding: EdgeInsets.symmetric(
+            horizontal: isMobile ? 24 : 80, vertical: isMobile ? 60 : 100),
+        child: isMobile
+            ? Column(
+                children: [
+                  _buildSumiOrb(size: 180),
+                  const SizedBox(height: 48),
+                  _buildSumiContent(isMobile: true),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(flex: 1, child: _buildSumiOrb(size: 300)),
+                  const SizedBox(width: 80),
+                  Expanded(flex: 1, child: _buildSumiContent(isMobile: false)),
+                ],
+              ),
+      );
+    });
+  }
+
+  Widget _buildSumiOrb({required double size}) {
+    return Center(
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Outer glow ring
+          Container(
+            width: size * 1.3,
+            height: size * 1.3,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  const Color(0xFF0D9488).withValues(alpha: 0.25),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+          // Inner glow ring
+          Container(
+            width: size * 1.1,
+            height: size * 1.1,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  const Color(0xFF1E3A8A).withValues(alpha: 0.4),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+          // Sumi orb image
+          Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0D9488).withValues(alpha: 0.4),
+                  blurRadius: 40,
+                  spreadRadius: 10,
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/sumi.png',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stack) => Container(
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [Color(0xFF0D9488), Color(0xFF1E3A8A)],
+                    ),
+                  ),
+                  child: const Icon(Icons.smart_toy,
+                      color: Colors.white, size: 80),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSumiContent({required bool isMobile}) {
+    return Column(
+      crossAxisAlignment:
+          isMobile ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          decoration: BoxDecoration(
+            border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.6)),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text('MEET SUMI TUTOR',
+              style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                  color: const Color(0xFF0D9488))),
+        ),
+        const SizedBox(height: 24),
+        RichText(
+          textAlign: isMobile ? TextAlign.center : TextAlign.start,
+          text: TextSpan(
+            style: GoogleFonts.poppins(
+                fontSize: isMobile ? 32 : 44,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                height: 1.15),
+            children: [
+              const TextSpan(text: 'Your 24/7\n'),
+              TextSpan(
+                  text: 'AI Tutor',
+                  style: GoogleFonts.poppins(
+                      color: const Color(0xFF0D9488),
+                      fontWeight: FontWeight.w900)),
+              const TextSpan(text: ' that knows\nyour notes.'),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'Sumi doesn\'t just answer questions — she reads your uploaded materials and explains concepts using your own course content, building on what you already know.',
+          textAlign: isMobile ? TextAlign.center : TextAlign.start,
+          style: GoogleFonts.lato(
+              fontSize: 16,
+              color: Colors.white.withValues(alpha: 0.75),
+              height: 1.6),
+        ),
+        const SizedBox(height: 36),
+        _buildSumiFeatureBullet(
+          icon: Icons.hub_outlined,
+          color: const Color(0xFF0D9488),
+          title: 'Retention Engine & Knowledge Graph',
+          desc: 'Visualises how concepts connect and surfaces what you haven\'t mastered yet.',
+        ),
+        const SizedBox(height: 20),
+        _buildSumiFeatureBullet(
+          icon: Icons.track_changes,
+          color: const Color(0xFFF59E0B),
+          title: 'Adaptive Learning Paths (ATLP)',
+          desc: 'Sumi diagnoses your weak areas and builds a personalised revision roadmap.',
+        ),
+        const SizedBox(height: 20),
+        _buildSumiFeatureBullet(
+          icon: Icons.repeat_on,
+          color: const Color(0xFF1E3A8A),
+          title: 'Spaced Repetition Engine',
+          desc: 'Daily missions powered by science-backed spacing to guarantee long-term memory.',
+        ),
+        const SizedBox(height: 40),
+        ElevatedButton.icon(
+          onPressed: () => context.go('/auth'),
+          icon: const Icon(Icons.arrow_forward, size: 18),
+          label: Text('Chat with Sumi — It\'s Free',
+              style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF0D9488),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSumiFeatureBullet({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String desc,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title,
+                  style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white)),
+              const SizedBox(height: 4),
+              Text(desc,
+                  style: GoogleFonts.lato(
+                      fontSize: 13,
+                      color: Colors.white.withValues(alpha: 0.6),
+                      height: 1.4)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildReviewsSection() {
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final isMobile = constraints.maxWidth < 900;
@@ -694,14 +952,14 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('THE LUMINARY EFFECT',
+                        Text('THE AI STUDY OS IN ACTION',
                             style: GoogleFonts.inter(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.5,
                                 color: WebColors.purplePrimary)),
                         const SizedBox(height: 12),
-                        Text('Joined by 18,000+ Students',
+                        Text('18,000+ students. One AI Study OS.',
                             style: GoogleFonts.outfit(
                                 fontSize: isMobile ? 26 : 40,
                                 fontWeight: FontWeight.w900,
@@ -756,7 +1014,7 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                         const SizedBox(width: 24),
                         Expanded(
                             child: _buildReviewCard(
-                                'I created domains on my phone, and by the time I\'m home SumQuiz has a full summary ready. It\'s like having a personal tutor.',
+                                'I uploaded my 200-level biochem slides and Sumi Tutor explained every diagram to me like a real teacher. I\'ve never understood enzyme kinetics this well.',
                                 'Faruk Adebayo',
                                 'Obafemi Awolowo University')),
                         const SizedBox(width: 24),
@@ -775,12 +1033,10 @@ class _StudentLandingViewState extends State<StudentLandingView> {
   }
 
   Widget _buildReviewCard(String quote, String name, String school) {
-    return Container(
+    return Landing3DCard(
+      depth: 8,
       padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(24),
-      ),
+      backgroundColor: const Color(0xFFF8FAFC),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -853,9 +1109,9 @@ class _StudentLandingViewState extends State<StudentLandingView> {
             child: Column(
               children: [
                 Text(
-                  'Ready to transform your study habits?',
+                  'Power up your studying with the AI Study OS',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                     fontSize: isMobile ? 28 : 40,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
@@ -863,11 +1119,11 @@ class _StudentLandingViewState extends State<StudentLandingView> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Join 18,000+ Nigerian students who are already using AI to master their courses and pass their exams with confidence.',
+                  'Upload anything. Get instant notes, quizzes, and flashcards. Let Sumi Tutor guide you to mastery with Adaptive Learning Paths and Spaced Repetition.',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.lato(
                     fontSize: isMobile ? 14 : 16,
-                    color: Colors.white.withValues(alpha: 0.8),
+                    color: Colors.white.withValues(alpha: 0.85),
                     height: 1.5,
                   ),
                 ),

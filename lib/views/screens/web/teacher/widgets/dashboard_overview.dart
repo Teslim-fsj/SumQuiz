@@ -9,6 +9,7 @@ import 'package:sumquiz/models/public_deck.dart';
 import 'package:sumquiz/models/teacher_models.dart';
 import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/theme/web_theme.dart';
+import 'package:sumquiz/providers/theme_provider.dart';
 
 class DashboardOverview extends StatelessWidget {
   final TeacherStats? stats;
@@ -41,11 +42,11 @@ class DashboardOverview extends StatelessWidget {
           children: [
             Text(
               'Hello, $name',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                 fontSize: isMobile ? 24 : 32,
                 fontWeight: FontWeight.w900,
                 color: isMobile
-                    ? WebColors.purplePrimary
+                    ? ThemeProvider.primaryDeepBlue
                     : const Color(0xFF1F1F1F),
                 letterSpacing: -0.5,
               ),
@@ -53,7 +54,7 @@ class DashboardOverview extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Keep building momentum. Knowledge is flowing.',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.lato(
                 fontSize: isMobile ? 14 : 16,
                 color: const Color(0xFF6B7280),
                 fontWeight: FontWeight.w400,
@@ -109,7 +110,7 @@ class DashboardOverview extends StatelessWidget {
               children: [
                 Text(
                   'Active Content Decks',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                     fontSize: isMobile ? 20 : 24,
                     fontWeight: FontWeight.w800,
                     color: const Color(0xFF1F1F1F),
@@ -119,7 +120,7 @@ class DashboardOverview extends StatelessWidget {
                   onPressed: () => context.go('/library'),
                   child: Text('View all',
                       style: TextStyle(
-                          color: WebColors.purplePrimary,
+                          color: ThemeProvider.primaryDeepBlue,
                           fontWeight: FontWeight.bold,
                           fontSize: isMobile ? 14 : 16)),
                 ),
@@ -163,11 +164,11 @@ class DashboardOverview extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Engagement Overview',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                           fontSize: 16, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 4),
                   Text('Quiz performance trends',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.lato(
                           fontSize: 12, color: Colors.grey[600])),
                 ],
               ),
@@ -189,14 +190,14 @@ class DashboardOverview extends StatelessWidget {
                                 blurRadius: 4)
                           ]),
                       child: Text('WEEKLY',
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.poppins(
                               fontSize: 11, fontWeight: FontWeight.bold)),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
                       child: Text('MONTHLY',
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.poppins(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
                               color: Colors.grey)),
@@ -226,17 +227,17 @@ class DashboardOverview extends StatelessWidget {
                       color: const Color(0xFFE5E7EB), shape: BoxShape.circle)),
               const SizedBox(width: 8),
               Text('Started',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.lato(
                       fontSize: 12, fontWeight: FontWeight.w600)),
               const SizedBox(width: 24),
               Container(
                   width: 10,
                   height: 10,
                   decoration: BoxDecoration(
-                      color: WebColors.purplePrimary, shape: BoxShape.circle)),
+                      color: ThemeProvider.primaryDeepBlue, shape: BoxShape.circle)),
               const SizedBox(width: 8),
               Text('Completed',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.lato(
                       fontSize: 12, fontWeight: FontWeight.w600)),
             ],
           )
@@ -291,14 +292,14 @@ class DashboardOverview extends StatelessWidget {
             width: isMobile ? 24 : 32,
             height: height2 * 1.2,
             decoration: BoxDecoration(
-              color: WebColors.purplePrimary,
+              color: ThemeProvider.primaryDeepBlue,
               borderRadius: BorderRadius.circular(8),
             ),
           ),
         ),
         const SizedBox(height: 12),
         Text(day,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.lato(
                 fontSize: isMobile ? 8 : 10,
                 fontWeight: FontWeight.w700,
                 color: Colors.grey[600])),
@@ -311,7 +312,7 @@ class DashboardOverview extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: WebColors.purplePrimary,
+        color: ThemeProvider.primaryDeepBlue,
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
@@ -319,21 +320,21 @@ class DashboardOverview extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text('ACTIVE STUDENTS',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: Colors.white70,
                   letterSpacing: 1)),
           const SizedBox(height: 12),
           Text('${stats?.activeStudents ?? 0}',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
                   color: Colors.white)),
           const SizedBox(height: 12),
           Text(
               '+${activity.where((e) => e.type == "attempt").length} student attempts tracked',
-              style: GoogleFonts.outfit(fontSize: 12, color: Colors.white70)),
+              style: GoogleFonts.lato(fontSize: 12, color: Colors.white70)),
         ],
       ),
     );
@@ -353,7 +354,7 @@ class DashboardOverview extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text('CONTENT RATING',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: Colors.grey[600],
@@ -365,7 +366,7 @@ class DashboardOverview extends StatelessWidget {
                   ((stats?.averageScore ?? 0) / 20)
                       .clamp(0.0, 5.0)
                       .toStringAsFixed(1),
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 24,
                       fontWeight: FontWeight.w900,
                       color: const Color(0xFF1F1F1F))),
@@ -374,14 +375,14 @@ class DashboardOverview extends StatelessWidget {
                 children: List.generate(
                     5,
                     (index) => const Icon(Icons.star,
-                        color: WebColors.purplePrimary, size: 20)),
+                        color: ThemeProvider.accentSoftOrange, size: 20)),
               ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
               'Average score across ${stats?.totalAttempts ?? 0} valid attempts.',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.lato(
                   fontSize: 12, color: Colors.grey[600], height: 1.5)),
         ],
       ),
@@ -405,9 +406,9 @@ class DashboardOverview extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('Classroom Codes',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 18, fontWeight: FontWeight.w800)),
-              const Icon(Icons.qr_code_2, color: WebColors.purplePrimary),
+              const Icon(Icons.qr_code_2, color: ThemeProvider.primaryDeepBlue),
             ],
           ),
           const SizedBox(height: 16),
@@ -429,16 +430,16 @@ class DashboardOverview extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(pack.title.toUpperCase(),
-                                style: GoogleFonts.outfit(
+                                style: GoogleFonts.lato(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.grey[600])),
                             const SizedBox(height: 4),
                             Text(pack.shareCode,
-                                style: GoogleFonts.outfit(
+                                style: GoogleFonts.poppins(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w900,
-                                    color: WebColors.purplePrimary,
+                                    color: ThemeProvider.primaryDeepBlue,
                                     letterSpacing: 2)),
                           ],
                         ),
@@ -476,19 +477,19 @@ class DashboardOverview extends StatelessWidget {
               Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                      color: const Color(0xFFF3E8FF),
+                      color: ThemeProvider.primaryDeepBlue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12)),
                   child: const Icon(Icons.psychology,
-                      color: WebColors.purplePrimary, size: 24)),
+                      color: ThemeProvider.primaryDeepBlue, size: 24)),
               const SizedBox(width: 16),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Student Sentiment',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                           fontSize: 18, fontWeight: FontWeight.w800)),
                   Text('Engagement analysis',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.lato(
                           fontSize: 13, color: Colors.grey[600])),
                 ],
               ),
@@ -518,7 +519,7 @@ class DashboardOverview extends StatelessWidget {
                 children: [
                   Text(
                       '"The AI-generated insights were incredibly helpful for the exam prep."',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.lato(
                           fontSize: 13,
                           fontStyle: FontStyle.italic,
                           color: Colors.grey[700],
@@ -530,7 +531,7 @@ class DashboardOverview extends StatelessWidget {
                           radius: 12, backgroundColor: Colors.teal),
                       const SizedBox(width: 8),
                       Text('Anonymous Student',
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.poppins(
                               fontSize: 11, fontWeight: FontWeight.bold)),
                     ],
                   )
@@ -570,7 +571,7 @@ class DashboardOverview extends StatelessWidget {
                       children: [
                         Text(
                             '"The AI-generated insights on the most recent material were incredibly helpful for my revision."',
-                            style: GoogleFonts.outfit(
+                            style: GoogleFonts.lato(
                                 fontSize: 13,
                                 fontStyle: FontStyle.italic,
                                 color: Colors.grey[700],
@@ -579,10 +580,10 @@ class DashboardOverview extends StatelessWidget {
                         Row(
                           children: [
                             const CircleAvatar(
-                                radius: 12, backgroundColor: Colors.teal),
+                                radius: 12, backgroundColor: ThemeProvider.secondaryTeal),
                             const SizedBox(width: 8),
                             Text('Anonymous Student',
-                                style: GoogleFonts.outfit(
+                                style: GoogleFonts.poppins(
                                     fontSize: 11, fontWeight: FontWeight.bold)),
                           ],
                         )
@@ -605,13 +606,13 @@ class DashboardOverview extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(label,
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.lato(
                     fontSize: 13, fontWeight: FontWeight.w700)),
             Text('${(val * 100).toInt()}%',
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
-                    color: WebColors.purplePrimary)),
+                    color: ThemeProvider.primaryDeepBlue)),
           ],
         ),
         const SizedBox(height: 8),
@@ -620,7 +621,7 @@ class DashboardOverview extends StatelessWidget {
           child: LinearProgressIndicator(
             value: val,
             backgroundColor: const Color(0xFFE5E7EB),
-            valueColor: const AlwaysStoppedAnimation(WebColors.purplePrimary),
+            valueColor: const AlwaysStoppedAnimation(ThemeProvider.secondaryTeal),
             minHeight: 8,
           ),
         ),
@@ -644,7 +645,7 @@ class DashboardOverview extends StatelessWidget {
                 Expanded(
                     flex: 3,
                     child: Text('DECK NAME',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             color: Colors.grey[500],
@@ -652,7 +653,7 @@ class DashboardOverview extends StatelessWidget {
                 Expanded(
                     flex: 1,
                     child: Text('STATUS',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             color: Colors.grey[500],
@@ -660,7 +661,7 @@ class DashboardOverview extends StatelessWidget {
                 Expanded(
                     flex: 2,
                     child: Text('ENROLLMENT',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             color: Colors.grey[500],
@@ -707,15 +708,15 @@ class DashboardOverview extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                      color: const Color(0xFFF3E8FF),
+                      color: ThemeProvider.primaryDeepBlue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8)),
                   child: const Icon(Icons.science_outlined,
-                      color: WebColors.purplePrimary, size: 18),
+                      color: ThemeProvider.primaryDeepBlue, size: 18),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                     child: Text(deck.title,
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: isMobile ? 12 : 15,
                             fontWeight: FontWeight.bold,
                             color: const Color(0xFF1F1F1F)),
@@ -735,10 +736,10 @@ class DashboardOverview extends StatelessWidget {
                       color: const Color(0xFFDCFCE7),
                       borderRadius: BorderRadius.circular(20)),
                   child: Text('LIVE',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF166534))),
+                          color: ThemeProvider.secondaryTeal)),
                 ),
               ),
             ),
@@ -747,12 +748,12 @@ class DashboardOverview extends StatelessWidget {
             child: Row(
               children: [
                 Text('$enrollmentCount',
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.poppins(
                         fontSize: isMobile ? 11 : 13,
                         fontWeight: FontWeight.w700)),
                 const SizedBox(width: 8),
                 Text('attempts',
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.lato(
                         fontSize: 11, color: Colors.grey[600])),
                 const SizedBox(width: 24),
               ],

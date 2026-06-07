@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sumquiz/models/public_deck.dart';
 import 'package:sumquiz/models/teacher_models.dart';
 import 'package:sumquiz/theme/web_theme.dart';
+import 'package:sumquiz/providers/theme_provider.dart';
 import 'shared_teacher_widgets.dart';
 
 class FeedbackInsights extends StatelessWidget {
@@ -50,7 +51,7 @@ class FeedbackInsights extends StatelessWidget {
                               height: 16,
                               child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: WebColors.purplePrimary))
+                                  color: ThemeProvider.primaryDeepBlue))
                           : const Icon(Icons.auto_awesome),
                       label: Text(isGeneratingFeedback
                           ? 'Analyzing...'
@@ -58,7 +59,7 @@ class FeedbackInsights extends StatelessWidget {
                               ? 'Generate Insights'
                               : 'Refresh Insights')),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: WebColors.purplePrimary,
+                        backgroundColor: ThemeProvider.primaryDeepBlue,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
@@ -81,7 +82,7 @@ class FeedbackInsights extends StatelessWidget {
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2, color: WebColors.purplePrimary))
+                                strokeWidth: 2, color: ThemeProvider.primaryDeepBlue))
                         : const Icon(Icons.auto_awesome),
                     label: Text(isGeneratingFeedback
                         ? 'Analyzing...'
@@ -89,7 +90,7 @@ class FeedbackInsights extends StatelessWidget {
                             ? 'Generate Insights'
                             : 'Refresh Insights')),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: WebColors.purplePrimary,
+                      backgroundColor: ThemeProvider.primaryDeepBlue,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
@@ -139,19 +140,19 @@ class FeedbackInsights extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.timeline, color: WebColors.purplePrimary),
+              const Icon(Icons.timeline, color: ThemeProvider.primaryDeepBlue),
               const SizedBox(width: 12),
               Text('AI FEEDBACK SYNTHESIS',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: WebColors.purplePrimary,
+                      color: ThemeProvider.primaryDeepBlue,
                       letterSpacing: 1.5)),
             ],
           ),
           const SizedBox(height: 12),
           Text('Critical Struggle Points',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                   fontSize: 20, fontWeight: FontWeight.w800)),
           const SizedBox(height: 12),
           if (feedbackInsight == null)
@@ -165,7 +166,7 @@ class FeedbackInsights extends StatelessWidget {
                 color: const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                    color: WebColors.purplePrimary.withValues(alpha: 0.1)),
+                    color: ThemeProvider.primaryDeepBlue.withValues(alpha: 0.1)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -173,7 +174,7 @@ class FeedbackInsights extends StatelessWidget {
                   Row(
                     children: [
                       Text('AI Insight Highlight',
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.poppins(
                               fontSize: 16, fontWeight: FontWeight.bold)),
                       if (!isMobile) ...[
                         const SizedBox(width: 12),
@@ -184,23 +185,23 @@ class FeedbackInsights extends StatelessWidget {
                                 color: const Color(0xFFF3E8FF),
                                 borderRadius: BorderRadius.circular(20)),
                             child: Text('High Priority',
-                                style: GoogleFonts.outfit(
+                                style: GoogleFonts.poppins(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
-                                    color: WebColors.purplePrimary))),
+                                    color: ThemeProvider.primaryDeepBlue))),
                       ],
                     ],
                   ),
                   const SizedBox(height: 12),
                   Text(feedbackInsight!,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.lato(
                           fontSize: 13, color: Colors.grey[700], height: 1.5)),
                   const SizedBox(height: 16),
                   Text('Review Topic Strategy →',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: WebColors.purplePrimary)),
+                          color: ThemeProvider.primaryDeepBlue)),
                 ],
               ),
             ),
@@ -213,7 +214,7 @@ class FeedbackInsights extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(isMobile ? 24 : 40),
       decoration: BoxDecoration(
-        color: WebColors.purplePrimary,
+        color: ThemeProvider.primaryDeepBlue,
         borderRadius: BorderRadius.circular(24),
         boxShadow: WebColors.cardShadow,
       ),
@@ -221,7 +222,7 @@ class FeedbackInsights extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('PERFORMANCE MIX',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: Colors.white70,
@@ -241,12 +242,12 @@ class FeedbackInsights extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text('72%',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: isMobile ? 28 : 32,
                             fontWeight: FontWeight.w900,
                             color: Colors.white)),
                     Text('AVERAGE MASTERY',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: 9,
                             fontWeight: FontWeight.bold,
                             color: Colors.white70,
@@ -278,11 +279,11 @@ class FeedbackInsights extends StatelessWidget {
                     color: Colors.white54, shape: BoxShape.circle)),
             const SizedBox(width: 12),
             Text(label,
-                style: GoogleFonts.outfit(fontSize: 14, color: Colors.white)),
+                style: GoogleFonts.poppins(fontSize: 14, color: Colors.white)),
           ],
         ),
         Text(value,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: Colors.white)),
@@ -302,14 +303,14 @@ class FeedbackInsights extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('SUBJECT TOPIC BREAKDOWN',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: Colors.grey[500],
                   letterSpacing: 1.5)),
           const SizedBox(height: 16),
           Text('Curriculum Mastery',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.poppins(
                   fontSize: 20, fontWeight: FontWeight.w800)),
           const SizedBox(height: 32),
           if (isMobile) ...[
@@ -318,7 +319,7 @@ class FeedbackInsights extends StatelessWidget {
             _topicRowMobile(
                 'HISTORICAL CONTEXT', 0.88, const Color(0xFFC4B5FD)),
             const SizedBox(height: 16),
-            _topicRowMobile('VARIABLE ANALYSIS', 0.65, WebColors.purplePrimary),
+            _topicRowMobile('VARIABLE ANALYSIS', 0.65, ThemeProvider.primaryDeepBlue),
             const SizedBox(height: 16),
             _topicRowMobile('STATISTICAL LOGIC', 0.94, const Color(0xFF4C1D95)),
           ] else
@@ -328,7 +329,7 @@ class FeedbackInsights extends StatelessWidget {
               children: [
                 _topicBar('LINEAR VARIABLES', 0.42, Colors.red[400]!),
                 _topicBar('HISTORICAL CONTEXT', 0.88, const Color(0xFFC4B5FD)),
-                _topicBar('VARIABLE ANALYSIS', 0.65, WebColors.purplePrimary),
+                _topicBar('VARIABLE ANALYSIS', 0.65, ThemeProvider.primaryDeepBlue),
                 _topicBar('STATISTICAL LOGIC', 0.94, const Color(0xFF4C1D95)),
               ],
             ),
@@ -345,12 +346,12 @@ class FeedbackInsights extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(label,
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: Colors.grey[700])),
             Text('${(val * 100).toInt()}%',
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.poppins(
                     fontSize: 12, fontWeight: FontWeight.w900, color: color)),
           ],
         ),
@@ -380,13 +381,13 @@ class FeedbackInsights extends StatelessWidget {
               children: [
                 Expanded(
                     child: Text(label,
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                             color: Colors.grey[600]),
                         overflow: TextOverflow.ellipsis)),
                 Text('${(heightPerc * 100).toInt()}%',
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.poppins(
                         fontSize: 12, fontWeight: FontWeight.w700)),
               ],
             ),
@@ -421,11 +422,11 @@ class FeedbackInsights extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('Targeted Interventions',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 18, fontWeight: FontWeight.w800)),
               if (isMobile)
                 const Icon(Icons.auto_fix_high,
-                    color: WebColors.purplePrimary, size: 18),
+                    color: ThemeProvider.primaryDeepBlue, size: 18),
             ],
           ),
           const SizedBox(height: 24),
@@ -435,7 +436,7 @@ class FeedbackInsights extends StatelessWidget {
                 Expanded(
                     flex: 2,
                     child: Text('STUDENT',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             color: Colors.grey[500],
@@ -443,7 +444,7 @@ class FeedbackInsights extends StatelessWidget {
                 Expanded(
                     flex: 1,
                     child: Text('PERFORMANCE CLUSTER',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             color: Colors.grey[500],
@@ -451,7 +452,7 @@ class FeedbackInsights extends StatelessWidget {
                 Expanded(
                     flex: 3,
                     child: Text('AI INSIGHT',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             color: Colors.grey[500],
@@ -459,7 +460,7 @@ class FeedbackInsights extends StatelessWidget {
                 Expanded(
                     flex: 1,
                     child: Text('INTERVENTION',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             color: Colors.grey[500],
@@ -484,7 +485,7 @@ class FeedbackInsights extends StatelessWidget {
               'High effort, low retention in quantitative reasoning.',
               'GUIDED PRACTICE',
               'Email Parent',
-              WebColors.purplePrimary,
+              ThemeProvider.primaryDeepBlue,
               isMobile: isMobile),
           _interventionRow(
               'ST',
@@ -537,12 +538,12 @@ class FeedbackInsights extends StatelessWidget {
                     child: Text(initials,
                         style: const TextStyle(
                             fontSize: 12,
-                            color: WebColors.purplePrimary,
+                            color: ThemeProvider.primaryDeepBlue,
                             fontWeight: FontWeight.bold))),
                 const SizedBox(width: 12),
                 Expanded(
                     child: Text(name,
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: 14, fontWeight: FontWeight.bold))),
                 Container(
                   padding:
@@ -551,7 +552,7 @@ class FeedbackInsights extends StatelessWidget {
                       color: clusterColor,
                       borderRadius: BorderRadius.circular(20)),
                   child: Text(cluster,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                           color: clusterTextInfo)),
@@ -560,7 +561,7 @@ class FeedbackInsights extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text('"$insight"',
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.lato(
                     fontSize: 12,
                     fontStyle: FontStyle.italic,
                     color: Colors.grey[700])),
@@ -574,10 +575,10 @@ class FeedbackInsights extends StatelessWidget {
                       color: const Color(0xFFF3E8FF),
                       borderRadius: BorderRadius.circular(12)),
                   child: Text(intervention,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.poppins(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
-                          color: WebColors.purplePrimary)),
+                          color: ThemeProvider.primaryDeepBlue)),
                 ),
                 const Spacer(),
                 ElevatedButton(
@@ -613,17 +614,17 @@ class FeedbackInsights extends StatelessWidget {
                     backgroundColor: const Color(0xFFF3E8FF),
                     child: Text(initials,
                         style: const TextStyle(
-                            color: WebColors.purplePrimary,
+                            color: ThemeProvider.primaryDeepBlue,
                             fontWeight: FontWeight.bold))),
                 const SizedBox(width: 16),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(name,
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.poppins(
                             fontSize: 14, fontWeight: FontWeight.bold)),
                     Text('Class A',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.lato(
                             fontSize: 11, color: Colors.grey[500])),
                   ],
                 ),
@@ -641,7 +642,7 @@ class FeedbackInsights extends StatelessWidget {
                     color: clusterColor,
                     borderRadius: BorderRadius.circular(12)),
                 child: Text(cluster,
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.poppins(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                         color: clusterTextInfo)),
@@ -651,7 +652,7 @@ class FeedbackInsights extends StatelessWidget {
           Expanded(
             flex: 3,
             child: Text('"$insight"',
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.lato(
                     fontSize: 12,
                     fontStyle: FontStyle.italic,
                     color: Colors.grey[700])),
@@ -664,10 +665,10 @@ class FeedbackInsights extends StatelessWidget {
                   color: const Color(0xFFF3E8FF),
                   borderRadius: BorderRadius.circular(12)),
               child: Text(intervention,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.poppins(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: WebColors.purplePrimary)),
+                      color: ThemeProvider.primaryDeepBlue)),
             ),
           ),
           Expanded(
