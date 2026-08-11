@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform, kIsWeb;
 import 'package:sumquiz/models/user_model.dart';
 import 'package:sumquiz/services/time_sync_service.dart';
+import 'package:sumquiz/services/creator_program_service.dart';
 
 /// IAP Service for handling Play Store purchases
 /// Direct Play Store integration for subscription management
@@ -211,6 +212,22 @@ class IAPService {
       developer.log(
           'Updated subscription for $uid: product=$productId, trial=$isTrial, credits=$credits',
           name: 'IAPService');
+
+      // Trigger creator program attribution tracking
+      try {
+        final double price = switch (productId) {
+          _proStarterId => 7.99,
+          _proMonthlyId => 14.99,
+          _proEliteId => 29.99,
+          _proCreatorId => 49.99,
+          _ => 0.0,
+        };
+        if (price > 0.0) {
+          await CreatorProgramService().trackSubscription(uid, price);
+        }
+      } catch (e) {
+        developer.log('Error tracking creator referral subscription: $e');
+      }
     } catch (e) {
       developer.log('Failed to update user subscription status',
           name: 'IAPService', error: e);

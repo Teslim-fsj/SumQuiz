@@ -18,6 +18,7 @@ import 'package:sumquiz/models/local_note.dart';
 import 'package:sumquiz/models/public_deck.dart';
 import 'package:sumquiz/models/folder.dart';
 import 'package:sumquiz/services/local_database_service.dart';
+import 'package:sumquiz/services/creator_program_service.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -166,6 +167,13 @@ class FirestoreService {
     try {
       await newDocRef.set(summaryWithId.toFirestore());
       await _localDb.updateSummarySyncStatus(summaryWithId.id, true);
+      
+      // Track summary generation for creator referral program
+      try {
+        await CreatorProgramService().trackSummary(userId);
+      } catch (e) {
+        debugPrint('Error tracking creator referral summary: $e');
+      }
     } catch (e) {
       debugPrint('Error saving summary to Firestore: $e');
     }
@@ -237,6 +245,13 @@ class FirestoreService {
     try {
       await newDocRef.set(quizWithId.toFirestore());
       await _localDb.updateQuizSyncStatus(quizWithId.id, true);
+      
+      // Track quiz generation for creator referral program
+      try {
+        await CreatorProgramService().trackQuiz(userId);
+      } catch (e) {
+        debugPrint('Error tracking creator referral quiz: $e');
+      }
     } catch (e) {
       debugPrint('Error saving quiz to Firestore: $e');
     }

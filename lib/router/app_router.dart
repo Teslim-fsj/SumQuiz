@@ -44,6 +44,12 @@ import 'package:sumquiz/views/screens/note_editor_screen.dart';
 import 'package:sumquiz/views/screens/post_study_results_screen.dart';
 import 'package:sumquiz/views/screens/sumi_live_screen.dart';
 import 'package:sumquiz/views/screens/debug/neural_debug_screen.dart';
+import 'package:sumquiz/views/screens/web/creator_program_landing.dart';
+import 'package:sumquiz/views/screens/web/creator_application_form.dart';
+import 'package:sumquiz/views/screens/web/creator_profile_screen.dart';
+import 'package:sumquiz/views/screens/web/creator_resources_page.dart';
+import 'package:sumquiz/views/screens/web/admin_creators_dashboard.dart';
+import 'package:sumquiz/views/screens/web/creator_referral_redirect.dart';
 
 // Role-Aware view helper
 class RoleAwareView extends StatelessWidget {
@@ -453,6 +459,39 @@ GoRouter createRouter(AuthService authService) {
             title: extra['title'] as String,
             type: extra['type'] as String,
           );
+        },
+      ),
+      GoRoute(
+        path: '/creator-program',
+        builder: (context, state) => const PublicScaffoldWeb(
+          isEducatorRoute: false,
+          child: CreatorProgramLanding(),
+        ),
+      ),
+      GoRoute(
+        path: '/creator-program/apply',
+        builder: (context, state) => const PublicScaffoldWeb(
+          isEducatorRoute: false,
+          child: CreatorApplicationForm(),
+        ),
+      ),
+      GoRoute(
+        path: '/creator-dashboard',
+        builder: (context, state) => const CreatorProfileScreen(),
+      ),
+      GoRoute(
+        path: '/creator-resources',
+        builder: (context, state) => const CreatorResourcesPage(),
+      ),
+      GoRoute(
+        path: '/admin/creators',
+        builder: (context, state) => const AdminCreatorsDashboard(),
+      ),
+      GoRoute(
+        path: '/c/:code',
+        builder: (context, state) {
+          final code = state.pathParameters['code']!;
+          return CreatorReferralRedirect(referralCode: code);
         },
       ),
     ],

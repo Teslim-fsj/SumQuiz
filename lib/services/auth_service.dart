@@ -1,6 +1,7 @@
 import 'dart:developer' as developer;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart'
     show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:google_sign_in/google_sign_in.dart' as auth;
@@ -14,6 +15,7 @@ import 'package:sumquiz/services/notification_integration.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
+import 'package:sumquiz/services/creator_program_service.dart';
 
 class AuthService {
   final FirebaseAuth _auth;
@@ -217,21 +219,8 @@ class AuthService {
           developer.log('User profile created successfully',
               name: 'AuthService');
 
-          if (referralCode != null && referralCode.isNotEmpty) {
-            try {
-              developer.log('Applying referral code: $referralCode',
-                  name: 'AuthService');
-              await _referralService.applyReferralCode(referralCode, user.uid);
-            } catch (e, s) {
-              developer.log(
-                  'Error applying referral code during Google Sign-In',
-                  name: 'AuthService',
-                  error: e,
-                  stackTrace: s);
-              // Don't fail the entire sign-in process if referral code fails
-              // Just log the error and continue
-            }
-          }
+          // Handle referral attribution pipeline securely
+          await _handleReferralAttribution(user.uid, user.email ?? '', referralCode);
 
           // 🔔 Schedule notifications for new user
           if (context.mounted) {
@@ -251,6 +240,13 @@ class AuthService {
           developer.log(
               'Existing user document found. Skipping profile creation.',
               name: 'AuthService');
+        }
+        
+        // Track first login for creator referral attribution
+        try {
+          await CreatorProgramService().trackLogin(user.uid);
+        } catch (e) {
+          developer.log('Error tracking creator referral login: $e');
         }
         developer.log('Google Sign-In flow complete.', name: 'AuthService');
       }
@@ -282,6 +278,14 @@ class AuthService {
       // Save authentication state for offline access
       if (result.user != null) {
         await _saveAuthState(result.user!);
+        
+        // Track login for creator referral attribution
+        try {
+          await CreatorProgramService().trackLogin(result.user!.uid);
+        } catch (e) {
+          developer.log('Error tracking creator referral login: $e');
+        }
+
         if (context.mounted) {
           await Provider.of<SyncProvider>(context, listen: false).syncData();
         }
@@ -338,17 +342,8 @@ class AuthService {
         );
         await _firestoreService.saveUserData(newUser);
 
-        // 4. Apply Referral Code (Best Effort)
-        if (referralCode != null && referralCode.isNotEmpty) {
-          try {
-            // Try to apply referral via service or cloud function
-            // Assuming _referralService exists and handles this
-            await _referralService.applyReferralCode(referralCode, user.uid);
-          } catch (e) {
-            developer.log('Failed to apply referral code', error: e);
-            // Do not fail the whole signup
-          }
-        }
+        // Apply Referral Code securely via attribution pipeline
+        await _handleReferralAttribution(user.uid, email, referralCode);
 
         // 5. Save Auth State & Sync
         await _saveAuthState(user);
@@ -446,6 +441,34 @@ class AuthService {
     } catch (e) {
       developer.log('Failed to update user role', error: e);
       rethrow;
+    }
+  }
+  Future<void> _handleReferralAttribution(String userId, String email, String? code) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final finalCode = (code != null && code.isNotEmpty)
+          ? code
+          : prefs.getString('pending_referral_code');
+
+      if (finalCode == null || finalCode.isEmpty) return;
+
+      if (finalCode.toUpperCase().startsWith('SUMI')) {
+        // Creator Referral Attribution
+        final creatorService = CreatorProgramService();
+        await creatorService.trackSignup(userId, email, finalCode.toUpperCase());
+        // Save creator referral tag on user doc
+        await FirebaseFirestore.instance.collection('users').doc(userId).update({
+          'referredByCreatorCode': finalCode.toUpperCase(),
+        });
+        await prefs.remove('pending_referral_code');
+        developer.log('Successfully attributed signup of $userId to creator code $finalCode');
+      } else {
+        // Standard Referral
+        await _referralService.applyReferralCode(finalCode, userId);
+        await prefs.remove('pending_referral_code');
+      }
+    } catch (e) {
+      developer.log('Error in referral attribution: $e');
     }
   }
 }

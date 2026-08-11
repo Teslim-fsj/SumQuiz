@@ -4,6 +4,7 @@ import '../services/time_sync_service.dart';
 enum UserRole {
   student,
   creator,
+  admin,
 }
 
 class UserModel {
