@@ -22,9 +22,12 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
 
   int _branchToIndex(int branch, bool isTeacher) {
     if (isTeacher) {
-      final List<int> teacherMobileBranches = [0, 1, 3, 4, 5];
-      final idx = teacherMobileBranches.indexOf(branch);
-      return idx;
+      // Teacher mapping: Home(0), Classroom(3), Library(1), Sumi AI(4)
+      if (branch == 0) return 0;
+      if (branch == 3) return 1;
+      if (branch == 1) return 2;
+      if (branch == 4) return 3;
+      return 0;
     }
     // Student mapping: Home(0), Notes(7), Library(1), Profile(5)
     if (branch == 0) return 0;
@@ -37,8 +40,9 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
   void _onTap(int index, bool isTeacher) {
     int targetBranch;
     if (isTeacher) {
-      final List<int> teacherMobileBranches = [0, 1, 3, 4, 5];
-      targetBranch = teacherMobileBranches[index];
+      // Teacher mapping: Home(0), Classroom(3), Library(1), Sumi AI(4)
+      final teacherBranches = [0, 3, 1, 4];
+      targetBranch = teacherBranches[index];
     } else {
       // Student mapping: Home(0), Notes(7), Library(1), Profile(5)
       final studentBranches = [0, 7, 1, 5];
@@ -170,38 +174,71 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
               shape: const CircularNotchedRectangle(),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildMobileNavItem(
-                    icon: Icons.auto_awesome_mosaic_outlined,
-                    activeIcon: Icons.auto_awesome_mosaic_rounded,
-                    label: 'Home',
-                    isActive: currentIdx == 0,
-                    onTap: () => _onTap(0, isTeacher),
-                  ),
-                  _buildMobileNavItem(
-                    icon: Icons.edit_note_outlined,
-                    activeIcon: Icons.edit_note_rounded,
-                    label: 'Notes',
-                    isActive: currentIdx == 1,
-                    onTap: () => _onTap(1, isTeacher),
-                  ),
-                  // Center gap for FAB
-                  const SizedBox(width: 56),
-                  _buildMobileNavItem(
-                    icon: Icons.book_outlined,
-                    activeIcon: Icons.book_rounded,
-                    label: 'Library',
-                    isActive: currentIdx == 2,
-                    onTap: () => _onTap(2, isTeacher),
-                  ),
-                  _buildMobileNavItem(
-                    icon: Icons.person_outline,
-                    activeIcon: Icons.person_rounded,
-                    label: 'Profile',
-                    isActive: currentIdx == 3,
-                    onTap: () => _onTap(3, isTeacher),
-                  ),
-                ],
+                children: isTeacher
+                    ? [
+                        _buildMobileNavItem(
+                          icon: Icons.home_outlined,
+                          activeIcon: Icons.home_rounded,
+                          label: 'Home',
+                          isActive: currentIdx == 0,
+                          onTap: () => _onTap(0, true),
+                        ),
+                        _buildMobileNavItem(
+                          icon: Icons.school_outlined,
+                          activeIcon: Icons.school_rounded,
+                          label: 'Classroom',
+                          isActive: currentIdx == 1,
+                          onTap: () => _onTap(1, true),
+                        ),
+                        // Center gap for FAB
+                        const SizedBox(width: 56),
+                        _buildMobileNavItem(
+                          icon: Icons.folder_outlined,
+                          activeIcon: Icons.folder_rounded,
+                          label: 'Library',
+                          isActive: currentIdx == 2,
+                          onTap: () => _onTap(2, true),
+                        ),
+                        _buildMobileNavItem(
+                          icon: Icons.smart_toy_outlined,
+                          activeIcon: Icons.smart_toy_rounded,
+                          label: 'Sumi AI',
+                          isActive: currentIdx == 3,
+                          onTap: () => _onTap(3, true),
+                        ),
+                      ]
+                    : [
+                        _buildMobileNavItem(
+                          icon: Icons.auto_awesome_mosaic_outlined,
+                          activeIcon: Icons.auto_awesome_mosaic_rounded,
+                          label: 'Home',
+                          isActive: currentIdx == 0,
+                          onTap: () => _onTap(0, false),
+                        ),
+                        _buildMobileNavItem(
+                          icon: Icons.edit_note_outlined,
+                          activeIcon: Icons.edit_note_rounded,
+                          label: 'Notes',
+                          isActive: currentIdx == 1,
+                          onTap: () => _onTap(1, false),
+                        ),
+                        // Center gap for FAB
+                        const SizedBox(width: 56),
+                        _buildMobileNavItem(
+                          icon: Icons.book_outlined,
+                          activeIcon: Icons.book_rounded,
+                          label: 'Library',
+                          isActive: currentIdx == 2,
+                          onTap: () => _onTap(2, false),
+                        ),
+                        _buildMobileNavItem(
+                          icon: Icons.person_outline,
+                          activeIcon: Icons.person_rounded,
+                          label: 'Profile',
+                          isActive: currentIdx == 3,
+                          onTap: () => _onTap(3, false),
+                        ),
+                      ],
               ),
             ),
           );
@@ -364,11 +401,11 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                           padding: EdgeInsets.symmetric(
                               horizontal: _isExpanded ? 16 : 8),
                           children: [
-                            if (isTeacher) ...[
+                             if (isTeacher) ...[
                               _buildSidebarTab(
-                                icon: Icons.dashboard_outlined,
-                                activeIcon: Icons.dashboard_rounded,
-                                label: 'Dashboard',
+                                icon: Icons.home_outlined,
+                                activeIcon: Icons.home_rounded,
+                                label: 'Home',
                                 isActive:
                                     widget.navigationShell.currentIndex == 0,
                                 onTap: () => _goToBranch(0),
@@ -376,29 +413,9 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                 isDark: isDark,
                               ),
                               _buildSidebarTab(
-                                icon: Icons.inventory_2_outlined,
-                                activeIcon: Icons.inventory_2_rounded,
-                                label: 'Content Manager',
-                                isActive:
-                                    widget.navigationShell.currentIndex == 1,
-                                onTap: () => _goToBranch(1),
-                                isExpanded: _isExpanded,
-                                isDark: isDark,
-                              ),
-                              _buildSidebarTab(
-                                icon: Icons.edit_note_outlined,
-                                activeIcon: Icons.edit_note_rounded,
-                                label: 'Notes',
-                                isActive:
-                                    widget.navigationShell.currentIndex == 8,
-                                onTap: () => _goToBranch(8),
-                                isExpanded: _isExpanded,
-                                isDark: isDark,
-                              ),
-                              _buildSidebarTab(
-                                icon: Icons.people_outline_rounded,
-                                activeIcon: Icons.people_rounded,
-                                label: 'Student Roster',
+                                icon: Icons.school_outlined,
+                                activeIcon: Icons.school_rounded,
+                                label: 'Classroom',
                                 isActive:
                                     widget.navigationShell.currentIndex == 3,
                                 onTap: () => _goToBranch(3),
@@ -406,22 +423,22 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                 isDark: isDark,
                               ),
                               _buildSidebarTab(
-                                icon: Icons.analytics_outlined,
-                                activeIcon: Icons.analytics_rounded,
-                                label: 'Analytics',
+                                icon: Icons.folder_outlined,
+                                activeIcon: Icons.folder_rounded,
+                                label: 'Library',
                                 isActive:
-                                    widget.navigationShell.currentIndex == 4,
-                                onTap: () => _goToBranch(4),
+                                    widget.navigationShell.currentIndex == 1,
+                                onTap: () => _goToBranch(1),
                                 isExpanded: _isExpanded,
                                 isDark: isDark,
                               ),
                               _buildSidebarTab(
-                                icon: Icons.auto_awesome_rounded,
-                                activeIcon: Icons.auto_awesome,
-                                label: 'Class Intelligence',
+                                icon: Icons.smart_toy_outlined,
+                                activeIcon: Icons.smart_toy_rounded,
+                                label: 'Sumi AI',
                                 isActive:
-                                    widget.navigationShell.currentIndex == 5,
-                                onTap: () => _goToBranch(5),
+                                    widget.navigationShell.currentIndex == 4,
+                                onTap: () => _goToBranch(4),
                                 isExpanded: _isExpanded,
                                 isDark: isDark,
                               ),

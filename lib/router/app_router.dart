@@ -15,7 +15,6 @@ import 'package:sumquiz/views/screens/review_screen.dart';
 import 'package:sumquiz/views/screens/summary_screen.dart';
 import 'package:sumquiz/views/screens/quiz_screen.dart';
 import 'package:sumquiz/views/screens/flashcards_screen.dart';
-import 'package:sumquiz/views/screens/creator_dashboard_screen.dart';
 import 'package:sumquiz/views/screens/preferences_screen.dart';
 import 'package:sumquiz/views/screens/data_storage_screen.dart';
 import 'package:sumquiz/views/screens/subscription_screen.dart';
@@ -31,7 +30,6 @@ import 'package:sumquiz/views/widgets/responsive_view.dart';
 import 'package:sumquiz/views/screens/web/library_screen_web.dart';
 import 'package:sumquiz/views/screens/web/create_content_screen_web.dart';
 import 'package:sumquiz/views/screens/web/results_view_screen_web.dart';
-import 'package:sumquiz/views/screens/web/teacher_dashboard_web.dart';
 import 'package:sumquiz/views/screens/web/public_scaffold_web.dart';
 import 'package:sumquiz/views/screens/web/student_landing_view.dart';
 import 'package:sumquiz/views/screens/web/educator_landing_view.dart';
@@ -43,6 +41,10 @@ import 'package:sumquiz/views/screens/notes_screen.dart';
 import 'package:sumquiz/views/screens/note_editor_screen.dart';
 import 'package:sumquiz/views/screens/post_study_results_screen.dart';
 import 'package:sumquiz/views/screens/sumi_live_screen.dart';
+import 'package:sumquiz/views/screens/teacher_home_screen.dart';
+import 'package:sumquiz/views/screens/teacher_classroom_screen.dart';
+import 'package:sumquiz/views/screens/teacher_classrooms_list_screen.dart';
+import 'package:sumquiz/views/screens/teacher_library_screen.dart';
 import 'package:sumquiz/views/screens/debug/neural_debug_screen.dart';
 import 'package:sumquiz/views/screens/web/creator_program_landing.dart';
 import 'package:sumquiz/views/screens/web/creator_application_form.dart';
@@ -230,8 +232,8 @@ GoRouter createRouter(AuthService authService) {
                       desktop: ReviewScreenWeb(autoStartMission: autoStart),
                     ),
                     creatorView: const ResponsiveView(
-                      mobile: TeacherDashboardWeb(module: 'dashboard'),
-                      desktop: TeacherDashboardWeb(module: 'dashboard'),
+                      mobile: TeacherHomeScreen(),
+                      desktop: TeacherHomeScreen(),
                     ),
                   );
                 },
@@ -249,8 +251,8 @@ GoRouter createRouter(AuthService authService) {
                     desktop: LibraryScreenWeb(),
                   ),
                   creatorView: ResponsiveView(
-                    mobile: TeacherDashboardWeb(module: 'content'),
-                    desktop: TeacherDashboardWeb(module: 'content'),
+                    mobile: TeacherLibraryScreen(),
+                    desktop: TeacherLibraryScreen(),
                   ),
                 ),
                 routes: [
@@ -343,8 +345,8 @@ GoRouter createRouter(AuthService authService) {
               GoRoute(
                 path: '/students',
                 builder: (context, state) => const ResponsiveView(
-                  mobile: TeacherDashboardWeb(module: 'students'),
-                  desktop: TeacherDashboardWeb(module: 'students'),
+                  mobile: TeacherClassroomsListScreen(),
+                  desktop: TeacherClassroomsListScreen(),
                 ),
               ),
             ],
@@ -355,8 +357,8 @@ GoRouter createRouter(AuthService authService) {
               GoRoute(
                 path: '/feedback',
                 builder: (context, state) => const ResponsiveView(
-                  mobile: TeacherDashboardWeb(module: 'feedback'),
-                  desktop: TeacherDashboardWeb(module: 'feedback'),
+                  mobile: SumiLiveScreen(),
+                  desktop: SumiLiveScreen(),
                 ),
               ),
             ],
@@ -438,8 +440,29 @@ GoRouter createRouter(AuthService authService) {
         },
       ),
       GoRoute(
+        path: '/teacher',
+        builder: (context, state) => const TeacherHomeScreen(),
+        routes: [
+          GoRoute(
+            path: 'classroom/:id',
+            builder: (context, state) {
+              final id = state.pathParameters['id'];
+              return TeacherClassroomScreen(classId: id);
+            },
+          ),
+          GoRoute(
+            path: 'classrooms',
+            builder: (context, state) => const TeacherClassroomsListScreen(),
+          ),
+          GoRoute(
+            path: 'library',
+            builder: (context, state) => const TeacherLibraryScreen(),
+          ),
+        ],
+      ),
+      GoRoute(
         path: '/creator_dashboard',
-        builder: (context, state) => const TeacherDashboardScreen(),
+        builder: (context, state) => const TeacherHomeScreen(),
       ),
       GoRoute(
         path: '/sumi-live',
