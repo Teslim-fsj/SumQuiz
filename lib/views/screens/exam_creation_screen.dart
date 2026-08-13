@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:sumquiz/models/local_quiz.dart';
 import 'package:sumquiz/models/local_quiz_question.dart';
@@ -49,8 +50,8 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
   bool _isProcessing = false;
   String _processingMessage = '';
   final ImagePicker _imagePicker = ImagePicker();
-  final List<Map<String, dynamic>> _selectedSourceFiles =
-      []; // { 'name': String, 'bytes': Uint8List, 'type': String }
+  // ignore: unused_field - reserved for future multi-file source support
+  // final List<Map<String, dynamic>> _selectedSourceFiles = [];
   CancellationToken? _cancelToken;
 
   @override
@@ -1372,25 +1373,44 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: Text(widget.examTitle),
-        backgroundColor: Colors.transparent,
+        backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back_rounded,
+              color: isDark ? Colors.white : const Color(0xFF1E293B)),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        title: Column(
+          children: [
+            Text(
+              'SumQuiz',
+              style: GoogleFonts.outfit(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF6B5CE7),
+              ),
+            ),
+            Text(
+              'Step 3: Review',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF64748B),
+              ),
+            ),
+          ],
+        ),
+        centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _saveExam,
-            tooltip: 'Save to Library',
-          ),
-          TextButton(
-            onPressed: _exportExam,
-            child: const Text('Export Exam'),
+            icon: Icon(Icons.settings_outlined,
+                color: isDark ? Colors.white70 : const Color(0xFF64748B)),
+            onPressed: () => context.push('/settings'),
           ),
         ],
       ),
@@ -1399,224 +1419,437 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const CircularProgressIndicator(),
+                  const CircularProgressIndicator(color: Color(0xFF6B5CE7)),
                   const SizedBox(height: 16),
-                  Text(_processingMessage),
+                  Text(
+                    _processingMessage,
+                    style: GoogleFonts.inter(
+                        fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
                 ],
               ),
             )
-          : ListView(
-              padding: const EdgeInsets.symmetric(vertical: 16),
+          : Column(
               children: [
-                // Top bar with exam info
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  color: theme.cardColor,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 16),
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.examTitle,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                      // ── Header Row ──────────────────────────────────────────
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Final Review',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w800,
+                                    color: isDark
+                                        ? Colors.white
+                                        : const Color(0xFF1E293B),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Read through the generated questions. Tap any question to edit.',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    height: 1.4,
+                                    color: const Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
                             ),
-                            Text(
-                              'Total Questions: ${_questions.length}',
-                              style: theme.textTheme.bodySmall,
+                          ),
+                          const SizedBox(width: 12),
+                          // Sumi AI Assist Badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEFF6FF),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: const Color(0xFFBFDBFE)),
                             ),
-                            Text(
-                              'Estimated Duration: ${widget.duration} mins',
-                              style: theme.textTheme.bodySmall,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.smart_toy_outlined,
+                                    size: 14, color: Color(0xFF2563EB)),
+                                const SizedBox(width: 4),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Sumi',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                        color: const Color(0xFF2563EB),
+                                      ),
+                                    ),
+                                    Text(
+                                      'AI Assist',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                        color: const Color(0xFF2563EB),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // ── Question Cards ──────────────────────────────────────
+                      ...List.generate(
+                        _questions.length,
+                        (index) => _buildReviewQuestionCard(index, isDark),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // ── + Add Question Button ──────────────────────────────
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: _addQuestion,
+                          style: TextButton.styleFrom(
+                            backgroundColor: isDark
+                                ? const Color(0xFF334155)
+                                : const Color(0xFFF3E8FF),
+                            foregroundColor: const Color(0xFF6B5CE7),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          icon: const Icon(Icons.add, size: 18),
+                          label: Text(
+                            'Add Question',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.add),
-                        onPressed: _addQuestion,
-                        tooltip: 'Add Question',
+
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
+
+                // ── Sticky Bottom Action Bar ─────────────────────────────────
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.06),
+                        blurRadius: 10,
+                        offset: const Offset(0, -4),
+                      ),
+                    ],
+                    border: Border(
+                      top: BorderSide(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : const Color(0xFFF1F5F9),
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _saveExam,
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            side: BorderSide(
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.2)
+                                  : const Color(0xFFE2E8F0),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: Text(
+                            'Save Draft',
+                            style: GoogleFonts.inter(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF1E293B),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _exportExam,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF6B5CE7),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: Text(
+                            'Assign or Export',
+                            style: GoogleFonts.inter(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                // Questions list
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    children: List.generate(
-                      _questions.length,
-                      (index) => _buildQuestionCard(index),
-                    ),
-                  ),
-                ),
               ],
             ),
     );
   }
 
-  Widget _buildQuestionCard(int index) {
-    final theme = Theme.of(context);
-    final question = _questions[index];
+  Widget _buildReviewQuestionCard(int index, bool isDark) {
+    final q = _questions[index];
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(
-                  'Q${index + 1}. (MCQ)',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${index + 1}.  ',
+                style: GoogleFonts.outfit(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF64748B),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  q.question,
+                  style: GoogleFonts.outfit(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    height: 1.3,
+                    color: isDark ? Colors.white : const Color(0xFF1E293B),
                   ),
                 ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () => _editQuestion(index),
-                  tooltip: 'Edit',
-                  color: theme.colorScheme.primary,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: () => _regenerateQuestion(index),
-                  tooltip: 'Regenerate',
-                  color: theme.colorScheme.secondary,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () => _deleteQuestion(index),
-                  tooltip: 'Delete',
-                  color: theme.colorScheme.error,
-                ),
-              ],
-            ),
-            TextFormField(
-              initialValue: question.question,
-              maxLines: null,
-              decoration: const InputDecoration(
-                labelText: 'Question',
-                border: OutlineInputBorder(),
               ),
-              onChanged: (value) {
-                setState(() {
-                  _questions[index] = LocalQuizQuestion(
-                    question: value,
-                    options: question.options,
-                    correctAnswer: question.correctAnswer,
-                  );
-                });
-              },
-            ),
-            const SizedBox(height: 12),
-            RadioGroup<String>(
-              groupValue: question.correctAnswer,
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    _questions[index] = LocalQuizQuestion(
-                      question: question.question,
-                      options: question.options,
-                      correctAnswer: value,
-                    );
-                  });
-                }
-              },
+              IconButton(
+                icon: const Icon(Icons.refresh_rounded,
+                    size: 18, color: Color(0xFF6B5CE7)),
+                tooltip: 'Regenerate',
+                onPressed: () => _regenerateQuestion(index),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline_rounded,
+                    size: 18, color: Color(0xFFEF4444)),
+                tooltip: 'Delete',
+                onPressed: () => _deleteQuestion(index),
+              ),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined,
+                    size: 18, color: Color(0xFF64748B)),
+                tooltip: 'Edit',
+                onPressed: () => _editQuestionDialog(index),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Radio options list
+          ...List.generate(
+            q.options.length,
+            (optIdx) {
+              final optionText = q.options[optIdx];
+              final isCorrect = (q.correctAnswer == optionText);
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  children: [
+                    Icon(
+                      isCorrect
+                          ? Icons.check_circle_rounded
+                          : Icons.radio_button_unchecked_rounded,
+                      size: 20,
+                      color: isCorrect
+                          ? const Color(0xFF6B5CE7)
+                          : const Color(0xFF94A3B8),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        optionText,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight:
+                              isCorrect ? FontWeight.w700 : FontWeight.w400,
+                          color: isCorrect
+                              ? (isDark ? Colors.white : const Color(0xFF1E293B))
+                              : (isDark ? Colors.grey[400] : const Color(0xFF475569)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+
+          // Explanation Card (Soft purple container)
+          if ((q.explanation?.isNotEmpty ?? false)) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF312E81).withValues(alpha: 0.3)
+                    : const Color(0xFFFAF5FF),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: const Color(0xFFF3E8FF),
+                ),
+              ),
               child: Column(
-                children: List.generate(
-                  question.options.length,
-                  (optionIndex) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Row(
-                      children: [
-                        Radio<String>(
-                          value: question.options[optionIndex],
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.lightbulb_outlined,
+                          size: 16, color: Color(0xFF7C3AED)),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Explanation',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF7C3AED),
                         ),
-                        Expanded(
-                          child: TextFormField(
-                            initialValue: question.options[optionIndex],
-                            decoration: InputDecoration(
-                              labelText:
-                                  'Option ${String.fromCharCode(65 + optionIndex)}',
-                              border: const OutlineInputBorder(),
-                              suffixIcon: question.correctAnswer ==
-                                      question.options[optionIndex]
-                                  ? const Icon(Icons.check_circle,
-                                      color: Colors.green)
-                                  : null,
-                            ),
-                            onChanged: (value) {
-                              final newOptions =
-                                  List<String>.from(question.options);
-                              newOptions[optionIndex] = value;
-
-                              // Update correct answer if it was this option
-                              String newCorrectAnswer = question.correctAnswer;
-                              if (question.correctAnswer ==
-                                  question.options[optionIndex]) {
-                                newCorrectAnswer = value;
-                              }
-
-                              setState(() {
-                                _questions[index] = LocalQuizQuestion(
-                                  question: question.question,
-                                  options: newOptions,
-                                  correctAnswer: newCorrectAnswer,
-                                  explanation: question.explanation,
-                                  questionType: question.questionType,
-                                );
-                              });
-                            },
-                          ),
-                        ),
-                      ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    q.explanation ?? '',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      height: 1.4,
+                      color: isDark
+                          ? Colors.grey[300]
+                          : const Color(0xFF4B5563),
                     ),
                   ),
-                ),
+                ],
               ),
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              initialValue: question.explanation,
-              maxLines: null,
-              decoration: const InputDecoration(
-                labelText: 'Explanation (optional)',
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _questions[index] = LocalQuizQuestion(
-                    question: question.question,
-                    options: question.options,
-                    correctAnswer: question.correctAnswer,
-                    explanation: value,
-                    questionType: question.questionType,
-                  );
-                });
-              },
             ),
           ],
-        ),
+          const SizedBox(height: 16),
+          Divider(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.08)
+                : const Color(0xFFF1F5F9),
+          ),
+        ],
       ),
     );
   }
 
-  void _editQuestion(int index) {
-    // In a real implementation, this might open a detailed edit dialog
-    // For now, the inline editing is already available in the card
-    debugPrint('Editing question $index');
+  void _editQuestionDialog(int index) {
+    final q = _questions[index];
+    final qController = TextEditingController(text: q.question);
+    final expController = TextEditingController(text: q.explanation);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Edit Question ${index + 1}',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: qController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Question Text',
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: expController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Explanation',
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _questions[index] = LocalQuizQuestion(
+                  question: qController.text.trim(),
+                  options: q.options,
+                  correctAnswer: q.correctAnswer,
+                  explanation: expController.text.trim(),
+                  questionType: q.questionType,
+                );
+              });
+              Navigator.pop(ctx);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6B5CE7),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
   }
 
-  Future<void> _regenerateQuestion(int index) async {
+  void _regenerateQuestion(int index) async {
     setState(() {
       _isProcessing = true;
       _processingMessage = 'Regenerating question ${index + 1}...';
@@ -1640,31 +1873,8 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
         _questions[index] = regeneratedQuestion;
         _isProcessing = false;
       });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Question regenerated successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e, stackTrace) {
-      debugPrint('Error regenerating question: $e');
-      debugPrint('Stack trace: $stackTrace');
-
-      setState(() {
-        _isProcessing = false;
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error regenerating question: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    } catch (e) {
+      setState(() => _isProcessing = false);
     }
   }
 
@@ -1672,13 +1882,6 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
     setState(() {
       _questions.removeAt(index);
     });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Question deleted'),
-        backgroundColor: Colors.orange,
-      ),
-    );
   }
 
   Future<void> _saveExam() async {
@@ -1712,19 +1915,13 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Exam saved to library!'),
-              backgroundColor: Colors.green),
+            content: Text('Exam saved to library!'),
+            backgroundColor: Colors.green,
+          ),
         );
       }
     } catch (e) {
-      debugPrint('Error saving exam: $e');
       setState(() => _isProcessing = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Error saving exam'), backgroundColor: Colors.red),
-        );
-      }
     }
   }
 
@@ -1738,17 +1935,9 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
         questionType: 'Multiple Choice',
       ));
     });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('New question added'),
-        backgroundColor: Colors.blue,
-      ),
-    );
   }
 
   void _exportExam() {
-    // Navigate to export options screen
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => ExportOptionsScreen(
@@ -1762,6 +1951,8 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
     );
   }
 }
+
+// ─── ExportOptionsScreen (Step 4: Success & Export Modal) ───────────────────
 
 class ExportOptionsScreen extends StatefulWidget {
   final String examTitle;
@@ -1784,289 +1975,508 @@ class ExportOptionsScreen extends StatefulWidget {
 }
 
 class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
-  bool _includeAnswerSheet = false;
+  String _selectedFormat = 'pdf'; // 'pdf' | 'doc' | 'gdocs'
+  bool _includeAnswerSheet = true;
   bool _includeMarkingScheme = false;
-  bool _randomizeQuestionOrder = false;
-  bool _randomizeOptions = false;
+  bool _showSchoolLogo = true;
   bool _isProcessing = false;
   String _processingMessage = '';
-
-  // New Header & Marks Info
-  final _schoolNameController = TextEditingController();
-  int _marksA = 1;
-  int _marksB = 5;
-  int _marksC = 10;
-
-  @override
-  void dispose() {
-    _schoolNameController.dispose();
-    super.dispose();
-  }
-
-  int get _totalMarks {
-    int total = 0;
-    for (var q in widget.questions) {
-      if (q.questionType == 'Multiple Choice' ||
-          q.questionType == 'True/False') {
-        total += _marksA;
-      } else if (q.questionType == 'Short Answer') {
-        total += _marksB;
-      } else {
-        total += _marksC;
-      }
-    }
-    return total;
-  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Export Exam'),
-        backgroundColor: Colors.transparent,
+        backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back_rounded,
+              color: isDark ? Colors.white : const Color(0xFF1E293B)),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        title: Text(
+          'SumQuiz',
+          style: GoogleFonts.outfit(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF6B5CE7),
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.settings_outlined,
+                color: isDark ? Colors.white70 : const Color(0xFF64748B)),
+            onPressed: () => context.push('/settings'),
+          ),
+        ],
       ),
       body: _isProcessing
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const CircularProgressIndicator(),
+                  const CircularProgressIndicator(color: Color(0xFF6B5CE7)),
                   const SizedBox(height: 16),
-                  Text(_processingMessage),
+                  Text(
+                    _processingMessage,
+                    style: GoogleFonts.inter(
+                        fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
                 ],
               ),
             )
-          : ListView(
-              padding: const EdgeInsets.all(16.0),
-              children: [
-                Text(
-                  'Professional structure for printable exams.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // 1. Header Information
-                _buildSectionCard(
-                  title: 'Exam Header',
-                  child: Column(
-                    children: [
-                      TextField(
-                        controller: _schoolNameController,
-                        decoration: const InputDecoration(
-                          labelText: 'School Name',
-                          hintText: 'e.g. Greenhill International Academy',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.school),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // 2. Marks Allocation
-                _buildSectionCard(
-                  title: 'Marks Allocation',
-                  child: Column(
-                    children: [
-                      _buildMarkInput(
-                        'Section A (MCQ / T&F)',
-                        _marksA,
-                        (val) => setState(() => _marksA = val),
-                      ),
-                      const Divider(),
-                      _buildMarkInput(
-                        'Section B (Short Answer)',
-                        _marksB,
-                        (val) => setState(() => _marksB = val),
-                      ),
-                      const Divider(),
-                      _buildMarkInput(
-                        'Section C (Theory / Essay)',
-                        _marksC,
-                        (val) => setState(() => _marksC = val),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'TOTAL MARKS:',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.onPrimaryContainer,
-                              ),
-                            ),
-                            Text(
-                              '$_totalMarks',
-                              style: theme.textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // 3. Document Settings
-                _buildSectionCard(
-                  title: 'Document Settings',
-                  child: Column(
-                    children: [
-                      SwitchListTile(
-                        title: const Text('Include answer sheet'),
-                        subtitle:
-                            const Text('Separate page with correct options'),
-                        value: _includeAnswerSheet,
-                        onChanged: (bool? value) {
-                          setState(() {
-                            _includeAnswerSheet = value!;
-                          });
-                        },
-                      ),
-                      SwitchListTile(
-                        title: const Text('Include marking scheme'),
-                        subtitle:
-                            const Text('Detailed explanations for answers'),
-                        value: _includeMarkingScheme,
-                        onChanged: (bool? value) {
-                          setState(() {
-                            _includeMarkingScheme = value!;
-                          });
-                        },
-                      ),
-                      SwitchListTile(
-                        title: const Text('Randomize question order'),
-                        value: _randomizeQuestionOrder,
-                        onChanged: (bool? value) {
-                          setState(() {
-                            _randomizeQuestionOrder = value!;
-                          });
-                        },
-                      ),
-                      SwitchListTile(
-                        title: const Text('Randomize options'),
-                        value: _randomizeOptions,
-                        onChanged: (bool? value) {
-                          setState(() {
-                            _randomizeOptions = value!;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-
-                // Download PDF button
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton.icon(
-                    onPressed: _downloadPdf,
-                    icon: const Icon(Icons.share_rounded),
-                    label: const Text(
-                      'Share / Print Exam',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          : SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Column(
+                children: [
+                  // ── Success Header ─────────────────────────────────────────
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF6B5CE7),
+                      shape: BoxShape.circle,
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: theme.colorScheme.onPrimary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                    child: const Icon(Icons.check_rounded,
+                        color: Colors.white, size: 36),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Success! Your exam is ready.',
+                    style: GoogleFonts.outfit(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Review the preview below. When you're ready, configure your export settings.",
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      height: 1.4,
+                      color: const Color(0xFF64748B),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ── Document Preview Card ──────────────────────────────────
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : const Color(0xFFE2E8F0),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        // Top Header Banner
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF312E81).withValues(alpha: 0.3)
+                                : const Color(0xFFFAF5FF),
+                            borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(20)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.school_outlined,
+                                  size: 16, color: Color(0xFF6B5CE7)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  widget.examTitle.isNotEmpty
+                                      ? widget.examTitle
+                                      : 'Midterm Examination - Biology 101',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark
+                                        ? Colors.white
+                                        : const Color(0xFF1E293B),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                      color: const Color(0xFFE2E8F0)),
+                                ),
+                                child: Text(
+                                  'Preview',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF64748B),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Skeleton page layout preview
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildSkeletonLine(width: 160, height: 10),
+                              const SizedBox(height: 8),
+                              _buildSkeletonLine(width: double.infinity, height: 8),
+                              const SizedBox(height: 6),
+                              _buildSkeletonLine(width: double.infinity, height: 8),
+                              const SizedBox(height: 6),
+                              _buildSkeletonLine(width: 100, height: 8),
+                              const SizedBox(height: 16),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? const Color(0xFF0F172A)
+                                      : const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                      color: const Color(0xFFE2E8F0)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 10,
+                                          backgroundColor:
+                                              Colors.grey[300],
+                                          child: Text('1',
+                                              style: GoogleFonts.inter(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold)),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        _buildSkeletonLine(
+                                            width: 180, height: 8),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    _buildSkeletonLine(width: 120, height: 6),
+                                    const SizedBox(height: 6),
+                                    _buildSkeletonLine(width: 80, height: 6),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // ── EXPORT FORMAT Section ──────────────────────────────────
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'EXPORT FORMAT',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                        color: const Color(0xFF64748B),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 32),
-              ],
+                  const SizedBox(height: 12),
+
+                  _buildFormatCard(
+                    id: 'pdf',
+                    icon: Icons.picture_as_pdf_rounded,
+                    iconBg: const Color(0xFFF3E8FF),
+                    iconColor: const Color(0xFF9333EA),
+                    title: 'PDF Document',
+                    subtitle: 'Best for printing',
+                    isSelected: _selectedFormat == 'pdf',
+                    onTap: () => setState(() => _selectedFormat = 'pdf'),
+                    isDark: isDark,
+                  ),
+                  const SizedBox(height: 10),
+                  _buildFormatCard(
+                    id: 'doc',
+                    icon: Icons.description_rounded,
+                    iconBg: const Color(0xFFEFF6FF),
+                    iconColor: const Color(0xFF2563EB),
+                    title: 'Word Document',
+                    subtitle: 'Fully editable',
+                    isSelected: _selectedFormat == 'doc',
+                    onTap: () => setState(() => _selectedFormat = 'doc'),
+                    isDark: isDark,
+                  ),
+                  const SizedBox(height: 10),
+                  _buildFormatCard(
+                    id: 'gdocs',
+                    icon: Icons.article_rounded,
+                    iconBg: const Color(0xFFECFDF5),
+                    iconColor: const Color(0xFF059669),
+                    title: 'Google Docs',
+                    subtitle: 'Save to Drive',
+                    isSelected: _selectedFormat == 'gdocs',
+                    onTap: () => setState(() => _selectedFormat = 'gdocs'),
+                    isDark: isDark,
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // ── INCLUSIONS Section ─────────────────────────────────────
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'INCLUSIONS',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                        color: const Color(0xFF64748B),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  Container(
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        SwitchListTile(
+                          activeTrackColor: const Color(0xFF6B5CE7),
+                          title: Text(
+                            'Include Answer Sheet',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF1E293B),
+                            ),
+                          ),
+                          value: _includeAnswerSheet,
+                          onChanged: (val) =>
+                              setState(() => _includeAnswerSheet = val),
+                        ),
+                        Divider(
+                          height: 1,
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : const Color(0xFFF1F5F9),
+                        ),
+                        SwitchListTile(
+                          activeTrackColor: const Color(0xFF6B5CE7),
+                          title: Text(
+                            'Include Marking Scheme',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF1E293B),
+                            ),
+                          ),
+                          value: _includeMarkingScheme,
+                          onChanged: (val) =>
+                              setState(() => _includeMarkingScheme = val),
+                        ),
+                        Divider(
+                          height: 1,
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : const Color(0xFFF1F5F9),
+                        ),
+                        SwitchListTile(
+                          activeTrackColor: const Color(0xFF6B5CE7),
+                          title: Row(
+                            children: [
+                              Text(
+                                'Show School Logo',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF1E293B),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              const Icon(Icons.info_outline_rounded,
+                                  size: 14, color: Color(0xFF94A3B8)),
+                            ],
+                          ),
+                          value: _showSchoolLogo,
+                          onChanged: (val) =>
+                              setState(() => _showSchoolLogo = val),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // ── Download / Share Button ────────────────────────────────
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: ElevatedButton.icon(
+                      onPressed: _exportExamFile,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6B5CE7),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      icon: const Icon(Icons.upload_rounded, size: 20),
+                      label: Text(
+                        'Download / Share Exam',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 40),
+                ],
+              ),
             ),
     );
   }
 
-  Widget _buildMarkInput(String label, int value, Function(int) onChanged) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Text(label,
-                style: const TextStyle(fontWeight: FontWeight.w500)),
+  Widget _buildFormatCard({
+    required String id,
+    required IconData icon,
+    required Color iconBg,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required bool isDark,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFF6B5CE7)
+                : (isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : const Color(0xFFE2E8F0)),
+            width: isSelected ? 2 : 1,
           ),
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.remove_circle_outline),
-                onPressed: value > 0 ? () => onChanged(value - 1) : null,
-              ),
-              Text('$value',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 16)),
-              IconButton(
-                icon: const Icon(Icons.add_circle_outline),
-                onPressed: () => onChanged(value + 1),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionCard({required String title, required Widget child}) {
-    final theme = Theme.of(context);
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: theme.dividerColor),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        ),
+        child: Row(
           children: [
-            Text(
-              title,
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.primary,
+            Icon(
+              isSelected
+                  ? Icons.radio_button_checked_rounded
+                  : Icons.radio_button_unchecked_rounded,
+              color: isSelected
+                  ? const Color(0xFF6B5CE7)
+                  : const Color(0xFF94A3B8),
+              size: 20,
+            ),
+            const SizedBox(width: 14),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: iconBg,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: iconColor, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.outfit(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: const Color(0xFF64748B),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            child,
           ],
         ),
       ),
     );
   }
 
-  Future<void> _downloadPdf() async {
+  Widget _buildSkeletonLine({required double width, required double height}) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: const Color(0xFFE2E8F0),
+        borderRadius: BorderRadius.circular(4),
+      ),
+    );
+  }
+
+  Future<void> _exportExamFile() async {
     setState(() {
       _isProcessing = true;
-      _processingMessage = 'Generating Professional Exam Paper...';
+      _processingMessage = 'Preparing ${_selectedFormat.toUpperCase()} file...';
     });
 
     try {
@@ -2098,46 +2508,35 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
       }
 
       final pdfGenerator = ExamPdfGenerator();
-      final schoolName = _schoolNameController.text.trim().isEmpty
-          ? 'SUMQUIZ ACADEMY'
-          : _schoolNameController.text.trim().toUpperCase();
-
-      // Process questions for randomization
-      var allQuestions = List<LocalQuizQuestion>.from(widget.questions);
-      if (_randomizeQuestionOrder) allQuestions.shuffle();
 
       final config = ExamPdfConfig(
-        schoolName: schoolName,
+        schoolName: _showSchoolLogo ? 'GREENHILL ACADEMY' : 'SUMQUIZ ACADEMY',
         examTitle: widget.examTitle,
         subject: widget.subject,
         classLevel: widget.classLevel,
         durationMinutes: widget.duration,
         shareCode: shareCode,
         creatorName: user?.displayName ?? 'Educator',
-        marksA: _marksA,
-        marksB: _marksB,
-        marksC: _marksC,
+        marksA: 1,
+        marksB: 5,
+        marksC: 10,
         includeAnswerSheet: _includeAnswerSheet,
         includeMarkingScheme: _includeMarkingScheme,
-        randomizeOptions: _randomizeOptions,
+        randomizeOptions: false,
       );
 
       final studentPaper = pdfGenerator.generateStudentPaper(
-        questions: allQuestions,
+        questions: widget.questions,
         config: config,
       );
       final bytes = await studentPaper.save();
       final fileName =
           '${widget.examTitle.replaceAll(' ', '_')}_Exam_Paper.pdf';
 
-      if (mounted) {
-        setState(() => _isProcessing = false);
-      }
+      if (mounted) setState(() => _isProcessing = false);
 
-      // 1. Download/Share using our cross-platform helper (fixes Google Drive & Social Sharing)
       await downloadPdf(bytes, fileName);
 
-      // 2. Also offer direct print layout (optional but helpful for teachers)
       try {
         await Printing.layoutPdf(
           onLayout: (PdfPageFormat format) async => bytes,
@@ -2149,14 +2548,13 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
 
       if (mounted) setState(() => _isProcessing = false);
     } catch (e) {
-      debugPrint('PDF Export Error: $e');
+      debugPrint('Export Error: $e');
       if (mounted) {
         setState(() => _isProcessing = false);
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error exporting PDF: $e')));
+            .showSnackBar(SnackBar(content: Text('Error exporting: $e')));
       }
     }
   }
-
-  // PDF generation is now handled by ExamPdfGenerator service.
 }
+
