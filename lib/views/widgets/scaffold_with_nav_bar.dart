@@ -88,81 +88,26 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
           return Scaffold(
             backgroundColor: theme.scaffoldBackgroundColor,
             extendBody: true,
-            // Center Create FAB in the notched bottom bar
-            floatingActionButton: SizedBox(
-              width: 48,
-              height: 48,
-              child: FloatingActionButton(
-                onPressed: () {
-                  if (isTeacher) {
-                    _showCreateOptions(context, theme);
-                  } else {
-                    context.go('/create-content');
-                  }
-                },
-                backgroundColor: WebColors.purplePrimary,
-                elevation: 4,
-                shape: const CircleBorder(),
-                child: const Icon(Icons.add, color: Colors.white, size: 24),
-              ).animate().scale(
-                  delay: 100.ms,
-                  duration: 300.ms,
-                  curve: Curves.easeOutBack),
-            ),
-            floatingActionButtonLocation:
-                FloatingActionButtonLocation.centerDocked,
             body: Stack(
               children: [
                 widget.navigationShell,
-                // Floating Sumi Tutor Orb (bottom-right)
+                // + Create FAB (replaces old Sumi orb)
                 Positioned(
                   right: 16,
-                  bottom: 88,
-                  child: GestureDetector(
-                    onTap: () {
-                      showGeneralDialog(
-                        context: context,
-                        barrierDismissible: true,
-                        barrierLabel: "Sumi Tutor",
-                        pageBuilder: (context, _, __) =>
-                            const SumiLiveSandboxOverlay(),
-                      );
-                    },
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: theme.colorScheme.surface,
-                        boxShadow: [
-                          BoxShadow(
-                            color: theme.colorScheme.primary
-                                .withValues(alpha: 0.3),
-                            blurRadius: 12,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                        border: Border.all(
-                          color: theme.colorScheme.primary
-                              .withValues(alpha: 0.4),
-                          width: 1.5,
-                        ),
-                      ),
-                      child: ClipOval(
-                        child: Image.asset(
-                          'assets/images/sumi.png',
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Icon(Icons.face_retouching_natural,
-                                  color: theme.colorScheme.primary, size: 20),
-                        ),
-                      ),
-                    ).animate(onPlay: (c) => c.repeat(reverse: true)).moveY(
-                        begin: 0,
-                        end: -6,
-                        duration: 2.seconds,
-                        curve: Curves.easeInOut),
-                  ),
+                  bottom: 80,
+                  child: FloatingActionButton(
+                    onPressed: () => _showCreateSheet(context, isTeacher),
+                    backgroundColor: WebColors.purplePrimary,
+                    elevation: 6,
+                    shape: const CircleBorder(),
+                    child: const Icon(Icons.add_rounded,
+                        color: Colors.white, size: 28),
+                  )
+                      .animate()
+                      .scale(
+                          delay: 100.ms,
+                          duration: 300.ms,
+                          curve: Curves.easeOutBack),
                 ),
               ],
             ),
@@ -170,8 +115,6 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
               height: 64,
               color: theme.cardColor.withValues(alpha: 0.97),
               elevation: 8,
-              notchMargin: 6,
-              shape: const CircularNotchedRectangle(),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: isTeacher
@@ -190,8 +133,6 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                           isActive: currentIdx == 1,
                           onTap: () => _onTap(1, true),
                         ),
-                        // Center gap for FAB
-                        const SizedBox(width: 56),
                         _buildMobileNavItem(
                           icon: Icons.folder_outlined,
                           activeIcon: Icons.folder_rounded,
@@ -222,8 +163,6 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                           isActive: currentIdx == 1,
                           onTap: () => _onTap(1, false),
                         ),
-                        // Center gap for FAB
-                        const SizedBox(width: 56),
                         _buildMobileNavItem(
                           icon: Icons.book_outlined,
                           activeIcon: Icons.book_rounded,
@@ -640,61 +579,375 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
     );
   }
 
-  void _showCreateOptions(BuildContext context, ThemeData theme) {
+  void _showCreateSheet(BuildContext context, bool isTeacher) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bgColor =
+        isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
+    final cardColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final subColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          color: bgColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Drag Handle
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.2)
+                          : Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                // Title
+                Center(
+                  child: Text(
+                    'Create something',
+                    style: GoogleFonts.outfit(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: textColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Center(
+                  child: Text(
+                    'Add material or start learning',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: subColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // ── STUDY section ──────────────────────────────────────────
+                Text(
+                  'STUDY',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                    color: subColor,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _sheetItem(
+                              context: context,
+                              icon: Icons.smart_toy_rounded,
+                              iconBg: const Color(0xFF3B82F6),
+                              label: 'Ask Sumi',
+                              isDark: isDark,
+                              onTap: () {
+                                Navigator.pop(context);
+                                showGeneralDialog(
+                                  context: context,
+                                  barrierDismissible: true,
+                                  barrierLabel: 'Sumi',
+                                  pageBuilder: (ctx, _, __) =>
+                                      const SumiLiveSandboxOverlay(),
+                                );
+                              },
+                            ),
+                          ),
+                          Container(
+                              width: 1,
+                              height: 72,
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.06)
+                                  : Colors.grey[100]),
+                          Expanded(
+                            child: _sheetItem(
+                              context: context,
+                              icon: Icons.edit_note_rounded,
+                              iconBg: const Color(0xFF8B5CF6),
+                              label: 'New Note',
+                              isDark: isDark,
+                              onTap: () {
+                                Navigator.pop(context);
+                                context.push('/notes/new');
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      Divider(
+                          height: 1,
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.06)
+                              : Colors.grey[100]),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _sheetItem(
+                              context: context,
+                              icon: Icons.text_fields_rounded,
+                              iconBg: const Color(0xFF7C3AED),
+                              label: 'Paste Research',
+                              isDark: isDark,
+                              onTap: () {
+                                Navigator.pop(context);
+                                context.go('/create-content');
+                              },
+                            ),
+                          ),
+                          Container(
+                              width: 1,
+                              height: 72,
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.06)
+                                  : Colors.grey[100]),
+                          Expanded(
+                            child: _sheetItem(
+                              context: context,
+                              icon: Icons.audio_file_rounded,
+                              iconBg: const Color(0xFF22C55E),
+                              label: 'Audio Brief',
+                              isDark: isDark,
+                              onTap: () {
+                                Navigator.pop(context);
+                                context.go('/create-content');
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // ── IMPORT section ─────────────────────────────────────────
+                Text(
+                  'IMPORT',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                    color: subColor,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _sheetItem(
+                              context: context,
+                              icon: Icons.picture_as_pdf_rounded,
+                              iconBg: const Color(0xFFF59E0B),
+                              label: 'Upload PDF',
+                              isDark: isDark,
+                              onTap: () {
+                                Navigator.pop(context);
+                                context.go('/create-content');
+                              },
+                            ),
+                          ),
+                          Container(
+                              width: 1,
+                              height: 72,
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.06)
+                                  : Colors.grey[100]),
+                          Expanded(
+                            child: _sheetItem(
+                              context: context,
+                              icon: Icons.camera_alt_rounded,
+                              iconBg: const Color(0xFF06B6D4),
+                              label: 'Scan / Image',
+                              isDark: isDark,
+                              onTap: () {
+                                Navigator.pop(context);
+                                context.go('/create-content');
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      Divider(
+                          height: 1,
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.06)
+                              : Colors.grey[100]),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _sheetItem(
+                              context: context,
+                              icon: Icons.play_circle_fill_rounded,
+                              iconBg: const Color(0xFFEF4444),
+                              label: 'YouTube',
+                              isDark: isDark,
+                              onTap: () {
+                                Navigator.pop(context);
+                                context.go('/create-content');
+                              },
+                            ),
+                          ),
+                          Container(
+                              width: 1,
+                              height: 72,
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.06)
+                                  : Colors.grey[100]),
+                          Expanded(
+                            child: _sheetItem(
+                              context: context,
+                              icon: Icons.language_rounded,
+                              iconBg: const Color(0xFF64B5F6),
+                              label: 'Web',
+                              isDark: isDark,
+                              onTap: () {
+                                Navigator.pop(context);
+                                context.go('/create-content');
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Teacher: also show Create Exam option
+                if (isTeacher) ...[
+                  const SizedBox(height: 20),
+                  Text(
+                    'EDUCATOR',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                      color: subColor,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  InkWell(
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.go('/create-content/exam-wizard');
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 18),
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF6B5CE7)
+                                  .withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.assignment_rounded,
+                                color: Color(0xFF6B5CE7), size: 22),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Text(
+                              'Create Formal Exam',
+                              style: GoogleFonts.outfit(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                              ),
+                            ),
+                          ),
+                          Icon(Icons.chevron_right_rounded,
+                              color: subColor, size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sheetItem({
+    required BuildContext context,
+    required IconData icon,
+    required Color iconBg,
+    required String label,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        child: Row(
           children: [
             Container(
               width: 40,
-              height: 4,
+              height: 40,
               decoration: BoxDecoration(
-                color: theme.dividerColor.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(2),
+                color: iconBg.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: iconBg, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                ),
               ),
             ),
-            const SizedBox(height: 24),
-            Text(
-              'Create New Content',
-              style: GoogleFonts.outfit(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 24),
-            _buildCreateOption(
-              context,
-              title: 'Exam / Quiz',
-              subtitle: 'Structured assessment with advanced analytics',
-              icon: Icons.assignment_outlined,
-              color: WebColors.purplePrimary,
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/create-content/exam-wizard');
-              },
-            ),
-            const SizedBox(height: 16),
-            _buildCreateOption(
-              context,
-              title: 'Study Pack',
-              subtitle: 'Summaries, Quizzes, and Flashcards from any source',
-              icon: Icons.auto_awesome_outlined,
-              color: const Color(0xFF0D9488),
-              onTap: () {
-                Navigator.pop(context);
-                _goToBranch(2);
-              },
-            ),
-            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -735,62 +988,6 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
     );
   }
 
-  Widget _buildCreateOption(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.outfit(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, color: theme.dividerColor),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildSidebarTab({
     required IconData icon,
