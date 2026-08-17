@@ -90,15 +90,25 @@ class LibraryViewModel with ChangeNotifier {
     allFlashcards$ = allFlashcardsFromDb$;
     allNotes$ = allNotesFromDb$;
 
-    // Combine for "All" tab (folders, notes, exams only)
-    allItems$ = Rx.combineLatest3<List<LibraryItem>, List<LibraryItem>,
-                List<LibraryItem>, List<LibraryItem>>(
-            allFolders$
-                .map((folders) => folders.map(LibraryItem.fromFolder).toList()),
-            allNotesFromDb$,
-            allExamsFromDb$,
-            (folders, notes, exams) => [...folders, ...notes, ...exams])
-        .shareReplay(maxSize: 1);
+    // Combine for "All" (notes, study packs, quizzes, flashcards, exams)
+    allItems$ = Rx.combineLatest5<
+        List<LibraryItem>,
+        List<LibraryItem>,
+        List<LibraryItem>,
+        List<LibraryItem>,
+        List<LibraryItem>,
+        List<LibraryItem>>(
+      allNotesFromDb$,
+      allSummariesFromDb$,
+      allQuizzesFromDb$,
+      allFlashcardsFromDb$,
+      allExamsFromDb$,
+      (notes, summaries, quizzes, flashcards, exams) {
+        final all = [...notes, ...summaries, ...quizzes, ...flashcards, ...exams];
+        all.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+        return all;
+      },
+    ).shareReplay(maxSize: 1);
 
     // Study Pack combines summaries, quizzes, flashcards
     studyPack$ = Rx.combineLatest3<List<LibraryItem>, List<LibraryItem>,
@@ -260,6 +270,53 @@ class LibraryViewModel with ChangeNotifier {
       await firestoreService.deleteItem(userId, item);
     } catch (e, s) {
       developer.log('Error deleting item',
+          name: 'LibraryViewModel', error: e, stackTrace: s);
+    }
+  }
+
+  Future<void> renameItem(LibraryItem item, String newTitle) async {
+    try {
+      switch (item.type) {
+        case LibraryItemType.summary:
+          final s = await localDb.getSummary(item.id);
+          if (s != null) {
+            s.title = newTitle;
+            await localDb.saveSummary(s);
+          }
+          break;
+        case LibraryItemType.quiz:
+        case LibraryItemType.exam:
+          final q = await localDb.getQuiz(item.id);
+          if (q != null) {
+            q.title = newTitle;
+            await localDb.saveQuiz(q);
+          }
+          break;
+        case LibraryItemType.flashcards:
+          final f = await localDb.getFlashcardSet(item.id);
+          if (f != null) {
+            f.title = newTitle;
+            await localDb.saveFlashcardSet(f);
+          }
+          break;
+        case LibraryItemType.note:
+          final n = await localDb.getNote(item.id);
+          if (n != null) {
+            n.title = newTitle;
+            await localDb.saveNote(n);
+          }
+          break;
+        case LibraryItemType.folder:
+          final folder = await localDb.getFolder(item.id);
+          if (folder != null) {
+            folder.name = newTitle;
+            folder.updatedAt = DateTime.now();
+            await localDb.saveFolder(folder);
+          }
+          break;
+      }
+    } catch (e, s) {
+      developer.log('Error renaming item',
           name: 'LibraryViewModel', error: e, stackTrace: s);
     }
   }

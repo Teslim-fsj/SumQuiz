@@ -29,23 +29,21 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
       if (branch == 4) return 3;
       return 0;
     }
-    // Student mapping: Home(0), Notes(7), Library(1), Profile(5)
+    // Student mapping: Home(0), Library(1), Profile(5)
     if (branch == 0) return 0;
-    if (branch == 7) return 1;
-    if (branch == 1) return 2;
-    if (branch == 5) return 3;
-    return -1;
+    if (branch == 1) return 1;
+    if (branch == 5) return 2;
+    return 0;
   }
 
   void _onTap(int index, bool isTeacher) {
     int targetBranch;
     if (isTeacher) {
-      // Teacher mapping: Home(0), Classroom(3), Library(1), Sumi AI(4)
       final teacherBranches = [0, 3, 1, 4];
       targetBranch = teacherBranches[index];
     } else {
-      // Student mapping: Home(0), Notes(7), Library(1), Profile(5)
-      final studentBranches = [0, 7, 1, 5];
+      // Student 3-tab mapping: Home(0), Library(1), Profile(5)
+      final studentBranches = [0, 1, 5];
       targetBranch = studentBranches[index];
     }
     widget.navigationShell.goBranch(
@@ -91,7 +89,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
             body: Stack(
               children: [
                 widget.navigationShell,
-                // + Create FAB (replaces old Sumi orb)
+                // Central / Floating + Create FAB
                 Positioned(
                   right: 16,
                   bottom: 80,
@@ -150,32 +148,25 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                       ]
                     : [
                         _buildMobileNavItem(
-                          icon: Icons.auto_awesome_mosaic_outlined,
-                          activeIcon: Icons.auto_awesome_mosaic_rounded,
+                          icon: Icons.home_outlined,
+                          activeIcon: Icons.home_rounded,
                           label: 'Home',
                           isActive: currentIdx == 0,
                           onTap: () => _onTap(0, false),
                         ),
                         _buildMobileNavItem(
-                          icon: Icons.edit_note_outlined,
-                          activeIcon: Icons.edit_note_rounded,
-                          label: 'Notes',
+                          icon: Icons.menu_book_outlined,
+                          activeIcon: Icons.menu_book_rounded,
+                          label: 'Library',
                           isActive: currentIdx == 1,
                           onTap: () => _onTap(1, false),
-                        ),
-                        _buildMobileNavItem(
-                          icon: Icons.book_outlined,
-                          activeIcon: Icons.book_rounded,
-                          label: 'Library',
-                          isActive: currentIdx == 2,
-                          onTap: () => _onTap(2, false),
                         ),
                         _buildMobileNavItem(
                           icon: Icons.person_outline,
                           activeIcon: Icons.person_rounded,
                           label: 'Profile',
-                          isActive: currentIdx == 3,
-                          onTap: () => _onTap(3, false),
+                          isActive: currentIdx == 2,
+                          onTap: () => _onTap(2, false),
                         ),
                       ],
               ),
@@ -393,22 +384,12 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                                 isDark: isDark,
                               ),
                               _buildSidebarTab(
-                                icon: Icons.book_outlined,
-                                activeIcon: Icons.book_rounded,
-                                label: 'My Library',
+                                icon: Icons.menu_book_outlined,
+                                activeIcon: Icons.menu_book_rounded,
+                                label: 'Library',
                                 isActive:
                                     widget.navigationShell.currentIndex == 1,
                                 onTap: () => _goToBranch(1),
-                                isExpanded: _isExpanded,
-                                isDark: isDark,
-                              ),
-                              _buildSidebarTab(
-                                icon: Icons.edit_note_outlined,
-                                activeIcon: Icons.edit_note_rounded,
-                                label: 'Notes',
-                                isActive:
-                                    widget.navigationShell.currentIndex == 7,
-                                onTap: () => _goToBranch(7),
                                 isExpanded: _isExpanded,
                                 isDark: isDark,
                               ),

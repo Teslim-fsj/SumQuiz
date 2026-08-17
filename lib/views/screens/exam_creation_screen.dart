@@ -1660,23 +1660,59 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
                   ),
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.refresh_rounded,
-                    size: 18, color: Color(0xFF6B5CE7)),
-                tooltip: 'Regenerate',
-                onPressed: () => _regenerateQuestion(index),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline_rounded,
-                    size: 18, color: Color(0xFFEF4444)),
-                tooltip: 'Delete',
-                onPressed: () => _deleteQuestion(index),
-              ),
-              IconButton(
-                icon: const Icon(Icons.edit_outlined,
-                    size: 18, color: Color(0xFF64748B)),
-                tooltip: 'Edit',
-                onPressed: () => _editQuestionDialog(index),
+              PopupMenuButton<String>(
+                icon: const Icon(
+                  Icons.more_vert_rounded,
+                  size: 20,
+                  color: Color(0xFF64748B),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                onSelected: (action) {
+                  if (action == 'edit') {
+                    _editQuestionDialog(index);
+                  } else if (action == 'regenerate') {
+                    _regenerateQuestion(index);
+                  } else if (action == 'delete') {
+                    _deleteQuestion(index);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit_outlined, size: 18),
+                        SizedBox(width: 10),
+                        Text('Edit question'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'regenerate',
+                    child: Row(
+                      children: [
+                        Icon(Icons.refresh_rounded,
+                            size: 18, color: Color(0xFF6B5CE7)),
+                        SizedBox(width: 10),
+                        Text('Regenerate'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline_rounded,
+                            size: 18, color: Color(0xFFEF4444)),
+                        SizedBox(width: 10),
+                        Text('Delete',
+                            style: TextStyle(color: Color(0xFFEF4444))),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

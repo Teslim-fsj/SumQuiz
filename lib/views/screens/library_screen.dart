@@ -1,28 +1,17 @@
-import 'package:cloud_firestore/cloud_firestore.dart' show Timestamp;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../models/user_model.dart';
 import '../../models/library_item.dart';
-import '../../models/folder.dart';
-import '../../models/editable_content.dart';
-import '../../models/quiz_question.dart';
-import '../../models/flashcard.dart';
 import '../../services/firestore_service.dart';
 import '../../services/local_database_service.dart';
 import '../../services/sync_service.dart';
 import '../../view_models/library_view_model.dart';
 import '../widgets/enter_code_dialog.dart';
 import '../../utils/library_share_helper.dart';
-import '../../widgets/sumi_mascot.dart';
-import '../../models/sumi_emotion.dart';
-import 'edit_summary_screen.dart';
-import 'edit_quiz_screen.dart';
-import 'edit_flashcards_screen.dart';
 
 class LibraryScreen extends StatelessWidget {
   const LibraryScreen({super.key});
@@ -59,11 +48,14 @@ class LibraryScreen extends StatelessWidget {
                   size: 80,
                   color: theme.colorScheme.primary.withValues(alpha: 0.2)),
               const SizedBox(height: 24),
-              Text('Please Log In',
-                  style: GoogleFonts.outfit(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary)),
+              Text(
+                'Please Log In',
+                style: GoogleFonts.outfit(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
               const SizedBox(height: 12),
               Text(
                 'Log in to access your synchronized library across all your devices.',
@@ -85,18 +77,22 @@ class _LibraryView extends StatefulWidget {
   _LibraryViewState createState() => _LibraryViewState();
 }
 
-class _LibraryViewState extends State<_LibraryView>
-    with TickerProviderStateMixin {
-  late TabController _mainTabController;
-  late TabController _folderTabController;
+class _LibraryViewState extends State<_LibraryView> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  int _selectedFilterIndex = 0; // 0: All, 1: Notes, 2: Study Packs, 3: Quizzes, 4: Exams
+
+  final List<String> _filters = [
+    'All',
+    'Notes',
+    'Study Packs',
+    'Quizzes',
+    'Exams',
+  ];
 
   @override
   void initState() {
     super.initState();
-    _mainTabController = TabController(length: 4, vsync: this);
-    _folderTabController = TabController(length: 3, vsync: this);
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text.toLowerCase();
@@ -106,396 +102,298 @@ class _LibraryViewState extends State<_LibraryView>
 
   @override
   void dispose() {
-    _mainTabController.dispose();
-    _folderTabController.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  Stream<List<LibraryItem>> _getActiveStream(LibraryViewModel viewModel) {
+    switch (_selectedFilterIndex) {
+      case 1:
+        return viewModel.allNotes$;
+      case 2:
+        return viewModel.studyPack$;
+      case 3:
+        return viewModel.allQuizzes$;
+      case 4:
+        return viewModel.allExams$;
+      case 0:
+      default:
+        return viewModel.allItems$;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final viewModel = context.watch<LibraryViewModel>();
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: _buildAppBar(context, theme, viewModel),
-      floatingActionButton: viewModel.selectedFolder != null
-          ? FloatingActionButton.extended(
-              onPressed: () => _showAddContentOptions(context, viewModel),
-              icon: const Icon(Icons.add_rounded),
-              label: Text('Add Content',
-                  style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
-              backgroundColor: theme.colorScheme.primary,
-              foregroundColor: theme.colorScheme.onPrimary,
-            ).animate().scale()
-          : null,
-      body: Column(
-        children: [
-          _buildHeader(context, theme, viewModel),
-          Expanded(
-            child: StreamBuilder<Folder?>(
-              stream: viewModel.selectedFolderStream,
-              builder: (context, snapshot) {
-                final selectedFolder = snapshot.data;
-                if (selectedFolder == null) {
-                  return TabBarView(
-                    controller: _mainTabController,
-                    children: [
-                      _buildContentList(viewModel.allItems$, theme, viewModel),
-                      _buildFolderList(viewModel, theme),
-                      _buildContentList(viewModel.allNotes$, theme, viewModel),
-                      _buildContentList(viewModel.allExams$, theme, viewModel),
-                    ],
-                  );
-                } else {
-                  return TabBarView(
-                    controller: _folderTabController,
-                    children: [
-                      _buildContentList(
-                          viewModel.getFolderStudyPackStream(selectedFolder.id),
-                          theme,
-                          viewModel),
-                      _buildContentList(
-                          viewModel.getFolderNotesStream(selectedFolder.id),
-                          theme,
-                          viewModel),
-                      _buildContentList(
-                          viewModel.getFolderExamsStream(selectedFolder.id),
-                          theme,
-                          viewModel),
-                    ],
-                  );
-                }
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  AppBar _buildAppBar(
-      BuildContext context, ThemeData theme, LibraryViewModel viewModel) {
-    final selectedFolder = viewModel.selectedFolder;
-    return AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      leading: selectedFolder != null
-          ? IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-              onPressed: () => viewModel.selectFolder(null),
-            )
-          : null,
-      title: Text(
-        selectedFolder?.name ?? 'Library',
-        style: GoogleFonts.outfit(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.primary,
-            fontSize: 22),
-      ),
-      centerTitle: true,
-      actions: [
-        if (viewModel.isSyncing)
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0),
-            child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2)),
-          )
-        else
-          IconButton(
-            icon: const Icon(Icons.sync_rounded),
-            onPressed: viewModel.syncAllData,
-            tooltip: 'Sync data',
-          ),
-      ],
-    );
-  }
-
-  Widget _buildHeader(
-      BuildContext context, ThemeData theme, LibraryViewModel viewModel) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: theme.cardColor,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                        color: theme.dividerColor.withValues(alpha: 0.05)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    style: GoogleFonts.inter(fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: 'Search through your library...',
-                      hintStyle: GoogleFonts.inter(
-                          color: theme.hintColor, fontSize: 14),
-                      prefixIcon: Icon(Icons.search_rounded,
-                          color: theme.hintColor, size: 20),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
+      backgroundColor:
+          isDark ? const Color(0xFF0B0F19) : const Color(0xFFF8FAFC),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Top Header Area ──────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Library',
+                          style: GoogleFonts.outfit(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF0F172A),
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          "Everything you're learning, in one place.",
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: isDark
+                                ? const Color(0xFF94A3B8)
+                                : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                  if (viewModel.isSyncing)
+                    const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  else
+                    IconButton(
+                      icon: const Icon(Icons.sync_rounded, size: 22),
+                      color: isDark
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFF64748B),
+                      onPressed: viewModel.syncAllData,
+                      tooltip: 'Sync library',
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.qr_code_scanner_rounded, size: 22),
+                    color: isDark
+                        ? const Color(0xFF94A3B8)
+                        : const Color(0xFF64748B),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => const EnterCodeDialog(),
+                      );
+                    },
+                    tooltip: 'Enter Share Code',
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // ── Prominent Search Bar ─────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : const Color(0xFFE2E8F0),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Search notes, study packs, quizzes...',
+                    hintStyle: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: const Color(0xFF94A3B8),
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      color: Color(0xFF94A3B8),
+                      size: 20,
+                    ),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear_rounded, size: 18),
+                            color: const Color(0xFF94A3B8),
+                            onPressed: () => _searchController.clear(),
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                  ),
                 ),
               ),
-              const SizedBox(width: 12),
-              IconButton.filledTonal(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (_) => const EnterCodeDialog(),
+            ),
+
+            const SizedBox(height: 12),
+
+            // ── Lightweight Filter Chips Bar ──────────────────────────────
+            SizedBox(
+              height: 38,
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                scrollDirection: Axis.horizontal,
+                itemCount: _filters.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final isSelected = _selectedFilterIndex == index;
+                  return _buildFilterChip(
+                    label: _filters[index],
+                    isSelected: isSelected,
+                    isDark: isDark,
+                    onTap: () {
+                      setState(() {
+                        _selectedFilterIndex = index;
+                      });
+                    },
                   );
                 },
-                icon: const Icon(Icons.add_link_rounded, size: 20),
-                style: IconButton.styleFrom(
-                  padding: const EdgeInsets.all(12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
-                ),
               ),
-            ],
-          ).animate().fadeIn().slideY(begin: -0.1),
-          const SizedBox(height: 20),
-          _buildTabBar(context, theme, viewModel),
-        ],
-      ),
-    );
-  }
+            ),
 
-  Widget _buildTabBar(
-      BuildContext context, ThemeData theme, LibraryViewModel viewModel) {
-    final selectedFolder = viewModel.selectedFolder;
-    final colorScheme = theme.colorScheme;
+            const SizedBox(height: 12),
 
-    return SizedBox(
-      height: 48,
-      child: TabBar(
-        controller:
-            selectedFolder == null ? _mainTabController : _folderTabController,
-        isScrollable: true,
-        indicator: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          color: colorScheme.primary,
-        ),
-        indicatorSize: TabBarIndicatorSize.tab,
-        labelStyle:
-            GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
-        unselectedLabelStyle:
-            GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 13),
-        labelColor: colorScheme.onPrimary,
-        unselectedLabelColor: theme.hintColor,
-        dividerColor: Colors.transparent,
-        tabAlignment: TabAlignment.start,
-        padding: EdgeInsets.zero,
-        indicatorPadding: const EdgeInsets.symmetric(vertical: 4),
-        tabs: selectedFolder == null
-            ? const [
-                Tab(text: '  All Content  '),
-                Tab(text: '  Study Packs  '),
-                Tab(text: '  Observations  '),
-                Tab(text: '  Exams  '),
-              ]
-            : const [
-                Tab(text: '  Study Pack  '),
-                Tab(text: '  Notes  '),
-                Tab(text: '  Exams  '),
-              ],
-      ),
-    ).animate().fadeIn(delay: 100.ms);
-  }
+            // ── Main Content List ─────────────────────────────────────────
+            Expanded(
+              child: StreamBuilder<List<LibraryItem>>(
+                stream: _getActiveStream(viewModel),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting &&
+                      !snapshot.hasData) {
+                    return const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    );
+                  }
 
-  Widget _buildFolderList(LibraryViewModel viewModel, ThemeData theme) {
-    return StreamBuilder<List<Folder>>(
-      stream: viewModel.allFolders$,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            !snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(
-              child:
-                  Text('Error: ${snapshot.error}', style: GoogleFonts.inter()));
-        }
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return _buildNoContentState('folders', theme);
-        }
-
-        final folders = snapshot.data!;
-        final filteredFolders = _searchQuery.isEmpty
-            ? folders
-            : folders
-                .where((folder) =>
-                    folder.name.toLowerCase().contains(_searchQuery))
-                .toList();
-
-        if (filteredFolders.isEmpty && _searchQuery.isNotEmpty) {
-          return _buildNoSearchResultsState(theme);
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(20),
-          itemCount: filteredFolders.length,
-          itemBuilder: (context, index) {
-            final folder = filteredFolders[index];
-            return _buildLibraryItemCard(
-              title: folder.name,
-              subtitle: DateFormat('MMM d, yyyy').format(folder.createdAt),
-              icon: Icons.folder_copy_rounded,
-              iconColor: Colors.deepPurpleAccent,
-              theme: theme,
-              onTap: () => viewModel.selectFolder(folder),
-            )
-                .animate()
-                .fadeIn(delay: (index * 50).ms)
-                .slideY(begin: 0.1, end: 0);
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildContentList(Stream<List<LibraryItem>> stream, ThemeData theme,
-      LibraryViewModel viewModel) {
-    return StreamBuilder<List<LibraryItem>>(
-      stream: stream,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            !snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(
-              child:
-                  Text('Error: ${snapshot.error}', style: GoogleFonts.inter()));
-        }
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return _buildNoContentState(
-              viewModel.selectedFolder == null ? 'content' : 'folder content',
-              theme);
-        }
-
-        final items = snapshot.data!
-            .where((item) => item.title.toLowerCase().contains(_searchQuery))
-            .toList();
-
-        if (items.isEmpty && _searchQuery.isNotEmpty) {
-          return _buildNoSearchResultsState(theme);
-        }
-
-        return RefreshIndicator(
-          onRefresh: viewModel.syncAllData,
-          child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 80),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return _buildLibraryItemCard(
-                title: item.title,
-                subtitle: item.type.name.toUpperCase(),
-                icon: _getIconForType(item.type),
-                iconColor: _getColorForType(item.type),
-                theme: theme,
-                trailing: _buildItemActions(context, item, viewModel, theme),
-                onTap: () => _navigateToContent(context, item, viewModel),
-              )
-                  .animate()
-                  .fadeIn(delay: (index * 50).ms)
-                  .slideY(begin: 0.1, end: 0);
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildLibraryItemCard({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color iconColor,
-    required VoidCallback onTap,
-    required ThemeData theme,
-    Widget? trailing,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.05)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon, color: iconColor, size: 22),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title.isEmpty ? 'Untitled' : title,
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text(
+                        'Error loading library: ${snapshot.error}',
                         style: GoogleFonts.inter(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: theme.textTheme.displayLarge?.color,
+                          color: const Color(0xFFEF4444),
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: theme.hintColor,
-                            letterSpacing: 0.5),
+                    );
+                  }
+
+                  final allItems = snapshot.data ?? [];
+                  final filteredItems = _searchQuery.isEmpty
+                      ? allItems
+                      : allItems
+                          .where((item) =>
+                              item.title.toLowerCase().contains(_searchQuery))
+                          .toList();
+
+                  if (filteredItems.isEmpty) {
+                    if (_searchQuery.isNotEmpty) {
+                      return _buildNoSearchResults(isDark);
+                    }
+                    return _buildEmptyState(isDark);
+                  }
+
+                  return RefreshIndicator(
+                    onRefresh: viewModel.syncAllData,
+                    color: const Color(0xFF6B5CE7),
+                    child: ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
+                      itemCount: filteredItems.length,
+                      separatorBuilder: (context, index) => Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.05)
+                            : const Color(0xFFF1F5F9),
                       ),
-                    ],
-                  ),
-                ),
-                if (trailing != null)
-                  trailing
-                else
-                  Icon(Icons.chevron_right_rounded,
-                      color: theme.hintColor, size: 20),
-              ],
+                      itemBuilder: (context, index) {
+                        final item = filteredItems[index];
+                        return _buildContentRow(
+                          context: context,
+                          item: item,
+                          viewModel: viewModel,
+                          isDark: isDark,
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChip({
+    required String label,
+    required bool isSelected,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    const activeColor = Color(0xFF6B5CE7);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? activeColor
+              : (isDark ? const Color(0xFF1E293B) : Colors.white),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected
+                ? activeColor
+                : (isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : const Color(0xFFE2E8F0)),
+          ),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              color: isSelected
+                  ? Colors.white
+                  : (isDark
+                      ? const Color(0xFF94A3B8)
+                      : const Color(0xFF64748B)),
             ),
           ),
         ),
@@ -503,60 +401,310 @@ class _LibraryViewState extends State<_LibraryView>
     );
   }
 
-  Widget _buildItemActions(BuildContext context, LibraryItem item,
-      LibraryViewModel viewModel, ThemeData theme) {
-    return PopupMenuButton<String>(
-      icon: Icon(Icons.more_vert_rounded, color: theme.hintColor, size: 20),
-      padding: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      onSelected: (value) async {
-        if (value == 'share') {
-          final user = context.read<UserModel?>();
-          if (user != null) {
-            await LibraryShareHelper.shareLibraryItem(context, item, user);
-          }
-        } else if (value == 'edit') {
-          _navigateToEdit(context, item);
-        } else if (value == 'delete') {
-          _confirmDelete(context, item, viewModel);
+  Widget _buildContentRow({
+    required BuildContext context,
+    required LibraryItem item,
+    required LibraryViewModel viewModel,
+    required bool isDark,
+  }) {
+    final typeDetails = _getTypeDetails(item.type);
+    final formattedDate = _formatTimestamp(item.timestamp);
+    final metadataString = _buildMetadataString(item, typeDetails.label, formattedDate);
+
+    return InkWell(
+      onTap: () => _navigateToContent(context, item, viewModel),
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Minimalist Content Type Badge
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: typeDetails.badgeColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                typeDetails.icon,
+                color: typeDetails.badgeColor,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 14),
+
+            // Title & Metadata
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title.isNotEmpty ? item.title : 'Untitled',
+                    style: GoogleFonts.outfit(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      height: 1.2,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    metadataString,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: isDark
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFF64748B),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+
+            // Overflow Action Menu
+            PopupMenuButton<String>(
+              icon: Icon(
+                Icons.more_vert_rounded,
+                size: 18,
+                color: isDark
+                    ? const Color(0xFF94A3B8)
+                    : const Color(0xFF94A3B8),
+              ),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              onSelected: (value) =>
+                  _handleAction(context, value, item, viewModel),
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'share',
+                  child: Row(
+                    children: [
+                      Icon(Icons.share_outlined, size: 18),
+                      SizedBox(width: 12),
+                      Text('Share'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit_outlined, size: 18),
+                      SizedBox(width: 12),
+                      Text('Rename / Edit'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline_rounded,
+                          size: 18, color: Color(0xFFEF4444)),
+                      SizedBox(width: 12),
+                      Text('Delete', style: TextStyle(color: Color(0xFFEF4444))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _buildMetadataString(
+      LibraryItem item, String typeLabel, String date) {
+    final buffer = StringBuffer();
+    buffer.write(typeLabel);
+
+    if (item.itemCount != null && item.itemCount! > 0) {
+      if (item.type == LibraryItemType.flashcards) {
+        buffer.write(' · ${item.itemCount} cards');
+      } else if (item.type == LibraryItemType.quiz ||
+          item.type == LibraryItemType.exam) {
+        buffer.write(' · ${item.itemCount} items');
+      } else {
+        buffer.write(' · ${item.itemCount} items');
+      }
+    }
+
+    if (item.score != null) {
+      buffer.write(' · ${(item.score! * 100).round()}% score');
+    }
+
+    buffer.write(' · $date');
+    return buffer.toString();
+  }
+
+  String _formatTimestamp(dynamic timestamp) {
+    if (timestamp == null) return '';
+    DateTime dt;
+    if (timestamp is DateTime) {
+      dt = timestamp;
+    } else {
+      try {
+        dt = timestamp.toDate();
+      } catch (e) {
+        return '';
+      }
+    }
+
+    final now = DateTime.now();
+    final difference = now.difference(dt);
+
+    if (difference.inDays == 0) {
+      return 'Today';
+    } else if (difference.inDays == 1) {
+      return 'Yesterday';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays}d ago';
+    } else {
+      return DateFormat('MMM d').format(dt);
+    }
+  }
+
+  _TypeDetails _getTypeDetails(LibraryItemType type) {
+    switch (type) {
+      case LibraryItemType.note:
+        return _TypeDetails(
+          label: 'Note',
+          icon: Icons.edit_note_rounded,
+          badgeColor: const Color(0xFF8B5CF6),
+        );
+      case LibraryItemType.summary:
+        return _TypeDetails(
+          label: 'Study Pack',
+          icon: Icons.auto_awesome_rounded,
+          badgeColor: const Color(0xFF0D9488),
+        );
+      case LibraryItemType.quiz:
+        return _TypeDetails(
+          label: 'Quiz',
+          icon: Icons.quiz_rounded,
+          badgeColor: const Color(0xFFF59E0B),
+        );
+      case LibraryItemType.flashcards:
+        return _TypeDetails(
+          label: 'Flashcards',
+          icon: Icons.style_rounded,
+          badgeColor: const Color(0xFF2563EB),
+        );
+      case LibraryItemType.exam:
+        return _TypeDetails(
+          label: 'Exam',
+          icon: Icons.timer_outlined,
+          badgeColor: const Color(0xFF6B5CE7),
+        );
+      case LibraryItemType.folder:
+        return _TypeDetails(
+          label: 'Folder',
+          icon: Icons.folder_outlined,
+          badgeColor: const Color(0xFF64748B),
+        );
+    }
+  }
+
+  void _navigateToContent(
+      BuildContext context, LibraryItem item, LibraryViewModel viewModel) async {
+    switch (item.type) {
+      case LibraryItemType.note:
+        context.push('/notes/${item.id}');
+        break;
+      case LibraryItemType.summary:
+        final localDb = Provider.of<LocalDatabaseService>(context, listen: false);
+        final summary = await localDb.getSummary(item.id);
+        if (context.mounted) {
+          context.push('/library/summary/${item.id}', extra: summary);
         }
-      },
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: 'edit',
-          child: Row(
-            children: [
-              const Icon(Icons.edit_rounded, size: 18),
-              const SizedBox(width: 12),
-              Text('Edit', style: GoogleFonts.inter(fontSize: 14)),
-            ],
+        break;
+      case LibraryItemType.quiz:
+      case LibraryItemType.exam:
+        final localDb = Provider.of<LocalDatabaseService>(context, listen: false);
+        final quiz = await localDb.getQuiz(item.id);
+        if (context.mounted) {
+          context.push('/library/quiz/${item.id}', extra: quiz);
+        }
+        break;
+      case LibraryItemType.flashcards:
+        final localDb = Provider.of<LocalDatabaseService>(context, listen: false);
+        final set = await localDb.getFlashcardSet(item.id);
+        if (context.mounted) {
+          context.push('/library/flashcards/${item.id}', extra: set);
+        }
+        break;
+      case LibraryItemType.folder:
+        break;
+    }
+  }
+
+  void _handleAction(BuildContext context, String action, LibraryItem item,
+      LibraryViewModel viewModel) async {
+    switch (action) {
+      case 'share':
+        final user = Provider.of<UserModel?>(context, listen: false);
+        if (user != null) {
+          LibraryShareHelper.shareLibraryItem(context, item, user);
+        }
+        break;
+      case 'edit':
+        _showEditDialog(context, item, viewModel);
+        break;
+      case 'delete':
+        _confirmDelete(context, item, viewModel);
+        break;
+    }
+  }
+
+  void _showEditDialog(
+      BuildContext context, LibraryItem item, LibraryViewModel viewModel) {
+    final titleController = TextEditingController(text: item.title);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Rename Item',
+          style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+        ),
+        content: TextField(
+          controller: titleController,
+          autofocus: true,
+          decoration: InputDecoration(
+            labelText: 'Title',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
-        PopupMenuItem(
-          value: 'share',
-          child: Row(
-            children: [
-              const Icon(Icons.share_rounded, size: 18),
-              const SizedBox(width: 12),
-              Text('Share', style: GoogleFonts.inter(fontSize: 14)),
-            ],
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
           ),
-        ),
-        const PopupMenuDivider(),
-        PopupMenuItem(
-          value: 'delete',
-          child: Row(
-            children: [
-              const Icon(Icons.delete_outline_rounded,
-                  size: 18, color: Colors.redAccent),
-              const SizedBox(width: 12),
-              Text('Delete',
-                  style:
-                      GoogleFonts.inter(fontSize: 14, color: Colors.redAccent)),
-            ],
+          ElevatedButton(
+            onPressed: () async {
+              final newTitle = titleController.text.trim();
+              if (newTitle.isNotEmpty) {
+                Navigator.pop(ctx);
+                await viewModel.renameItem(item, newTitle);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6B5CE7),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Save'),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -564,295 +712,131 @@ class _LibraryViewState extends State<_LibraryView>
       BuildContext context, LibraryItem item, LibraryViewModel viewModel) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Delete Item?',
-            style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-        content: Text('Are you sure you want to remove "${item.title}"?',
-            style: GoogleFonts.inter()),
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Delete Item?',
+          style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'Are you sure you want to delete "${item.title}"? This cannot be undone.',
+          style: GoogleFonts.inter(),
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: GoogleFonts.inter(color: Colors.grey)),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
           ),
-          TextButton(
-            onPressed: () {
-              viewModel.deleteItem(item);
-              Navigator.pop(context);
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await viewModel.deleteItem(item);
             },
-            child: Text('Delete',
-                style: GoogleFonts.inter(
-                    color: Colors.redAccent, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Delete'),
           ),
         ],
       ),
     );
   }
 
-  IconData _getIconForType(LibraryItemType type) {
-    switch (type) {
-      case LibraryItemType.summary:
-        return Icons.article_rounded;
-      case LibraryItemType.quiz:
-        return Icons.quiz_rounded;
-      case LibraryItemType.flashcards:
-        return Icons.style_rounded;
-      case LibraryItemType.exam:
-        return Icons.assignment_rounded;
-      case LibraryItemType.note:
-        return Icons.edit_note_rounded;
-      case LibraryItemType.folder:
-        return Icons.folder_copy_rounded;
-    }
-  }
-
-  Color _getColorForType(LibraryItemType type) {
-    switch (type) {
-      case LibraryItemType.summary:
-        return const Color(0xFF0D9488);
-      case LibraryItemType.quiz:
-        return const Color(0xFFF59E0B);
-      case LibraryItemType.flashcards:
-        return const Color(0xFFEC4899);
-      case LibraryItemType.exam:
-        return const Color(0xFF6366F1);
-      case LibraryItemType.note:
-        return const Color(0xFF8B5CF6);
-      case LibraryItemType.folder:
-        return Colors.deepPurpleAccent;
-    }
-  }
-
-  void _showAddContentOptions(
-      BuildContext context, LibraryViewModel viewModel) {
-    // Show options to add content to a folder
-  }
-
-  Widget _buildNoContentState(String type, ThemeData theme) {
+  Widget _buildEmptyState(bool isDark) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 40.0),
+        padding: const EdgeInsets.symmetric(horizontal: 32),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const SumiMascot(state: SumiState.confused, size: 100),
-            const SizedBox(height: 24),
-            Text(
-              'Your library is quiet',
-              style: GoogleFonts.outfit(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: theme.hintColor),
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: const Color(0xFF6B5CE7).withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.menu_book_rounded,
+                color: Color(0xFF6B5CE7),
+                size: 28,
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Text(
-              'Start by creating a new Study Pack or Note to fill this space.',
+              'Your Library is empty',
+              style: GoogleFonts.outfit(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Tap + to create a note, study pack, quiz, or formal exam.',
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
-                  color: theme.hintColor.withValues(alpha: 0.7)),
+                fontSize: 13,
+                color: isDark
+                    ? const Color(0xFF94A3B8)
+                    : const Color(0xFF64748B),
+                height: 1.4,
+              ),
             ),
           ],
         ),
       ),
-    ).animate().fadeIn();
+    );
   }
 
-  Widget _buildNoSearchResultsState(ThemeData theme) {
+  Widget _buildNoSearchResults(bool isDark) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.search_off_rounded,
-              size: 64, color: theme.hintColor.withValues(alpha: 0.2)),
-          const SizedBox(height: 16),
-          Text(
-            'No results for "$_searchQuery"',
-            style: GoogleFonts.inter(
-                fontWeight: FontWeight.bold, color: theme.hintColor),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Navigation methods
-  Future<void> _navigateToContent(BuildContext context, LibraryItem item,
-      LibraryViewModel viewModel) async {
-    switch (item.type) {
-      case LibraryItemType.folder:
-        viewModel.selectFolder(Folder(
-          id: item.id,
-          name: item.title,
-          userId: item.userId ?? viewModel.userId,
-          createdAt: item.timestamp.toDate(),
-          updatedAt: item.timestamp.toDate(),
-        ));
-        return;
-      case LibraryItemType.note:
-        context.push('/notes/${item.id}');
-        return;
-      case LibraryItemType.summary:
-      case LibraryItemType.quiz:
-      case LibraryItemType.flashcards:
-      case LibraryItemType.exam:
-        break;
-    }
-
-    final db = context.read<LocalDatabaseService>();
-    final parentFolderId = await db.getParentFolderId(item.id);
-
-    if (parentFolderId != null) {
-      final tab = switch (item.type) {
-        LibraryItemType.summary => 0,
-        LibraryItemType.quiz || LibraryItemType.exam => 1,
-        LibraryItemType.flashcards => 2,
-        _ => 0,
-      };
-      context.pushNamed(
-        'results-view',
-        pathParameters: {'folderId': parentFolderId},
-        queryParameters: {'tab': tab.toString()},
-      );
-      return;
-    }
-
-    switch (item.type) {
-      case LibraryItemType.summary:
-        context.push('/library/summary/${item.id}');
-        break;
-      case LibraryItemType.quiz:
-      case LibraryItemType.exam:
-        context.push('/library/quiz/${item.id}');
-        break;
-      case LibraryItemType.flashcards:
-        context.push('/library/flashcards/${item.id}');
-        break;
-      default:
-        break;
-    }
-  }
-
-  Future<void> _navigateToEdit(BuildContext context, LibraryItem item) async {
-    final db = context.read<LocalDatabaseService>();
-
-    switch (item.type) {
-      case LibraryItemType.summary:
-        final localSummary = await db.getSummary(item.id);
-        if (localSummary == null || !context.mounted) return;
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => EditSummaryScreen(
-              content: EditableContent.fromSummary(
-                localSummary.id,
-                localSummary.title,
-                localSummary.content,
-                localSummary.tags,
-                Timestamp.fromDate(localSummary.timestamp),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.search_off_rounded,
+              size: 48,
+              color: Color(0xFF94A3B8),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No items match your search',
+              style: GoogleFonts.outfit(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
               ),
             ),
-          ),
-        );
-        break;
-      case LibraryItemType.quiz:
-      case LibraryItemType.exam:
-        final localQuiz = await db.getQuiz(item.id);
-        if (localQuiz == null || !context.mounted) return;
-        final questions = localQuiz.questions
-            .map((q) => QuizQuestion(
-                  question: q.question,
-                  options: q.options,
-                  correctAnswer: q.correctAnswer,
-                  explanation: q.explanation,
-                  questionType: q.questionType,
-                ))
-            .toList();
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => EditQuizScreen(
-              content: EditableContent.fromQuiz(
-                localQuiz.id,
-                localQuiz.title,
-                questions,
-                Timestamp.fromDate(localQuiz.timestamp),
+            const SizedBox(height: 6),
+            Text(
+              'Try a different search keyword or clear the filter.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: const Color(0xFF94A3B8),
               ),
             ),
-          ),
-        );
-        break;
-      case LibraryItemType.flashcards:
-        final localSet = await db.getFlashcardSet(item.id);
-        if (localSet == null || !context.mounted) return;
-        final cards = localSet.flashcards
-            .map((f) => Flashcard(
-                  id: f.id,
-                  question: f.question,
-                  answer: f.answer,
-                ))
-            .toList();
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => EditFlashcardsScreen(
-              content: EditableContent.fromFlashcardSet(
-                localSet.id,
-                localSet.title,
-                cards,
-                Timestamp.fromDate(localSet.timestamp),
-              ),
-            ),
-          ),
-        );
-        break;
-      case LibraryItemType.note:
-        if (context.mounted) context.push('/notes/${item.id}');
-        break;
-      case LibraryItemType.folder:
-        if (!context.mounted) return;
-        _showRenameFolderDialog(context, item);
-        break;
-    }
-  }
-
-  void _showRenameFolderDialog(BuildContext context, LibraryItem item) {
-    final controller = TextEditingController(text: item.title);
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('Rename Study Pack',
-            style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'Enter name...',
-            labelText: 'Name',
-          ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final newName = controller.text.trim();
-              if (newName.isEmpty) return;
-              final user = context.read<UserModel?>();
-              final folder = Folder(
-                id: item.id,
-                name: newName,
-                userId: item.userId ?? user?.uid ?? '',
-                createdAt: item.timestamp.toDate(),
-                updatedAt: DateTime.now(),
-              );
-              await context.read<LocalDatabaseService>().saveFolder(folder);
-              if (dialogContext.mounted) Navigator.pop(dialogContext);
-            },
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
   }
+}
+
+class _TypeDetails {
+  final String label;
+  final IconData icon;
+  final Color badgeColor;
+
+  _TypeDetails({
+    required this.label,
+    required this.icon,
+    required this.badgeColor,
+  });
 }
