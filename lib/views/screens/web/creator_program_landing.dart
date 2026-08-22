@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sumquiz/theme/web_theme.dart';
+import 'package:sumquiz/views/screens/web/widgets/landing_tab_toggle.dart';
 
 class CreatorProgramLanding extends StatefulWidget {
   const CreatorProgramLanding({super.key});
@@ -50,10 +51,15 @@ class _CreatorProgramLandingState extends State<CreatorProgramLanding> {
         ),
         padding: EdgeInsets.symmetric(
           horizontal: isMobile ? 24 : 80,
-          vertical: isMobile ? 48 : 80,
+          vertical: isMobile ? 36 : 64,
         ),
         child: Column(
           children: [
+            const LandingTabToggle(
+              currentTab: LandingTab.creator,
+              isDark: true,
+            ),
+            const SizedBox(height: 24),
             // Badge
             Container(
               padding:

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sumquiz/theme/web_theme.dart';
 import 'package:sumquiz/views/screens/web/widgets/landing_3d_card.dart';
+import 'package:sumquiz/views/screens/web/widgets/landing_tab_toggle.dart';
 
 class StudentLandingView extends StatefulWidget {
   const StudentLandingView({super.key});
@@ -28,7 +29,7 @@ class _StudentLandingViewState extends State<StudentLandingView> {
         controller: _scrollController,
         child: Column(
           children: [
-            _buildTabToggle(),
+            const LandingTabToggle(currentTab: LandingTab.student),
             _buildStudentHeroSection(),
             _buildStepsSection(),
             _buildFeatureGridSection(),
@@ -38,57 +39,6 @@ class _StudentLandingViewState extends State<StudentLandingView> {
             _buildStudentFooter(),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildTabToggle() {
-    return Container(
-      margin: const EdgeInsets.only(top: 40, bottom: 20),
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            decoration: BoxDecoration(
-              color: WebColors.purplePrimary,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                    color: WebColors.purplePrimary.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4))
-              ],
-            ),
-            child: Text('STUDENT',
-                style: GoogleFonts.inter(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    fontSize: 13,
-                    letterSpacing: 1.2)),
-          ),
-          InkWell(
-            onTap: () => context.go('/Educators'),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Text('EDUCATION',
-                  style: GoogleFonts.inter(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[600],
-                      fontSize: 13,
-                      letterSpacing: 1.2)),
-            ),
-          )
-        ],
       ),
     );
   }

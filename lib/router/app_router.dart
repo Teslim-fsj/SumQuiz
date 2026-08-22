@@ -118,8 +118,12 @@ GoRouter createRouter(AuthService authService) {
     redirect: (context, state) {
       // Navigation State Helpers
       final isAuthRoute = state.matchedLocation == '/auth';
-      final isLanding = state.matchedLocation == '/landing' ||
-          state.matchedLocation == '/Educators';
+      final loc = state.matchedLocation.toLowerCase();
+      final isLanding = loc == '/landing' ||
+          loc == '/educators' ||
+          loc == '/creator-program' ||
+          loc == '/creator-program/apply' ||
+          loc.startsWith('/c/');
       final isSplash = state.matchedLocation == '/splash';
       final isOnboarding = state.matchedLocation == '/onboarding';
       final isPublicDeck = state.matchedLocation.startsWith('/s/') ||
@@ -172,6 +176,13 @@ GoRouter createRouter(AuthService authService) {
         builder: (context, state) => const PublicScaffoldWeb(
           isEducatorRoute: false,
           child: StudentLandingView(),
+        ),
+      ),
+      GoRoute(
+        path: '/educators',
+        builder: (context, state) => const PublicScaffoldWeb(
+          isEducatorRoute: true,
+          child: EducatorLandingView(),
         ),
       ),
       GoRoute(
