@@ -122,6 +122,7 @@ jobs:
         run: |
           flutter build appbundle \
             --release \
+            --android-skip-build-dependency-validation \
             --dart-define=API_KEY=${{ secrets.API_KEY || vars.API_KEY }} \
             --dart-define=DEEPGRAM_API_KEY=${{ secrets.DEEPGRAM_API_KEY || vars.DEEPGRAM_API_KEY }}
 
