@@ -1,33 +1,29 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../services/auth_service.dart';
+import '../../../providers/sync_provider.dart';
 import '../../../services/local_database_service.dart';
 import '../../../services/spaced_repetition_service.dart';
-import '../../../services/progress_service.dart';
-import '../../../services/firestore_service.dart';
 import '../../../models/flashcard.dart';
-import '../../../models/local_flashcard.dart';
-import '../../../models/local_flashcard_set.dart';
+import '../../../models/flashcard_set.dart';
 import '../../../models/user_model.dart';
 import '../../../models/daily_mission.dart';
 import '../../../services/mission_service.dart';
+import '../../../services/mastery/sumi_tutor_service.dart';
 import '../../../services/user_service.dart';
-import '../../widgets/web/active_mission_card.dart';
-import '../../widgets/web/streak_card.dart';
-import '../../widgets/web/accuracy_card.dart';
-import '../../widgets/web/review_list_card.dart';
-import '../../widgets/web/focus_timer_card.dart';
-import '../../widgets/web/daily_goal_card.dart';
-import '../../widgets/web/interactive_preview_card.dart';
-import '../../widgets/web/role_selection_dialog.dart';
+import '../../../views/screens/spaced_repetition_screen.dart';
+import '../../../view_models/mastery_view_model.dart';
+import '../../../views/screens/flashcards_screen.dart';
+import '../../../views/widgets/sumi_live_sandbox_overlay.dart';
+import '../../../views/widgets/web/role_selection_dialog.dart';
+import '../../../theme/web_theme.dart';
 
 class ReviewScreenWeb extends StatefulWidget {
   final bool autoStartMission;
@@ -40,15 +36,8 @@ class ReviewScreenWeb extends StatefulWidget {
 class _ReviewScreenWebState extends State<ReviewScreenWeb> {
   DailyMission? _dailyMission;
   bool _isLoading = true;
-  String? _error;
-  DateTime? _nextReviewDate;
-  int _dueCount = 0;
-  double _accuracy = 0.0;
-  int _dailyGoalMinutes = 60;
-  int _timeSpentMinutes = 0;
-  String _previewQuestion = "What is the 'event loop' in JavaScript?";
 
-  // Study Session State
+  // In-page Study Session State for Web
   bool _isStudying = false;
   List<Flashcard> _studyCards = [];
   int _currentCardIndex = 0;
@@ -57,19 +46,11 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
   final Stopwatch _stopwatch = Stopwatch();
   Timer? _timer;
 
-  List<LocalFlashcardSet> _dueFlashcardSets = []; // Updated type
-  late SpacedRepetitionService _srsService;
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkNewUser();
-
-      // Auto-start mission if requested via deep link
-      if (widget.autoStartMission) {
-        _fetchAndStartMission();
-      }
     });
   }
 
@@ -95,6 +76,14 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
   }
 
   @override
+  void didUpdateWidget(ReviewScreenWeb oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.autoStartMission && !oldWidget.autoStartMission) {
+      _startMission();
+    }
+  }
+
+  @override
   void dispose() {
     _timer?.cancel();
     _stopwatch.stop();
@@ -104,212 +93,109 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
   Future<void> _loadDashboardData() async {
     if (!mounted) return;
 
+    final localDb = Provider.of<LocalDatabaseService>(context, listen: false);
+    await localDb.init();
+
+    if (mounted) {
+      await Provider.of<SyncProvider>(context, listen: false).syncData();
+    }
+
+    await _loadMission();
+
+    if (widget.autoStartMission) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _startMission();
+      });
+    }
+  }
+
+  Future<void> _loadMission() async {
+    if (!mounted) return;
     final authService = Provider.of<AuthService>(context, listen: false);
     final userId = authService.currentUser?.uid;
 
     if (userId == null) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _error = "User not found.";
-        });
-      }
+      setState(() => _isLoading = false);
       return;
     }
 
-    final missionService = Provider.of<MissionService>(context, listen: false);
-    final localDb = Provider.of<LocalDatabaseService>(context, listen: false);
-    final firestoreService =
-        Provider.of<FirestoreService>(context, listen: false);
-
     try {
+      final missionService =
+          Provider.of<MissionService>(context, listen: false);
       final mission = await missionService.generateDailyMission(userId);
-
-      await localDb.init();
-      _srsService = SpacedRepetitionService(localDb.getSpacedRepetitionBox());
-      final stats = await _srsService.getStatistics(userId);
-      final nextDate = _srsService.getNextReviewDate(userId);
-
-      final progressService = ProgressService();
-      // Use recent accuracy for last 7 days
-      final avgAccuracy = await progressService.getRecentAccuracyStats(userId);
-      // Get time spent TODAY only
-      final totalTimeSpentSeconds =
-          await progressService.getTimeSpentToday(userId);
-
-      // Fetch flashcard sets with Firestore fallback
-      List<LocalFlashcardSet> allSets =
-          await localDb.getAllFlashcardSets(userId);
-      if (allSets.isEmpty) {
-        final fsSets = await firestoreService.streamFlashcardSets(userId).first;
-        if (fsSets.isNotEmpty) {
-          allSets = fsSets
-              .map((s) => LocalFlashcardSet(
-                    id: s.id,
-                    title: s.title,
-                    timestamp: s.timestamp.toDate(),
-                    userId: userId,
-                    flashcards: s.flashcards
-                        .map((f) => LocalFlashcard(
-                              question: f.question,
-                              answer: f.answer,
-                            ))
-                        .toList(),
-                  ))
-              .toList();
-        }
-      }
-
-      if (!mounted) return;
-
-      final dueIds = await _srsService.getDueItems(userId);
-      _dueFlashcardSets = allSets
-          .where((s) => s.flashcards.any((f) => dueIds.contains(f.id)))
-          .toList();
-
-      // If none are due but we have sets, show some anyway to avoid empty state
-      if (_dueFlashcardSets.isEmpty && allSets.isNotEmpty) {
-        _dueFlashcardSets = allSets.take(3).toList();
-      }
-
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .get();
-
-      int dailyGoal = 60;
-      int timeSpentToday = 0;
-      String lastQuestion = "What is the 'event loop' in JavaScript?";
-
-      if (userDoc.exists) {
-        final userData = userDoc.data();
-        dailyGoal = userData?['dailyGoal'] as int? ?? 60;
-      }
-
-      // Convert seconds to minutes for display
-      timeSpentToday = (totalTimeSpentSeconds / 60).round();
-
-      if (allSets.isNotEmpty && allSets.first.flashcards.isNotEmpty) {
-        lastQuestion = allSets.first.flashcards.first.question;
-      }
-
       if (mounted) {
         setState(() {
           _dailyMission = mission;
-          _dueCount = stats['dueForReviewCount'] as int? ?? 0;
-          _nextReviewDate = nextDate;
-          // Extract average from the stats map
-          _accuracy = avgAccuracy['average'] ?? 0.0;
-          _dailyGoalMinutes = dailyGoal;
-          _timeSpentMinutes = timeSpentToday;
-          _previewQuestion = lastQuestion;
           _isLoading = false;
-          _error = null;
         });
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _error = "Error loading dashboard: $e";
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _fetchAndStartMission() async {
+  Future<void> _startMission() async {
     if (_dailyMission == null) return;
-
-    if (_dailyMission!.isCompleted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content:
-              Text("You've already completed today's mission! Great job!")));
-      return;
-    }
-
     setState(() => _isLoading = true);
 
     try {
-      final authService = Provider.of<AuthService>(context, listen: false);
-      final userId = authService.currentUser?.uid;
-      final localDb = Provider.of<LocalDatabaseService>(context, listen: false);
-
-      if (userId == null) throw Exception("User ID null");
-
+      final userId =
+          Provider.of<AuthService>(context, listen: false).currentUser?.uid;
       final missionService =
           Provider.of<MissionService>(context, listen: false);
       final cards = await missionService.fetchMissionCards(
-          userId, _dailyMission!.flashcardIds);
+          userId!, _dailyMission!.flashcardIds);
 
       if (cards.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text(
-                  'Could not find mission cards. Using random cards instead.')));
-
-          final allSets = await localDb.getAllFlashcardSets(userId);
-          final allFlashcards = allSets
-              .expand((s) => s.flashcards)
-              .map((c) => Flashcard(
-                    id: c.id,
-                    question: c.question,
-                    answer: c.answer,
-                  ))
-              .toList();
-
-          _studyCards = allFlashcards.take(5).toList();
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No flashcards found for mission.')),
+          );
         }
-      } else {
+        return;
+      }
+
+      setState(() {
         _studyCards = cards;
-      }
-
-      if (_studyCards.isEmpty) {
-        throw Exception("No flashcards found to study.");
-      }
-
-      _startStudySession();
+        _isStudying = true;
+        _isLoading = false;
+        _currentCardIndex = 0;
+        _isFlipped = false;
+        _correctCount = 0;
+      });
+      _stopwatch.reset();
+      _stopwatch.start();
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Failed to start mission: $e")));
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _startSetReview(LocalFlashcardSet set) async {
-    setState(() => _isLoading = true);
-    try {
-      _studyCards = set.flashcards
-          .map((c) => Flashcard(
-                id: c.id,
-                question: c.question,
-                answer: c.answer,
-              ))
-          .toList();
-      _startStudySession();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed to load set: $e')));
-        setState(() => _isLoading = false);
-      }
-    }
-  }
+  void _nextCard(bool known) {
+    if (known) _correctCount++;
 
-  void _startStudySession() {
-    setState(() {
-      _isStudying = true;
-      _isLoading = false;
-      _currentCardIndex = 0;
-      _isFlipped = false;
-      _correctCount = 0;
-    });
-    _stopwatch.reset();
-    _stopwatch.start();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) setState(() {});
-    });
+    final currentCard = _studyCards[_currentCardIndex];
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final localDb = Provider.of<LocalDatabaseService>(context, listen: false);
+    final userId = authService.currentUser?.uid;
+
+    if (userId != null) {
+      final srsService =
+          SpacedRepetitionService(localDb.getSpacedRepetitionBox());
+      srsService.updateReview(currentCard.id, known);
+    }
+
+    if (_currentCardIndex < _studyCards.length - 1) {
+      setState(() {
+        _currentCardIndex++;
+        _isFlipped = false;
+      });
+    } else {
+      _endStudySession();
+    }
   }
 
   void _endStudySession() async {
@@ -323,242 +209,95 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
           Provider.of<MissionService>(context, listen: false);
       final userService = UserService();
 
-      // Update completion stats
       double accuracy =
           _studyCards.isEmpty ? 0 : _correctCount / _studyCards.length;
 
-      // Wrap in try-catch to ensure we return to dashboard even if analytics fail
       try {
         if (_dailyMission != null && !_dailyMission!.isCompleted) {
           await missionService.completeMission(
               userId, _dailyMission!, accuracy);
         }
         await userService.incrementItemsCompleted(userId);
-
-        // Save progress details with proper logging
-        final progressService = ProgressService();
-        await progressService.logAccuracy(userId, accuracy);
-
-        // Log the complete study session for cross-platform tracking
-        await progressService.logStudySession(
-          userId: userId,
-          accuracy: accuracy,
-          durationSeconds: _stopwatch.elapsed.inSeconds,
-        );
+        if (mounted) {
+          await context
+              .read<SumiTutorService>()
+              .checkAndScheduleRetentionAlert(userId);
+        }
       } catch (e) {
-        debugPrint('Analytics error: $e');
+        debugPrint('Session complete error: $e');
       }
 
       await _loadDashboardData();
     }
 
-    setState(() {
-      _isStudying = false;
-    });
-
-    _showCompletionDialog();
+    if (mounted) {
+      setState(() => _isStudying = false);
+      _showCompletionDialog();
+    }
   }
 
   void _showCompletionDialog() {
-    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Session Complete!',
-            style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text('Session Complete! 🎉',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.w900)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.asset('assets/images/web/success_illustration.png',
-                height: 120),
+            const Icon(Icons.emoji_events_rounded,
+                size: 64, color: Color(0xFFF59E0B)),
             const SizedBox(height: 16),
-            Text('You got $_correctCount out of ${_studyCards.length} correct!',
-                style: GoogleFonts.outfit(
-                    fontSize: 18, fontWeight: FontWeight.w600)),
+            Text(
+              'You got $_correctCount out of ${_studyCards.length} correct!',
+              style: GoogleFonts.outfit(
+                  fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
-            Text('Time: ${_formatDuration(_stopwatch.elapsed)}',
-                style: GoogleFonts.outfit(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7))),
+            Text(
+              'Time Spent: ${_formatDuration(_stopwatch.elapsed)}',
+              style: GoogleFonts.inter(color: Colors.grey[600]),
+            ),
           ],
         ),
         actions: [
           ElevatedButton(
             onPressed: () => Navigator.pop(context),
             style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
+              backgroundColor: WebColors.purplePrimary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('Great!'),
+            child: const Text('Continue Learning'),
           ),
         ],
       ),
     );
   }
 
-  void _showMissionDetails(BuildContext context) {
-    if (_dailyMission == null) return;
-    final theme = Theme.of(context);
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-        ),
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Daily Mission',
-                  style: GoogleFonts.outfit(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close),
-                  style: IconButton.styleFrom(
-                    backgroundColor: theme.colorScheme.surface,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Text(
-              _dailyMission!.title,
-              style: GoogleFonts.outfit(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Complete the curated quiz sets for today to earn extra XP and maintain your streak.',
-              style: GoogleFonts.outfit(
-                fontSize: 16,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _fetchAndStartMission();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: Text(
-                  _dailyMission?.isCompleted == true
-                      ? 'Mission Completed'
-                      : 'Start Mission',
-                  style: GoogleFonts.outfit(
-                      fontWeight: FontWeight.w700, fontSize: 16),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, "0");
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+    return "${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds";
   }
 
-  void _nextCard(bool known) {
-    if (known) _correctCount++;
-
-    // Update SRS progress for the individual card
-    final currentCard = _studyCards[_currentCardIndex];
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final userId = authService.currentUser?.uid;
-    if (userId != null) {
-      _srsService.updateReview(currentCard.id, known);
-    }
-
-    if (_currentCardIndex < _studyCards.length - 1) {
-      setState(() {
-        _currentCardIndex++;
-        _isFlipped = false;
-      });
-    } else {
-      _endStudySession();
-    }
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning,';
+    if (hour < 17) return 'Good Afternoon,';
+    return 'Good Evening,';
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final user = Provider.of<UserModel?>(context);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     if (_isStudying) {
-      return _buildStudySession();
-    }
-
-    return Container(
-      color: theme.colorScheme.surface,
-      child: _isLoading
-          ? Center(
-              child:
-                  CircularProgressIndicator(color: theme.colorScheme.primary))
-          : _error != null
-              ? Center(
-                  child: Text(_error!,
-                      style: TextStyle(
-                          color: theme.colorScheme.onSurface, fontSize: 18)))
-              : SingleChildScrollView(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1280),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildHeader(user),
-                          const SizedBox(height: 12),
-                          _buildSrsBanner(context),
-                          const SizedBox(height: 12),
-                          // Three stat cards in a row
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: ActiveMissionCard(
-                                  mission: _dailyMission,
-                                  onStart: _fetchAndStartMission,
-                                  onDetails: () {
-                                    _showMissionDetails(context);
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: AccuracyCard(
-                                  accuracy: _accuracy,
-                                  highestAccuracy: _accuracy,
-                                  lowestAccuracy: _accuracy,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
                                 child: DailyGoalCard(
                                   goalMinutes: _dailyGoalMinutes,
                                   timeSpentMinutes: _timeSpentMinutes,

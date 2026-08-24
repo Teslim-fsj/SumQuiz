@@ -374,8 +374,8 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               ),
                             ] else ...[
                               _buildSidebarTab(
-                                icon: Icons.auto_awesome_mosaic_outlined,
-                                activeIcon: Icons.auto_awesome_mosaic_rounded,
+                                icon: Icons.home_outlined,
+                                activeIcon: Icons.home_rounded,
                                 label: 'Home',
                                 isActive:
                                     widget.navigationShell.currentIndex == 0,

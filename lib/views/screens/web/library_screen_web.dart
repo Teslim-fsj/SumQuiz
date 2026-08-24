@@ -255,6 +255,7 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
       {'label': 'All Content', 'icon': Icons.grid_view_rounded},
       {'label': 'Notes', 'icon': Icons.note_alt_rounded},
       {'label': 'Study Packs', 'icon': Icons.folder_copy_rounded},
+      {'label': 'Quizzes', 'icon': Icons.quiz_rounded},
       {'label': 'Exams', 'icon': Icons.assignment_rounded},
     ];
 
@@ -308,8 +309,8 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
                         color: isSelected
-                            ? WebColors.purplePrimary
-                            : const Color(0xFF64748B),
+                          ? WebColors.purplePrimary
+                          : const Color(0xFF64748B),
                       ),
                     ),
                   ],
@@ -323,14 +324,13 @@ class LibraryScreenWebState extends State<LibraryScreenWeb> {
   }
 
   Widget _buildDynamicContent(String userId, LibraryViewModel viewModel) {
-    // Map filter index to the correct stream
+    // Map filter index to the correct stream matching mobile library
     final stream = switch (_selectedFilter) {
-      0 => viewModel.allItems$,
       1 => viewModel.allNotes$,
-      2 => viewModel.allFolders$
-          .map((folders) => folders.map(LibraryItem.fromFolder).toList()),
-      3 => viewModel.allExams$,
-      _ => viewModel.allItems$,
+      2 => viewModel.studyPack$,
+      3 => viewModel.allQuizzes$,
+      4 => viewModel.allExams$,
+      0 || _ => viewModel.allItems$,
     };
 
     return StreamBuilder<List<LibraryItem>>(
