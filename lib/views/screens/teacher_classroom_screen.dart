@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:sumquiz/models/public_deck.dart';
 import 'package:sumquiz/models/teacher_models.dart';
 import 'package:sumquiz/models/user_model.dart';
@@ -185,6 +186,14 @@ class _TeacherClassroomScreenState extends State<TeacherClassroomScreen> {
     );
   }
 
+  void _shareDeckNative(PublicDeck deck) {
+    final shareText = deck.shareCode.isNotEmpty
+        ? 'Practice "${deck.title}" on SumQuiz! Join with code: ${deck.shareCode} or open: https://sumquiz.xyz/deck?id=${deck.id}'
+        : 'Practice "${deck.title}" on SumQuiz! https://sumquiz.xyz/deck?id=${deck.id}';
+
+    SharePlus.share(shareText, subject: 'SumQuiz: ${deck.title}');
+  }
+
   Widget _shareCard(PublicDeck deck, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(18),
@@ -200,24 +209,32 @@ class _TeacherClassroomScreenState extends State<TeacherClassroomScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Share with students'),
+                const Text(
+                  'Share with students',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 Text(
                   deck.shareCode.isEmpty
                       ? 'Open material to share its link'
                       : 'Code: ${deck.shareCode}',
+                  style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
                 ),
               ],
             ),
           ),
+          if (deck.shareCode.isNotEmpty)
+            IconButton(
+              tooltip: 'Copy share code',
+              onPressed: () => _copyShareCode(deck.shareCode),
+              icon: const Icon(Icons.copy_outlined),
+            ),
           IconButton(
-            tooltip: 'Copy share code',
-            onPressed: deck.shareCode.isEmpty
-                ? null
-                : () => _copyShareCode(deck.shareCode),
-            icon: const Icon(Icons.copy_outlined),
+            tooltip: 'Share link',
+            onPressed: () => _shareDeckNative(deck),
+            icon: const Icon(Icons.share_rounded),
           ),
           IconButton(
-            tooltip: 'Open material',
+            tooltip: 'Preview as student',
             onPressed: () => context.push('/deck?id=${deck.id}'),
             icon: const Icon(Icons.open_in_new_rounded),
           ),

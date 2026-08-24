@@ -67,6 +67,7 @@ class _QuizScreenState extends State<QuizScreen> {
   late List<LocalQuizQuestion> _questions;
 
   int _score = 0;
+  final Map<String, dynamic> _questionAnswers = {};
   String? _quizId;
   List<LocalFlashcard> _relatedFlashcards = [];
 
@@ -350,7 +351,7 @@ class _QuizScreenState extends State<QuizScreen> {
             score: percentageScore,
             totalQuestions: _questions.length,
             correctAnswers: _score,
-            answers: {}, // We can expand this in the future
+            answers: Map<String, dynamic>.from(_questionAnswers),
             attemptedAt: DateTime.now(),
             timeTakenSeconds: currentSessionSeconds,
           ));
@@ -407,6 +408,7 @@ class _QuizScreenState extends State<QuizScreen> {
     setState(() {
       _state = QuizState.inProgress;
       _score = 0;
+      _questionAnswers.clear();
     });
   }
 
@@ -415,6 +417,7 @@ class _QuizScreenState extends State<QuizScreen> {
     setState(() {
       _state = QuizState.creation;
       _errorMessage = '';
+      _questionAnswers.clear();
     });
   }
 
@@ -932,6 +935,14 @@ class _QuizScreenState extends State<QuizScreen> {
                     sumi.clearDialogue();
                   }
                 });
+              }
+
+              final qIndex = _questions.indexOf(question);
+              if (qIndex >= 0) {
+                _questionAnswers['$qIndex'] = {
+                  'correct': isCorrect,
+                  'question': question.question,
+                };
               }
 
               if (isCorrect) {

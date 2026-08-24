@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../models/public_deck.dart';
 import '../../models/user_model.dart';
@@ -268,104 +270,151 @@ class _TeacherLibraryScreenState extends State<TeacherLibraryScreen> {
 
               const SizedBox(height: 20),
 
-              // ── AI Suggestion Card ─────────────────────────────────────────
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF1E3A8A).withValues(alpha: 0.3)
-                      : const Color(0xFFEFF6FF),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: const Color(0xFFBFDBFE).withValues(alpha: 0.6),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFBFDBFE)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.smart_toy_outlined,
-                            size: 14,
-                            color: Color(0xFF2563EB),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'AI Suggestion',
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF2563EB),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      "Generate Quiz from 'Cell Biology Fundamentals'",
-                      style: GoogleFonts.outfit(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : const Color(0xFF1E293B),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Based on recent student completion rates.',
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: const Color(0xFF2563EB),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: ElevatedButton(
-                        onPressed: () => context.push('/create-content'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2563EB),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          'Create',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ).animate().fadeIn(duration: 350.ms),
-
-              const SizedBox(height: 80),
-            ],
+  Future<void> _deleteDeck(PublicDeck deck) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete material?'),
+        content: Text('Are you sure you want to delete "${deck.title}"? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
           ),
-        ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
       ),
     );
+
+    if (confirmed == true) {
+      await _teacherService.deleteContent(deck.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Deleted "${deck.title}"')),
+        );
+        _loadContent();
+      }
+    }
+  }
+
+  void _shareDeck(PublicDeck deck) {
+    final shareText = deck.shareCode.isNotEmpty
+        ? 'Practice "${deck.title}" on SumQuiz! Join with code: ${deck.shareCode} or visit: https://sumquiz.xyz/deck?id=${deck.id}'
+        : 'Practice "${deck.title}" on SumQuiz! https://sumquiz.xyz/deck?id=${deck.id}';
+
+    SharePlus.share(shareText, subject: 'SumQuiz: ${deck.title}');
+  }
+
+  Widget _buildAiSuggestion(bool isDark) {
+    final hasContent = _contentList.isNotEmpty;
+    final targetDeck = hasContent ? _contentList.first : null;
+    final title = hasContent
+        ? (targetDeck!.isExam
+            ? "Create Study Pack for '${targetDeck.title}'"
+            : "Generate Quiz Exam from '${targetDeck.title}'")
+        : 'Generate your first interactive study pack with AI';
+    final subtitle = hasContent
+        ? 'Enhance student engagement with companion practice materials.'
+        : 'Transform your notes or syllabus into ready-to-share quizzes.';
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF1E3A8A).withValues(alpha: 0.3)
+            : const Color(0xFFEFF6FF),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFBFDBFE).withValues(alpha: 0.6),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 4,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFBFDBFE)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.smart_toy_outlined,
+                  size: 14,
+                  color: Color(0xFF2563EB),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'AI Assistant',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF2563EB),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: GoogleFonts.outfit(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : const Color(0xFF1E293B),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: const Color(0xFF2563EB),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.centerRight,
+            child: ElevatedButton(
+              onPressed: () => context.push(
+                hasContent && !targetDeck!.isExam
+                    ? '/create-content/exam-wizard'
+                    : '/create-content',
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2563EB),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                'Create',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 350.ms);
   }
 
   Widget _buildContentCards(bool isDark) {
@@ -401,13 +450,14 @@ class _TeacherLibraryScreenState extends State<TeacherLibraryScreen> {
         final deck = filtered[index];
         return _buildDeckCard(
           isDark: isDark,
+          deck: deck,
           type: deck.isExam ? 'Exam' : 'Pack',
           status: 'Published',
           statusColor: WebColors.purplePrimary,
           title: deck.title,
-          enrolledText: '👥 ${deck.startedCount} Enrolled',
-          actionText: 'Manage →',
-          onActionTap: () => context.push('/create-content?id=${deck.id}'),
+          enrolledText: '👥 ${deck.startedCount} Started · ${deck.completedCount} Done',
+          actionText: 'Analytics & Learners →',
+          onActionTap: () => context.push('/teacher/classroom/${deck.id}'),
         );
       },
     );
@@ -456,50 +506,9 @@ class _TeacherLibraryScreenState extends State<TeacherLibraryScreen> {
     );
   }
 
-  Widget _buildMockCards(bool isDark) {
-    return Column(
-      children: [
-        _buildDeckCard(
-          isDark: isDark,
-          type: 'Pack',
-          status: '✓ Published',
-          statusColor: const Color(0xFF7C3AED),
-          statusBg: const Color(0xFFF3E8FF),
-          title: 'Cell Biology Fundamentals',
-          enrolledText: '👥 124 Enrolled',
-          actionText: 'Manage →',
-          onActionTap: () {},
-        ),
-        const SizedBox(height: 14),
-        _buildDeckCard(
-          isDark: isDark,
-          type: 'Exam',
-          status: '📝 Draft',
-          statusColor: const Color(0xFF64748B),
-          statusBg: const Color(0xFFF1F5F9),
-          title: 'Midterm: Genetics',
-          enrolledText: '👥 -- Enrolled',
-          actionText: 'Edit ✏️',
-          onActionTap: () => context.push('/create-content/exam-wizard'),
-        ),
-        const SizedBox(height: 14),
-        _buildDeckCard(
-          isDark: isDark,
-          type: 'Pack',
-          status: '🔒 Private',
-          statusColor: const Color(0xFFB45309),
-          statusBg: const Color(0xFFFEF3C7),
-          title: 'Advanced Evolutionary Theory',
-          enrolledText: '👥 5 Enrolled',
-          actionText: 'Manage →',
-          onActionTap: () {},
-        ),
-      ],
-    );
-  }
-
   Widget _buildDeckCard({
     required bool isDark,
+    required PublicDeck deck,
     required String type,
     required String status,
     required Color statusColor,
@@ -530,57 +539,121 @@ class _TeacherLibraryScreenState extends State<TeacherLibraryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Badges row
+          // Badges row + Popup Menu
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF334155)
-                      : const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  type,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF64748B),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      type,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF64748B),
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusBg ?? statusColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      status,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: statusColor,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: statusBg ?? statusColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  status,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: statusColor,
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_horiz_rounded, size: 20),
+                onSelected: (val) {
+                  if (val == 'analytics') {
+                    context.push('/teacher/classroom/${deck.id}');
+                  } else if (val == 'preview') {
+                    context.push('/deck?id=${deck.id}');
+                  } else if (val == 'share') {
+                    _shareDeck(deck);
+                  } else if (val == 'delete') {
+                    _deleteDeck(deck);
+                  }
+                },
+                itemBuilder: (ctx) => [
+                  const PopupMenuItem(
+                    value: 'analytics',
+                    child: Row(
+                      children: [
+                        Icon(Icons.insights_outlined, size: 18),
+                        SizedBox(width: 8),
+                        Text('Learners & Analytics'),
+                      ],
+                    ),
                   ),
-                ),
+                  const PopupMenuItem(
+                    value: 'preview',
+                    child: Row(
+                      children: [
+                        Icon(Icons.open_in_new_rounded, size: 18),
+                        SizedBox(width: 8),
+                        Text('Preview Material'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'share',
+                    child: Row(
+                      children: [
+                        Icon(Icons.share_outlined, size: 18),
+                        SizedBox(width: 8),
+                        Text('Share with Students'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline_rounded, size: 18, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Delete', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
           const SizedBox(height: 12),
-          Text(
-            title,
-            style: GoogleFonts.outfit(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : const Color(0xFF1E293B),
+          InkWell(
+            onTap: onActionTap,
+            child: Text(
+              title,
+              style: GoogleFonts.outfit(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : const Color(0xFF1E293B),
+              ),
             ),
           ),
           const SizedBox(height: 16),
