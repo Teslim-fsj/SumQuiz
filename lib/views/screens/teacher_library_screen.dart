@@ -270,6 +270,16 @@ class _TeacherLibraryScreenState extends State<TeacherLibraryScreen> {
 
               const SizedBox(height: 20),
 
+              // ── AI Companion Suggestion Banner ────────────────────────────
+              _buildAiSuggestion(isDark),
+              const SizedBox(height: 32),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _deleteDeck(PublicDeck deck) async {
     final confirmed = await showDialog<bool>(
       context: context,
