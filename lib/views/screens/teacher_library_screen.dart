@@ -50,9 +50,13 @@ class _TeacherLibraryScreenState extends State<TeacherLibraryScreen> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      backgroundColor: isDark
+          ? const Color(0xFF0F172A)
+          : const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+        backgroundColor: isDark
+            ? const Color(0xFF0F172A)
+            : const Color(0xFFF8FAFC),
         elevation: 0,
         leading: IconButton(
           icon: Icon(
@@ -125,7 +129,9 @@ class _TeacherLibraryScreenState extends State<TeacherLibraryScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.2 : 0.03,
+                      ),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -140,12 +146,18 @@ class _TeacherLibraryScreenState extends State<TeacherLibraryScreen> {
                   onChanged: (val) => setState(() => _searchQuery = val),
                   decoration: InputDecoration(
                     hintText: 'Search materials...',
-                    hintStyle: GoogleFonts.inter(color: const Color(0xFF94A3B8)),
-                    prefixIcon: const Icon(Icons.search_rounded,
-                        color: Color(0xFF94A3B8)),
+                    hintStyle: GoogleFonts.inter(
+                      color: const Color(0xFF94A3B8),
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      color: Color(0xFF94A3B8),
+                    ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
                   ),
                 ),
               ),
@@ -171,15 +183,19 @@ class _TeacherLibraryScreenState extends State<TeacherLibraryScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
                             color: _selectedTabIndex == 0
-                                ? (isDark ? const Color(0xFF334155) : Colors.white)
+                                ? (isDark
+                                      ? const Color(0xFF334155)
+                                      : Colors.white)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: _selectedTabIndex == 0
                                 ? [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.05),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.05,
+                                      ),
                                       blurRadius: 4,
-                                    )
+                                    ),
                                   ]
                                 : [],
                           ),
@@ -208,15 +224,19 @@ class _TeacherLibraryScreenState extends State<TeacherLibraryScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
                             color: _selectedTabIndex == 1
-                                ? (isDark ? const Color(0xFF334155) : Colors.white)
+                                ? (isDark
+                                      ? const Color(0xFF334155)
+                                      : Colors.white)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: _selectedTabIndex == 1
                                 ? [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.05),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.05,
+                                      ),
                                       blurRadius: 4,
-                                    )
+                                    ),
                                   ]
                                 : [],
                           ),
@@ -265,7 +285,9 @@ class _TeacherLibraryScreenState extends State<TeacherLibraryScreen> {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
@@ -274,8 +296,11 @@ class _TeacherLibraryScreenState extends State<TeacherLibraryScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.smart_toy_outlined,
-                              size: 14, color: Color(0xFF2563EB)),
+                          const Icon(
+                            Icons.smart_toy_outlined,
+                            size: 14,
+                            color: Color(0xFF2563EB),
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             'AI Suggestion',
@@ -314,7 +339,9 @@ class _TeacherLibraryScreenState extends State<TeacherLibraryScreen> {
                           backgroundColor: const Color(0xFF2563EB),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 12),
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -344,23 +371,25 @@ class _TeacherLibraryScreenState extends State<TeacherLibraryScreen> {
   Widget _buildContentCards(bool isDark) {
     if (_isLoading) {
       return const Center(
-          child: Padding(
-        padding: EdgeInsets.all(24.0),
-        child: CircularProgressIndicator(),
-      ));
+        child: Padding(
+          padding: EdgeInsets.all(24.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
     }
 
     // Filter content list by tab & search query
     final isExamTab = _selectedTabIndex == 1;
     final filtered = _contentList.where((deck) {
       final matchesTab = isExamTab ? deck.isExam : !deck.isExam;
-      final matchesSearch = _searchQuery.isEmpty ||
+      final matchesSearch =
+          _searchQuery.isEmpty ||
           deck.title.toLowerCase().contains(_searchQuery.toLowerCase());
       return matchesTab && matchesSearch;
     }).toList();
 
     if (filtered.isEmpty) {
-      return _buildMockCards(isDark);
+      return _buildEmptyState(isDark, isExamTab);
     }
 
     return ListView.separated(
@@ -381,6 +410,49 @@ class _TeacherLibraryScreenState extends State<TeacherLibraryScreen> {
           onActionTap: () => context.push('/create-content?id=${deck.id}'),
         );
       },
+    );
+  }
+
+  Widget _buildEmptyState(bool isDark, bool isExamTab) {
+    final label = isExamTab ? 'exam' : 'study pack';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.library_add_outlined,
+            size: 42,
+            color: WebColors.purplePrimary,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'No ${isExamTab ? 'exams' : 'study packs'} yet',
+            style: GoogleFonts.outfit(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.white : const Color(0xFF1E293B),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Create a $label, then share it with your students.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(color: const Color(0xFF64748B)),
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton(
+            onPressed: () => context.push(
+              isExamTab ? '/create-content/exam-wizard' : '/create-content',
+            ),
+            child: Text('Create $label'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -462,8 +534,10 @@ class _TeacherLibraryScreenState extends State<TeacherLibraryScreen> {
           Row(
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: isDark
                       ? const Color(0xFF334155)
@@ -481,8 +555,10 @@ class _TeacherLibraryScreenState extends State<TeacherLibraryScreen> {
               ),
               const SizedBox(width: 8),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: statusBg ?? statusColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
@@ -575,7 +651,10 @@ class _TeacherLibraryScreenState extends State<TeacherLibraryScreen> {
             ),
             const SizedBox(height: 20),
             ListTile(
-              leading: const Icon(Icons.quiz_rounded, color: WebColors.purplePrimary),
+              leading: const Icon(
+                Icons.quiz_rounded,
+                color: WebColors.purplePrimary,
+              ),
               title: const Text('New Exam / Quiz'),
               subtitle: const Text('Structured assessment with AI generation'),
               onTap: () {
@@ -584,7 +663,10 @@ class _TeacherLibraryScreenState extends State<TeacherLibraryScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.menu_book_rounded, color: Color(0xFF0D9488)),
+              leading: const Icon(
+                Icons.menu_book_rounded,
+                color: Color(0xFF0D9488),
+              ),
               title: const Text('New Study Pack'),
               subtitle: const Text('Summaries, quizzes & flashcards'),
               onTap: () {

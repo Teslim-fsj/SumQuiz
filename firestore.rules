@@ -67,5 +67,18 @@ service cloud.firestore {
         allow create: if isAuthenticated() && request.auth.uid == viewerId;
       }
     }
+
+    // Student attempts power the teacher dashboard. A student can write only
+    // their own result, while the student and the deck owner can read it.
+    match /attempts/{attemptId} {
+      allow create: if isAuthenticated()
+        && request.auth.uid == request.resource.data.studentId
+        && request.resource.data.creatorId ==
+          get(/databases/$(database)/documents/public_decks/$(request.resource.data.contentId)).data.creatorId;
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.studentId ||
+        request.auth.uid == resource.data.creatorId
+      );
+    }
   }
 }
