@@ -1,8 +1,8 @@
 flutter_native_splash:
-  color: "#000000"
+  color: "#1E3A8A"
   image: assets/images/sumquiz_logo.png
   android_12:
     image: assets/images/sumquiz_logo.png
-    color: "#000000"
+    color: "#1E3A8A"
   ios: true
   android: true

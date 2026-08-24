@@ -202,6 +202,13 @@ GoRouter createRouter(AuthService authService) {
       ),
       GoRoute(
         path: '/splash',
+        redirect: (context, state) {
+          if (kIsWeb) {
+            final auth = Provider.of<AuthService>(context, listen: false);
+            return auth.currentUser != null ? '/' : '/landing';
+          }
+          return null;
+        },
         builder: (context, state) => const SplashScreen(),
       ),
       GoRoute(

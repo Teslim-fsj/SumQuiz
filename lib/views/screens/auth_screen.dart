@@ -1,16 +1,16 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:sumquiz/services/auth_service.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sumquiz/models/user_model.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:sumquiz/utils/auth_error_messages.dart';
 import 'package:go_router/go_router.dart';
-// Removed Sumi mascot for a more professional auth experience
+
+import 'package:sumquiz/services/auth_service.dart';
+import 'package:sumquiz/models/user_model.dart';
+import 'package:sumquiz/utils/auth_error_messages.dart';
+import 'package:sumquiz/theme/web_theme.dart';
 
 enum AuthMode { login, signUp }
 
@@ -28,9 +28,12 @@ class _AuthScreenState extends State<AuthScreen> {
   final _passwordController = TextEditingController();
   final _fullNameController = TextEditingController();
   final _referralCodeController = TextEditingController();
+
   AuthMode _authMode = AuthMode.login;
   UserRole _signUpRole = UserRole.student;
   bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _showReferralField = false;
 
   @override
   void dispose() {
@@ -41,10 +44,11 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
-  void _switchAuthMode() {
+  void _switchAuthMode(AuthMode mode) {
+    if (_authMode == mode) return;
     setState(() {
-      _authMode =
-          _authMode == AuthMode.login ? AuthMode.signUp : AuthMode.login;
+      _authMode = mode;
+      _formKey.currentState?.reset();
     });
   }
 
@@ -63,11 +67,7 @@ class _AuthScreenState extends State<AuthScreen> {
           _passwordController.text.trim(),
         );
         if (!mounted) return;
-        if (widget.redirectPath != null && widget.redirectPath!.isNotEmpty) {
-          context.go(widget.redirectPath!);
-        } else {
-          context.go('/');
-        }
+        _navigateAfterAuth();
       } else {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('intended_role', _signUpRole.name);
@@ -80,11 +80,7 @@ class _AuthScreenState extends State<AuthScreen> {
           _referralCodeController.text.trim(),
         );
         if (!mounted) return;
-        if (widget.redirectPath != null && widget.redirectPath!.isNotEmpty) {
-          context.go(widget.redirectPath!);
-        } else {
-          context.go('/');
-        }
+        _navigateAfterAuth();
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) _showError(theme, messageForFirebaseAuth(e));
@@ -105,15 +101,13 @@ class _AuthScreenState extends State<AuthScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('intended_role', _signUpRole.name);
 
-      await authService.signInWithGoogle(context,
-          referralCode: _referralCodeController.text.trim());
+      await authService.signInWithGoogle(
+        context,
+        referralCode: _referralCodeController.text.trim(),
+      );
 
       if (!mounted) return;
-      if (widget.redirectPath != null && widget.redirectPath!.isNotEmpty) {
-        context.go(widget.redirectPath!);
-      } else {
-        context.go('/');
-      }
+      _navigateAfterAuth();
     } on FirebaseAuthException catch (e) {
       if (mounted) _showError(theme, messageForFirebaseAuth(e));
     } catch (e) {
@@ -123,14 +117,121 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
+  void _navigateAfterAuth() {
+    if (widget.redirectPath != null && widget.redirectPath!.isNotEmpty) {
+      context.go(widget.redirectPath!);
+    } else {
+      context.go('/');
+    }
+  }
+
+  void _showForgotPasswordDialog() {
+    final resetEmailController =
+        TextEditingController(text: _emailController.text.trim());
+    bool isResetting = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text(
+              'Reset Password',
+              style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Enter your email address and we will send you a link to reset your password.',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: const Color(0xFF64748B),
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: resetEmailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    labelText: 'Email Address',
+                    prefixIcon: const Icon(Icons.mail_outline_rounded, size: 20),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Cancel', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+              ),
+              ElevatedButton(
+                onPressed: isResetting
+                    ? null
+                    : () async {
+                        final email = resetEmailController.text.trim();
+                        if (email.isEmpty) return;
+                        setDialogState(() => isResetting = true);
+                        try {
+                          await FirebaseAuth.instance
+                              .sendPasswordResetEmail(email: email);
+                          if (!context.mounted) return;
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Password reset email sent! Check your inbox.'),
+                              backgroundColor: Color(0xFF10B981),
+                            ),
+                          );
+                        } catch (e) {
+                          setDialogState(() => isResetting = false);
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error: ${e.toString()}'),
+                              backgroundColor: Colors.redAccent,
+                            ),
+                          );
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: WebColors.purplePrimary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: isResetting
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text('Send Reset Link'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   void _showError(ThemeData theme, String message) {
     if (!mounted || message.isEmpty) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message,
-            style: theme.textTheme.bodyMedium
-                ?.copyWith(color: theme.colorScheme.onError)),
-        backgroundColor: theme.colorScheme.error,
+        content: Text(
+          message,
+          style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w500),
+        ),
+        backgroundColor: const Color(0xFFDC2626),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -140,68 +241,569 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final size = MediaQuery.of(context).size;
-    final isMobile = size.width < 900;
-    final cs = theme.colorScheme;
+    final isDesktop = size.width >= 960;
 
     return Scaffold(
-      backgroundColor: cs.surface,
-      body: Stack(
-        children: [
-          // Background Aesthetic
-          _AuthBackground(colorScheme: cs),
-
-          Row(
-            children: [
-              if (!isMobile)
-                Expanded(flex: 5, child: _buildBrandingPanel(theme)),
-              Expanded(
-                flex: 6,
+      backgroundColor: isDark ? const Color(0xFF090D1A) : const Color(0xFFF8FAFC),
+      body: Center(
+        child: isDesktop
+            ? Container(
+                constraints: const BoxConstraints(maxWidth: 1100, maxHeight: 720),
+                margin: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.05),
+                      blurRadius: 30,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    // Left: Value Proposition / Feature Showcase
+                    Expanded(flex: 5, child: _buildBrandingShowcase(isDark)),
+                    // Divider
+                    Container(
+                      width: 1,
+                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                    ),
+                    // Right: Clean Form
+                    Expanded(
+                      flex: 6,
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 36),
+                        child: _buildFormContent(theme, isDark),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
                 child: Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(32),
-                    child: _buildAuthPanel(theme, isMobile: isMobile),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 440),
+                    child: Column(
+                      children: [
+                        _buildMobileBrandHeader(isDark),
+                        const SizedBox(height: 24),
+                        Container(
+                          padding: const EdgeInsets.all(28),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.04),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: _buildFormContent(theme, isDark),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
+      ),
+    );
+  }
+
+  // ─── Left Branding Showcase on Desktop ───────────────────────────────────────
+
+  Widget _buildBrandingShowcase(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(48),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF090D1A) : const Color(0xFFFAFAFE),
+        borderRadius: const BorderRadius.horizontal(left: Radius.circular(28)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Logo & Title
+          Row(
+            children: [
+              Image.asset(
+                'assets/images/sumquiz_logo.png',
+                width: 36,
+                height: 36,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.school_rounded,
+                  color: WebColors.purplePrimary,
+                  size: 36,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'SumQuiz',
+                style: GoogleFonts.outfit(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  letterSpacing: -0.5,
+                ),
+              ),
             ],
+          ),
+
+          // Main Tagline
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'The Intelligent Study & Teaching OS.',
+                style: GoogleFonts.outfit(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w900,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  height: 1.15,
+                  letterSpacing: -0.8,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Turn raw textbooks, lecture slides, and notes into active recall flashcards, quizzes, and print-ready exams in seconds.',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: const Color(0xFF64748B),
+                  height: 1.6,
+                ),
+              ),
+              const SizedBox(height: 28),
+
+              _featureBullet('⚡ Instant Deep Synthesis from PDFs & YouTube', isDark),
+              const SizedBox(height: 12),
+              _featureBullet('🧠 Spaced Repetition (SRS) for 10x long-term retention', isDark),
+              const SizedBox(height: 12),
+              _featureBullet('🎓 Teacher Question Analytics & Printable Exam Papers', isDark),
+            ],
+          ),
+
+          // Trust Badge / Quote
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.verified_user_rounded, color: Color(0xFF10B981), size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Trusted by over 50,000 students & educators worldwide.',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white70 : const Color(0xFF334155),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildBrandingPanel(ThemeData theme) {
-    final cs = theme.colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(64),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Clean branding area (logo + concise value prop)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.asset('assets/images/sumquiz_logo.png',
-                height: 56, width: 56, fit: BoxFit.cover),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            _authMode == AuthMode.login ? 'Welcome back' : 'Create your account',
-            style: GoogleFonts.outfit(
-              fontSize: 36,
-              fontWeight: FontWeight.w900,
-              height: 1.05,
-              color: cs.onSurface,
-              letterSpacing: -1.2,
+  Widget _featureBullet(String text, bool isDark) {
+    return Row(
+      children: [
+        const Icon(Icons.check_circle_rounded, color: WebColors.purplePrimary, size: 16),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: isDark ? Colors.white70 : const Color(0xFF334155),
             ),
           ),
-          const SizedBox(height: 12),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileBrandHeader(bool isDark) {
+    return Column(
+      children: [
+        Image.asset(
+          'assets/images/sumquiz_logo.png',
+          width: 44,
+          height: 44,
+          errorBuilder: (_, __, ___) => const Icon(
+            Icons.school_rounded,
+            color: WebColors.purplePrimary,
+            size: 44,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'SumQuiz',
+          style: GoogleFonts.outfit(
+            fontSize: 26,
+            fontWeight: FontWeight.w900,
+            color: isDark ? Colors.white : const Color(0xFF0F172A),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'AI-Powered Study & Teaching Suite',
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            color: const Color(0xFF64748B),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ─── Main Form Content ───────────────────────────────────────────────────────
+
+  Widget _buildFormContent(ThemeData theme, bool isDark) {
+    final isLogin = _authMode == AuthMode.login;
+
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header Tab Toggle (Sign In / Create Account)
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF090D1A) : const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _tabButton(
+                    title: 'Sign In',
+                    isSelected: isLogin,
+                    onTap: () => _switchAuthMode(AuthMode.login),
+                    isDark: isDark,
+                  ),
+                ),
+                Expanded(
+                  child: _tabButton(
+                    title: 'Create Account',
+                    isSelected: !isLogin,
+                    onTap: () => _switchAuthMode(AuthMode.signUp),
+                    isDark: isDark,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Title & Subtitle
           Text(
-            'Secure, modern authentication — get access to personalized quizzes and streak boosters.',
+            isLogin ? 'Welcome back' : 'Get started for free',
+            style: GoogleFonts.outfit(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              color: isDark ? Colors.white : const Color(0xFF0F172A),
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            isLogin
+                ? 'Enter your credentials to access your study library.'
+                : 'Create your account to start generating study packs.',
             style: GoogleFonts.inter(
-              fontSize: 16,
-              color: cs.onSurface.withValues(alpha: 0.65),
+              fontSize: 13,
+              color: const Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Role Switcher on Sign Up
+          if (!isLogin) ...[
+            Text(
+              'I AM JOINING AS',
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.0,
+                color: const Color(0xFF64748B),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _roleCard(
+                    title: 'Student / Learner',
+                    icon: Icons.school_rounded,
+                    isSelected: _signUpRole == UserRole.student,
+                    onTap: () => setState(() => _signUpRole = UserRole.student),
+                    isDark: isDark,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _roleCard(
+                    title: 'Teacher / Educator',
+                    icon: Icons.workspace_premium_rounded,
+                    isSelected: _signUpRole == UserRole.creator,
+                    onTap: () => setState(() => _signUpRole = UserRole.creator),
+                    isDark: isDark,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
+
+          // Google Button
+          _buildGoogleButton(isDark),
+          const SizedBox(height: 20),
+
+          // Divider
+          Row(
+            children: [
+              Expanded(
+                child: Divider(
+                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: Text(
+                  'OR CONTINUE WITH EMAIL',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.8,
+                    color: const Color(0xFF94A3B8),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Divider(
+                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Sign Up: Full Name
+          if (!isLogin) ...[
+            _buildInputField(
+              controller: _fullNameController,
+              label: 'Full Name',
+              hint: 'John Doe',
+              icon: Icons.person_outline_rounded,
+              isDark: isDark,
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) {
+                  return 'Please enter your name';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // Email
+          _buildInputField(
+            controller: _emailController,
+            label: 'Email Address',
+            hint: 'name@example.com',
+            icon: Icons.mail_outline_rounded,
+            keyboardType: TextInputType.emailAddress,
+            isDark: isDark,
+            validator: (v) {
+              if (v == null || v.trim().isEmpty || !v.contains('@')) {
+                return 'Please enter a valid email address';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // Password
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Password',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white70 : const Color(0xFF334155),
+                    ),
+                  ),
+                  if (isLogin)
+                    InkWell(
+                      onTap: _showForgotPasswordDialog,
+                      child: Text(
+                        'Forgot password?',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: WebColors.purplePrimary,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              TextFormField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                validator: (v) {
+                  if (v == null || v.length < 6) {
+                    return 'Password must be at least 6 characters';
+                  }
+                  return null;
+                },
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
+                decoration: InputDecoration(
+                  hintText: '••••••••',
+                  hintStyle: GoogleFonts.inter(color: Colors.grey[400]),
+                  prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      size: 20,
+                      color: Colors.grey[500],
+                    ),
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
+                  ),
+                  filled: true,
+                  fillColor: isDark ? const Color(0xFF090D1A) : const Color(0xFFF8FAFC),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(
+                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(
+                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(
+                      color: WebColors.purplePrimary,
+                      width: 1.5,
+                    ),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Sign Up: Optional Referral Code Toggle
+          if (!isLogin) ...[
+            if (!_showReferralField)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => setState(() => _showReferralField = true),
+                  icon: const Icon(Icons.add_rounded, size: 16),
+                  label: const Text('Have a class / referral code?'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: WebColors.purplePrimary,
+                    textStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              )
+            else
+              _buildInputField(
+                controller: _referralCodeController,
+                label: 'Class / Referral Code (Optional)',
+                hint: 'e.g. SQ-BIO101',
+                icon: Icons.tag_rounded,
+                isDark: isDark,
+              ),
+            const SizedBox(height: 8),
+          ],
+
+          const SizedBox(height: 12),
+
+          // Submit Action Button
+          ElevatedButton(
+            onPressed: _isLoading ? null : _submit,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: WebColors.purplePrimary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            child: _isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        isLogin ? 'Sign In' : 'Create Account',
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward_rounded, size: 18),
+                    ],
+                  ),
+          ),
+          const SizedBox(height: 20),
+
+          // Footnote Terms
+          Text(
+            'By continuing, you agree to SumQuiz\'s Terms of Service and Privacy Policy.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              color: const Color(0xFF94A3B8),
               height: 1.4,
             ),
           ),
@@ -210,449 +812,200 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  Widget _buildAuthPanel(ThemeData theme, {required bool isMobile}) {
-    final cs = theme.colorScheme;
-    final isDark = cs.brightness == Brightness.dark;
-    final cardBg = isDark
-        ? Colors.white.withValues(alpha: 0.05)
-        : cs.surfaceContainerHighest.withValues(alpha: 0.3);
-    final cardBorder = isDark
-        ? Colors.white.withValues(alpha: 0.1)
-        : cs.outline.withValues(alpha: 0.1);
+  Widget _tabButton({
+    required String title,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required bool isDark,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isDark ? const Color(0xFF1E293B) : Colors.white)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          title,
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+            color: isSelected
+                ? (isDark ? Colors.white : const Color(0xFF0F172A))
+                : const Color(0xFF64748B),
+          ),
+        ),
+      ),
+    );
+  }
 
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 480),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (isMobile) ...[
-            Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.asset('assets/images/sumquiz_logo.png',
-                    height: 120, width: 120, fit: BoxFit.cover),
+  Widget _roleCard({
+    required String title,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required bool isDark,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? WebColors.purplePrimary.withValues(alpha: 0.1)
+              : (isDark ? const Color(0xFF090D1A) : const Color(0xFFF8FAFC)),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected
+                ? WebColors.purplePrimary
+                : (isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isSelected ? WebColors.purplePrimary : const Color(0xFF64748B),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                title,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                  color: isSelected
+                      ? WebColors.purplePrimary
+                      : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(height: 28),
           ],
-
-          // Clean Auth Panel (professional, non-frosted)
-          Material(
-            elevation: 2,
-            color: cardBg,
-            borderRadius: BorderRadius.circular(20),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: AnimatedSwitcher(
-                duration: 300.ms,
-                child: _authMode == AuthMode.login
-                    ? _buildLoginForm(theme)
-                    : _buildSignUpForm(theme),
-              ),
-            ),
-          ).animate().fadeIn(),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildLoginForm(ThemeData theme) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        key: const ValueKey('login'),
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget _buildGoogleButton(bool isDark) {
+    return OutlinedButton(
+      onPressed: _isLoading ? null : _googleSignIn,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: isDark ? Colors.white : const Color(0xFF0F172A),
+        side: BorderSide(
+          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            'Sign In',
-            style: GoogleFonts.outfit(
-              fontSize: 32,
-              fontWeight: FontWeight.w900,
-              color: theme.colorScheme.onSurface,
+          SvgPicture.asset(
+            'assets/icons/google_logo.svg',
+            height: 18,
+            width: 18,
+            errorBuilder: (_, __, ___) => const Icon(
+              Icons.g_mobiledata_rounded,
+              size: 22,
+              color: Colors.redAccent,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(width: 10),
           Text(
-            'Enter your credentials to continue your study.',
-            style: GoogleFonts.outfit(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+            'Continue with Google',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-          const SizedBox(height: 32),
-          _buildTextField(
-            controller: _emailController,
-            label: 'Email',
-            icon: Icons.alternate_email_rounded,
-            theme: theme,
-            keyboardType: TextInputType.emailAddress,
-          ),
-          const SizedBox(height: 20),
-          _buildTextField(
-            controller: _passwordController,
-            label: 'Password',
-            icon: Icons.lock_outline_rounded,
-            theme: theme,
-            obscureText: true,
-          ),
-          const SizedBox(height: 24),
-          _buildAuthButton('Login to Neural Hub', _submit, theme),
-          const SizedBox(height: 24),
-          _buildSocialDivider(theme),
-          const SizedBox(height: 24),
-          _buildGoogleButton(theme),
-          const SizedBox(height: 32),
-          _buildSwitchMode(
-              'Don\'t have an account?', 'Create one', _switchAuthMode, theme),
         ],
       ),
     );
   }
 
-  Widget _buildSignUpForm(ThemeData theme) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        key: const ValueKey('signup'),
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Join SumQuiz',
-            style: GoogleFonts.outfit(
-              fontSize: 32,
-              fontWeight: FontWeight.w900,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 32),
-          _buildRoleSelector(theme),
-          const SizedBox(height: 24),
-          _buildTextField(
-            controller: _fullNameController,
-            label: 'Full Name',
-            icon: Icons.person_outline_rounded,
-            theme: theme,
-          ),
-          const SizedBox(height: 20),
-          _buildTextField(
-            controller: _emailController,
-            label: 'Email',
-            icon: Icons.alternate_email_rounded,
-            theme: theme,
-            keyboardType: TextInputType.emailAddress,
-          ),
-          const SizedBox(height: 20),
-          _buildTextField(
-            controller: _passwordController,
-            label: 'Password',
-            icon: Icons.lock_outline_rounded,
-            theme: theme,
-            obscureText: true,
-          ),
-          const SizedBox(height: 24),
-          _buildAuthButton('Begin My Journey', _submit, theme),
-          const SizedBox(height: 24),
-          _buildSocialDivider(theme),
-          const SizedBox(height: 24),
-          _buildGoogleButton(theme),
-          const SizedBox(height: 32),
-          _buildSwitchMode(
-              'Already a member?', 'Log in', _switchAuthMode, theme),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTextField({
+  Widget _buildInputField({
     required TextEditingController controller,
     required String label,
+    required String hint,
     required IconData icon,
-    required ThemeData theme,
-    bool obscureText = false,
+    required bool isDark,
     TextInputType? keyboardType,
+    String? Function(String?)? validator,
   }) {
-    final cs = theme.colorScheme;
-    final isDark = cs.brightness == Brightness.dark;
-    final fill = isDark
-        ? Colors.black.withValues(alpha: 0.2)
-        : Colors.white.withValues(alpha: 0.5);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: GoogleFonts.outfit(
-            fontSize: 14,
+          style: GoogleFonts.inter(
+            fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: cs.onSurface.withValues(alpha: 0.8),
+            color: isDark ? Colors.white70 : const Color(0xFF334155),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         TextFormField(
           controller: controller,
-          obscureText: obscureText,
           keyboardType: keyboardType,
-          style: GoogleFonts.outfit(
-              color: cs.onSurface, fontWeight: FontWeight.w500),
+          validator: validator,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: isDark ? Colors.white : const Color(0xFF0F172A),
+          ),
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, size: 20, color: cs.primary),
+            hintText: hint,
+            hintStyle: GoogleFonts.inter(color: Colors.grey[400]),
+            prefixIcon: Icon(icon, size: 20),
             filled: true,
-            fillColor: fill,
+            fillColor: isDark ? const Color(0xFF090D1A) : const Color(0xFFF8FAFC),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none,
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(
+                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+              ),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none,
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(
+                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(
-                  color: cs.primary.withValues(alpha: 0.5), width: 2),
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(
+                color: WebColors.purplePrimary,
+                width: 1.5,
+              ),
             ),
             contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRoleSelector(ThemeData theme) {
-    final cs = theme.colorScheme;
-    final isDark = cs.brightness == Brightness.dark;
-    final bg = isDark
-        ? Colors.black.withValues(alpha: 0.2)
-        : Colors.white.withValues(alpha: 0.5);
-
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _RolePill(
-              label: 'Learner',
-              isSelected: _signUpRole == UserRole.student,
-              onTap: () => setState(() => _signUpRole = UserRole.student),
-              colorScheme: cs,
-            ),
-          ),
-          Expanded(
-            child: _RolePill(
-              label: 'Educator',
-              isSelected: _signUpRole == UserRole.creator,
-              onTap: () => setState(() => _signUpRole = UserRole.creator),
-              colorScheme: cs,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAuthButton(
-      String text, VoidCallback onPressed, ThemeData theme) {
-    return SizedBox(
-      height: 60,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: theme.colorScheme.primary,
-          foregroundColor: theme.colorScheme.onPrimary,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          elevation: 0,
-        ),
-        child: _isLoading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: Colors.white))
-            : Text(text,
-                style: GoogleFonts.outfit(
-                    fontSize: 16, fontWeight: FontWeight.bold)),
-      ),
-    ).animate(target: _isLoading ? 0 : 1).shimmer(duration: 2.seconds);
-  }
-
-  Widget _buildGoogleButton(ThemeData theme) {
-    return SizedBox(
-      height: 60,
-      child: OutlinedButton.icon(
-        onPressed: _isLoading ? null : _googleSignIn,
-        icon: SvgPicture.asset('assets/icons/google_logo.svg', height: 24),
-        label: Text('Continue with Google',
-            style: GoogleFonts.outfit(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface)),
-        style: OutlinedButton.styleFrom(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          side: BorderSide(
-              color: theme.colorScheme.outline.withValues(alpha: 0.1)),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSocialDivider(ThemeData theme) {
-    return Row(
-      children: [
-        Expanded(
-            child: Divider(
-                color: theme.colorScheme.outline.withValues(alpha: 0.1))),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text('OR',
-              style: GoogleFonts.jetBrainsMono(
-                  fontSize: 12,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                  fontWeight: FontWeight.bold)),
-        ),
-        Expanded(
-            child: Divider(
-                color: theme.colorScheme.outline.withValues(alpha: 0.1))),
-      ],
-    );
-  }
-
-  Widget _buildSwitchMode(
-      String text, String action, VoidCallback onTap, ThemeData theme) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(text,
-            style: GoogleFonts.outfit(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
-        TextButton(
-          onPressed: onTap,
-          child: Text(action,
-              style: GoogleFonts.outfit(
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary)),
-        ),
-      ],
-    );
-  }
-}
-
-class _RolePill extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-  final ColorScheme colorScheme;
-
-  const _RolePill(
-      {required this.label,
-      required this.isSelected,
-      required this.onTap,
-      required this.colorScheme});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: 300.ms,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: GoogleFonts.outfit(
-            fontWeight: FontWeight.bold,
-            color: isSelected
-                ? colorScheme.onPrimary
-                : colorScheme.onSurface.withValues(alpha: 0.5),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AuthBackground extends StatelessWidget {
-  final ColorScheme colorScheme;
-  const _AuthBackground({required this.colorScheme});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = colorScheme.brightness == Brightness.dark;
-    final baseColor =
-        isDark ? const Color(0xFF09090B) : const Color(0xFFF8FAFC);
-    final glow1 = isDark
-        ? colorScheme.primary.withValues(alpha: 0.15)
-        : colorScheme.primary.withValues(alpha: 0.1);
-    final glow2 = isDark
-        ? colorScheme.tertiary.withValues(alpha: 0.15)
-        : colorScheme.tertiary.withValues(alpha: 0.1);
-
-    return Stack(
-      children: [
-        // Base
-        Container(color: baseColor),
-
-        // Animated Orbs
-        Positioned(
-          top: -150,
-          left: -150,
-          child: Container(
-            width: 500,
-            height: 500,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: glow1,
-            ),
-          )
-              .animate(onPlay: (c) => c.repeat(reverse: true))
-              .scale(
-                  begin: const Offset(1, 1),
-                  end: const Offset(1.2, 1.2),
-                  duration: 8.seconds)
-              .move(
-                  begin: const Offset(-20, -20),
-                  end: const Offset(20, 20),
-                  duration: 10.seconds),
-        ),
-        Positioned(
-          bottom: -150,
-          right: -150,
-          child: Container(
-            width: 500,
-            height: 500,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: glow2,
-            ),
-          )
-              .animate(onPlay: (c) => c.repeat(reverse: true))
-              .scale(
-                  begin: const Offset(1, 1),
-                  end: const Offset(1.1, 1.1),
-                  duration: 10.seconds)
-              .move(
-                  begin: const Offset(20, 20),
-                  end: const Offset(-20, -20),
-                  duration: 12.seconds),
-        ),
-
-        // Global Glassmorphism Blur Layer
-        Positioned.fill(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
-            child: Container(color: Colors.transparent),
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),
         ),
       ],
     );
   }
 }
+

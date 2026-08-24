@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,16 +22,24 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _handleNavigation() async {
-    // Combine min splash duration with initialization
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (!mounted) return;
-
     final prefs = await SharedPreferences.getInstance();
     final authService = Provider.of<AuthService>(context, listen: false);
 
     final user = authService.currentUser;
     final bool hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
+
+    if (kIsWeb) {
+      if (!mounted) return;
+      if (user != null) {
+        context.go('/');
+      } else {
+        context.go('/landing');
+      }
+      return;
+    }
+
+    // Combine min splash duration with initialization for mobile
+    await Future.delayed(const Duration(milliseconds: 1800));
 
     if (!mounted) return;
 
@@ -45,15 +54,15 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Gradient definitions
+    // Vibrant Blue Gradient definitions
     final colors1 = [
-      const Color(0xFF1A237E),
-      const Color(0xFF3949AB)
-    ]; // Deep Blue
+      const Color(0xFF0F172A),
+      const Color(0xFF1E3A8A)
+    ]; // Deep Royal Blue
     final colors2 = [
-      const Color(0xFF311B92),
-      const Color(0xFF5E35B1)
-    ]; // Deep Purple
+      const Color(0xFF1E40AF),
+      const Color(0xFF2563EB)
+    ]; // Vibrant Blue
 
     return Scaffold(
       body: Animate(
