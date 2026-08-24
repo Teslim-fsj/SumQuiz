@@ -193,6 +193,10 @@ GoRouter createRouter(AuthService authService) {
         ),
       ),
       GoRoute(
+        path: '/teachers',
+        redirect: (context, state) => '/educators',
+      ),
+      GoRoute(
         path: '/onboarding',
         builder: (context, state) => const OnboardingScreen(),
       ),

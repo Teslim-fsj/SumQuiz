@@ -870,28 +870,76 @@ class _CreatorProgramLandingState extends State<CreatorProgramLanding> {
 
   Widget _buildFooter() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 32),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      color: const Color(0xFF0F172A),
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 48),
+      child: Column(
         children: [
-          Text(
-            '© 2025 SumQuiz · ',
-            style: GoogleFonts.inter(
-                fontSize: 13, color: Colors.grey[500]),
-          ),
-          InkWell(
-            onTap: () => context.go('/landing'),
-            child: Text(
-              'Back to Home',
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                color: WebColors.purplePrimary,
-                fontWeight: FontWeight.w600,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/images/sumquiz_logo.png',
+                width: 28,
+                height: 28,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.stars_rounded,
+                  color: Color(0xFFC084FC),
+                  size: 28,
+                ),
               ),
-            ),
+              const SizedBox(width: 10),
+              Text(
+                'SumQuiz Creator Program',
+                style: GoogleFonts.outfit(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Empowering Educational Creators & Student Influencers.',
+            style: GoogleFonts.inter(fontSize: 13, color: Colors.white54),
+          ),
+          const SizedBox(height: 28),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 28,
+            runSpacing: 12,
+            children: [
+              _footerLink('For Students', () => context.go('/landing')),
+              _footerLink('For Teachers', () => context.go('/educators')),
+              _footerLink('Creator Partnership', () => context.go('/creator-program')),
+              _footerLink('Pricing & Pro', () => context.push('/settings/subscription')),
+              _footerLink('Apply as Creator', () => context.go('/creator-program/apply')),
+            ],
+          ),
+          const SizedBox(height: 32),
+          const Divider(color: Colors.white12),
+          const SizedBox(height: 20),
+          Text(
+            '© ${DateTime.now().year} SumQuiz. All rights reserved.',
+            style: GoogleFonts.inter(fontSize: 12, color: Colors.white38),
           ),
         ],
       ),
     );
   }
+
+  Widget _footerLink(String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Text(
+        label,
+        style: GoogleFonts.inter(
+          fontSize: 13,
+          color: Colors.white70,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
 }
+

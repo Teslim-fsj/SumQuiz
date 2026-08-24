@@ -1050,46 +1050,76 @@ class _EducatorLandingViewState extends State<EducatorLandingView> {
 
   Widget _buildFooter() {
     return Container(
-      color: const Color(0xFF0A0F1D),
-      padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 40),
-      child: Center(
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset(
-                  'assets/images/sumquiz_logo.png',
-                  width: 24,
-                  height: 24,
-                  errorBuilder: (_, __, ___) => const Icon(
-                    Icons.school_rounded,
-                    color: Colors.white,
-                    size: 24,
-                  ),
+      color: const Color(0xFF090D1A),
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 48),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/images/sumquiz_logo.png',
+                width: 28,
+                height: 28,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.school_rounded,
+                  color: Color(0xFF60A5FA),
+                  size: 28,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  'SumQuiz',
-                  style: GoogleFonts.outfit(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              '© 2026 SumQuiz. All rights reserved.',
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                color: Colors.grey[500],
               ),
-            ),
-          ],
+              const SizedBox(width: 10),
+              Text(
+                'SumQuiz for Educators',
+                style: GoogleFonts.outfit(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'The Intelligent Assessment & Teaching Platform.',
+            style: GoogleFonts.inter(fontSize: 13, color: Colors.white54),
+          ),
+          const SizedBox(height: 28),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 28,
+            runSpacing: 12,
+            children: [
+              _footerLink('For Students', () => context.go('/landing')),
+              _footerLink('For Teachers', () => context.go('/educators')),
+              _footerLink('Creator Partnership', () => context.go('/creator-program')),
+              _footerLink('Pricing & Pro', () => context.push('/settings/subscription')),
+              _footerLink('Sign In', () => context.go('/auth')),
+            ],
+          ),
+          const SizedBox(height: 32),
+          const Divider(color: Colors.white12),
+          const SizedBox(height: 20),
+          Text(
+            '© ${DateTime.now().year} SumQuiz. All rights reserved.',
+            style: GoogleFonts.inter(fontSize: 12, color: Colors.white38),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _footerLink(String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Text(
+        label,
+        style: GoogleFonts.inter(
+          fontSize: 13,
+          color: Colors.white70,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );
   }
 }
+
