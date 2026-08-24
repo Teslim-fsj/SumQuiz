@@ -2527,12 +2527,18 @@ class _ExportOptionsScreenState extends State<ExportOptionsScreen> {
           id: publicDeckId,
           creatorId: user.uid,
           creatorName: user.displayName,
-          title: widget.subject,
+          title: widget.examTitle.trim().isNotEmpty
+              ? widget.examTitle.trim()
+              : widget.subject,
           description:
-              "Practice Exam for ${widget.subject} ${widget.classLevel}",
+              "Practice Exam for ${widget.subject} (${widget.classLevel})",
           shareCode: shareCode,
+          isExam: true,
           summaryData: {},
           quizData: {
+            'title': widget.examTitle.trim().isNotEmpty
+                ? widget.examTitle.trim()
+                : widget.subject,
             'questions': widget.questions.map((q) => q.toMap()).toList(),
           },
           flashcardData: {},
