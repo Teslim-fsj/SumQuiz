@@ -103,8 +103,10 @@ jobs:
       - name: Flutter clean
         run: flutter clean
 
-      - name: Install dependencies
-        run: flutter pub get
+      - name: Resolve Flutter dependencies
+        run: |
+          rm -f pubspec.lock
+          flutter pub get
 
       - name: Generate Hive adapters
         run: dart run build_runner build --delete-conflicting-outputs
