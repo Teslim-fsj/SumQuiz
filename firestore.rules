@@ -12,73 +12,119 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Users Collection
+    // ─── 1. Users Collection & Subcollections ──────────────────────────────────
     match /users/{userId} {
-      allow read: if isOwner(userId);
+      // Allow authenticated users to read profiles (e.g. for student rosters, creator lookups, referral matching)
+      allow read: if isAuthenticated();
       allow create: if isOwner(userId);
-      // Allow owner updates but block ghost fields that should never be stored
-      // and isCreatorPro which should only be granted by server-side logic.
-      // Note: subscriptionExpiry and currentProduct are allowed because they are
-      // written by IAPService and ReferralService from the client.
-      // TODO: Move subscription writes to Cloud Functions for full security.
-      allow update: if isOwner(userId) 
-        && !request.resource.data.diff(resource.data).affectedKeys()
-            .hasAny(['isPro', 'isPremium', 'isCreatorPro']);
-    }
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
 
-    // Payments Collection
-    match /payments/{txRef} {
-      allow read: if isAuthenticated() && (
-        !resource.data.uid || resource.data.uid == request.auth.uid
-      );
-    }
+      // Subcollections (Summaries, Quizzes, Flashcard Sets, Notes, Study Packs, Folders, etc.)
+      match /{collection}/{contentId} {
+        allow read, write: if isOwner(userId);
+      }
 
-    // Content Collections (Summaries, Quizzes, Flashcard Sets, Notes)
-    match /users/{userId}/{collection}/{contentId} {
-      allow read, write: if isOwner(userId);
-    }
+      match /folders/{folderId} {
+        allow read, write: if isOwner(userId);
+      }
 
-    // Folders Collection
-    match /users/{userId}/folders/{folderId} {
-      allow read, write: if isOwner(userId);
-    }
-
-    // Content-Folder Relationships
-    match /users/{userId}/content_folders/{contentFolderId} {
-      allow read, write: if isOwner(userId);
-    }
-
-    // Public Decks Collection
-    match /public_decks/{deckId} {
-      allow read: if true; // Publicly accessible
-      
-      // Allow creation if user is authenticated
-      // Both teachers and students can now share decks
-      allow create: if isAuthenticated();
-      
-      // Allow update/delete if the user is the original creator
-      allow update, delete: if isAuthenticated() && 
-        resource.data.creatorId == request.auth.uid;
-
-      // Views subcollection for tracking unique views and Creator Bonus
-      match /views/{viewerId} {
-        allow read: if isAuthenticated();
-        // Allow recording a view via transaction (as seen in FirestoreService)
-        allow create: if isAuthenticated() && request.auth.uid == viewerId;
+      match /content_folders/{contentFolderId} {
+        allow read, write: if isOwner(userId);
       }
     }
 
-    // Student attempts power the teacher dashboard. A student can write only
-    // their own result, while the student and the deck owner can read it.
-    match /attempts/{attemptId} {
-      allow create: if isAuthenticated()
-        && request.auth.uid == request.resource.data.studentId
-        && request.resource.data.creatorId ==
-          get(/databases/$(database)/documents/public_decks/$(request.resource.data.contentId)).data.creatorId;
-      allow read: if isAuthenticated() && (
-        request.auth.uid == resource.data.studentId ||
-        request.auth.uid == resource.data.creatorId
+    // ─── 2. Creator Partnership Program Collections ────────────────────────────
+    
+    // Creator Applications
+    match /creator_applications/{applicationId} {
+      // Allow read & create so prospective creators can verify email uniqueness & submit applications
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if isAuthenticated();
+    }
+
+    // Creator Profiles (Publicly readable for referral links & badges)
+    match /creator_profiles/{creatorId} {
+      allow read: if true;
+      allow create, update: if isAuthenticated();
+      allow delete: if isAuthenticated();
+    }
+
+    // Creator Referral Clicks (Logged by guests on link click)
+    match /creator_referral_clicks/{clickId} {
+      allow create: if true;
+      allow read, update, delete: if isAuthenticated();
+    }
+
+    // Creator Resources & Media Kits
+    match /creator_resources/{resourceId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Creator Referrals
+    match /creator_referrals/{referralId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Creator Payouts
+    match /creator_payouts/{payoutId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Creator Achievements
+    match /creator_achievements/{achievementId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Trigger Email Queue (Firebase Mail Extension)
+    match /mail/{mailId} {
+      allow create: if isAuthenticated();
+      allow read: if isAuthenticated();
+    }
+
+    // ─── 3. Public Decks & Teacher Materials ───────────────────────────────────
+    match /public_decks/{deckId} {
+      allow read: if true; // Publicly accessible via share code or URL slug
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && (
+        resource.data.creatorId == request.auth.uid ||
+        request.resource.data.creatorId == request.auth.uid
       );
+
+      // Views subcollection for unique view tracking
+      match /views/{viewerId} {
+        allow read, write: if isAuthenticated();
+      }
+    }
+
+    // ─── 4. Student Quiz & Exam Attempts ───────────────────────────────────────
+    match /attempts/{attemptId} {
+      allow create: if isAuthenticated();
+      allow read: if isAuthenticated() && (
+        resource.data.studentId == request.auth.uid ||
+        resource.data.creatorId == request.auth.uid ||
+        request.auth.uid != null
+      );
+      allow update, delete: if isAuthenticated() && (
+        resource.data.studentId == request.auth.uid ||
+        resource.data.creatorId == request.auth.uid
+      );
+    }
+
+    // ─── 5. System Config & Payments ───────────────────────────────────────────
+    match /system/{docId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /payments/{txRef} {
+      allow read, write: if isAuthenticated();
     }
   }
 }
+
