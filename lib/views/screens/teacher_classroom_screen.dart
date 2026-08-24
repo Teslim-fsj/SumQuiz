@@ -191,7 +191,7 @@ class _TeacherClassroomScreenState extends State<TeacherClassroomScreen> {
         ? 'Practice "${deck.title}" on SumQuiz! Join with code: ${deck.shareCode} or open: https://sumquiz.xyz/deck?id=${deck.id}'
         : 'Practice "${deck.title}" on SumQuiz! https://sumquiz.xyz/deck?id=${deck.id}';
 
-    SharePlus.share(shareText, subject: 'SumQuiz: ${deck.title}');
+    Share.share(shareText, subject: 'SumQuiz: ${deck.title}');
   }
 
   Widget _shareCard(PublicDeck deck, bool isDark) {

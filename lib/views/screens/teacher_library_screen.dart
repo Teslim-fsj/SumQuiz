@@ -306,7 +306,7 @@ class _TeacherLibraryScreenState extends State<TeacherLibraryScreen> {
         ? 'Practice "${deck.title}" on SumQuiz! Join with code: ${deck.shareCode} or visit: https://sumquiz.xyz/deck?id=${deck.id}'
         : 'Practice "${deck.title}" on SumQuiz! https://sumquiz.xyz/deck?id=${deck.id}';
 
-    SharePlus.share(shareText, subject: 'SumQuiz: ${deck.title}');
+    Share.share(shareText, subject: 'SumQuiz: ${deck.title}');
   }
 
   Widget _buildAiSuggestion(bool isDark) {
