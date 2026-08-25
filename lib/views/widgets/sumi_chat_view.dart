@@ -197,9 +197,10 @@ class _SumiChatViewState extends State<SumiChatView> {
 
   Widget _buildMessageBubble(ThemeData theme, SumiMessage message) {
     final isUser = message.role == MessageRole.user;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: 20),
       child: Column(
         crossAxisAlignment:
             isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -209,14 +210,37 @@ class _SumiChatViewState extends State<SumiChatView> {
             mainAxisAlignment:
                 isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
             children: [
+              if (!isUser) ...[
+                Container(
+                  width: 32,
+                  height: 32,
+                  margin: const EdgeInsets.only(right: 12, top: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6B5CE7).withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Image.asset(
+                      'assets/images/sumi.png',
+                      width: 20,
+                      height: 20,
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.auto_awesome_rounded,
+                        color: Color(0xFF6B5CE7),
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               Flexible(
                 child: Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
                   decoration: BoxDecoration(
                     color: isUser
-                        ? theme.colorScheme.primary.withValues(alpha: 0.08)
-                        : theme.cardColor,
+                        ? const Color(0xFF6B5CE7)
+                        : (isDark ? const Color(0xFF1E293B) : Colors.white),
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(20),
                       topRight: const Radius.circular(20),
@@ -225,14 +249,19 @@ class _SumiChatViewState extends State<SumiChatView> {
                     ),
                     border: Border.all(
                       color: isUser
-                          ? theme.colorScheme.primary.withValues(alpha: 0.1)
-                          : theme.dividerColor.withValues(alpha: 0.1),
+                          ? Colors.transparent
+                          : (isDark
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : const Color(0xFFE2E8F0)),
                     ),
                     boxShadow: [
                       BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.01),
-                          blurRadius: 5,
-                          offset: const Offset(0, 2)),
+                        color: isUser
+                            ? const Color(0xFF6B5CE7).withValues(alpha: 0.25)
+                            : Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
                     ],
                   ),
                   child: isUser
@@ -241,13 +270,32 @@ class _SumiChatViewState extends State<SumiChatView> {
                           style: GoogleFonts.inter(
                             height: 1.5,
                             fontSize: 14,
-                            color: theme.textTheme.bodyMedium?.color,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
                           ),
                         )
                       : MarkdownBody(
                           data: message.text,
                           styleSheet: MarkdownStyleSheet(
-                            p: GoogleFonts.inter(height: 1.5, fontSize: 14),
+                            p: GoogleFonts.inter(
+                              height: 1.5,
+                              fontSize: 14,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            ),
+                            h1: GoogleFonts.outfit(
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            ),
+                            h2: GoogleFonts.outfit(
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            ),
+                            code: GoogleFonts.jetBrainsMono(
+                              fontSize: 13,
+                              backgroundColor: isDark
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : const Color(0xFFF1F5F9),
+                            ),
                           ),
                         ),
                 ),
@@ -256,72 +304,89 @@ class _SumiChatViewState extends State<SumiChatView> {
           ),
           Padding(
             padding: EdgeInsets.only(
-                top: 8, left: isUser ? 0 : 4, right: isUser ? 4 : 0),
+                top: 6, left: isUser ? 0 : 44, right: isUser ? 4 : 0),
             child: Text(
-              isUser ? "YOU" : "SUMI TUTOR",
+              isUser ? "YOU" : "SUMI AI TUTOR",
               style: GoogleFonts.inter(
-                color: isUser ? theme.hintColor : theme.colorScheme.primary,
+                color: isUser ? const Color(0xFF94A3B8) : const Color(0xFF6B5CE7),
                 fontSize: 10,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.8,
               ),
             ),
           ),
         ],
       )
           .animate()
-          .fadeIn(duration: 400.ms)
+          .fadeIn(duration: 350.ms)
           .slideY(begin: 0.05, end: 0, curve: Curves.easeOutCubic),
     );
   }
 
   Widget _buildInputArea(ThemeData theme, SumiProvider sumi) {
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
+        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
         border: Border(
-            top: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05))),
+            top: BorderSide(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : const Color(0xFFE2E8F0))),
       ),
       child: Row(
         children: [
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: theme.cardColor,
-                borderRadius: BorderRadius.circular(24),
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: BorderRadius.circular(28),
                 border: Border.all(
-                    color: theme.dividerColor.withValues(alpha: 0.1)),
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : const Color(0xFFE2E8F0)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: TextField(
                 controller: _controller,
-                style: GoogleFonts.inter(fontSize: 14),
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
                 decoration: InputDecoration(
-                  hintText: "Ask Sumi anything...",
+                  hintText: "Ask Sumi anything or paste notes...",
                   hintStyle: GoogleFonts.inter(
-                      color: theme.hintColor.withValues(alpha: 0.5),
+                      color: const Color(0xFF94A3B8),
                       fontSize: 14),
                   prefixIcon: _isExtractingContext
                       ? const Padding(
                           padding: EdgeInsets.all(12),
-                          child: CircularProgressIndicator(strokeWidth: 2))
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Color(0xFF6B5CE7)))
                       : IconButton(
                           icon: const Icon(Icons.add_circle_outline_rounded,
                               size: 20),
-                          color:
-                              theme.colorScheme.primary.withValues(alpha: 0.7),
+                          color: const Color(0xFF6B5CE7),
                           onPressed: _pickFiles,
-                          tooltip: 'Add context',
+                          tooltip: 'Attach PDF, notes, or image context',
                         ),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.mic_none_rounded, size: 20),
-                    color: theme.colorScheme.primary.withValues(alpha: 0.7),
+                    color: const Color(0xFF6B5CE7),
                     onPressed: () => _startVoiceTutoring(sumi),
-                    tooltip: 'Voice mode',
+                    tooltip: 'Live voice mode',
                   ),
                   border: InputBorder.none,
                   contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
                 onSubmitted: (_) => _sendMessage(sumi),
               ),
@@ -338,11 +403,11 @@ class _SumiChatViewState extends State<SumiChatView> {
                         strokeWidth: 2, color: Colors.white))
                 : const Icon(Icons.arrow_upward_rounded, size: 20),
             style: IconButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
+              backgroundColor: const Color(0xFF6B5CE7),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
             ),
           ),
         ],

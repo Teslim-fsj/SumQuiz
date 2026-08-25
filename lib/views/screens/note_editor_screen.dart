@@ -373,24 +373,26 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
 
   Widget _buildTopBar(bool isRecording, ThemeData theme) {
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: isDark ? const Color(0xFF0F172A) : Colors.white,
         border: Border(
             bottom:
-                BorderSide(color: colorScheme.outline.withValues(alpha: 0.1))),
+                BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0))),
       ),
       child: Row(
         children: [
           IconButton(
             onPressed: () => context.pop(),
             icon: Icon(Icons.arrow_back_ios_new_rounded,
-                size: 20, color: colorScheme.onSurface),
+                size: 18, color: isDark ? Colors.white : const Color(0xFF0F172A)),
             style: IconButton.styleFrom(
-              backgroundColor:
-                  colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              backgroundColor: isDark
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : const Color(0xFFF1F5F9),
               padding: const EdgeInsets.all(12),
             ),
           ),
@@ -399,15 +401,18 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
             child: TextField(
               controller: _titleController,
               style: GoogleFonts.outfit(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
               ),
               decoration: InputDecoration(
                 hintText: 'Untitled Note',
                 border: InputBorder.none,
-                hintStyle: TextStyle(
-                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                hintStyle: GoogleFonts.outfit(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF94A3B8),
+                ),
               ),
             ),
           ),
@@ -421,11 +426,12 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                 _showSidebar
                     ? Icons.arrow_forward_ios_rounded
                     : Icons.arrow_back_ios_rounded,
-                color: colorScheme.onSurfaceVariant),
+                size: 18,
+                color: isDark ? Colors.white70 : const Color(0xFF475569)),
             style: IconButton.styleFrom(
               backgroundColor: _showSidebar
-                  ? colorScheme.primary.withValues(alpha: 0.1)
-                  : Colors.transparent,
+                  ? const Color(0xFF6B5CE7).withValues(alpha: 0.15)
+                  : (isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFF1F5F9)),
             ),
           ),
         ],
@@ -507,7 +513,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     required ThemeData theme,
     required bool showLabel,
   }) {
-    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final isActive = _mode == mode;
 
     return Expanded(
@@ -518,11 +524,17 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           borderRadius: BorderRadius.circular(18),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
-            height: 48,
+            height: 46,
             decoration: BoxDecoration(
-              color:
-                  isActive ? colorScheme.primaryContainer : Colors.transparent,
+              color: isActive
+                  ? const Color(0xFF6B5CE7).withValues(alpha: isDark ? 0.25 : 0.12)
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: isActive
+                    ? const Color(0xFF6B5CE7).withValues(alpha: 0.3)
+                    : Colors.transparent,
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -531,8 +543,8 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                   icon,
                   size: 20,
                   color: isActive
-                      ? colorScheme.primary
-                      : colorScheme.onSurfaceVariant,
+                      ? const Color(0xFF6B5CE7)
+                      : (isDark ? Colors.grey[400] : const Color(0xFF64748B)),
                 ),
                 if (showLabel) ...[
                   const SizedBox(width: 8),
@@ -542,10 +554,10 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(
                         fontSize: 13,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
                         color: isActive
-                            ? colorScheme.primary
-                            : colorScheme.onSurfaceVariant,
+                            ? const Color(0xFF6B5CE7)
+                            : (isDark ? Colors.grey[400] : const Color(0xFF64748B)),
                       ),
                     ),
                   ),
