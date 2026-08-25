@@ -298,7 +298,7 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SumiMascot(
-              state: hasAvailable ? SumiState.celebrating : SumiState.curious,
+              state: hasAvailable ? SumiState.celebrating : SumiState.idle,
               size: 110,
             ).animate().scale().fadeIn(),
             const SizedBox(height: 24),
