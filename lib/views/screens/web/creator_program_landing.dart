@@ -148,22 +148,32 @@ class _CreatorProgramLandingState extends State<CreatorProgramLanding> {
                     ],
                   ),
                 ).animate().fadeIn(delay: 200.ms),
-                OutlinedButton(
-                  onPressed: () {},
-                  style: OutlinedButton.styleFrom(
+                ElevatedButton(
+                  onPressed: () => context.go('/creator-dashboard'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white.withValues(alpha: 0.15),
                     foregroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.white24),
                     padding: EdgeInsets.symmetric(
-                      horizontal: isMobile ? 24 : 36,
+                      horizontal: isMobile ? 24 : 32,
                       vertical: 18,
                     ),
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
+                      borderRadius: BorderRadius.circular(16),
+                      side: const BorderSide(color: Colors.white24),
+                    ),
                   ),
-                  child: Text(
-                    'Learn More',
-                    style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w600, fontSize: 15),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.dashboard_rounded, size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Creator Dashboard',
+                        style: GoogleFonts.inter(
+                            fontWeight: FontWeight.w700, fontSize: 15),
+                      ),
+                    ],
                   ),
                 ).animate().fadeIn(delay: 250.ms),
               ],
