@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../models/user_model.dart';
 import '../../theme/web_theme.dart';
+import '../../providers/create_content_provider.dart';
 import '../widgets/sumi_live_sandbox_overlay.dart';
 
 class ScaffoldWithNavBar extends StatefulWidget {
@@ -280,6 +281,9 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                             if (isTeacher) {
                               context.go('/create-content/exam-wizard');
                             } else {
+                              Provider.of<CreateContentProvider>(context,
+                                      listen: false)
+                                  .reset();
                               _goToBranch(2);
                             }
                           },
@@ -698,6 +702,9 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               isDark: isDark,
                               onTap: () {
                                 Navigator.pop(context);
+                                Provider.of<CreateContentProvider>(context,
+                                        listen: false)
+                                    .reset();
                                 context.go('/create-content');
                               },
                             ),
@@ -717,6 +724,9 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               isDark: isDark,
                               onTap: () {
                                 Navigator.pop(context);
+                                Provider.of<CreateContentProvider>(context,
+                                        listen: false)
+                                    .reset();
                                 context.go('/create-content');
                               },
                             ),
@@ -758,6 +768,9 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               isDark: isDark,
                               onTap: () {
                                 Navigator.pop(context);
+                                Provider.of<CreateContentProvider>(context,
+                                        listen: false)
+                                    .reset();
                                 context.go('/create-content');
                               },
                             ),
@@ -777,6 +790,9 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               isDark: isDark,
                               onTap: () {
                                 Navigator.pop(context);
+                                Provider.of<CreateContentProvider>(context,
+                                        listen: false)
+                                    .reset();
                                 context.go('/create-content');
                               },
                             ),
@@ -799,6 +815,9 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               isDark: isDark,
                               onTap: () {
                                 Navigator.pop(context);
+                                Provider.of<CreateContentProvider>(context,
+                                        listen: false)
+                                    .reset();
                                 context.go('/create-content');
                               },
                             ),
@@ -818,6 +837,9 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               isDark: isDark,
                               onTap: () {
                                 Navigator.pop(context);
+                                Provider.of<CreateContentProvider>(context,
+                                        listen: false)
+                                    .reset();
                                 context.go('/create-content');
                               },
                             ),

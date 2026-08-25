@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:confetti/confetti.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../services/auth_service.dart';
+import '../../models/user_model.dart';
 import '../../services/local_database_service.dart';
 import '../../services/spaced_repetition_service.dart';
 import '../../models/local_flashcard.dart';
@@ -25,6 +28,7 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
   late ConfettiController _confettiController;
 
   List<LocalFlashcard> _dueFlashcards = [];
+  List<LocalFlashcard> _allFlashcards = [];
   final Map<String, List<String>> _flashcardToTopicIds = {};
 
   int _currentIndex = 0;
@@ -55,6 +59,13 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
     super.dispose();
   }
 
+  String? _getUserId() {
+    final auth = Provider.of<AuthService>(context, listen: false);
+    if (auth.currentUser?.uid != null) return auth.currentUser!.uid;
+    final userModel = Provider.of<UserModel?>(context, listen: false);
+    return userModel?.uid;
+  }
+
   Future<void> _initializeAndLoad() async {
     _spacedRepetitionService =
         Provider.of<SpacedRepetitionService>(context, listen: false);
@@ -71,9 +82,9 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
     });
 
     try {
-      final user = Provider.of<User?>(context, listen: false);
-      if (user != null) {
-        final allFlashcardSets = await _dbService.getAllFlashcardSets(user.uid);
+      final uid = _getUserId();
+      if (uid != null && uid.isNotEmpty) {
+        final allFlashcardSets = await _dbService.getAllFlashcardSets(uid);
 
         // Build topic mapping
         _flashcardToTopicIds.clear();
@@ -85,8 +96,10 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
           }
         }
 
+        _allFlashcards = allLocalFlashcards;
+
         final flashcards = await _spacedRepetitionService.getDueFlashcards(
-            user.uid, allLocalFlashcards);
+            uid, allLocalFlashcards);
 
         if (!mounted) return;
 
@@ -95,7 +108,11 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
           _isLoading = false;
           _currentIndex = 0;
           if (flashcards.isEmpty) {
-            _message = 'No items are due for review right now. Great job!';
+            if (allLocalFlashcards.isEmpty) {
+              _message = 'No flashcards found in your library yet.';
+            } else {
+              _message = 'All due cards reviewed! Great job keeping up.';
+            }
           }
         });
       } else {
@@ -112,6 +129,16 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
         _message = 'An error occurred: $e';
       });
     }
+  }
+
+  void _startPracticeAll() {
+    if (_allFlashcards.isEmpty) return;
+    setState(() {
+      _dueFlashcards = List.from(_allFlashcards)..shuffle();
+      _currentIndex = 0;
+      _isFlipping = false;
+      _message = '';
+    });
   }
 
   void _flipCard() {
@@ -134,17 +161,19 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
 
       // 2. Emit Mastery Signals (Neural Link)
       if (!mounted) return;
-      final user = Provider.of<User?>(context, listen: false);
-      final topicIds = _flashcardToTopicIds[flashcard.id] ?? [];
-      for (final topicId in topicIds) {
-        await _masteryService.processSignal(LearningSignal(
-          topicId: topicId,
-          type: quality >= 3
-              ? SignalType.flashcardSuccess
-              : SignalType.flashcardFailure,
-          magnitude: quality / 5.0,
-          timestamp: DateTime.now(),
-        ));
+      final uid = _getUserId();
+      if (uid != null) {
+        final topicIds = _flashcardToTopicIds[flashcard.id] ?? [];
+        for (final topicId in topicIds) {
+          await _masteryService.processSignal(LearningSignal(
+            topicId: topicId,
+            type: quality >= 3
+                ? SignalType.flashcardSuccess
+                : SignalType.flashcardFailure,
+            magnitude: quality / 5.0,
+            timestamp: DateTime.now(),
+          ));
+        }
       }
 
       _showStabilityGain(quality);
@@ -195,14 +224,15 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text('Review Session',
-            style: theme.textTheme.titleLarge
-                ?.copyWith(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+            style: GoogleFonts.outfit(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3,
+                fontSize: 20)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -259,37 +289,103 @@ class _SpacedRepetitionScreenState extends State<SpacedRepetitionScreen> {
   }
 
   Widget _buildCompletionOrMessageView(ThemeData theme) {
+    final hasAvailable = _allFlashcards.isNotEmpty;
+
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SumiMascot(state: SumiState.celebrating, size: 120)
-                .animate()
-                .scale()
-                .fadeIn(),
-            const SizedBox(height: 32),
-            Text(_message,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurface),
-                    textAlign: TextAlign.center)
-                .animate()
-                .fadeIn(delay: 200.ms)
-                .slideY(begin: 0.1),
-            const SizedBox(height: 48),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: theme.colorScheme.onPrimary,
+            SumiMascot(
+              state: hasAvailable ? SumiState.celebrating : SumiState.curious,
+              size: 110,
+            ).animate().scale().fadeIn(),
+            const SizedBox(height: 24),
+            Text(
+              _message,
+              style: GoogleFonts.outfit(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: theme.colorScheme.onSurface,
+              ),
+              textAlign: TextAlign.center,
+            ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
+            const SizedBox(height: 12),
+            Text(
+              hasAvailable
+                  ? 'You have ${_allFlashcards.length} total flashcards in your library.'
+                  : 'Add study notes or upload materials to start active recall.',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 36),
+            if (hasAvailable) ...[
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _startPracticeAll,
+                  icon: const Icon(Icons.bolt_rounded),
+                  label: Text('Practice All Cards (${_allFlashcards.length})'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    elevation: 0,
+                    textStyle: GoogleFonts.inter(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              ).animate().fadeIn(delay: 300.ms),
+              const SizedBox(height: 12),
+            ] else ...[
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    context.go('/create-content');
+                  },
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Create Study Pack'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    elevation: 0,
+                    textStyle: GoogleFonts.inter(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              ).animate().fadeIn(delay: 300.ms),
+              const SizedBox(height: 12),
+            ],
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: OutlinedButton.styleFrom(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16)),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 48, vertical: 16)),
-              child: const Text('Return Home',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  side: BorderSide(
+                      color: theme.dividerColor.withValues(alpha: 0.2)),
+                ),
+                child: Text('Return Home',
+                    style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w600, fontSize: 15)),
+              ),
             ).animate().fadeIn(delay: 400.ms),
           ],
         ),
