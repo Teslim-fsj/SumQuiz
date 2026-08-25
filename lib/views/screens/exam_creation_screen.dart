@@ -22,6 +22,7 @@ import 'package:sumquiz/services/youtube_service.dart';
 import 'package:sumquiz/utils/youtube_pro_gate.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sumquiz/services/download/download_helper.dart';
+import 'package:sumquiz/theme/web_theme.dart';
 
 class ExamCreationScreen extends StatefulWidget {
   const ExamCreationScreen({super.key});
@@ -34,24 +35,30 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _subjectController = TextEditingController();
   final TextEditingController _customLevelController = TextEditingController();
+  final TextEditingController _smartDescriptionController =
+      TextEditingController();
+
   String _selectedLevel = 'JSS1';
-  int _numberOfQuestions = 20;
+  int _numberOfQuestions = 15;
   String _duration = '60';
+  String _selectedDifficultyName = 'Intermediate';
+  String _cognitiveFocus = 'Apply & Analyze';
+  double _difficultyValue = 0.5;
+
   bool _includeMultipleChoice = true;
   bool _includeShortAnswer = false;
   bool _includeTheory = false;
   bool _includeTrueFalse = false;
-  double _difficultyValue = 0.5; // Medium difficulty by default
-  bool _advancedSettings = false;
   bool _evenTopicCoverage = true;
   bool _focusWeakAreas = false;
+
   String _sourceMaterial = '';
-  bool _showFullPreview = false;
+  String _selectedSourceType = '';
+  String _sourceFileName = '';
+
   bool _isProcessing = false;
   String _processingMessage = '';
   final ImagePicker _imagePicker = ImagePicker();
-  // ignore: unused_field - reserved for future multi-file source support
-  // final List<Map<String, dynamic>> _selectedSourceFiles = [];
   CancellationToken? _cancelToken;
 
   @override
@@ -60,21 +67,26 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
     _titleController.dispose();
     _subjectController.dispose();
     _customLevelController.dispose();
+    _smartDescriptionController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final user = Provider.of<UserModel?>(context, listen: false);
+    final textDark = isDark ? Colors.white : const Color(0xFF0F172A);
+    final textMuted =
+        isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.1)
+        : const Color(0xFFE2E8F0);
 
-    // Check if user has Pro access
-    // Check if user has Pro access OR has trial exams remaining OR is a teacher
     if (user != null &&
         !user.isPro &&
         user.role != UserRole.creator &&
         user.examsGenerated >= 3) {
-      // Show upgrade dialog if user is not Pro
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted) {
           showDialog(
@@ -89,39 +101,19 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Create New Exam'),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
         ),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.lock,
-                size: 80,
-                color: Colors.grey,
-              ),
+              const Icon(Icons.lock, size: 80, color: Colors.grey),
               const SizedBox(height: 24),
-              Text(
-                'Tutor Exam feature requires Pro subscription',
-                style: theme.textTheme.headlineSmall,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Upgrade to access advanced exam creation tools',
-                style: theme.textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
+              Text('Tutor Exam feature requires Pro subscription',
+                  style: theme.textTheme.headlineSmall,
+                  textAlign: TextAlign.center),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () {
-                  context.push('/settings/subscription');
-                },
+                onPressed: () => context.push('/settings/subscription'),
                 child: const Text('Upgrade to Pro'),
               ),
             ],
@@ -131,24 +123,57 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
     }
 
     return Scaffold(
+      backgroundColor:
+          isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Create New Exam'),
-        backgroundColor: Colors.transparent,
+        backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back_rounded, color: textDark),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        title: Column(
+          children: [
+            Text(
+              'SumQuiz',
+              style: GoogleFonts.outfit(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: textDark,
+              ),
+            ),
+            Text(
+              'Step 1: Setup',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF64748B),
+              ),
+            ),
+          ],
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.settings_outlined, color: textDark),
+            onPressed: () => context.push('/settings'),
+          ),
+        ],
       ),
       body: _isProcessing
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const CircularProgressIndicator(),
+                  const CircularProgressIndicator(color: Color(0xFF6B5CE7)),
                   const SizedBox(height: 16),
-                  Text(_processingMessage),
-                  const SizedBox(height: 8),
+                  Text(
+                    _processingMessage,
+                    style: GoogleFonts.inter(
+                        fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 12),
                   TextButton(
                     onPressed: () {
                       _cancelToken?.cancel();
@@ -162,604 +187,659 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
               ),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header
-                  Text(
-                    'Create New Exam',
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Turn your teaching materials into an editable test paper.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Source Material',
+                              style: GoogleFonts.outfit(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: textDark,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Choose how you want to build this exam.',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                color: textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundColor:
+                            WebColors.purplePrimary.withValues(alpha: 0.1),
+                        backgroundImage: user?.photoURL != null
+                            ? NetworkImage(user!.photoURL!)
+                            : null,
+                        child: user?.photoURL == null
+                            ? Image.asset(
+                                'assets/images/sumi.png',
+                                width: 28,
+                                height: 28,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                    Icons.person,
+                                    color: WebColors.purplePrimary,
+                                    size: 20),
+                              )
+                            : null,
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
-                  if (user != null && !user.isPro) ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildGridSourceCard(
+                          title: 'PDF Document',
+                          subtitle: 'Upload a file',
+                          icon: Icons.picture_as_pdf_outlined,
+                          isSelected: _selectedSourceType == 'PDF',
+                          onTap: () => _selectSourceMaterial('PDF'),
+                          isDark: isDark,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildGridSourceCard(
+                          title: 'Paste Notes',
+                          subtitle: 'Direct text input',
+                          icon: Icons.description_outlined,
+                          badgeText: '✨ SUMI SUGGESTED',
+                          isSelected: _selectedSourceType == 'Notes',
+                          onTap: () => _selectSourceMaterial('Notes'),
+                          isDark: isDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildGridSourceCard(
+                          title: 'Images',
+                          subtitle: 'Scan diagrams/text',
+                          icon: Icons.image_outlined,
+                          isSelected: _selectedSourceType == 'Image',
+                          onTap: () => _showImageSourceSelection(),
+                          isDark: isDark,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildGridSourceCard(
+                          title: 'YouTube Link',
+                          subtitle: 'Generate from video',
+                          icon: Icons.play_circle_outline_rounded,
+                          isSelected: _selectedSourceType == 'YouTube',
+                          onTap: () => _selectSourceMaterial('YouTube'),
+                          isDark: isDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_sourceMaterial.isNotEmpty) ...[
+                    const SizedBox(height: 14),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      margin: const EdgeInsets.only(bottom: 24),
+                          horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                            color: theme.colorScheme.primary
-                                .withValues(alpha: 0.2)),
+                        color: const Color(0xFFF0FDF4),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFBBF7D0)),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.auto_awesome,
-                              color: theme.colorScheme.primary, size: 20),
-                          const SizedBox(width: 12),
+                          const Icon(Icons.check_circle_rounded,
+                              color: Color(0xFF16A34A), size: 18),
+                          const SizedBox(width: 10),
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Free Trial: ${user.examsGenerated}/3 Exams Used',
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: theme.colorScheme.onPrimaryContainer,
-                                  ),
-                                ),
-                                Text(
-                                  'Upgrade to Pro for unlimited generation.',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onPrimaryContainer
-                                        .withValues(alpha: 0.8),
-                                  ),
-                                ),
-                              ],
+                            child: Text(
+                              'Attached: ${_sourceFileName.isNotEmpty ? _sourceFileName : 'Source loaded (${_sourceMaterial.length} chars)'}',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF15803D),
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
+                          ),
+                          InkWell(
+                            onTap: () => setState(() {
+                              _sourceMaterial = '';
+                              _sourceFileName = '';
+                              _selectedSourceType = '';
+                            }),
+                            child: const Icon(Icons.close_rounded,
+                                size: 18, color: Color(0xFF15803D)),
                           ),
                         ],
                       ),
                     ),
-                  ] else ...[
-                    const SizedBox(height: 24),
                   ],
-
-                  // Basic Info Section
-                  _buildSectionCard(
-                    title: 'Basic Info',
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        TextField(
-                          controller: _titleController,
-                          decoration: const InputDecoration(
-                            labelText: 'Exam Title',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        DropdownButtonFormField<String>(
-                          initialValue: _selectedLevel,
-                          decoration: const InputDecoration(
-                            labelText: 'Class / Level',
-                            border: OutlineInputBorder(),
-                          ),
-                          items: [
-                            'JSS1',
-                            'JSS2',
-                            'JSS3',
-                            'SS1',
-                            'SS2',
-                            'SS3',
-                            '100 Level',
-                            'Custom'
-                          ].map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              _selectedLevel = newValue!;
-                            });
-                          },
-                        ),
-                        if (_selectedLevel == 'Custom') ...[
-                          const SizedBox(height: 16),
-                          TextField(
-                            controller: _customLevelController,
-                            decoration: const InputDecoration(
-                              labelText: 'Specify Custom Class / Level',
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 16),
-                        TextField(
-                          controller: _subjectController,
-                          decoration: const InputDecoration(
-                            labelText: 'Subject',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller:
-                                    TextEditingController(text: _duration),
-                                keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(
-                                  labelText: 'Duration',
-                                  border: OutlineInputBorder(),
-                                ),
-                                onChanged: (value) {
-                                  setState(() {
-                                    _duration = value;
-                                  });
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            const Text('mins'),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
                   const SizedBox(height: 24),
-
-                  // Source Material Section
-                  _buildSectionCard(
-                    title: 'Source Material',
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
+                    children: [
+                      const Icon(Icons.auto_awesome_rounded,
+                          size: 16, color: Color(0xFF0F172A)),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Smart Description',
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: textDark,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '(Optional)',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: borderColor),
+                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Text(
-                          'Upload Material',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Wrap(
-                          spacing: 12,
-                          children: [
-                            _buildUploadOption('PDF', Icons.picture_as_pdf, () {
-                              _selectSourceMaterial('PDF');
-                            }),
-                            _buildUploadOption('Scan / Image', Icons.camera_alt,
-                                () {
-                              _showImageSourceSelection();
-                            }),
-                            _buildUploadOption('Notes', Icons.note_alt, () {
-                              _selectSourceMaterial('Notes');
-                            }),
-                            _buildUploadOption(
-                                'YouTube', Icons.play_circle_fill, () {
-                              if (!userMayImportFromYouTube(user)) {
-                                showDialog<void>(
-                                  context: context,
-                                  builder: (_) => const UpgradeDialog(
-                                    featureName: 'YouTube import',
-                                  ),
-                                );
-                                return;
-                              }
-                              _selectSourceMaterial('YouTube');
-                            }),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        if (_sourceMaterial.isNotEmpty) ...[
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: theme.cardColor,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: theme.dividerColor),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Icon(Icons.check_circle,
-                                        color: Colors.green),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Extracted content preview',
-                                      style:
-                                          theme.textTheme.titleSmall?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  _showFullPreview
-                                      ? _sourceMaterial
-                                      : '${_sourceMaterial.substring(0, _sourceMaterial.length > 100 ? 100 : _sourceMaterial.length)}...',
-                                  maxLines: _showFullPreview ? null : 3,
-                                  style: theme.textTheme.bodySmall,
-                                ),
-                                if (_sourceMaterial.length > 100) ...[
-                                  const SizedBox(height: 8),
-                                  TextButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        _showFullPreview = !_showFullPreview;
-                                      });
-                                    },
-                                    child: Text(_showFullPreview
-                                        ? 'Show Less'
-                                        : 'View Full'),
-                                  ),
-                                ],
-                              ],
+                        Expanded(
+                          child: TextField(
+                            controller: _smartDescriptionController,
+                            style: GoogleFonts.inter(
+                                fontSize: 14, color: textDark),
+                            maxLines: 2,
+                            minLines: 1,
+                            decoration: InputDecoration(
+                              hintText:
+                                  "Tell Sumi what you want to focus on (e.g., 'Focus heavily on the causes of the Civil...",
+                              hintStyle: GoogleFonts.inter(
+                                fontSize: 13,
+                                color: textMuted,
+                              ),
+                              border: InputBorder.none,
+                              isDense: true,
                             ),
                           ),
-                        ],
+                        ),
+                        IconButton(
+                          onPressed: _showPromptSuggestionsModal,
+                          icon: Icon(Icons.mic_none_rounded,
+                              color: textDark, size: 22),
+                          tooltip: 'Prompt Suggestions',
+                        ),
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 24),
-
-                  // Question Settings Section
-                  _buildSectionCard(
-                    title: 'Question Settings',
+                  Text(
+                    'Exam Configuration',
+                    style: GoogleFonts.outfit(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: textDark,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: borderColor),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.02),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Number of Questions
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                'Number of Questions',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                '$_numberOfQuestions',
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: theme.colorScheme.primary,
-                                ),
-                              ),
-                            ),
-                          ],
+                        _buildConfigRow(
+                          icon: Icons.psychology_outlined,
+                          title: 'Difficulty Level',
+                          value: _selectedDifficultyName,
+                          onTap: _showDifficultyModal,
+                          isDark: isDark,
                         ),
-                        const SizedBox(height: 12),
-                        Slider(
-                          value: _numberOfQuestions.toDouble(),
-                          min: 5,
-                          max: 50,
-                          divisions: 45,
-                          label: _numberOfQuestions.round().toString(),
-                          onChanged: (double value) {
-                            setState(() {
-                              _numberOfQuestions = value.round();
-                            });
-                          },
+                        Divider(height: 1, color: borderColor),
+                        _buildConfigRow(
+                          icon: Icons.format_list_bulleted_rounded,
+                          title: 'Question Count',
+                          value: '$_numberOfQuestions Questions',
+                          onTap: _showQuestionCountModal,
+                          isDark: isDark,
                         ),
-
-                        const SizedBox(height: 24),
-
-                        // Question Types
-                        Text(
-                          'Question Types',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                        Divider(height: 1, color: borderColor),
+                        _buildConfigRow(
+                          icon: Icons.lightbulb_outlined,
+                          title: 'Cognitive Focus',
+                          value: _cognitiveFocus,
+                          onTap: _showCognitiveFocusModal,
+                          isDark: isDark,
                         ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 12,
-                          children: [
-                            FilterChip(
-                              label: const Text('Multiple Choice'),
-                              selected: _includeMultipleChoice,
-                              onSelected: (selected) {
-                                setState(() {
-                                  _includeMultipleChoice = selected;
-                                });
-                              },
-                            ),
-                            FilterChip(
-                              label: const Text('Short Answer'),
-                              selected: _includeShortAnswer,
-                              onSelected: (selected) {
-                                setState(() {
-                                  _includeShortAnswer = selected;
-                                });
-                              },
-                            ),
-                            FilterChip(
-                              label: const Text('Theory / Essay'),
-                              selected: _includeTheory,
-                              onSelected: (selected) {
-                                setState(() {
-                                  _includeTheory = selected;
-                                });
-                              },
-                            ),
-                            FilterChip(
-                              label: const Text('True/False'),
-                              selected: _includeTrueFalse,
-                              onSelected: (selected) {
-                                setState(() {
-                                  _includeTrueFalse = selected;
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // Difficulty Mix
-                        Text(
-                          'Difficulty Mix',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Text(
-                              'Easy',
-                              style: theme.textTheme.bodySmall,
-                            ),
-                            Expanded(
-                              child: Slider(
-                                value: _difficultyValue,
-                                min: 0.0,
-                                max: 1.0,
-                                label: '${(_difficultyValue * 100).round()}%',
-                                onChanged: (double value) {
-                                  setState(() {
-                                    _difficultyValue = value;
-                                  });
-                                },
-                              ),
-                            ),
-                            Text(
-                              'Hard',
-                              style: theme.textTheme.bodySmall,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Text(
-                              'Easy ${(100 - (_difficultyValue * 100)).round()}%',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: _difficultyValue < 0.5
-                                    ? theme.colorScheme.primary
-                                    : theme.disabledColor,
-                              ),
-                            ),
-                            Text(
-                              'Medium ${((_difficultyValue * 100) - 50).abs().round()}%',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: (_difficultyValue >= 0.4 &&
-                                        _difficultyValue <= 0.6)
-                                    ? theme.colorScheme.primary
-                                    : theme.disabledColor,
-                              ),
-                            ),
-                            Text(
-                              'Hard ${(_difficultyValue * 100).round()}%',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: _difficultyValue > 0.5
-                                    ? theme.colorScheme.primary
-                                    : theme.disabledColor,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Advanced Settings Toggle
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _advancedSettings = !_advancedSettings;
-                            });
-                          },
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Advanced Settings',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Icon(
-                                _advancedSettings
-                                    ? Icons.expand_less
-                                    : Icons.expand_more,
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        if (_advancedSettings) ...[
-                          const SizedBox(height: 16),
-                          CheckboxListTile(
-                            title: const Text('Generate evenly across topics'),
-                            value: _evenTopicCoverage,
-                            onChanged: (bool? value) {
-                              setState(() {
-                                _evenTopicCoverage = value!;
-                              });
-                            },
-                          ),
-                          CheckboxListTile(
-                            title:
-                                const Text('Focus on weak / highlighted areas'),
-                            value: _focusWeakAreas,
-                            onChanged: (bool? value) {
-                              setState(() {
-                                _focusWeakAreas = value!;
-                              });
-                            },
-                          ),
-                        ],
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 32),
-
-                  // Generate Button
                   SizedBox(
                     width: double.infinity,
                     height: 56,
-                    child: Consumer<UserModel?>(
-                      builder: (context, user, child) {
-                        final bool isLimitReached = user != null &&
-                            !user.isPro &&
-                            user.examsGenerated >= 3;
-
-                        return ElevatedButton.icon(
-                          onPressed: (isLimitReached || _sourceMaterial.isEmpty)
-                              ? (isLimitReached
-                                  ? () => context.push('/settings/subscription')
-                                  : null)
-                              : _generateDraftExam,
-                          icon: Icon(isLimitReached
-                              ? Icons.workspace_premium
-                              : Icons.auto_awesome),
-                          label: Text(
-                            isLimitReached
-                                ? 'Upgrade to Pro'
-                                : 'Generate Draft Exam',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w600),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: isLimitReached
-                                ? theme.colorScheme.tertiary
-                                : theme.colorScheme.primary,
-                            foregroundColor: isLimitReached
-                                ? theme.colorScheme.onTertiary
-                                : theme.colorScheme.onPrimary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                    child: OutlinedButton(
+                      onPressed: _isProcessing ? null : _generateDraftExam,
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor:
+                            isDark ? const Color(0xFF1E293B) : Colors.white,
+                        side: BorderSide(color: borderColor, width: 1.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28),
+                        ),
+                        elevation: 2,
+                        shadowColor: Colors.black.withValues(alpha: 0.04),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Create Exam',
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: textDark,
                             ),
                           ),
-                        );
-                      },
+                          const SizedBox(width: 8),
+                          Icon(Icons.arrow_forward_rounded,
+                              color: textDark, size: 20),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Editable before export.',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                    ),
-                  ),
+                  const SizedBox(height: 32),
                 ],
               ),
             ),
     );
   }
 
-  Widget _buildSectionCard({
+  Widget _buildGridSourceCard({
     required String title,
-    required Widget child,
+    required String subtitle,
+    required IconData icon,
+    required VoidCallback onTap,
+    required bool isDark,
+    String? badgeText,
+    bool isSelected = false,
   }) {
-    final theme = Theme.of(context);
+    final cardBg = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final borderColor = isSelected
+        ? WebColors.purplePrimary
+        : (isDark
+            ? Colors.white.withValues(alpha: 0.08)
+            : const Color(0xFFE2E8F0));
+    final textDark = isDark ? Colors.white : const Color(0xFF0F172A);
+    final textMuted =
+        isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     return Container(
+      height: 125,
       decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.dividerColor),
+        color: cardBg,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(24),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Icon(icon, color: textDark, size: 24),
+                    if (badgeText != null)
+                      Text(
+                        badgeText,
+                        style: GoogleFonts.inter(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                          color: textDark,
+                        ),
+                      ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.outfit(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: textDark,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildConfigRow({
+    required IconData icon,
+    required String title,
+    required String value,
+    required VoidCallback onTap,
+    required bool isDark,
+  }) {
+    final textDark = isDark ? Colors.white : const Color(0xFF0F172A);
+    final textMuted =
+        isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(24),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
           children: [
-            Text(
-              title,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface,
+            Icon(icon, size: 22, color: textDark),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: textDark,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: textMuted,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            child,
+            Icon(Icons.chevron_right_rounded, color: textMuted, size: 22),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildUploadOption(String title, IconData icon, VoidCallback onTap) {
-    final theme = Theme.of(context);
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 100,
-        height: 100,
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: theme.dividerColor),
+  void _showDifficultyModal() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Select Difficulty Level',
+                style: GoogleFonts.outfit(
+                    fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                leading: const Icon(Icons.sentiment_satisfied_alt_rounded,
+                    color: Colors.green),
+                title: const Text('Beginner (Easy)'),
+                subtitle: const Text('Foundational recall and basic definitions'),
+                trailing: _selectedDifficultyName == 'Beginner'
+                    ? const Icon(Icons.check, color: WebColors.purplePrimary)
+                    : null,
+                onTap: () {
+                  setState(() {
+                    _selectedDifficultyName = 'Beginner';
+                    _difficultyValue = 0.2;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.sentiment_neutral_rounded,
+                    color: Colors.blue),
+                title: const Text('Intermediate (Medium)'),
+                subtitle: const Text('Applied concepts and scenario analysis'),
+                trailing: _selectedDifficultyName == 'Intermediate'
+                    ? const Icon(Icons.check, color: WebColors.purplePrimary)
+                    : null,
+                onTap: () {
+                  setState(() {
+                    _selectedDifficultyName = 'Intermediate';
+                    _difficultyValue = 0.5;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.sentiment_very_satisfied_rounded,
+                    color: Colors.orange),
+                title: const Text('Advanced (Hard)'),
+                subtitle: const Text('Deep evaluation, theory & multi-step problems'),
+                trailing: _selectedDifficultyName == 'Advanced'
+                    ? const Icon(Icons.check, color: WebColors.purplePrimary)
+                    : null,
+                onTap: () {
+                  setState(() {
+                    _selectedDifficultyName = 'Advanced';
+                    _difficultyValue = 0.8;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 32,
-              color: theme.colorScheme.primary,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: theme.textTheme.bodySmall,
-              textAlign: TextAlign.center,
-            ),
-          ],
+      ),
+    );
+  }
+
+  void _showQuestionCountModal() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Select Question Count',
+                style: GoogleFonts.outfit(
+                    fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [10, 15, 20, 25, 30, 40, 50].map((count) {
+                  final isSelected = _numberOfQuestions == count;
+                  return ChoiceChip(
+                    label: Text('$count Questions'),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() => _numberOfQuestions = count);
+                        Navigator.pop(context);
+                      }
+                    },
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showCognitiveFocusModal() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Select Cognitive Focus',
+                style: GoogleFonts.outfit(
+                    fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                title: const Text('Apply & Analyze'),
+                subtitle: const Text('Practical problem solving and real-world application'),
+                trailing: _cognitiveFocus == 'Apply & Analyze'
+                    ? const Icon(Icons.check, color: WebColors.purplePrimary)
+                    : null,
+                onTap: () {
+                  setState(() => _cognitiveFocus = 'Apply & Analyze');
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: const Text('Recall & Understand'),
+                subtitle: const Text('Key definitions, terms, and foundational memory'),
+                trailing: _cognitiveFocus == 'Recall & Understand'
+                    ? const Icon(Icons.check, color: WebColors.purplePrimary)
+                    : null,
+                onTap: () {
+                  setState(() => _cognitiveFocus = 'Recall & Understand');
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: const Text('Evaluate & Create'),
+                subtitle: const Text('High-order critique, essay theory, and synthesis'),
+                trailing: _cognitiveFocus == 'Evaluate & Create'
+                    ? const Icon(Icons.check, color: WebColors.purplePrimary)
+                    : null,
+                onTap: () {
+                  setState(() => _cognitiveFocus = 'Evaluate & Create');
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showPromptSuggestionsModal() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Quick Focus Prompts',
+                style: GoogleFonts.outfit(
+                    fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  'Focus heavily on formulas and calculation steps',
+                  'Emphasize key definitions and vocabulary',
+                  'Include real-world case study questions',
+                  'Test common pitfalls and misconceptions',
+                ].map((prompt) {
+                  return ActionChip(
+                    label: Text(prompt, style: const TextStyle(fontSize: 12)),
+                    onPressed: () {
+                      setState(() {
+                        _smartDescriptionController.text = prompt;
+                      });
+                      Navigator.pop(context);
+                    },
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -930,6 +1010,14 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
       if (mounted) {
         setState(() {
           _sourceMaterial = combinedText;
+          _sourceFileName = files.isNotEmpty
+              ? (files.length == 1
+                  ? files.first['name']
+                  : '${files.length} files attached')
+              : 'Uploaded Files';
+          _selectedSourceType = files.isNotEmpty
+              ? (files.first['type'] == 'pdf' ? 'PDF' : 'Image')
+              : '';
           _isProcessing = false;
         });
       }
@@ -945,8 +1033,7 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
 
   Future<void> _selectSourceMaterial(String type) async {
     setState(() {
-      _isProcessing = true;
-      _processingMessage = 'Selecting $type...';
+      _selectedSourceType = type;
     });
 
     try {
@@ -960,16 +1047,19 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
       } else if (type == 'Image') {
         fileType = FileType.image;
       } else if (type == 'YouTube') {
-        setState(() => _isProcessing = false);
         _showYoutubeInputDialog();
         return;
       } else if (type == 'Notes') {
-        setState(() => _isProcessing = false);
         _showNotesInputDialog();
         return;
       } else if (type == 'Audio') {
         fileType = FileType.audio;
       }
+
+      setState(() {
+        _isProcessing = true;
+        _processingMessage = 'Selecting $type...';
+      });
 
       result = await FilePicker.platform.pickFiles(
         type: fileType,
@@ -1053,7 +1143,11 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
                 final text = notesController.text.trim();
                 Navigator.pop(context);
                 if (text.isNotEmpty) {
-                  setState(() => _sourceMaterial = text);
+                  setState(() {
+                    _sourceMaterial = text;
+                    _sourceFileName = 'Direct Notes (${text.length} chars)';
+                    _selectedSourceType = 'Notes';
+                  });
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -1158,6 +1252,8 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
       if (!mounted) return;
       setState(() {
         _sourceMaterial = transcript;
+        _sourceFileName = 'YouTube Video Transcript';
+        _selectedSourceType = 'YouTube';
         _isProcessing = false;
       });
     } catch (e) {
@@ -1170,21 +1266,39 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
   }
 
   Future<void> _generateDraftExam() async {
-    if (_titleController.text.isEmpty || _subjectController.text.isEmpty) {
+    if (_sourceMaterial.isEmpty && _smartDescriptionController.text.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Please fill in the exam title and subject'),
-            backgroundColor: Colors.red,
+            content: Text('Please select or upload source material first'),
+            backgroundColor: Colors.orange,
           ),
         );
       }
       return;
     }
 
+    String examTitle = _titleController.text.trim();
+    String subjectName = _subjectController.text.trim();
+
+    if (examTitle.isEmpty) {
+      if (_sourceFileName.isNotEmpty) {
+        examTitle = _sourceFileName.replaceAll(RegExp(r'\.[a-zA-Z0-9]+$'), '');
+      } else if (_smartDescriptionController.text.isNotEmpty) {
+        final words = _smartDescriptionController.text.split(' ');
+        examTitle = words.take(5).join(' ');
+      } else {
+        examTitle = '$_selectedDifficultyName Exam Assessment';
+      }
+    }
+
+    if (subjectName.isEmpty) {
+      subjectName = examTitle;
+    }
+
     setState(() {
       _isProcessing = true;
-      _processingMessage = 'Generating exam questions...';
+      _processingMessage = 'Generating exam questions with AI...';
     });
 
     try {
@@ -1201,18 +1315,27 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
       if (_includeTheory) questionTypes.add('Theory');
       if (_includeTrueFalse) questionTypes.add('True/False');
 
-      // Check if question types are selected
       if (questionTypes.isEmpty) {
-        throw Exception('Please select at least one question type');
+        questionTypes.add('Multiple Choice');
+      }
+
+      // Combine source with smart description and cognitive focus instructions
+      String combinedSource = _sourceMaterial;
+      if (_smartDescriptionController.text.trim().isNotEmpty) {
+        combinedSource =
+            'Focus / Instructions: ${_smartDescriptionController.text.trim()}\nCognitive Focus: $_cognitiveFocus\n\n$combinedSource';
+      } else {
+        combinedSource =
+            'Cognitive Focus: $_cognitiveFocus\n\n$combinedSource';
       }
 
       // Generate the exam using AI service
       _cancelToken = CancellationToken();
 
       final quiz = await enhancedAIService.generateExam(
-        text: _sourceMaterial,
-        title: _titleController.text,
-        subject: _subjectController.text,
+        text: combinedSource,
+        title: examTitle,
+        subject: subjectName,
         level: _selectedLevel == 'Custom'
             ? _customLevelController.text
             : _selectedLevel,
@@ -1248,8 +1371,8 @@ class _ExamCreationScreenState extends State<ExamCreationScreen> {
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => QuestionEditorScreen(
-              examTitle: _titleController.text,
-              subject: _subjectController.text,
+              examTitle: examTitle,
+              subject: subjectName,
               classLevel: _selectedLevel == 'Custom'
                   ? _customLevelController.text
                   : _selectedLevel,
@@ -1408,9 +1531,10 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(Icons.settings_outlined,
+            icon: Icon(Icons.file_upload_outlined,
                 color: isDark ? Colors.white70 : const Color(0xFF64748B)),
-            onPressed: () => context.push('/settings'),
+            tooltip: 'Export Exam',
+            onPressed: _exportExam,
           ),
         ],
       ),
