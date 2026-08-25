@@ -128,6 +128,7 @@ GoRouter createRouter(AuthService authService) {
       final isOnboarding = state.matchedLocation == '/onboarding';
       final isPublicDeck = state.matchedLocation.startsWith('/s/') ||
           state.matchedLocation == '/deck';
+      final isAdminRoute = loc.startsWith('/admin');
 
       final userModel = Provider.of<UserModel?>(context);
       final firebaseUser = authService.currentUser;
@@ -152,12 +153,20 @@ GoRouter createRouter(AuthService authService) {
         return null;
       }
 
-      // 3. Handle Email Verification for Creators
+      // 3. Guard admin routes — only UserRole.admin may proceed
+      if (isAdminRoute) {
+        if (userModel.role != UserRole.admin) {
+          return kIsWeb ? '/landing' : '/';
+        }
+        return null; // admin user — allow through
+      }
+
+      // 4. Handle Email Verification for Creators
       if (!userModel.isEmailVerified && userModel.role == UserRole.creator) {
         return null;
       }
 
-      // 4. Handle Authenticated Users on Public Routes
+      // 5. Handle Authenticated Users on Public Routes
       if (isAuthRoute || isLanding || isSplash) {
         final redirectParam = state.uri.queryParameters['redirect'];
         if (redirectParam != null && redirectParam.isNotEmpty) {
