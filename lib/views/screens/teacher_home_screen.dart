@@ -134,41 +134,40 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     );
   }
 
-  Widget _quickActions(bool isDark) => Wrap(
-    spacing: 10,
-    runSpacing: 10,
-    children: [
-      _action(
-        'Create study pack',
-        Icons.auto_stories_outlined,
-        () => context.push('/create-content'),
-      ),
-      _action(
-        'Create exam',
-        Icons.quiz_outlined,
-        () => context.push('/create-content/exam-wizard'),
-      ),
-      _action(
-        'My materials',
-        Icons.folder_copy_outlined,
-        () => context.push('/teacher/library'),
-      ),
-      _action(
-        'Track learners',
-        Icons.insights_outlined,
-        () => context.push('/teacher/classrooms'),
-      ),
-    ],
-  );
+  Widget _quickActions(bool isDark) => Row(
+        children: [
+          Expanded(
+            child: _action(
+              'Create study pack',
+              Icons.auto_stories_outlined,
+              () => context.push('/create-content'),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _action(
+              'Create exam',
+              Icons.quiz_outlined,
+              () => context.push('/create-content/exam-wizard'),
+            ),
+          ),
+        ],
+      );
 
-  Widget _action(String label, IconData icon, VoidCallback onTap) => SizedBox(
-    width: 165,
-    child: OutlinedButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, size: 19),
-      label: Text(label),
-    ),
-  );
+  Widget _action(String label, IconData icon, VoidCallback onTap) =>
+      OutlinedButton.icon(
+        onPressed: onTap,
+        icon: Icon(icon, size: 19),
+        label: Text(
+          label,
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
+        ),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+      );
 
   Widget _stats(TeacherStats stats, bool isDark) => GridView.count(
     shrinkWrap: true,
