@@ -41,18 +41,18 @@ class WebExamSetupStep extends StatelessWidget {
         children: [
           Text(
             'Step 1: Source & Subject Grounding',
-            style: GoogleFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              color: const Color(0xFF1E293B),
+            style: GoogleFonts.outfit(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF0F172A),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
-            'Define the intellectual boundaries of your exam. Upload your course materials and\nestablish the academic context to ensure AI-generated questions align with your curriculum.',
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              color: const Color(0xFF475569),
+            'Define the intellectual boundaries of your exam. Upload your course materials and establish the academic context to ensure AI-generated questions align with your curriculum.',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: const Color(0xFF64748B),
               height: 1.5,
             ),
           ),
@@ -85,17 +85,17 @@ class WebExamSetupStep extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(32),
                   ),
-                  elevation: 8,
-                  shadowColor: ThemeProvider.primaryDeepBlue.withValues(alpha: 0.4),
+                  elevation: 4,
+                  shadowColor: ThemeProvider.primaryDeepBlue.withValues(alpha: 0.2),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       'Continue to Configuration',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(width: 8),

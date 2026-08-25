@@ -29,21 +29,21 @@ class WebSourceSelection extends StatelessWidget {
           const SizedBox(height: 20),
           Text(
             'Choose Your Knowledge Source',
-            style: GoogleFonts.poppins(
+            style: GoogleFonts.outfit(
               fontSize: 28,
               fontWeight: FontWeight.w800,
-              color: const Color(0xFF1A1A1A),
+              color: const Color(0xFF0F172A),
               height: 1.1,
             ),
           ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1, end: 0),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             'Transform any information into mastery. Select your material to begin\nthe generation process.',
             textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
+            style: GoogleFonts.inter(
               fontSize: 15,
               fontWeight: FontWeight.w400,
-              color: const Color(0xFF666666),
+              color: const Color(0xFF64748B),
               height: 1.5,
             ),
           ).animate().fadeIn(delay: 200.ms),
@@ -155,18 +155,18 @@ class WebSourceSelection extends StatelessWidget {
                 const SizedBox(width: 12),
                 Text(
                   'AI Engine Status: ',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xFF666666),
+                    color: const Color(0xFF64748B),
                   ),
                 ),
                 Text(
                   'Ready to ingest new data',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF3300FF),
+                    color: const Color(0xFF6B5CE7),
                   ),
                 ),
               ],
@@ -224,15 +224,15 @@ class _SourceCardState extends State<_SourceCard> {
             border: Border.all(
               color: _isHovered
                   ? widget.accentColor.withValues(alpha: 0.3)
-                  : const Color(0xFFE8ECF4),
+                  : const Color(0xFFE2E8F0),
             ),
             boxShadow: [
               BoxShadow(
                 color: _isHovered
                     ? widget.accentColor.withValues(alpha: 0.08)
-                    : Colors.black.withValues(alpha: 0.03),
-                blurRadius: _isHovered ? 24 : 16,
-                offset: Offset(0, _isHovered ? 8 : 4),
+                    : Colors.black.withValues(alpha: 0.02),
+                blurRadius: _isHovered ? 20 : 12,
+                offset: Offset(0, _isHovered ? 6 : 3),
               ),
             ],
           ),
@@ -254,10 +254,10 @@ class _SourceCardState extends State<_SourceCard> {
                   Expanded(
                     child: Text(
                       widget.title,
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF1A1A1A),
+                      style: GoogleFonts.outfit(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF0F172A),
                       ),
                     ),
                   ),
@@ -273,7 +273,7 @@ class _SourceCardState extends State<_SourceCard> {
                       ),
                       child: Text(
                         'PRO',
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.inter(
                           fontSize: 10,
                           fontWeight: FontWeight.w900,
                           color: Colors.amber.shade800,
@@ -283,14 +283,14 @@ class _SourceCardState extends State<_SourceCard> {
                     ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Text(
                 widget.description,
-                style: GoogleFonts.poppins(
+                style: GoogleFonts.inter(
                   fontSize: 13,
                   height: 1.4,
                   fontWeight: FontWeight.w400,
-                  color: const Color(0xFF666666),
+                  color: const Color(0xFF64748B),
                 ),
               ),
               if (widget.showVideoPreview) ...[
@@ -299,7 +299,7 @@ class _SourceCardState extends State<_SourceCard> {
                   height: 80,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F0720),
+                    color: const Color(0xFF0F172A),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Center(
@@ -328,9 +328,9 @@ class _SourceCardState extends State<_SourceCard> {
                   children: [
                     Text(
                       widget.buttonText,
-                      style: GoogleFonts.poppins(
+                      style: GoogleFonts.inter(
                         fontSize: 13,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: widget.accentColor,
                         letterSpacing: 0.5,
                       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sumquiz/providers/create_content_provider.dart';
+import 'package:sumquiz/theme/web_theme.dart';
 
 class WebConfiguration extends StatelessWidget {
   final CreateContentProvider provider;
@@ -28,19 +29,19 @@ class WebConfiguration extends StatelessWidget {
               children: [
                 Text(
                   'Configure Your Study Pack',
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.outfit(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
-                    color: const Color(0xFF1A1A1A),
+                    color: const Color(0xFF0F172A),
                   ),
                 ).animate().fadeIn().slideX(begin: -0.05, end: 0),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Text(
                   'Tailor your learning experience. Our AI will curate content based on your difficulty preference and study archetype.',
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w400,
-                    color: const Color(0xFF666666),
+                    color: const Color(0xFF64748B),
                     height: 1.5,
                   ),
                 ).animate().fadeIn(delay: 200.ms),
@@ -551,14 +552,15 @@ class _ArchetypeCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color:
-                isSelected ? const Color(0xFF3300FF) : const Color(0xFFE0E6FF),
+            color: isSelected
+                ? WebColors.purplePrimary
+                : const Color(0xFFE2E8F0),
             width: 2,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                      color: const Color(0xFF3300FF).withValues(alpha: 0.1),
+                      color: WebColors.purplePrimary.withValues(alpha: 0.1),
                       blurRadius: 20,
                       offset: const Offset(0, 10))
                 ]
@@ -571,10 +573,10 @@ class _ArchetypeCard extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F4FF),
+                color: WebColors.purplePrimary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: const Color(0xFF3300FF), size: 20),
+              child: Icon(icon, color: WebColors.purplePrimary, size: 20),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -582,16 +584,16 @@ class _ArchetypeCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title,
-                      style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFF1A1A1A))),
-                  const SizedBox(height: 8),
+                      style: GoogleFonts.outfit(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF0F172A))),
+                  const SizedBox(height: 6),
                   Text(description,
-                      style: GoogleFonts.poppins(
+                      style: GoogleFonts.inter(
                           fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF666666),
+                          fontWeight: FontWeight.w400,
+                          color: const Color(0xFF64748B),
                           height: 1.4)),
                 ],
               ),
@@ -604,11 +606,12 @@ class _ArchetypeCard extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(
                     color: isSelected
-                        ? const Color(0xFF3300FF)
-                        : const Color(0xFFE0E6FF),
+                        ? WebColors.purplePrimary
+                        : const Color(0xFFE2E8F0),
                     width: 2),
-                color:
-                    isSelected ? const Color(0xFF3300FF) : Colors.transparent,
+                color: isSelected
+                    ? WebColors.purplePrimary
+                    : Colors.transparent,
               ),
               child: isSelected
                   ? const Center(
@@ -645,27 +648,27 @@ class _PreviewItem extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)
+                    color: Colors.black.withValues(alpha: 0.04), blurRadius: 10)
               ],
             ),
-            child: Icon(icon, color: const Color(0xFF3300FF), size: 20),
+            child: Icon(icon, color: WebColors.purplePrimary, size: 20),
           ),
           const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label,
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.inter(
                       fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                      color: const Color(0xFF999999),
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF94A3B8),
                       letterSpacing: 1.0)),
               const SizedBox(height: 2),
               Text(value,
-                  style: GoogleFonts.poppins(
-                      fontSize: 16,
+                  style: GoogleFonts.outfit(
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF1A1A1A))),
+                      color: const Color(0xFF0F172A))),
             ],
           ),
         ],

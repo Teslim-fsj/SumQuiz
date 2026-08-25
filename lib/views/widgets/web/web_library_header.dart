@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:sumquiz/theme/web_theme.dart';
+
 class WebLibraryHeader extends StatelessWidget {
   final TextEditingController searchController;
   final VoidCallback onImport;
@@ -35,8 +37,8 @@ class WebLibraryHeader extends StatelessWidget {
               child: TextField(
                 controller: searchController,
                 decoration: InputDecoration(
-                  hintText: 'Search your library...',
-                  hintStyle: GoogleFonts.outfit(
+                  hintText: 'Search notes, study packs, quizzes, flashcards, exams...',
+                  hintStyle: GoogleFonts.inter(
                     color: const Color(0xFF64748B),
                     fontSize: 14,
                   ),
@@ -50,20 +52,21 @@ class WebLibraryHeader extends StatelessWidget {
           ),
           const SizedBox(width: 24),
           // Import Button
-          ElevatedButton(
+          ElevatedButton.icon(
             onPressed: onImport,
+            icon: const Icon(Icons.download_rounded, size: 18),
+            label: Text(
+              'Import Code',
+              style:
+                  GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
+            ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0D9488),
+              backgroundColor: WebColors.purplePrimary,
               foregroundColor: Colors.white,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(22)),
-            ),
-            child: Text(
-              'Import',
-              style:
-                  GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 14),
             ),
           ),
           const SizedBox(width: 16),

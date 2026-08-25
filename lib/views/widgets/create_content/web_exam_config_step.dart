@@ -60,18 +60,18 @@ class WebExamConfigStep extends StatelessWidget {
             children: [
               Text(
                 'Advanced Exam Configuration',
-                style: GoogleFonts.poppins(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                  color: const Color(0xFF1E293B),
+                style: GoogleFonts.outfit(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF0F172A),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Text(
-                'Fine-tune the intelligence engine. Define your constraints, question variety,\nand difficulty distribution for the Final Architecture exam.',
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  color: const Color(0xFF475569),
+                'Fine-tune the intelligence engine. Define your constraints, question variety, and difficulty distribution for the exam.',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: const Color(0xFF64748B),
                   height: 1.5,
                 ),
               ),
