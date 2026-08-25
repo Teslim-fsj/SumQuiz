@@ -15,7 +15,7 @@ import '../../../models/user_model.dart';
 import '../../../models/daily_mission.dart';
 import '../../../services/mission_service.dart';
 import '../../../services/mastery/sumi_tutor_service.dart';
-import '../../../services/user_service.dart';
+import '../../../models/mastery/topic_node.dart';
 import '../../../views/screens/spaced_repetition_screen.dart';
 import '../../../view_models/mastery_view_model.dart';
 import '../../../views/widgets/sumi_live_sandbox_overlay.dart';
@@ -1115,26 +1115,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
   Widget _buildFocusAreasSection(MasteryViewModel? masteryVm, bool isDark) {
     final topics = (masteryVm != null && masteryVm.priorityTopics.isNotEmpty)
         ? masteryVm.priorityTopics
-        : [
-            PriorityTopic(
-              name: 'Cellular Respiration & Krebs',
-              retentionScore: 0.82,
-              totalCards: 18,
-              forgettingRisk: 0.25,
-            ),
-            PriorityTopic(
-              name: 'Genetics & Punnett Squares',
-              retentionScore: 0.65,
-              totalCards: 14,
-              forgettingRisk: 0.45,
-            ),
-            PriorityTopic(
-              name: 'Enzyme Kinetics & Catalysis',
-              retentionScore: 0.90,
-              totalCards: 22,
-              forgettingRisk: 0.12,
-            ),
-          ];
+        : <TopicNode>[];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1164,17 +1145,43 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
           ],
         ),
         const SizedBox(height: 12),
-        ...topics.map((t) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _buildTopicCard(t, isDark),
-            )),
+        if (topics.isEmpty) ...[
+          _buildFocusAreaCard(
+            title: 'Cellular Respiration & Krebs',
+            subText: '18 cards · 82% retention',
+            isDark: isDark,
+          ),
+          const SizedBox(height: 12),
+          _buildFocusAreaCard(
+            title: 'Genetics & Punnett Squares',
+            subText: '14 cards · 65% retention',
+            isDark: isDark,
+          ),
+        ] else ...[
+          ...topics.take(3).map((t) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _buildTopicCard(t, isDark),
+              )),
+        ],
       ],
     ).animate().fadeIn(delay: 250.ms, duration: 250.ms);
   }
 
-  Widget _buildTopicCard(PriorityTopic topic, bool isDark) {
-    final masteryPct = (topic.retentionScore * 100).toInt();
+  Widget _buildTopicCard(TopicNode topic, bool isDark) {
+    final masteryPct = (topic.masteryScore * 100).toInt();
 
+    return _buildFocusAreaCard(
+      title: topic.name,
+      subText: '${topic.contentIds.length} items · $masteryPct% mastery',
+      isDark: isDark,
+    );
+  }
+
+  Widget _buildFocusAreaCard({
+    required String title,
+    required String subText,
+    required bool isDark,
+  }) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -1213,7 +1220,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  topic.name,
+                  title,
                   style: GoogleFonts.outfit(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -1222,7 +1229,7 @@ class _ReviewScreenWebState extends State<ReviewScreenWeb> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${topic.totalCards} cards · $masteryPct% retention',
+                  subText,
                   style:
                       GoogleFonts.inter(fontSize: 12, color: Colors.grey[500]),
                 ),
