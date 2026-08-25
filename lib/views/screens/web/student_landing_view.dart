@@ -1133,6 +1133,241 @@ class _StudentLandingViewState extends State<StudentLandingView> {
     });
   }
 
+  // ─── Sumi Spotlight Helpers ───────────────────────────────────────────────
+
+  Widget _buildSumiContent(bool isMobile) {
+    return Column(
+      crossAxisAlignment:
+          isMobile ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFF7C3AED).withValues(alpha: 0.25),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: const Color(0xFFA78BFA).withValues(alpha: 0.4),
+            ),
+          ),
+          child: Text(
+            'MEET SUMI · YOUR 24/7 AI TUTOR',
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.5,
+              color: const Color(0xFFC4B5FD),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'A study companion that actually knows your syllabus',
+          textAlign: isMobile ? TextAlign.center : TextAlign.start,
+          style: GoogleFonts.outfit(
+            fontSize: isMobile ? 24 : 36,
+            fontWeight: FontWeight.w900,
+            color: Colors.white,
+            letterSpacing: -0.5,
+            height: 1.15,
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          'Sumi is grounded in your uploaded materials, tracks what you haven\'t mastered, and intervenes before you fail.',
+          textAlign: isMobile ? TextAlign.center : TextAlign.start,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: Colors.grey[400],
+            height: 1.6,
+          ),
+        ),
+        const SizedBox(height: 24),
+        _buildSumiBullet(Icons.mic_none, 'Voice-to-voice tutoring',
+            'Talk to Sumi aloud — on the bus, in bed, anywhere.'),
+        const SizedBox(height: 12),
+        _buildSumiBullet(Icons.psychology_outlined, 'Socratic questioning mode',
+            'Sumi asks guiding questions to force active recall.'),
+        const SizedBox(height: 12),
+        _buildSumiBullet(
+            Icons.notifications_active_outlined,
+            'Proactive decay alerts',
+            'Sumi notifies you the moment a topic enters the danger zone.'),
+        const SizedBox(height: 28),
+        ElevatedButton(
+          onPressed: () => context.go('/auth'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF7C3AED),
+            foregroundColor: Colors.white,
+            padding:
+                const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+          child: Text(
+            'Study with Sumi Free',
+            style:
+                GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSumiBullet(IconData icon, String title, String desc) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF7C3AED).withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: const Color(0xFFA78BFA), size: 18),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  )),
+              const SizedBox(height: 2),
+              Text(desc,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                    height: 1.5,
+                  )),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSumiPreviewCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1B4B),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: const Color(0xFFA78BFA).withValues(alpha: 0.3),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6D28D9).withValues(alpha: 0.25),
+            blurRadius: 30,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF7C3AED),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.psychology,
+                    color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Sumi',
+                      style: GoogleFonts.outfit(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white)),
+                  Text('AI Tutor · Online',
+                      style: GoogleFonts.inter(
+                          fontSize: 10, color: Colors.grey[500])),
+                ],
+              ),
+              const Spacer(),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                    color: Color(0xFF10B981), shape: BoxShape.circle),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildChatBubble(
+              'Can you explain enzyme inhibition using my biochem notes?',
+              isUser: true),
+          const SizedBox(height: 10),
+          _buildChatBubble(
+              'Of course! Based on your Week 5 slides, competitive inhibitors bind to the active site, blocking substrate access. Think of it like a wrong key stuck in a lock. Want a practice question?',
+              isUser: false),
+          const SizedBox(height: 10),
+          _buildChatBubble('Yes, test me!', isUser: true),
+          const SizedBox(height: 16),
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.1)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text('Ask Sumi anything...',
+                      style: GoogleFonts.inter(
+                          fontSize: 12, color: Colors.grey[600])),
+                ),
+                const Icon(Icons.mic_none,
+                    color: Color(0xFFA78BFA), size: 18),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChatBubble(String text, {required bool isUser}) {
+    return Align(
+      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 280),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isUser
+              ? const Color(0xFF7C3AED)
+              : Colors.white.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Text(
+          text,
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            color: isUser ? Colors.white : Colors.grey[300],
+            height: 1.5,
+          ),
+        ),
+      ),
+    );
+  }
+
   // ─── Testimonials Section ──────────────────────────────────────────────────
 
   Widget _buildTestimonials() {

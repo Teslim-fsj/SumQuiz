@@ -16,6 +16,7 @@ import '../../../models/daily_mission.dart';
 import '../../../services/mission_service.dart';
 import '../../../services/mastery/sumi_tutor_service.dart';
 import '../../../models/mastery/topic_node.dart';
+import '../../../services/user_service.dart';
 import '../../../views/screens/spaced_repetition_screen.dart';
 import '../../../view_models/mastery_view_model.dart';
 import '../../../views/widgets/sumi_live_sandbox_overlay.dart';
