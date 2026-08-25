@@ -14,28 +14,28 @@ class UsageConfig {
 
   // --- DAILY QUOTAS (Actions vs Transformations) ---
   static final Map<String, int> heavyQuota = {
-    'free': 1,
-    'standard_pro': 10,
-    'power_pro': 30,
-    'creator': 50,
+    'free': 3,
+    'standard_pro': 20,
+    'power_pro': 50,
+    'creator': 100,
   };
 
   static final Map<String, int> lightQuota = {
-    'free': 5,
-    'standard_pro': 100,
-    'power_pro': 500,
-    'creator': 1000,
+    'free': 50,
+    'standard_pro': 500,
+    'power_pro': 2000,
+    'creator': 5000,
   };
 
   // Compute Unit (CU) Weights (Internal Economics - Margin Safety)
   static const double cuNano = 0.5; // Mascot state, tiny nudges
-  static const double cuMicro = 1.5; // Summaries, Title generation
-  static const double cuStandard = 6.0; // Quizzes (10q), Flashcards (20c)
-  static const double cuMacro = 20.0; // Exams, Long PDFs, YouTube
+  static const double cuMicro = 1.0; // Summaries, Title generation, Context upload
+  static const double cuStandard = 5.0; // Quizzes (10q), Flashcards (20c)
+  static const double cuMacro = 15.0; // Exams, Long PDFs, YouTube
   static const double cuExtreme =
-      45.0; // Live Lecture recordings (Neural Intake)
-  static const double cuTutor = 8.0; // AI Tutor Interaction (Voice or Chat)
-  static const double cuTutorSession = 25.0; // Start a Live Voice Session
+      30.0; // Live Lecture recordings (Neural Intake)
+  static const double cuTutor = 1.0; // AI Tutor Interaction (Voice or Chat turn)
+  static const double cuTutorSession = 3.0; // Start a Live Voice Session
 
   // Adaptive Multipliers
   static const double multiYoutube = 1.5;
@@ -91,19 +91,19 @@ class UsageService {
       final bool effectivelyHeavy = isHeavy ||
           isYoutube ||
           isMultimodal ||
-          ['lecture', 'tutor_session', 'exam'].contains(actionType);
+          ['lecture', 'exam'].contains(actionType);
 
       // 1. Quota Check (Visible Limits)
       if (!user.isPro) {
         if (effectivelyHeavy) {
-          final int limit = UsageConfig.heavyQuota[tier] ?? 1;
+          final int limit = UsageConfig.heavyQuota[tier] ?? 3;
           if (currentHeavy >= limit) {
             developer.log('Heavy quota exceeded for $tier user: $uid',
                 name: 'UsageService');
             return false;
           }
         } else {
-          final int limit = UsageConfig.lightQuota[tier] ?? 5;
+          final int limit = UsageConfig.lightQuota[tier] ?? 50;
           if (currentLight >= limit) {
             developer.log('Light quota exceeded for $tier user: $uid',
                 name: 'UsageService');
@@ -137,8 +137,8 @@ class UsageService {
         return false;
       }
 
-      // 3. Burst Control (Abuse protection)
-      if (await _isBursting(uid, user)) {
+      // 3. Burst Control (Abuse protection only for heavy deck generation)
+      if (await _isBursting(uid, user, actionType)) {
         return false;
       }
 
@@ -149,17 +149,23 @@ class UsageService {
     }
   }
 
-  /// Internal adaptive throttling check (Burst protection)
-  Future<bool> _isBursting(String uid, UserModel user) async {
+  /// Internal adaptive throttling check (Burst protection for heavy generations only)
+  Future<bool> _isBursting(
+      String uid, UserModel user, String actionType) async {
+    // Conversational, tutoring, mascot, or lightweight actions never burst-throttle
+    if (!['quiz', 'exam', 'generate', 'lecture'].contains(actionType)) {
+      return false;
+    }
+
     final now = TimeSyncService.now;
     final lastAction = user.lastDeckGenerationDate;
     if (lastAction == null) return false;
 
     final diff = now.difference(lastAction);
 
-    // Safety thresholds
-    if (user.tier == 'free' && diff.inSeconds < 60) return true;
-    if (user.isPro && diff.inSeconds < 5) return true;
+    // Safety thresholds for bulk generation
+    if (user.tier == 'free' && diff.inSeconds < 15) return true;
+    if (user.isPro && diff.inSeconds < 3) return true;
 
     return false;
   }
@@ -173,7 +179,7 @@ class UsageService {
       final bool effectivelyHeavy = isHeavy ||
           isYoutube ||
           isMultimodal ||
-          ['lecture', 'tutor_session', 'exam'].contains(actionType);
+          ['lecture', 'exam'].contains(actionType);
 
       double cost = _calculateInternalCost(actionType,
           isHeavy: effectivelyHeavy,
@@ -213,14 +219,17 @@ class UsageService {
           computeUnits = tierCap;
         }
 
+        final bool isDeckGen =
+            ['quiz', 'exam', 'generate', 'lecture'].contains(actionType);
+
         transaction.update(userRef, {
           'computeUnits': (computeUnits - cost).clamp(0.0, 10000.0),
           if (effectivelyHeavy)
             'dailyHeavyActions': newHeavy + 1
           else
             'dailyLightActions': newLight + 1,
-          'totalDecksGenerated': user.totalDecksGenerated + 1,
-          'lastDeckGenerationDate': FieldValue.serverTimestamp(),
+          if (isDeckGen) 'totalDecksGenerated': user.totalDecksGenerated + 1,
+          if (isDeckGen) 'lastDeckGenerationDate': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         });
       });
@@ -239,8 +248,9 @@ class UsageService {
       bool isMultimodal = false}) {
     double base = UsageConfig.cuStandard;
 
-    if (actionType == 'summary' || actionType == 'note')
+    if (actionType == 'summary' || actionType == 'note') {
       base = UsageConfig.cuMicro;
+    }
     if (actionType == 'generate' || actionType == 'quiz') {
       base = UsageConfig.cuMacro;
     }
@@ -264,3 +274,4 @@ class UsageService {
       recordStudySession(uid, action);
   Future<bool> canGenerateDeck(String uid) => canStartStudySession(uid, 'quiz');
 }
+

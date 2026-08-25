@@ -211,7 +211,8 @@ class SumiProvider extends ChangeNotifier {
       if (!canProceed) {
         _limitReached = true;
         _currentState = SumiState.tired;
-        _dialogue = "I've reached my limit — let's power up your plan!";
+        _dialogue =
+            "Neural capacity depleted — recharge or power up your plan!";
         notifyListeners();
         return;
       }
@@ -375,7 +376,8 @@ class SumiProvider extends ChangeNotifier {
       if (!canProceed) {
         _limitReached = true;
         _currentState = SumiState.tired;
-        _dialogue = "I've reached my limit — let's power up your plan!";
+        _dialogue =
+            "Neural capacity depleted — recharge or power up your plan!";
         notifyListeners();
         return;
       }
@@ -574,7 +576,8 @@ class SumiProvider extends ChangeNotifier {
           await _usageService.canPerformAction(uid, 'tutor_session');
       if (!canProceed) {
         _limitReached = true;
-        _dialogue = "I've reached my limit — let's power up your plan!";
+        _dialogue =
+            "Neural capacity depleted — recharge or power up your plan!";
         _currentState = SumiState.tired;
         notifyListeners();
         return;

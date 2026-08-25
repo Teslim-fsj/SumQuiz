@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -7,9 +8,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../models/user_model.dart';
 import '../../providers/sumi_provider.dart';
 import '../../models/sumi_message.dart';
 import '../../services/content_extraction_service.dart';
+import '../../utils/youtube_pro_gate.dart';
 import 'upgrade_dialog.dart';
 
 class SumiChatView extends StatefulWidget {
@@ -351,50 +354,103 @@ class _SumiChatViewState extends State<SumiChatView> {
     final result = await FilePicker.platform.pickFiles(
       allowMultiple: false,
       type: FileType.custom,
-      allowedExtensions: ['pdf', 'txt', 'png', 'jpg'],
+      allowedExtensions: ['pdf', 'txt', 'png', 'jpg', 'jpeg', 'webp', 'md'],
       withData: true,
     );
 
-    if (result != null && result.files.single.bytes != null) {
+    if (result != null &&
+        result.files.single.bytes != null &&
+        result.files.single.bytes!.isNotEmpty) {
       setState(() => _isExtractingContext = true);
       try {
         final extractionService = context.read<ContentExtractionService>();
         final userId = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
+        final fileName = result.files.single.name.toLowerCase();
+        final bytes = result.files.single.bytes!;
+
+        String type;
+        dynamic input;
+        String mimeType;
+
+        if (fileName.endsWith('.pdf')) {
+          type = 'pdf';
+          input = bytes;
+          mimeType = 'application/pdf';
+        } else if (fileName.endsWith('.png') ||
+            fileName.endsWith('.jpg') ||
+            fileName.endsWith('.jpeg') ||
+            fileName.endsWith('.webp')) {
+          type = 'image';
+          input = bytes;
+          mimeType = fileName.endsWith('.png')
+              ? 'image/png'
+              : (fileName.endsWith('.webp') ? 'image/webp' : 'image/jpeg');
+        } else {
+          type = 'text';
+          input = utf8.decode(bytes, allowMalformed: true);
+          mimeType = 'text/plain';
+        }
+
+        UserModel? user;
+        try {
+          user = context.read<UserModel?>();
+        } catch (_) {}
+
+        final allowPdf = userMayImportFromPdf(user);
+        final allowWeb = userMayImportFromWeb(user);
 
         final extResult = await extractionService.extractContent(
-          type: result.files.single.name.endsWith('.pdf') ? 'pdf' : 'text',
-          input: result.files.single.bytes,
+          type: type,
+          input: input,
           userId: userId,
-          mimeType: result.files.single.name.endsWith('.pdf')
-              ? 'application/pdf'
-              : 'text/plain',
+          mimeType: mimeType,
+          allowPdfImport: allowPdf,
+          allowWebImport: allowWeb,
         );
 
-        setState(() {
-          _additionalContext +=
-              '\n\n[Content from ${result.files.single.name}]:\n${extResult.text}';
-          _isExtractingContext = false;
-        });
+        if (extResult.text.trim().isNotEmpty) {
+          setState(() {
+            _additionalContext +=
+                '\n\n[Content from ${result.files.single.name}]:\n${extResult.text.trim()}';
+            _isExtractingContext = false;
+          });
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              content: Text(
-                'Added ${result.files.single.name} to context',
-                style: GoogleFonts.inter(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold),
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                content: Text(
+                  'Added ${result.files.single.name} to context',
+                  style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold),
+                ),
               ),
-            ),
-          );
+            );
+          }
+        } else {
+          setState(() => _isExtractingContext = false);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'No extractable content found in ${result.files.single.name}',
+                  style: GoogleFonts.inter(fontSize: 12),
+                ),
+              ),
+            );
+          }
         }
       } catch (e) {
         setState(() => _isExtractingContext = false);
         if (mounted) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text('Failed: $e')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Upload failed: $e'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
         }
       }
     }
