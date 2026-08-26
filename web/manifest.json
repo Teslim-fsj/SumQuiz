@@ -4,7 +4,7 @@
     "start_url": ".",
     "display": "standalone",
     "background_color": "#FFFFFF",
-    "theme_color": "#4285F4",
+    "theme_color": "#6B5CE7",
     "description": "Transform your learning experience with SumQuiz - your AI-powered study companion for creating quizzes, flashcards, and summaries.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
