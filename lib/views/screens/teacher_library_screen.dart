@@ -313,8 +313,8 @@ class _TeacherLibraryScreenState extends State<TeacherLibraryScreen> {
 
   void _shareDeck(PublicDeck deck) {
     final shareText = deck.shareCode.isNotEmpty
-        ? 'Practice "${deck.title}" on SumQuiz! Join with code: ${deck.shareCode} or visit: https://sumquiz.xyz/deck?id=${deck.id}'
-        : 'Practice "${deck.title}" on SumQuiz! https://sumquiz.xyz/deck?id=${deck.id}';
+        ? 'Practice "${deck.title}" on SumQuiz! Join with code: ${deck.shareCode} or visit: https://sumquiz.com/deck?id=${deck.id}'
+        : 'Practice "${deck.title}" on SumQuiz! https://sumquiz.com/deck?id=${deck.id}';
 
     Share.share(shareText, subject: 'SumQuiz: ${deck.title}');
   }

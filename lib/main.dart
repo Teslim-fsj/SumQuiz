@@ -88,7 +88,7 @@ void callbackDispatcher() {
 }
 
 void main() async {
-  usePathUrlStrategy(); // Remove # from web URLs (sumquiz.xyz/route instead of sumquiz.xyz/#/route)
+  usePathUrlStrategy(); // Remove # from web URLs (sumquiz.com/route instead of sumquiz.com/#/route)
   WidgetsFlutterBinding.ensureInitialized();
   if (!kIsWeb) {
     await Workmanager().initialize(callbackDispatcher);

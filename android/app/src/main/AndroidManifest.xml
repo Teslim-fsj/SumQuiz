@@ -41,12 +41,12 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
 
-            <!-- Deep Links: https://sumquiz.xyz/* -->
+            <!-- Deep Links: https://sumquiz.com/* -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="sumquiz.xyz" />
+                <data android:scheme="https" android:host="sumquiz.com" />
             </intent-filter>
 
             <!-- Custom URL Scheme: sumquiz://* -->

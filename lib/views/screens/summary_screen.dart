@@ -386,7 +386,7 @@ class SummaryScreenState extends State<SummaryScreen> {
 
       if (!mounted) return;
 
-      final shareUrl = 'https://sumquiz.xyz/deck?id=$deckId';
+      final shareUrl = 'https://sumquiz.com/deck?id=$deckId';
 
       showDialog(
           context: context,

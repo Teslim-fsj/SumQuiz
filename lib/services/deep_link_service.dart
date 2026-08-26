@@ -3,7 +3,7 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-/// Handles deep links for sumquiz.xyz and sumquiz:// custom scheme
+/// Handles deep links for sumquiz.com and sumquiz:// custom scheme
 class DeepLinkService {
   static final DeepLinkService _instance = DeepLinkService._internal();
   factory DeepLinkService() => _instance;
@@ -51,9 +51,9 @@ class DeepLinkService {
 
     // Extract the path from the deep link
     // Supports:
-    //   - https://sumquiz.xyz/library/flashcards/abc123
+    //   - https://sumquiz.com/library/flashcards/abc123
     //   - sumquiz://library/flashcards/abc123
-    //   - https://sumquiz.xyz/deck?id=abc123
+    //   - https://sumquiz.com/deck?id=abc123
     String path = uri.path;
 
     // If the path is empty or just /, go home

@@ -166,7 +166,7 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
 
       if (!mounted) return;
 
-      final origin = kIsWeb ? Uri.base.origin : 'https://sumquiz.xyz';
+      final origin = kIsWeb ? Uri.base.origin : 'https://sumquiz.com';
       final shareLink =
           (publishedDeck.slug != null && publishedDeck.slug!.isNotEmpty)
               ? '$origin/s/${publishedDeck.slug}'
