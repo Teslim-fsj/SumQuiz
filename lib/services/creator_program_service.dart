@@ -116,7 +116,7 @@ class CreatorProgramService {
         ? referralCode
         : 'SUMI${_uuid.v4().substring(0, 4).toUpperCase()}';
 
-    const baseUrl = 'https://sumquiz.app/c';
+    const baseUrl = 'https://sumquiz.com/c';
     final referralLink = '$baseUrl/$finalCode';
 
     // Batch: update application + create profile
@@ -149,7 +149,7 @@ class CreatorProgramService {
       'message': {
         'subject': '🎉 You\'re Approved! Welcome to the SumQuiz Creator Program',
         'text':
-            'Hi ${app.fullName},\n\nCongratulations! Your application to the SumQuiz Creator Program has been approved.\n\nYour referral code: $finalCode\nYour referral link: $referralLink\n\nLogin at https://sumquiz.app to access your creator dashboard.\n\nTeam SumQuiz',
+            'Hi ${app.fullName},\n\nCongratulations! Your application to the SumQuiz Creator Program has been approved.\n\nYour referral code: $finalCode\nYour referral link: $referralLink\n\nLogin at https://sumquiz.com to access your creator dashboard.\n\nTeam SumQuiz',
         'html':
             '<h2>🎉 Welcome to SumQuiz Creator Program!</h2><p>Hi ${app.fullName},</p><p>Your application has been <strong>approved</strong>.</p><p><strong>Referral Code:</strong> $finalCode</p><p><strong>Referral Link:</strong> <a href="$referralLink">$referralLink</a></p>',
       },
@@ -176,8 +176,23 @@ class CreatorProgramService {
 
   // ─── Creator Profiles (Suspend/Reactivate) ───────────────────────────────────
 
-  /// Stream a creator profile by application/creator ID.
-  Stream<CreatorProfile?> getCreatorProfileStream(String creatorId) {
+  /// Stream a creator profile by application/creator ID or by user email.
+  Stream<CreatorProfile?> getCreatorProfileStream(String creatorId, {String? email}) {
+    if (email != null && email.isNotEmpty) {
+      return _profiles
+          .where('email', isEqualTo: email.toLowerCase())
+          .limit(1)
+          .snapshots()
+          .map((snap) {
+        if (snap.docs.isNotEmpty) {
+          final doc = snap.docs.first;
+          return CreatorProfile.fromMap(
+              doc.data() as Map<String, dynamic>, doc.id);
+        }
+        return null;
+      });
+    }
+
     return _profiles.doc(creatorId).snapshots().map((doc) {
       if (!doc.exists) return null;
       return CreatorProfile.fromMap(doc.data() as Map<String, dynamic>, doc.id);

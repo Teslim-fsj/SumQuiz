@@ -12,9 +12,98 @@ class CreatorProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) {
-      return const Scaffold(body: Center(child: Text('Not logged in')));
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        body: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 440),
+            margin: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: WebColors.purplePrimary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.workspace_premium_rounded,
+                    size: 36,
+                    color: WebColors.purplePrimary,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Creator Partnership',
+                  style: GoogleFonts.outfit(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Sign in with the email or Google account you used to apply for the Creator Program.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: const Color(0xFF64748B),
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () =>
+                        context.go('/auth?redirect=/creator-dashboard'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: WebColors.purplePrimary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      'Sign In / Register',
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () => context.go('/creator-program'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF64748B),
+                  ),
+                  child: const Text('Back to Creator Program'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
 
     final service = CreatorProgramService();
@@ -45,7 +134,8 @@ class CreatorProfileScreen extends StatelessWidget {
         ],
       ),
       body: StreamBuilder<CreatorProfile?>(
-        stream: service.getCreatorProfileStream(uid),
+        stream: service.getCreatorProfileStream(currentUser.uid,
+            email: currentUser.email),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
