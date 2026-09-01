@@ -7,6 +7,7 @@ import '../models/sumi_message.dart';
 import '../services/ai/generator_ai_service.dart';
 import '../services/local_database_service.dart';
 import '../services/recording_service.dart';
+import '../services/speech_service.dart';
 import '../services/deepgram_live_transcription_service.dart';
 import 'dart:io';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -22,6 +23,7 @@ class SumiProvider extends ChangeNotifier {
   final SumiEmotionEngine _engine = SumiEmotionEngine();
 
   final RecordingService _recordingService = RecordingService();
+  final SpeechService _speechService = SpeechService();
   final DeepgramLiveTranscriptionService _deepgramTranscription =
       DeepgramLiveTranscriptionService();
 
@@ -124,6 +126,9 @@ class SumiProvider extends ChangeNotifier {
   StreamSubscription<String>? _deepgramTranscriptSub;
   StreamSubscription<String>? _deepgramPartialSub;
   StreamSubscription<String>? _deepgramErrorSub;
+  StreamSubscription<String>? _speechTranscriptSub;
+  StreamSubscription<String>? _speechPartialSub;
+  String _singleVoiceTranscript = '';
 
   bool _isLiveSession = false;
   bool get isLiveSession => _isLiveSession;
@@ -321,6 +326,7 @@ class SumiProvider extends ChangeNotifier {
       _isVoiceRecording = true;
       _recordingDuration = Duration.zero;
       _currentState = SumiState.idle;
+      _singleVoiceTranscript = '';
       notifyListeners();
 
       await _recordingService.startRecording("sumi_voice");
@@ -330,6 +336,29 @@ class SumiProvider extends ChangeNotifier {
         _recordingDuration = duration;
         notifyListeners();
       });
+
+      // Also listen with on-device SpeechService for fast transcription
+      try {
+        await _speechService.init();
+        _speechTranscriptSub?.cancel();
+        _speechTranscriptSub = _speechService.transcriptStream.listen((text) {
+          if (text.trim().isNotEmpty) {
+            _singleVoiceTranscript = text.trim();
+          }
+        });
+        _speechPartialSub?.cancel();
+        _speechPartialSub = _speechService.partialStream.listen((partial) {
+          if (partial.trim().isNotEmpty) {
+            _singleVoiceTranscript = partial.trim();
+            _dialogue = partial.trim();
+            notifyListeners();
+          }
+        });
+        await _speechService.startListening();
+      } catch (e) {
+        developer.log('Speech recognizer initial start note: $e',
+            name: 'SumiProvider');
+      }
     } catch (e) {
       _isVoiceRecording = false;
       _dialogue = "Microphone error. Is it plugged in?";
@@ -346,21 +375,34 @@ class SumiProvider extends ChangeNotifier {
     notifyListeners();
 
     _recordingSub?.cancel();
+    try {
+      await _speechService.stopListening();
+      await _speechTranscriptSub?.cancel();
+      await _speechPartialSub?.cancel();
+    } catch (_) {}
 
     try {
       final path = await _recordingService.stopRecording();
-      final session = await AudioSession.instance;
-      await session.setActive(false);
+      if (!_isLiveSession) {
+        final session = await AudioSession.instance;
+        await session.setActive(false);
+      }
 
-      if (path != null) {
+      if (_singleVoiceTranscript.trim().isNotEmpty) {
+        // Fast path: Ask Sumi with real-time transcribed text
+        await askSumi(_singleVoiceTranscript.trim(), context: context);
+      } else if (path != null) {
         final file = File(path);
-        final bytes = await file.readAsBytes();
-
-        // Process with AI
-        await _processVoiceInput(bytes, context: context);
+        if (await file.exists()) {
+          final bytes = await file.readAsBytes();
+          if (bytes.isNotEmpty) {
+            // Process audio with multimodal AI
+            await _processVoiceInput(bytes, context: context);
+          }
+        }
       }
     } catch (e) {
-      _dialogue = "I couldn't hear that clearly.";
+      _dialogue = "I couldn't hear that clearly. Let's try again!";
     } finally {
       _isProcessingVoice = false;
       if (!_isLiveSession) _currentState = SumiState.idle;
@@ -610,6 +652,13 @@ class SumiProvider extends ChangeNotifier {
     _vadTimer?.cancel();
     _recordingSub?.cancel();
     await _stopDeepgramLiveLoop();
+    await _speechTranscriptSub?.cancel();
+    await _speechPartialSub?.cancel();
+    _speechTranscriptSub = null;
+    _speechPartialSub = null;
+    try {
+      await _speechService.stopListening();
+    } catch (_) {}
     _cancelTtsWatchdog();
     _ttsQueue.clear();
     _isTtsActive = false;
@@ -713,60 +762,73 @@ class SumiProvider extends ChangeNotifier {
   }
 
   Future<void> _runLiveLoop({String? context}) async {
-    while (_isLiveSession) {
-      if (_isSumiSpeaking || _isProcessingVoice) {
-        await Future.delayed(const Duration(milliseconds: 500));
-        continue;
-      }
+    await _speechTranscriptSub?.cancel();
+    await _speechPartialSub?.cancel();
+
+    try {
+      await _speechService.init();
+    } catch (e) {
+      developer.log('SpeechService init error: $e', name: 'SumiProvider');
+    }
+
+    _speechTranscriptSub = _speechService.transcriptStream.listen((text) async {
+      final transcript = text.trim();
+      if (transcript.isEmpty || !_isLiveSession) return;
+      if (_isProcessingVoice || _isSumiSpeaking || _isStreaming) return;
+
+      _isVoiceRecording = false;
+      _isProcessingVoice = true;
+      _currentState = SumiState.thinking;
+      _dialogue = transcript;
+      notifyListeners();
 
       try {
-        await startVoiceRecording();
-        _silenceCount = 0;
-        _hasSpeaked = false;
+        await _speechService.stopListening();
+      } catch (_) {}
 
-        int peakCount = 0;
-        int gracePeriod = 0;
-        while (_isVoiceRecording && _isLiveSession) {
-          await Future.delayed(const Duration(milliseconds: 100));
-          gracePeriod++;
-
-          final amp = await _recordingService.getAmplitude();
-          if (amp.current > amplitudeThreshold) {
-            peakCount++;
-            if (peakCount > 1) {
-              _silenceCount = 0;
-              _hasSpeaked = true;
-            }
-          } else {
-            peakCount = 0;
-            if (_hasSpeaked) _silenceCount++;
-          }
-
-          // Force stop if too long or silence threshold reached after speaking
-          if ((_hasSpeaked && _silenceCount >= silenceThreshold) ||
-              _recordingDuration.inSeconds > 30 ||
-              (gracePeriod > 100 && !_hasSpeaked)) {
-            // Stop after 10s of silence if no speech
-            break;
-          }
-        }
-
-        if (_isLiveSession && _hasSpeaked) {
-          await stopVoiceRecording(context: context);
-          // Wait for Sumi to finish speaking before next loop
+      try {
+        await askSumi(transcript, context: context);
+      } finally {
+        _isProcessingVoice = false;
+        if (_isLiveSession) {
+          // Wait for Sumi to finish speaking before resuming listening
           while (_isSumiSpeaking && _isLiveSession) {
-            await Future.delayed(const Duration(milliseconds: 500));
+            await Future.delayed(const Duration(milliseconds: 250));
           }
-          // Turn-taking grace period
-          await Future.delayed(const Duration(milliseconds: 800));
-        } else if (_isLiveSession) {
-          await _recordingService.stopRecording();
-          _isVoiceRecording = false;
+          await Future.delayed(const Duration(milliseconds: 600));
+          if (_isLiveSession && !_isSumiSpeaking && !_isStreaming) {
+            try {
+              await _speechService.startListening();
+              _isVoiceRecording = true;
+              _currentState = SumiState.idle;
+              _dialogue = "I'm listening...";
+              notifyListeners();
+            } catch (e) {
+              developer.log('Speech recognizer resume failed: $e',
+                  name: 'SumiProvider');
+            }
+          }
         }
-      } catch (e) {
-        developer.log("Live Loop Error: $e");
-        await Future.delayed(const Duration(seconds: 1));
       }
+    });
+
+    _speechPartialSub = _speechService.partialStream.listen((text) {
+      if (!_isLiveSession || _isProcessingVoice || _isSumiSpeaking) return;
+      final partial = text.trim();
+      _dialogue = partial.isEmpty ? "I'm listening..." : partial;
+      notifyListeners();
+    });
+
+    try {
+      await _speechService.startListening();
+      _isVoiceRecording = true;
+      _dialogue = "I'm listening...";
+      notifyListeners();
+    } catch (e) {
+      developer.log('Speech start failed: $e', name: 'SumiProvider');
+      _errorMessage = 'Microphone speech recognition could not start.';
+      _isVoiceRecording = false;
+      notifyListeners();
     }
   }
 
