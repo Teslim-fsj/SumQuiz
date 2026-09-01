@@ -17,8 +17,12 @@ import '../widgets/handwriting_canvas.dart';
 import '../../services/transcript_recovery_service.dart';
 import '../widgets/recording_bar_widget.dart';
 import '../widgets/aura_alert_banner.dart';
+import '../widgets/notes/live_recording_view.dart';
+import '../widgets/notes/split_document_viewer.dart';
+import '../widgets/notes/interactive_canvas_view.dart';
 
 enum NoteEditorMode { write, capture, draw, generate }
+enum NoteWorkspaceLayout { focus, splitScreen, canvas, liveRecording }
 
 class NoteEditorScreen extends StatefulWidget {
   final String noteId;
@@ -36,9 +40,16 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   final FocusNode _editorFocusNode = FocusNode();
 
   NoteEditorMode _mode = NoteEditorMode.write;
+  NoteWorkspaceLayout _layout = NoteWorkspaceLayout.splitScreen;
   bool _isInitialized = false;
   bool _showSidebar = false;
   Offset? _lensPosition;
+
+  int get _wordCount {
+    final text = _controller.document.toPlainText().trim();
+    if (text.isEmpty) return 0;
+    return text.split(RegExp(r'\s+')).where((s) => s.isNotEmpty).length;
+  }
 
   StreamSubscription<String>? _transcriptSub;
   StreamSubscription<String>? _cleanupSub;
@@ -300,6 +311,26 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
               child: CircularProgressIndicator(color: colorScheme.primary)));
     }
 
+    // 1. Live Recording Mode (media_1788275760517.png)
+    if (isRecording || _layout == NoteWorkspaceLayout.liveRecording) {
+      return LiveRecordingView(
+        noteProvider: noteProvider,
+        title: _titleController.text.isNotEmpty ? _titleController.text : 'Lecture 4',
+        topic: 'Thermodynamics',
+        onStopRecording: () async {
+          await noteProvider.stopRecording();
+          setState(() {
+            _layout = NoteWorkspaceLayout.splitScreen;
+          });
+        },
+        onBack: () {
+          setState(() {
+            _layout = NoteWorkspaceLayout.splitScreen;
+          });
+        },
+      );
+    }
+
     return PopScope(
       canPop: true,
       onPopInvokedWithResult: (didPop, result) async {
@@ -324,7 +355,9 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                   onAction: () => noteProvider.clearError(),
                 ),
               _buildTopBar(isRecording, theme),
-              if (_mode == NoteEditorMode.write) _buildQuillToolbar(theme),
+              if (_layout == NoteWorkspaceLayout.splitScreen ||
+                  (_layout == NoteWorkspaceLayout.focus && _mode == NoteEditorMode.write))
+                _buildCustomQuillToolbar(theme),
               Expanded(
                 child: Stack(
                   clipBehavior: Clip.none,
@@ -332,19 +365,13 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                     Positioned.fill(
                       child: _buildEditorArea(noteProvider, theme, isRecording),
                     ),
-                    if (isRecording)
-                      const Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        child: RecordingBarWidget(),
+                    if (_layout != NoteWorkspaceLayout.canvas)
+                      Positioned(
+                        left: 16,
+                        right: 16,
+                        bottom: 16,
+                        child: _buildWorkspaceDock(noteProvider, user, theme),
                       ),
-                    Positioned(
-                      left: 16,
-                      right: 16,
-                      bottom: isRecording ? 96 : 16,
-                      child: _buildWorkspaceDock(noteProvider, user, theme),
-                    ),
                     if (_showSidebar) ...[
                       Positioned.fill(
                         child: GestureDetector(
@@ -372,66 +399,183 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   }
 
   Widget _buildTopBar(bool isRecording, ThemeData theme) {
-    final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0F172A) : Colors.white,
         border: Border(
-            bottom:
-                BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0))),
+          bottom: BorderSide(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.08)
+                : const Color(0xFFE2E8F0),
+          ),
+        ),
       ),
       child: Row(
         children: [
           IconButton(
             onPressed: () => context.pop(),
-            icon: Icon(Icons.arrow_back_ios_new_rounded,
-                size: 18, color: isDark ? Colors.white : const Color(0xFF0F172A)),
-            style: IconButton.styleFrom(
-              backgroundColor: isDark
-                  ? Colors.white.withValues(alpha: 0.06)
-                  : const Color(0xFFF1F5F9),
-              padding: const EdgeInsets.all(12),
+            icon: Icon(
+              Icons.arrow_back_rounded,
+              size: 22,
+              color: isDark ? Colors.white : const Color(0xFF0F172A),
             ),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: TextField(
               controller: _titleController,
               style: GoogleFonts.outfit(
-                fontSize: 22,
+                fontSize: 20,
                 fontWeight: FontWeight.w800,
                 color: isDark ? Colors.white : const Color(0xFF0F172A),
               ),
               decoration: InputDecoration(
-                hintText: 'Untitled Note',
+                hintText: 'Research Note',
                 border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
                 hintStyle: GoogleFonts.outfit(
-                  fontSize: 22,
+                  fontSize: 20,
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF94A3B8),
                 ),
               ),
             ),
           ),
-          if (isRecording) _buildCaptureBadge(theme),
-          const SizedBox(width: 16),
-          IconButton(
-            onPressed: () => setState(() => _showSidebar = !_showSidebar),
-            tooltip:
-                _showSidebar ? 'Hide context panel' : 'Topics & recordings',
+
+          // Focus mode: "Saved" capsule
+          if (_layout == NoteWorkspaceLayout.focus) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF1E293B)
+                    : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Saved',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isDark
+                      ? const Color(0xFFCBD5E1)
+                      : const Color(0xFF475569),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+          ],
+
+          // Split / Canvas mode: "Share" action
+          if (_layout == NoteWorkspaceLayout.splitScreen ||
+              _layout == NoteWorkspaceLayout.canvas) ...[
+            TextButton(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Note link copied to clipboard! 📋',
+                        style: GoogleFonts.inter(fontSize: 14)),
+                    backgroundColor: const Color(0xFF6B5CE7),
+                    duration: const Duration(seconds: 2),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              style: TextButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                'Share',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF6B5CE7),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+
+          // Popup Menu for Layout Switching
+          PopupMenuButton<NoteWorkspaceLayout>(
             icon: Icon(
-                _showSidebar
-                    ? Icons.arrow_forward_ios_rounded
-                    : Icons.arrow_back_ios_rounded,
-                size: 18,
-                color: isDark ? Colors.white70 : const Color(0xFF475569)),
-            style: IconButton.styleFrom(
-              backgroundColor: _showSidebar
-                  ? const Color(0xFF6B5CE7).withValues(alpha: 0.15)
-                  : (isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFF1F5F9)),
+              Icons.more_horiz_rounded,
+              color: isDark ? Colors.white70 : const Color(0xFF475569),
+              size: 22,
+            ),
+            tooltip: 'Switch Workspace Layout',
+            onSelected: (layout) {
+              if (layout == NoteWorkspaceLayout.liveRecording) {
+                final user = Provider.of<UserModel?>(context, listen: false);
+                context.read<NoteProvider>().startRecording(user?.uid ?? '');
+              }
+              setState(() => _layout = layout);
+            },
+            itemBuilder: (context) => [
+              _buildLayoutMenuItem(
+                NoteWorkspaceLayout.splitScreen,
+                'Split Document Mode',
+                Icons.vertical_split_rounded,
+                _layout == NoteWorkspaceLayout.splitScreen,
+              ),
+              _buildLayoutMenuItem(
+                NoteWorkspaceLayout.focus,
+                'Minimalist Focus Mode',
+                Icons.menu_book_rounded,
+                _layout == NoteWorkspaceLayout.focus,
+              ),
+              _buildLayoutMenuItem(
+                NoteWorkspaceLayout.canvas,
+                'Interactive Canvas Mode',
+                Icons.dashboard_customize_rounded,
+                _layout == NoteWorkspaceLayout.canvas,
+              ),
+              _buildLayoutMenuItem(
+                NoteWorkspaceLayout.liveRecording,
+                'Live Lecture Recording',
+                Icons.mic_rounded,
+                _layout == NoteWorkspaceLayout.liveRecording,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  PopupMenuItem<NoteWorkspaceLayout> _buildLayoutMenuItem(
+    NoteWorkspaceLayout value,
+    String label,
+    IconData icon,
+    bool isSelected,
+  ) {
+    return PopupMenuItem<NoteWorkspaceLayout>(
+      value: value,
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 18,
+            color: isSelected
+                ? const Color(0xFF6B5CE7)
+                : const Color(0xFF64748B),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              color: isSelected ? const Color(0xFF6B5CE7) : null,
             ),
           ),
         ],
@@ -628,6 +772,9 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                 provider.stopRecording();
               } else {
                 provider.startRecording(user?.uid ?? '');
+                setState(() {
+                  _layout = NoteWorkspaceLayout.liveRecording;
+                });
               }
             },
             icon: Icon(isRecording ? Icons.stop_rounded : Icons.mic_rounded),
@@ -807,35 +954,149 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     );
   }
 
-  Widget _buildQuillToolbar(ThemeData theme) {
-    final colorScheme = theme.colorScheme;
+  Widget _buildCustomQuillToolbar(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLowest,
+        color: isDark ? const Color(0xFF0F172A) : Colors.white,
         border: Border(
-          bottom:
-              BorderSide(color: colorScheme.outline.withValues(alpha: 0.08)),
+          bottom: BorderSide(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.08)
+                : const Color(0xFFE2E8F0),
+          ),
         ),
       ),
-      child: quill.QuillSimpleToolbar(
-        controller: _controller,
-        config: quill.QuillSimpleToolbarConfig(
-          showFontFamily: false,
-          showFontSize: false,
-          showBackgroundColorButton: false,
-          showClearFormat: true,
-          showColorButton: true,
-          showCodeBlock: false,
-          showInlineCode: false,
-          showSubscript: false,
-          showSuperscript: false,
-          showHeaderStyle: true,
-          showListCheck: true,
-          showQuote: true,
-          showIndent: true,
-          showLink: false,
-          showSearchButton: false,
-          toolbarSize: 44,
+      child: Row(
+        children: [
+          // H1
+          _textFormatButton('H1', () {
+            final isH1 = _controller
+                .getSelectionStyle()
+                .attributes
+                .containsKey(quill.Attribute.h1.key);
+            _controller.formatSelection(
+                isH1 ? quill.Attribute.clone(quill.Attribute.h1, null) : quill.Attribute.h1);
+          }, isDark),
+          const SizedBox(width: 4),
+          // H2
+          _textFormatButton('H2', () {
+            final isH2 = _controller
+                .getSelectionStyle()
+                .attributes
+                .containsKey(quill.Attribute.h2.key);
+            _controller.formatSelection(
+                isH2 ? quill.Attribute.clone(quill.Attribute.h2, null) : quill.Attribute.h2);
+          }, isDark),
+          const SizedBox(width: 6),
+          // Bold
+          _iconFormatButton(Icons.format_bold_rounded, () {
+            final isBold = _controller
+                .getSelectionStyle()
+                .attributes
+                .containsKey(quill.Attribute.bold.key);
+            _controller.formatSelection(isBold
+                ? quill.Attribute.clone(quill.Attribute.bold, null)
+                : quill.Attribute.bold);
+          }, isDark),
+          const SizedBox(width: 4),
+          // Italic
+          _iconFormatButton(Icons.format_italic_rounded, () {
+            final isItalic = _controller
+                .getSelectionStyle()
+                .attributes
+                .containsKey(quill.Attribute.italic.key);
+            _controller.formatSelection(isItalic
+                ? quill.Attribute.clone(quill.Attribute.italic, null)
+                : quill.Attribute.italic);
+          }, isDark),
+          const SizedBox(width: 8),
+
+          Container(
+            height: 16,
+            width: 1,
+            color: isDark ? Colors.white24 : const Color(0xFFE2E8F0),
+          ),
+          const SizedBox(width: 8),
+
+          // Bullet List
+          _iconFormatButton(Icons.format_list_bulleted_rounded, () {
+            final isUl = _controller
+                .getSelectionStyle()
+                .attributes
+                .containsKey(quill.Attribute.ul.key);
+            _controller.formatSelection(
+                isUl ? quill.Attribute.clone(quill.Attribute.ul, null) : quill.Attribute.ul);
+          }, isDark),
+          const SizedBox(width: 4),
+          // Numbered List
+          _iconFormatButton(Icons.format_list_numbered_rounded, () {
+            final isOl = _controller
+                .getSelectionStyle()
+                .attributes
+                .containsKey(quill.Attribute.ol.key);
+            _controller.formatSelection(
+                isOl ? quill.Attribute.clone(quill.Attribute.ol, null) : quill.Attribute.ol);
+          }, isDark),
+
+          const Spacer(),
+
+          // Cloud Saved Indicator
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.cloud_done_outlined,
+                size: 15,
+                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'Saved',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color:
+                      isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _textFormatButton(String label, VoidCallback onTap, bool isDark) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _iconFormatButton(IconData icon, VoidCallback onTap, bool isDark) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        child: Icon(
+          icon,
+          size: 18,
+          color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
         ),
       ),
     );
@@ -844,63 +1105,90 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   Widget _buildEditorArea(NoteProvider provider, ThemeData theme,
       [bool isRecording = false]) {
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    // 1. Canvas Mode
+    if (_layout == NoteWorkspaceLayout.canvas) {
+      final user = Provider.of<UserModel?>(context, listen: false);
+      return InteractiveCanvasView(
+        isSynthesizing: provider.state == NoteProcessingState.generating ||
+            provider.state == NoteProcessingState.cleaning_up,
+        onSynthesize: () async {
+          if (user == null) return;
+          final folderId = await provider.generateStudyMaterials(user.uid);
+          if (folderId != null && mounted) {
+            context.pushNamed('results-view',
+                pathParameters: {'folderId': folderId});
+          }
+        },
+      );
+    }
+
     final bottomInset = switch (_mode) {
-      NoteEditorMode.write => isRecording ? 172.0 : 112.0,
-      _ => isRecording ? 244.0 : 172.0,
+      NoteEditorMode.write => 112.0,
+      _ => 172.0,
     };
 
-    return Container(
-      color: colorScheme.surface,
+    // Note Editor Main Widget
+    final editorWidget = Container(
+      color: isDark ? const Color(0xFF0F172A) : Colors.white,
       child: Stack(
         children: [
           Positioned.fill(
-            child: quill.QuillEditor.basic(
-              controller: _controller,
-              scrollController: _scrollController,
-              config: quill.QuillEditorConfig(
-                autoFocus: true,
-                padding: EdgeInsets.fromLTRB(
-                  40,
-                  40,
-                  40,
-                  bottomInset,
-                ),
-                placeholder: 'Start typing, recording, or sketching...',
-                embedBuilders: [
-                  ImageEmbedBuilder(),
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              padding: EdgeInsets.fromLTRB(28, 20, 28, bottomInset),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  quill.QuillEditor.basic(
+                    controller: _controller,
+                    config: quill.QuillEditorConfig(
+                      autoFocus: true,
+                      padding: EdgeInsets.zero,
+                      placeholder: 'Start typing, recording, or sketching...',
+                      embedBuilders: [
+                        ImageEmbedBuilder(),
+                      ],
+                      customStyles: quill.DefaultStyles(
+                        paragraph: quill.DefaultTextBlockStyle(
+                          GoogleFonts.inter(
+                              fontSize: 16,
+                              height: 1.8,
+                              color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155)),
+                          const quill.HorizontalSpacing(0, 0),
+                          const quill.VerticalSpacing(0, 0),
+                          const quill.VerticalSpacing(0, 0),
+                          null,
+                        ),
+                        h1: quill.DefaultTextBlockStyle(
+                          GoogleFonts.outfit(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                          const quill.HorizontalSpacing(0, 0),
+                          const quill.VerticalSpacing(16, 0),
+                          const quill.VerticalSpacing(0, 0),
+                          null,
+                        ),
+                        h2: quill.DefaultTextBlockStyle(
+                          GoogleFonts.outfit(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                          const quill.HorizontalSpacing(0, 0),
+                          const quill.VerticalSpacing(12, 0),
+                          const quill.VerticalSpacing(0, 0),
+                          null,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (_layout == NoteWorkspaceLayout.focus) ...[
+                    const SizedBox(height: 36),
+                    _buildWordCountFooter(isDark),
+                  ],
                 ],
-                customStyles: quill.DefaultStyles(
-                  paragraph: quill.DefaultTextBlockStyle(
-                    GoogleFonts.inter(
-                        fontSize: 16,
-                        height: 1.8,
-                        color: colorScheme.onSurface),
-                    const quill.HorizontalSpacing(0, 0),
-                    const quill.VerticalSpacing(0, 0),
-                    const quill.VerticalSpacing(0, 0),
-                    null,
-                  ),
-                  h1: quill.DefaultTextBlockStyle(
-                    GoogleFonts.outfit(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface),
-                    const quill.HorizontalSpacing(0, 0),
-                    const quill.VerticalSpacing(16, 0),
-                    const quill.VerticalSpacing(0, 0),
-                    null,
-                  ),
-                  h2: quill.DefaultTextBlockStyle(
-                    GoogleFonts.outfit(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface),
-                    const quill.HorizontalSpacing(0, 0),
-                    const quill.VerticalSpacing(12, 0),
-                    const quill.VerticalSpacing(0, 0),
-                    null,
-                  ),
-                ),
               ),
             ),
           ),
@@ -914,6 +1202,32 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
               ),
             ),
         ],
+      ),
+    );
+
+    // 2. Split Screen Mode (media_1788275813972.png)
+    if (_layout == NoteWorkspaceLayout.splitScreen) {
+      return SplitDocumentViewer(
+        documentName: 'Cellular Biology - Chapter 4.pdf',
+        child: editorWidget,
+      );
+    }
+
+    // 3. Focus Mode
+    return editorWidget;
+  }
+
+  Widget _buildWordCountFooter(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      alignment: Alignment.center,
+      child: Text(
+        '$_wordCount words',
+        style: GoogleFonts.inter(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+        ),
       ),
     );
   }
