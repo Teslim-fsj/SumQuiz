@@ -151,10 +151,9 @@ class _CreateContentScreenState extends State<CreateContentScreen>
     if (!canProceed) {
       if (mounted) {
         await NotificationIntegration.onUsageLimitHit(context);
-        setState(() {
-          _errorMessage =
-              "You've reached today's study limit. Upgrade to continue learning.";
-        });
+        if (mounted) {
+          UpgradeDialog.show(context, featureName: feature);
+        }
       }
       return false;
     }
@@ -778,6 +777,22 @@ class _CreateContentScreenState extends State<CreateContentScreen>
       final aiService = Provider.of<EnhancedAIService>(context, listen: false);
       final localDb = Provider.of<LocalDatabaseService>(context, listen: false);
       final usageService = UsageService();
+
+      // Gate: check limit before topic generation (free users only)
+      if (!user.isPro && user.role != UserRole.creator) {
+        final canProceed =
+            await usageService.canPerformAction(user.uid, 'generate');
+        if (!canProceed) {
+          if (mounted) {
+            await NotificationIntegration.onUsageLimitHit(context);
+            if (mounted) {
+              UpgradeDialog.show(context, featureName: 'AI Topic Generation');
+            }
+          }
+          if (mounted) setState(() => _isLoading = false);
+          return;
+        }
+      }
 
       await usageService.recordAction(user.uid, 'generate');
 

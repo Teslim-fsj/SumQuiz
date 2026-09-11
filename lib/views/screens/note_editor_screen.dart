@@ -20,6 +20,7 @@ import '../widgets/aura_alert_banner.dart';
 import '../widgets/notes/live_recording_view.dart';
 import '../widgets/notes/split_document_viewer.dart';
 import '../widgets/notes/interactive_canvas_view.dart';
+import '../widgets/upgrade_dialog.dart';
 
 enum NoteEditorMode { write, capture, draw, generate }
 enum NoteWorkspaceLayout { focus, splitScreen, canvas, liveRecording }
@@ -294,12 +295,12 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     final user = Provider.of<UserModel?>(context);
     final isRecording = noteProvider.state == NoteProcessingState.recording;
 
-    // Show subscription screen if limit reached
+    // Show upgrade dialog if limit reached
     if (noteProvider.limitReached) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           noteProvider.clearError(); // resets limitReached to false
-          context.push('/settings/subscription');
+          UpgradeDialog.show(context, featureName: 'Live Lecture Notes');
         }
       });
     }
