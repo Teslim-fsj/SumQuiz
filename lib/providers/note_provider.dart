@@ -86,6 +86,9 @@ class NoteProvider with ChangeNotifier {
   Duration _recordingDuration = Duration.zero;
   Duration get recordingDuration => _recordingDuration;
 
+  bool _isRecordingPaused = false;
+  bool get isRecordingPaused => _isRecordingPaused;
+
   LocalNote? _currentNote;
   LocalNote? get currentNote => _currentNote;
 
@@ -424,6 +427,7 @@ class NoteProvider with ChangeNotifier {
   void _clearRecordingState() {
     _state = NoteProcessingState.idle;
     _recordingDuration = Duration.zero;
+    _isRecordingPaused = false;
     _livePartialTranscript = '';
     _speechSub?.cancel();
     _partialSub?.cancel();
@@ -435,8 +439,37 @@ class NoteProvider with ChangeNotifier {
     );
   }
 
+  Future<void> pauseRecording() async {
+    if (_state != NoteProcessingState.recording || _isRecordingPaused) return;
+    _isRecordingPaused = true;
+    try {
+      await _recordingService.pauseRecording();
+      if (!isDeepgramEnabled) {
+        await _speechService.stopListening();
+      }
+      notifyListeners();
+    } catch (e) {
+      developer.log('Error pausing recording: $e', name: 'NoteProvider');
+    }
+  }
+
+  Future<void> resumeRecording() async {
+    if (_state != NoteProcessingState.recording || !_isRecordingPaused) return;
+    _isRecordingPaused = false;
+    try {
+      await _recordingService.resumeRecording();
+      if (!isDeepgramEnabled) {
+        await _speechService.startListening();
+      }
+      notifyListeners();
+    } catch (e) {
+      developer.log('Error resuming recording: $e', name: 'NoteProvider');
+    }
+  }
+
   Future<void> stopRecording() async {
     if (_state != NoteProcessingState.recording) return;
+    _isRecordingPaused = false;
 
     try {
       developer.log('Stopping lecture recording...', name: 'NoteProvider');

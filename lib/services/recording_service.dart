@@ -11,6 +11,7 @@ class RecordingService {
 
   String? _currentPath;
   DateTime? _startTime;
+  Duration _elapsedBeforePause = Duration.zero;
   bool _isDisposed = false;
 
   final StreamController<Duration> _durationController =
@@ -64,6 +65,7 @@ class RecordingService {
       );
 
       await _recorder.start(config, path: _currentPath!);
+      _elapsedBeforePause = Duration.zero;
       _startTime = DateTime.now();
       _startTimer();
       _startAmplitudePolling();
@@ -92,6 +94,32 @@ class RecordingService {
       case RecordQuality.high:
         return 44100;
     }
+  }
+
+  Future<void> pauseRecording() async {
+    if (await _recorder.isRecording()) {
+      await _recorder.pause();
+      _stopAmplitudePolling();
+      if (_startTime != null) {
+        _elapsedBeforePause += DateTime.now().difference(_startTime!);
+      }
+      _timer?.cancel();
+      _timer = null;
+      _startTime = null;
+    }
+  }
+
+  Future<void> resumeRecording() async {
+    if (await _recorder.isPaused()) {
+      await _recorder.resume();
+      _startTime = DateTime.now();
+      _startTimer();
+      _startAmplitudePolling();
+    }
+  }
+
+  Future<bool> isPaused() async {
+    return await _recorder.isPaused();
   }
 
   Future<String?> stopRecording() async {
@@ -137,7 +165,8 @@ class RecordingService {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_startTime != null && !_isDisposed) {
-        _durationController.add(DateTime.now().difference(_startTime!));
+        _durationController
+            .add(_elapsedBeforePause + DateTime.now().difference(_startTime!));
       }
     });
   }
@@ -146,6 +175,7 @@ class RecordingService {
     _timer?.cancel();
     _timer = null;
     _startTime = null;
+    _elapsedBeforePause = Duration.zero;
     if (!_isDisposed) {
       _durationController.add(Duration.zero);
     }
