@@ -41,7 +41,7 @@ android {
     defaultConfig {
         applicationId = "com.sumquiz.app"
         minSdk = 26
-        targetSdk = 35  // ← Updated to 35 (safe & recommended)
+        targetSdk = 36  // ← Updated to 36 to satisfy Google Play Console requirements
         
         val flutterVersionCode = localProperties.getProperty("flutter.versionCode")?.toInt() ?: 1
         val flutterVersionName = localProperties.getProperty("flutter.versionName") ?: "1.0"
