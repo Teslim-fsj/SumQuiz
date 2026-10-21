@@ -3,11 +3,17 @@ import 'package:google_fonts/google_fonts.dart';
 
 class SplitDocumentViewer extends StatefulWidget {
   final String documentName;
+  final String? documentContent;
+  final VoidCallback? onClose;
+  final VoidCallback? onPickDocument;
   final Widget child;
 
   const SplitDocumentViewer({
     super.key,
-    this.documentName = 'Cellular Biology - Chapter 4.pdf',
+    this.documentName = 'Attached Document',
+    this.documentContent,
+    this.onClose,
+    this.onPickDocument,
     required this.child,
   });
 
@@ -16,9 +22,9 @@ class SplitDocumentViewer extends StatefulWidget {
 }
 
 class _SplitDocumentViewerState extends State<SplitDocumentViewer> {
-  int _zoomPercentage = 125;
-  bool _isHighlighterActive = true;
-  double _splitRatio = 0.42; // Upper pane ratio
+  int _zoomPercentage = 100;
+  bool _isHighlighterActive = false;
+  double _splitRatio = 0.40; // Upper pane ratio
 
   void _zoomIn() {
     setState(() {
@@ -113,7 +119,9 @@ class _SplitDocumentViewerState extends State<SplitDocumentViewer> {
       ),
       child: Row(
         children: [
-          // Document Name Pill
+          Icon(Icons.picture_as_pdf_rounded,
+              size: 18, color: const Color(0xFF6B5CE7)),
+          const SizedBox(width: 8),
           Flexible(
             child: Text(
               widget.documentName,
@@ -121,21 +129,21 @@ class _SplitDocumentViewerState extends State<SplitDocumentViewer> {
               style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
               ),
             ),
           ),
           const SizedBox(width: 12),
 
-          // Zoom & Search Controls
+          // Zoom Controls
           IconButton(
-            icon: const Icon(Icons.search_rounded, size: 18),
+            icon: const Icon(Icons.zoom_out_rounded, size: 18),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
             color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-            onPressed: () {},
+            onPressed: _zoomOut,
+            tooltip: 'Zoom Out',
           ),
-          const SizedBox(width: 4),
           Text(
             '$_zoomPercentage%',
             style: GoogleFonts.inter(
@@ -145,24 +153,18 @@ class _SplitDocumentViewerState extends State<SplitDocumentViewer> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.zoom_out_rounded, size: 18),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-            onPressed: _zoomOut,
-          ),
-          IconButton(
             icon: const Icon(Icons.zoom_in_rounded, size: 18),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
             color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
             onPressed: _zoomIn,
+            tooltip: 'Zoom In',
           ),
 
           Container(
             height: 16,
             width: 1,
-            margin: const EdgeInsets.symmetric(horizontal: 8),
+            margin: const EdgeInsets.symmetric(horizontal: 6),
             color: isDark ? Colors.white24 : const Color(0xFFE2E8F0),
           ),
 
@@ -181,70 +183,98 @@ class _SplitDocumentViewerState extends State<SplitDocumentViewer> {
               child: Icon(
                 Icons.border_color_rounded,
                 size: 16,
-                color: _isHighlighterActive ? const Color(0xFF6B5CE7) : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+                color: _isHighlighterActive
+                    ? const Color(0xFF6B5CE7)
+                    : (isDark ? Colors.white70 : const Color(0xFF64748B)),
               ),
             ),
           ),
-          const SizedBox(width: 6),
 
-          // Pencil / Draw Tool
-          IconButton(
-            icon: const Icon(Icons.edit_outlined, size: 16),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-            onPressed: () {},
-          ),
+          if (widget.onClose != null) ...[
+            const SizedBox(width: 6),
+            IconButton(
+              icon: const Icon(Icons.close_rounded, size: 18),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              color: isDark ? Colors.white70 : const Color(0xFF64748B),
+              tooltip: 'Close Document View',
+              onPressed: widget.onClose,
+            ),
+          ],
         ],
       ),
     );
   }
 
   Widget _buildDocumentContent(bool isDark) {
+    if (widget.documentContent != null && widget.documentContent!.isNotEmpty) {
+      return Container(
+        width: double.infinity,
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: SingleChildScrollView(
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF0F172A) : Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+              ),
+            ),
+            child: Text(
+              widget.documentContent!,
+              style: GoogleFonts.inter(
+                fontSize: 14 * (_zoomPercentage / 100),
+                height: 1.6,
+                color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       width: double.infinity,
       color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: SingleChildScrollView(
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF0F172A) : Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.description_outlined,
+                size: 40,
+                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
+            const SizedBox(height: 12),
+            Text(
+              'No document loaded',
+              style: GoogleFonts.outfit(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
+              ),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+            const SizedBox(height: 4),
+            Text(
+              'Attach a PDF or lecture slide to study side-by-side',
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
               ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '4.2 Mitochondria\nStructure and Function',
-                style: GoogleFonts.outfit(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  height: 1.25,
-                  color: isDark ? Colors.white : const Color(0xFF0F172A),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                'Mitochondria are often referred to as the powerhouses of the cell. They generate most of the cell\'s supply of adenosine triphosphate (ATP), used as a source of chemical energy. A mitochondrion contains outer and inner membranes composed of phospholipid bilayers and proteins.',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  height: 1.6,
-                  color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+            ),
+            if (widget.onPickDocument != null) ...[
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: widget.onPickDocument,
+                icon: const Icon(Icons.upload_file_rounded, size: 18),
+                label: const Text('Attach PDF Document'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF6B5CE7),
                 ),
               ),
             ],
-          ),
+          ],
         ),
       ),
     );

@@ -71,7 +71,12 @@ class InputValidator {
 }
 
 class CreateContentScreen extends StatefulWidget {
-  const CreateContentScreen({super.key});
+  /// Optional import method to open immediately: `pdf`, `image`, `audio`,
+  /// `link` (YouTube / web) or `text`. Lets entry points like the Create
+  /// sheet skip straight to the right picker.
+  final String? initialMethod;
+
+  const CreateContentScreen({super.key, this.initialMethod});
 
   @override
   State<CreateContentScreen> createState() => _CreateContentScreenState();
@@ -108,10 +113,38 @@ class _CreateContentScreenState extends State<CreateContentScreen>
   // New design state: More options expanded
   bool _showMoreOptions = false;
   final ScrollController _scrollController = ScrollController();
+  final FocusNode _linkFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
+    final method = widget.initialMethod;
+    if (method != null && method.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _applyInitialMethod(method);
+      });
+    }
+  }
+
+  /// Jumps straight into the picker for [method] so users coming from the
+  /// Create sheet don't have to pick the same option a second time.
+  void _applyInitialMethod(String method) {
+    switch (method) {
+      case 'pdf':
+      case 'audio':
+        setState(() => _selectedImportMethod = method);
+        _pickPdf();
+        break;
+      case 'image':
+        setState(() => _selectedImportMethod = 'image');
+        _showImagePickerOptions();
+        break;
+      case 'link':
+      case 'text':
+        setState(() => _selectedImportMethod = method);
+        _linkFocusNode.requestFocus();
+        break;
+    }
   }
 
   @override
@@ -120,6 +153,7 @@ class _CreateContentScreenState extends State<CreateContentScreen>
     _textController.dispose();
     _linkController.dispose();
     _topicController.dispose();
+    _linkFocusNode.dispose();
     super.dispose();
   }
 
@@ -1108,7 +1142,20 @@ class _CreateContentScreenState extends State<CreateContentScreen>
                 Expanded(
                   child: TextField(
                     controller: _linkController,
-                    onChanged: (v) => setState(() {}),
+                    focusNode: _linkFocusNode,
+                    onChanged: (v) => setState(() {
+                      // Typed input only drives the method when no file is
+                      // attached; files take priority.
+                      if (_pdfBytes != null || _selectedImages.isNotEmpty) {
+                        return;
+                      }
+                      if (InputValidator.isValidUrl(v.trim())) {
+                        _selectedImportMethod = 'link';
+                      } else {
+                        _selectedImportMethod = 'text';
+                        _textController.text = v;
+                      }
+                    }),
                     style:
                         GoogleFonts.outfit(color: Colors.white, fontSize: 16),
                     decoration: InputDecoration(

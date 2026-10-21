@@ -14,11 +14,27 @@
       },
       "oauth_client": [
         {
+          "client_id": "1063163612294-1ecjra9bd0lm3ndmpo7tjsvh7ckq4uiv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sumquiz.app",
+            "certificate_hash": "8c8b50d4b2fbb54f507eee1a83794490b40a0cef"
+          }
+        },
+        {
           "client_id": "1063163612294-bqbcsmmkeao9dfjer4qmro6j2tkv1lur.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.sumquiz.app",
             "certificate_hash": "5e6add74ffe573e69d194c9e9cc0c7416f395d84"
+          }
+        },
+        {
+          "client_id": "1063163612294-c12t5l2pvu4dk1dn8fqutsunbh8g6v9p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sumquiz.app",
+            "certificate_hash": "9952300769a2c1061a9e26af81c417bae08ebe52"
           }
         },
         {

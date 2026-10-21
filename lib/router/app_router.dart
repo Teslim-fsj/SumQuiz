@@ -348,16 +348,23 @@ GoRouter createRouter(AuthService authService) {
             routes: <RouteBase>[
               GoRoute(
                 path: '/create-content',
-                builder: (context, state) => const RoleAwareView(
-                  studentView: ResponsiveView(
-                    mobile: CreateContentScreen(),
-                    desktop: CreateContentScreenWeb(),
-                  ),
-                  creatorView: ResponsiveView(
-                    mobile: CreateContentScreen(),
-                    desktop: CreateContentScreenWeb(),
-                  ),
-                ),
+                builder: (context, state) {
+                  final method = state.uri.queryParameters['method'];
+                  final mobile = CreateContentScreen(
+                    key: ValueKey(state.uri.toString()),
+                    initialMethod: method,
+                  );
+                  return RoleAwareView(
+                    studentView: ResponsiveView(
+                      mobile: mobile,
+                      desktop: const CreateContentScreenWeb(),
+                    ),
+                    creatorView: ResponsiveView(
+                      mobile: mobile,
+                      desktop: const CreateContentScreenWeb(),
+                    ),
+                  );
+                },
                 routes: [
                   GoRoute(
                     path: 'exam-wizard',

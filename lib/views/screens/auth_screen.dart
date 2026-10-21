@@ -109,9 +109,11 @@ class _AuthScreenState extends State<AuthScreen> {
       if (!mounted) return;
       _navigateAfterAuth();
     } on FirebaseAuthException catch (e) {
-      if (mounted) _showError(theme, messageForFirebaseAuth(e));
+      final msg = messageForFirebaseAuth(e);
+      if (msg.isNotEmpty && mounted) _showError(theme, msg);
     } catch (e) {
-      if (mounted) _showError(theme, messageForAuthFailure(e));
+      final msg = messageForAuthFailure(e);
+      if (msg.isNotEmpty && mounted) _showError(theme, msg);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

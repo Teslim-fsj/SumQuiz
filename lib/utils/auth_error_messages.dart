@@ -84,9 +84,18 @@ String messageForAuthFailure(Object e) {
   if (e is FirebaseAuthException) {
     return messageForFirebaseAuth(e);
   }
-  final s = e.toString();
-  if (s.contains('Referral') || s.contains('referral')) {
-    return s.replaceFirst(RegExp(r'^Exception:\s*'), '').trim();
+  final s = e.toString().toLowerCase();
+  if (s.contains('canceled') || s.contains('cancelled')) {
+    return ''; // Silent - user dismissed the dialog
   }
-  return 'Something went wrong. Please try again.';
+  if (s.contains('network') || s.contains('socket')) {
+    return 'Network error during sign-in. Please check your connection.';
+  }
+  if (s.contains('referral')) {
+    return e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '').trim();
+  }
+  if (s.contains('10:') || s.contains('developer_error') || s.contains('12500')) {
+    return 'Google Sign-In configuration error (SHA-1 mismatch in Firebase Console).';
+  }
+  return 'Google sign-in could not complete. Please try again.';
 }

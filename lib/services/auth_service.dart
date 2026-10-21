@@ -129,7 +129,12 @@ class AuthService {
           _googleSignInInitialized = true;
         }
 
-        await _googleSignIn.signOut(); // Ensure fresh account picker
+        try {
+          await _googleSignIn.signOut(); // Ensure fresh account picker
+        } catch (e) {
+          developer.log('Non-critical: signOut before authenticate failed: $e',
+              name: 'AuthService');
+        }
 
         // Step 1: Authenticate (identity only)
         developer.log('Authenticating with Google...', name: 'AuthService');

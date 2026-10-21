@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' as io;
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -15,15 +17,10 @@ import '../../models/user_model.dart';
 import '../../services/mastery_service.dart';
 import '../widgets/handwriting_canvas.dart';
 import '../../services/transcript_recovery_service.dart';
-import '../widgets/recording_bar_widget.dart';
 import '../widgets/aura_alert_banner.dart';
 import '../widgets/notes/live_recording_view.dart';
 import '../widgets/notes/split_document_viewer.dart';
-import '../widgets/notes/interactive_canvas_view.dart';
 import '../widgets/upgrade_dialog.dart';
-
-enum NoteEditorMode { write, capture, draw, generate }
-enum NoteWorkspaceLayout { focus, splitScreen, canvas, liveRecording }
 
 class NoteEditorScreen extends StatefulWidget {
   final String noteId;
@@ -40,11 +37,15 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   final TextEditingController _titleController = TextEditingController();
   final FocusNode _editorFocusNode = FocusNode();
 
-  NoteEditorMode _mode = NoteEditorMode.write;
-  NoteWorkspaceLayout _layout = NoteWorkspaceLayout.splitScreen;
   bool _isInitialized = false;
   bool _showSidebar = false;
-  Offset? _lensPosition;
+  bool _showSplitDocument = false;
+  bool _isSketchMode = false;
+  bool _isEraserMode = false;
+  bool _showFullScreenRecording = false;
+
+  String _attachedDocumentName = 'Attached Document';
+  String? _attachedDocumentContent;
 
   int get _wordCount {
     final text = _controller.document.toPlainText().trim();
@@ -65,8 +66,9 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     if (widget.noteId == 'new') {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         final uri = GoRouterState.of(context).uri;
-        await noteProvider.createNewNote(user?.uid ?? '');
+        final newNote = await noteProvider.createNewNote(user?.uid ?? '');
         if (mounted) {
+          _titleController.text = newNote.title;
           if (uri.queryParameters['startRecording'] == 'true') {
             noteProvider.startRecording(user?.uid ?? '');
           }
@@ -83,7 +85,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
 
     _titleController.addListener(_onTitleChanged);
     _controller.addListener(_onContentChanged);
-    _controller.onSelectionChanged = _handleSelectionChanged;
 
     _transcriptSub = noteProvider.transcriptChunkStream.listen((text) {
       if (mounted && text.isNotEmpty) {
@@ -102,7 +103,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
               selection: const TextSelection.collapsed(offset: 0),
             );
             _controller.addListener(_onContentChanged);
-            _controller.onSelectionChanged = _handleSelectionChanged;
             oldController.dispose();
           });
           ScaffoldMessenger.of(context).showSnackBar(
@@ -115,16 +115,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           debugPrint('Failed to apply cleaned notes: $e');
         }
       }
-    });
-  }
-
-  void _handleSelectionChanged(TextSelection selection) {
-    if (selection.isCollapsed) {
-      if (_lensPosition != null) setState(() => _lensPosition = null);
-      return;
-    }
-    setState(() {
-      _lensPosition = const Offset(150, 400);
     });
   }
 
@@ -149,29 +139,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     final isAtEnd = currentSelection.extentOffset >= insertionIndex;
 
     _controller.document.insert(insertionIndex, textToInsert);
-
-    // Highlight keywords
-    final List<String> keywords = [
-      'mitochondria',
-      'energy',
-      'atp',
-      'cell',
-      'nucleus',
-      'important',
-      'exam'
-    ];
-    final lowerText = textToInsert.toLowerCase();
-    for (final keyword in keywords) {
-      int idx = lowerText.indexOf(keyword);
-      while (idx != -1) {
-        _controller.formatText(
-            insertionIndex + idx,
-            keyword.length,
-            quill.Attribute.clone(quill.Attribute.color,
-                Colors.orangeAccent.toARGB32().toRadixString(16)));
-        idx = lowerText.indexOf(keyword, idx + keyword.length);
-      }
-    }
 
     if (isAtEnd) {
       final newLength = _controller.document.length;
@@ -221,7 +188,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
             selection: const TextSelection.collapsed(offset: 0),
           );
           _controller.addListener(_onContentChanged);
-          _controller.onSelectionChanged = _handleSelectionChanged;
         } catch (e) {
           _controller.document.insert(0, note.content);
         }
@@ -276,6 +242,32 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     }
   }
 
+  Future<void> _pickDocumentForSplitView() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'txt', 'doc', 'docx'],
+        withData: true,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+        String? previewText;
+        if (file.bytes != null && file.extension?.toLowerCase() == 'txt') {
+          previewText = utf8.decode(file.bytes!);
+        }
+        setState(() {
+          _attachedDocumentName = file.name;
+          _attachedDocumentContent = previewText ??
+              'Document "${file.name}" loaded (${(file.size / 1024).toStringAsFixed(1)} KB).\nUse alongside your notes.';
+          _showSplitDocument = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error picking document: $e');
+    }
+  }
+
   @override
   void dispose() {
     _titleController.dispose();
@@ -291,15 +283,15 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final noteProvider = context.watch<NoteProvider>();
     final user = Provider.of<UserModel?>(context);
     final isRecording = noteProvider.state == NoteProcessingState.recording;
 
-    // Show upgrade dialog if limit reached
     if (noteProvider.limitReached) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          noteProvider.clearError(); // resets limitReached to false
+          noteProvider.clearError();
           UpgradeDialog.show(context, featureName: 'Live Lecture Notes');
         }
       });
@@ -307,26 +299,30 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
 
     if (!_isInitialized) {
       return Scaffold(
-          backgroundColor: colorScheme.surface,
-          body: Center(
-              child: CircularProgressIndicator(color: colorScheme.primary)));
+        backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+        body: Center(
+          child: CircularProgressIndicator(color: colorScheme.primary),
+        ),
+      );
     }
 
-    // 1. Live Recording Mode (media_1788275760517.png)
-    if (isRecording || _layout == NoteWorkspaceLayout.liveRecording) {
+    // Fullscreen dedicated Live Lecture Recording view (expandable)
+    if (_showFullScreenRecording) {
       return LiveRecordingView(
         noteProvider: noteProvider,
-        title: _titleController.text.isNotEmpty ? _titleController.text : 'Lecture 4',
-        topic: 'Thermodynamics',
+        title: _titleController.text.isNotEmpty
+            ? _titleController.text
+            : 'Lecture Recording',
+        topic: 'Live Session',
         onStopRecording: () async {
           await noteProvider.stopRecording();
           setState(() {
-            _layout = NoteWorkspaceLayout.splitScreen;
+            _showFullScreenRecording = false;
           });
         },
         onBack: () {
           setState(() {
-            _layout = NoteWorkspaceLayout.splitScreen;
+            _showFullScreenRecording = false;
           });
         },
       );
@@ -343,42 +339,79 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: colorScheme.surface,
+        backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
         body: SafeArea(
           child: Column(
             children: [
               if (noteProvider.errorMessage.isNotEmpty)
                 AuraAlertBanner(
-                  title: "Neural Disruption",
+                  title: "Notice",
                   description: noteProvider.errorMessage,
                   onIgnore: () => noteProvider.clearError(),
                   actionLabel: "DISMISS",
                   onAction: () => noteProvider.clearError(),
                 ),
-              _buildTopBar(isRecording, theme),
-              if (_layout == NoteWorkspaceLayout.splitScreen ||
-                  (_layout == NoteWorkspaceLayout.focus && _mode == NoteEditorMode.write))
-                _buildCustomQuillToolbar(theme),
+
+              // 1. Sleek Top Bar
+              _buildTopBar(noteProvider, user, theme),
+
+              // 2. Active Lecture Recording Banner Island (when recording is running in note)
+              if (isRecording) _buildActiveRecordingIsland(noteProvider, theme),
+
+              // 3. Main Note Workspace
               Expanded(
                 child: Stack(
-                  clipBehavior: Clip.none,
                   children: [
+                    // Note Editor with optional Document Split Pane
                     Positioned.fill(
-                      child: _buildEditorArea(noteProvider, theme, isRecording),
+                      child: _showSplitDocument
+                          ? SplitDocumentViewer(
+                              documentName: _attachedDocumentName,
+                              documentContent: _attachedDocumentContent,
+                              onClose: () =>
+                                  setState(() => _showSplitDocument = false),
+                              onPickDocument: _pickDocumentForSplitView,
+                              child: _buildEditorContent(isDark, theme),
+                            )
+                          : _buildEditorContent(isDark, theme),
                     ),
-                    if (_layout != NoteWorkspaceLayout.canvas)
-                      Positioned(
-                        left: 16,
-                        right: 16,
-                        bottom: 16,
-                        child: _buildWorkspaceDock(noteProvider, user, theme),
+
+                    // Sketch Drawing Canvas Overlay
+                    if (_isSketchMode)
+                      Positioned.fill(
+                        child: Container(
+                          color: (isDark ? Colors.black : Colors.white)
+                              .withValues(alpha: 0.85),
+                          child: Stack(
+                            children: [
+                              HandwritingCanvas(
+                                strokes: noteProvider.drawingStrokes,
+                                onStrokeComplete: (stroke) =>
+                                    noteProvider.addDrawingStroke(stroke),
+                                currentAudioTime:
+                                    noteProvider.recordingDuration,
+                                onStrokeTap: (time) =>
+                                    noteProvider.seekAudio(time),
+                                isEraserMode: _isEraserMode,
+                              ),
+                              Positioned(
+                                top: 16,
+                                right: 16,
+                                child: _buildSketchControlBar(
+                                    noteProvider, isDark),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
+
+                    // Right Sidebar (Entities & Audio Sessions)
                     if (_showSidebar) ...[
                       Positioned.fill(
                         child: GestureDetector(
                           onTap: () => setState(() => _showSidebar = false),
                           child: Container(
-                            color: Colors.black.withValues(alpha: 0.18),
+                            color: Colors.black.withValues(alpha: 0.25),
                           ),
                         ),
                       ),
@@ -392,6 +425,9 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                   ],
                 ),
               ),
+
+              // 4. Keyboard-Docked Formatting Toolbar (replaces obtrusive dock)
+              if (!_isSketchMode) _buildKeyboardToolbar(theme),
             ],
           ),
         ),
@@ -399,11 +435,17 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     );
   }
 
-  Widget _buildTopBar(bool isRecording, ThemeData theme) {
+  // ── Top Bar ─────────────────────────────────────────────────────────────
+  Widget _buildTopBar(
+      NoteProvider noteProvider, UserModel? user, ThemeData theme) {
     final isDark = theme.brightness == Brightness.dark;
+    final isRecording = noteProvider.state == NoteProcessingState.recording;
+    final isGenerating =
+        noteProvider.state == NoteProcessingState.generating ||
+            noteProvider.state == NoteProcessingState.cleaning_up;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0F172A) : Colors.white,
         border: Border(
@@ -425,23 +467,26 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
             ),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            tooltip: 'Back to Notes',
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
+
+          // Title TextField
           Expanded(
             child: TextField(
               controller: _titleController,
               style: GoogleFonts.outfit(
-                fontSize: 20,
+                fontSize: 19,
                 fontWeight: FontWeight.w800,
                 color: isDark ? Colors.white : const Color(0xFF0F172A),
               ),
               decoration: InputDecoration(
-                hintText: 'Research Note',
+                hintText: 'Note Title...',
                 border: InputBorder.none,
                 isDense: true,
                 contentPadding: EdgeInsets.zero,
                 hintStyle: GoogleFonts.outfit(
-                  fontSize: 20,
+                  fontSize: 19,
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF94A3B8),
                 ),
@@ -449,428 +494,59 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
             ),
           ),
 
-          // Focus mode: "Saved" capsule
-          if (_layout == NoteWorkspaceLayout.focus) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? const Color(0xFF1E293B)
-                    : const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
+          // Cloud Saved badge
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.cloud_done_rounded,
+                  size: 15,
+                  color: isDark
+                      ? const Color(0xFF94A3B8)
+                      : const Color(0xFF64748B)),
+              const SizedBox(width: 4),
+              Text(
                 'Saved',
                 style: GoogleFonts.inter(
                   fontSize: 12,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                   color: isDark
-                      ? const Color(0xFFCBD5E1)
-                      : const Color(0xFF475569),
+                      ? const Color(0xFF94A3B8)
+                      : const Color(0xFF64748B),
                 ),
-              ),
-            ),
-            const SizedBox(width: 10),
-          ],
-
-          // Split / Canvas mode: "Share" action
-          if (_layout == NoteWorkspaceLayout.splitScreen ||
-              _layout == NoteWorkspaceLayout.canvas) ...[
-            TextButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Note link copied to clipboard! 📋',
-                        style: GoogleFonts.inter(fontSize: 14)),
-                    backgroundColor: const Color(0xFF6B5CE7),
-                    duration: const Duration(seconds: 2),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-              style: TextButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: Text(
-                'Share',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF6B5CE7),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-          ],
-
-          // Popup Menu for Layout Switching
-          PopupMenuButton<NoteWorkspaceLayout>(
-            icon: Icon(
-              Icons.more_horiz_rounded,
-              color: isDark ? Colors.white70 : const Color(0xFF475569),
-              size: 22,
-            ),
-            tooltip: 'Switch Workspace Layout',
-            onSelected: (layout) {
-              if (layout == NoteWorkspaceLayout.liveRecording) {
-                final user = Provider.of<UserModel?>(context, listen: false);
-                context.read<NoteProvider>().startRecording(user?.uid ?? '');
-              }
-              setState(() => _layout = layout);
-            },
-            itemBuilder: (context) => [
-              _buildLayoutMenuItem(
-                NoteWorkspaceLayout.splitScreen,
-                'Split Document Mode',
-                Icons.vertical_split_rounded,
-                _layout == NoteWorkspaceLayout.splitScreen,
-              ),
-              _buildLayoutMenuItem(
-                NoteWorkspaceLayout.focus,
-                'Minimalist Focus Mode',
-                Icons.menu_book_rounded,
-                _layout == NoteWorkspaceLayout.focus,
-              ),
-              _buildLayoutMenuItem(
-                NoteWorkspaceLayout.canvas,
-                'Interactive Canvas Mode',
-                Icons.dashboard_customize_rounded,
-                _layout == NoteWorkspaceLayout.canvas,
-              ),
-              _buildLayoutMenuItem(
-                NoteWorkspaceLayout.liveRecording,
-                'Live Lecture Recording',
-                Icons.mic_rounded,
-                _layout == NoteWorkspaceLayout.liveRecording,
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  PopupMenuItem<NoteWorkspaceLayout> _buildLayoutMenuItem(
-    NoteWorkspaceLayout value,
-    String label,
-    IconData icon,
-    bool isSelected,
-  ) {
-    return PopupMenuItem<NoteWorkspaceLayout>(
-      value: value,
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: 18,
-            color: isSelected
-                ? const Color(0xFF6B5CE7)
-                : const Color(0xFF64748B),
-          ),
           const SizedBox(width: 10),
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: isSelected ? const Color(0xFF6B5CE7) : null,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildWorkspaceDock(
-      NoteProvider noteProvider, UserModel? user, ThemeData theme) {
-    final colorScheme = theme.colorScheme;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 180),
-          child: _buildModePanel(noteProvider, user, theme),
-        ),
-        const SizedBox(height: 10),
-        Material(
-          elevation: 12,
-          shadowColor: Colors.black.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(24),
-          color: colorScheme.surface.withValues(alpha: 0.96),
-          child: Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                  color: colorScheme.outline.withValues(alpha: 0.08)),
-            ),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final showLabels = constraints.maxWidth >= 360;
-                return Row(
-                  children: [
-                    _buildModeButton(
-                      mode: NoteEditorMode.write,
-                      icon: Icons.edit_note_rounded,
-                      label: 'Write',
-                      theme: theme,
-                      showLabel: showLabels,
-                    ),
-                    _buildModeButton(
-                      mode: NoteEditorMode.capture,
-                      icon: Icons.mic_rounded,
-                      label: 'Capture',
-                      theme: theme,
-                      showLabel: showLabels,
-                    ),
-                    _buildModeButton(
-                      mode: NoteEditorMode.draw,
-                      icon: Icons.draw_rounded,
-                      label: 'Draw',
-                      theme: theme,
-                      showLabel: showLabels,
-                    ),
-                    _buildModeButton(
-                      mode: NoteEditorMode.generate,
-                      icon: Icons.auto_awesome_rounded,
-                      label: 'Generate',
-                      theme: theme,
-                      showLabel: showLabels,
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildModeButton({
-    required NoteEditorMode mode,
-    required IconData icon,
-    required String label,
-    required ThemeData theme,
-    required bool showLabel,
-  }) {
-    final isDark = theme.brightness == Brightness.dark;
-    final isActive = _mode == mode;
-
-    return Expanded(
-      child: Tooltip(
-        message: label,
-        child: InkWell(
-          onTap: () => setState(() => _mode = mode),
-          borderRadius: BorderRadius.circular(18),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            height: 46,
-            decoration: BoxDecoration(
-              color: isActive
-                  ? const Color(0xFF6B5CE7).withValues(alpha: isDark ? 0.25 : 0.12)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: isActive
-                    ? const Color(0xFF6B5CE7).withValues(alpha: 0.3)
-                    : Colors.transparent,
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  size: 20,
-                  color: isActive
-                      ? const Color(0xFF6B5CE7)
-                      : (isDark ? Colors.grey[400] : const Color(0xFF64748B)),
-                ),
-                if (showLabel) ...[
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      label,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
-                        color: isActive
-                            ? const Color(0xFF6B5CE7)
-                            : (isDark ? Colors.grey[400] : const Color(0xFF64748B)),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildModePanel(
-      NoteProvider noteProvider, UserModel? user, ThemeData theme) {
-    switch (_mode) {
-      case NoteEditorMode.capture:
-        return _buildCapturePanel(noteProvider, user, theme);
-      case NoteEditorMode.draw:
-        return _buildDrawPanel(noteProvider, theme);
-      case NoteEditorMode.generate:
-        return _buildGeneratePanel(noteProvider, user, theme);
-      case NoteEditorMode.write:
-        return const SizedBox.shrink();
-    }
-  }
-
-  Widget _buildCapturePanel(
-      NoteProvider provider, UserModel? user, ThemeData theme) {
-    final colorScheme = theme.colorScheme;
-    final isRecording = provider.state == NoteProcessingState.recording;
-
-    return _buildFloatingPanel(
-      theme: theme,
-      child: Row(
-        children: [
-          Icon(
-            isRecording ? Icons.hearing_rounded : Icons.graphic_eq_rounded,
-            color: isRecording ? colorScheme.error : colorScheme.primary,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              isRecording
-                  ? (provider.liveTranscript.isNotEmpty
-                      ? provider.liveTranscript
-                      : 'Listening for lecture audio...')
-                  : 'Capture lecture speech, upload diagrams, or add an image.',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          IconButton.filledTonal(
-            tooltip: 'Upload diagram',
-            onPressed: _insertImage,
-            icon: const Icon(Icons.add_photo_alternate_rounded),
-          ),
-          const SizedBox(width: 8),
-          IconButton.filled(
-            tooltip: isRecording ? 'Stop recording' : 'Start live lecture',
-            onPressed: () {
+          // 🎙️ Record Lecture Toggle
+          IconButton(
+            onPressed: () async {
               if (isRecording) {
-                provider.stopRecording();
+                await noteProvider.stopRecording();
               } else {
-                provider.startRecording(user?.uid ?? '');
-                setState(() {
-                  _layout = NoteWorkspaceLayout.liveRecording;
-                });
+                noteProvider.startRecording(user?.uid ?? '');
               }
             },
-            icon: Icon(isRecording ? Icons.stop_rounded : Icons.mic_rounded),
-            style: IconButton.styleFrom(
-              backgroundColor:
-                  isRecording ? colorScheme.error : colorScheme.primary,
-              foregroundColor:
-                  isRecording ? colorScheme.onError : colorScheme.onPrimary,
+            icon: Icon(
+              isRecording ? Icons.stop_circle_rounded : Icons.mic_rounded,
+              size: 24,
+              color: isRecording
+                  ? const Color(0xFFEF4444)
+                  : const Color(0xFF6B5CE7),
             ),
+            tooltip: isRecording ? 'Stop Lecture Recording' : 'Record Lecture',
           ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildDrawPanel(NoteProvider provider, ThemeData theme) {
-    final colorScheme = theme.colorScheme;
-
-    return _buildFloatingPanel(
-      theme: theme,
-      child: Row(
-        children: [
-          Icon(Icons.gesture_rounded, color: colorScheme.primary),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Draw directly over this note. Strokes can stay synced to lecture time.',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          IconButton.filledTonal(
-            tooltip: 'Undo drawing stroke',
-            onPressed: provider.drawingStrokes.isEmpty
-                ? null
-                : () => provider.undoLastStroke(),
-            icon: const Icon(Icons.undo_rounded),
-          ),
-          const SizedBox(width: 8),
-          IconButton.filledTonal(
-            tooltip: 'Clear drawing',
-            onPressed: provider.drawingStrokes.isEmpty
-                ? null
-                : () => provider.clearStrokes(),
-            icon: const Icon(Icons.delete_sweep_rounded),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGeneratePanel(
-      NoteProvider provider, UserModel? user, ThemeData theme) {
-    final colorScheme = theme.colorScheme;
-    final isGenerating = provider.state == NoteProcessingState.generating;
-    final isCleaning = provider.state == NoteProcessingState.cleaning_up;
-
-    return _buildFloatingPanel(
-      theme: theme,
-      child: Row(
-        children: [
-          Icon(Icons.auto_awesome_rounded, color: colorScheme.tertiary),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              isCleaning
-                  ? 'Organizing your lecture notes...'
-                  : isGenerating
-                      ? 'Building your study pack...'
-                      : 'Create summary, quiz, and flashcards from this note.',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
+          // ✨ One-Tap Study Pack Synthesis
           FilledButton.icon(
-            onPressed: user == null || isGenerating || isCleaning
+            onPressed: user == null || isGenerating
                 ? null
                 : () async {
-                    if (provider.state == NoteProcessingState.recording) {
+                    if (isRecording) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
-                              'Please stop recording before synthesizing study materials.'),
+                              'Please finish recording before generating study pack.'),
                           backgroundColor: Colors.orangeAccent,
                         ),
                       );
@@ -878,194 +554,468 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                     }
 
                     final folderId =
-                        await provider.generateStudyMaterials(user.uid);
+                        await noteProvider.generateStudyMaterials(user.uid);
                     if (folderId != null && mounted) {
                       context.pushNamed('results-view',
                           pathParameters: {'folderId': folderId});
                     }
                   },
-            icon: isGenerating || isCleaning
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF6B5CE7),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            icon: isGenerating
                 ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
                   )
-                : const Icon(Icons.bolt_rounded),
-            label: Text(isCleaning
-                ? 'Organizing'
-                : isGenerating
-                    ? 'Generating'
-                    : 'Generate'),
+                : const Icon(Icons.auto_awesome_rounded, size: 15),
+            label: Text(
+              isGenerating ? 'Studying...' : 'Study',
+              style: GoogleFonts.inter(
+                  fontSize: 13, fontWeight: FontWeight.w700),
+            ),
+          ),
+          const SizedBox(width: 4),
+
+          // Options Menu
+          PopupMenuButton<String>(
+            icon: Icon(
+              Icons.more_vert_rounded,
+              color: isDark ? Colors.white70 : const Color(0xFF475569),
+              size: 22,
+            ),
+            tooltip: 'More Options',
+            onSelected: (value) async {
+              switch (value) {
+                case 'split_doc':
+                  if (_showSplitDocument) {
+                    setState(() => _showSplitDocument = false);
+                  } else {
+                    _pickDocumentForSplitView();
+                  }
+                  break;
+                case 'sketch':
+                  setState(() => _isSketchMode = !_isSketchMode);
+                  break;
+                case 'fullscreen_recording':
+                  setState(() => _showFullScreenRecording = true);
+                  break;
+                case 'sidebar':
+                  setState(() => _showSidebar = !_showSidebar);
+                  break;
+                case 'share':
+                  final text = _controller.document.toPlainText();
+                  Clipboard.setData(ClipboardData(text: text));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Note copied to clipboard! 📋'),
+                      backgroundColor: Color(0xFF6B5CE7),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                  break;
+                case 'delete':
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Delete Note?'),
+                      content: const Text(
+                          'Are you sure you want to delete this note? This action cannot be undone.'),
+                      actions: [
+                        TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Cancel')),
+                        FilledButton(
+                          style: FilledButton.styleFrom(
+                              backgroundColor: Colors.red),
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text('Delete'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true && mounted) {
+                    final targetId =
+                        noteProvider.currentNote?.id ?? widget.noteId;
+                    await noteProvider.deleteNote(targetId);
+                    if (mounted) context.pop();
+                  }
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'split_doc',
+                child: Row(
+                  children: [
+                    Icon(Icons.vertical_split_rounded,
+                        size: 18, color: const Color(0xFF6B5CE7)),
+                    const SizedBox(width: 10),
+                    Text(_showSplitDocument
+                        ? 'Hide Document Pane'
+                        : 'Attach Document (Split View)'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'sketch',
+                child: Row(
+                  children: [
+                    Icon(Icons.draw_rounded,
+                        size: 18, color: const Color(0xFF8B5CF6)),
+                    const SizedBox(width: 10),
+                    Text(_isSketchMode ? 'Exit Sketch Mode' : 'Sketch / Draw'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'fullscreen_recording',
+                child: Row(
+                  children: [
+                    Icon(Icons.fullscreen_rounded,
+                        size: 18, color: const Color(0xFFEC4899)),
+                    const SizedBox(width: 10),
+                    const Text('Full-Screen Lecture View'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'sidebar',
+                child: Row(
+                  children: [
+                    Icon(Icons.menu_open_rounded,
+                        size: 18, color: const Color(0xFF3B82F6)),
+                    const SizedBox(width: 10),
+                    const Text('Topics & Audio History'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem(
+                value: 'share',
+                child: Row(
+                  children: [
+                    const Icon(Icons.copy_rounded, size: 18),
+                    const SizedBox(width: 10),
+                    const Text('Copy Note Text'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    const Icon(Icons.delete_outline_rounded,
+                        size: 18, color: Colors.red),
+                    const SizedBox(width: 10),
+                    const Text('Delete Note',
+                        style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFloatingPanel({
-    required ThemeData theme,
-    required Widget child,
-  }) {
-    final colorScheme = theme.colorScheme;
-    return Material(
-      elevation: 12,
-      shadowColor: Colors.black.withValues(alpha: 0.12),
-      borderRadius: BorderRadius.circular(24),
-      color: colorScheme.surface.withValues(alpha: 0.98),
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 64),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          border:
-              Border.all(color: colorScheme.outline.withValues(alpha: 0.08)),
-        ),
-        child: child,
-      ),
-    );
-  }
+  // ── Active Lecture Recording Banner Island ─────────────────────────────
+  Widget _buildActiveRecordingIsland(
+      NoteProvider provider, ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    final minutes = provider.recordingDuration.inMinutes
+        .remainder(60)
+        .toString()
+        .padLeft(2, '0');
+    final seconds = provider.recordingDuration.inSeconds
+        .remainder(60)
+        .toString()
+        .padLeft(2, '0');
 
-  Widget _buildCaptureBadge(ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: theme.colorScheme.errorContainer.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(100),
-        border:
-            Border.all(color: theme.colorScheme.error.withValues(alpha: 0.3)),
+        color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.15 : 0.08),
+        border: Border(
+          bottom: BorderSide(
+            color: const Color(0xFFEF4444).withValues(alpha: 0.25),
+          ),
+        ),
       ),
       child: Row(
         children: [
+          // Red dot indicator
           Container(
             width: 8,
             height: 8,
-            decoration: BoxDecoration(
-                color: theme.colorScheme.error, shape: BoxShape.circle),
+            decoration: const BoxDecoration(
+              color: Color(0xFFEF4444),
+              shape: BoxShape.circle,
+            ),
           ).animate(onPlay: (c) => c.repeat()).fadeIn().fadeOut(),
           const SizedBox(width: 8),
+
+          // Status & Elapsed Time
           Text(
-            'LIVE RECORDING',
+            'RECORDING LECTURE • $minutes:$seconds',
             style: GoogleFonts.jetBrainsMono(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.error),
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFFEF4444),
+            ),
+          ),
+          const Spacer(),
+
+          // Expand to full-screen view
+          IconButton(
+            icon: const Icon(Icons.fullscreen_rounded, size: 20),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            color: isDark ? Colors.white70 : const Color(0xFF475569),
+            tooltip: 'Expand to Fullscreen Recording',
+            onPressed: () => setState(() => _showFullScreenRecording = true),
+          ),
+
+          // Pause / Resume
+          IconButton(
+            icon: Icon(
+              provider.isRecordingPaused
+                  ? Icons.play_arrow_rounded
+                  : Icons.pause_rounded,
+              size: 20,
+            ),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            color: isDark ? Colors.white70 : const Color(0xFF475569),
+            onPressed: () {
+              if (provider.isRecordingPaused) {
+                provider.resumeRecording();
+              } else {
+                provider.pauseRecording();
+              }
+            },
+          ),
+
+          // Stop Button
+          IconButton(
+            icon: const Icon(Icons.stop_circle_rounded,
+                size: 22, color: Color(0xFFEF4444)),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            onPressed: () => provider.stopRecording(),
+            tooltip: 'Stop & Finish',
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCustomQuillToolbar(ThemeData theme) {
+  // ── Editor Content Canvas ──────────────────────────────────────────────
+  Widget _buildEditorContent(bool isDark, ThemeData theme) {
+    return SingleChildScrollView(
+      controller: _scrollController,
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 60),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          quill.QuillEditor.basic(
+            controller: _controller,
+            config: quill.QuillEditorConfig(
+              autoFocus: false,
+              padding: EdgeInsets.zero,
+              placeholder: 'Start writing your notes or record a lecture...',
+              embedBuilders: [
+                ImageEmbedBuilder(),
+              ],
+              customStyles: quill.DefaultStyles(
+                paragraph: quill.DefaultTextBlockStyle(
+                  GoogleFonts.inter(
+                    fontSize: 16,
+                    height: 1.8,
+                    color: isDark
+                        ? const Color(0xFFCBD5E1)
+                        : const Color(0xFF334155),
+                  ),
+                  const quill.HorizontalSpacing(0, 0),
+                  const quill.VerticalSpacing(0, 0),
+                  const quill.VerticalSpacing(0, 0),
+                  null,
+                ),
+                h1: quill.DefaultTextBlockStyle(
+                  GoogleFonts.outfit(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                  const quill.HorizontalSpacing(0, 0),
+                  const quill.VerticalSpacing(16, 0),
+                  const quill.VerticalSpacing(0, 0),
+                  null,
+                ),
+                h2: quill.DefaultTextBlockStyle(
+                  GoogleFonts.outfit(
+                    fontSize: 21,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                  const quill.HorizontalSpacing(0, 0),
+                  const quill.VerticalSpacing(12, 0),
+                  const quill.VerticalSpacing(0, 0),
+                  null,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 36),
+
+          // Word Count Indicator
+          Center(
+            child: Text(
+              '$_wordCount words',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color:
+                    isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Keyboard-Docked Formatting Toolbar ──────────────────────────────────
+  Widget _buildKeyboardToolbar(ThemeData theme) {
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F172A) : Colors.white,
+        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
         border: Border(
-          bottom: BorderSide(
+          top: BorderSide(
             color: isDark
                 ? Colors.white.withValues(alpha: 0.08)
                 : const Color(0xFFE2E8F0),
           ),
         ),
       ),
-      child: Row(
-        children: [
-          // H1
-          _textFormatButton('H1', () {
-            final isH1 = _controller
-                .getSelectionStyle()
-                .attributes
-                .containsKey(quill.Attribute.h1.key);
-            _controller.formatSelection(
-                isH1 ? quill.Attribute.clone(quill.Attribute.h1, null) : quill.Attribute.h1);
-          }, isDark),
-          const SizedBox(width: 4),
-          // H2
-          _textFormatButton('H2', () {
-            final isH2 = _controller
-                .getSelectionStyle()
-                .attributes
-                .containsKey(quill.Attribute.h2.key);
-            _controller.formatSelection(
-                isH2 ? quill.Attribute.clone(quill.Attribute.h2, null) : quill.Attribute.h2);
-          }, isDark),
-          const SizedBox(width: 6),
-          // Bold
-          _iconFormatButton(Icons.format_bold_rounded, () {
-            final isBold = _controller
-                .getSelectionStyle()
-                .attributes
-                .containsKey(quill.Attribute.bold.key);
-            _controller.formatSelection(isBold
-                ? quill.Attribute.clone(quill.Attribute.bold, null)
-                : quill.Attribute.bold);
-          }, isDark),
-          const SizedBox(width: 4),
-          // Italic
-          _iconFormatButton(Icons.format_italic_rounded, () {
-            final isItalic = _controller
-                .getSelectionStyle()
-                .attributes
-                .containsKey(quill.Attribute.italic.key);
-            _controller.formatSelection(isItalic
-                ? quill.Attribute.clone(quill.Attribute.italic, null)
-                : quill.Attribute.italic);
-          }, isDark),
-          const SizedBox(width: 8),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            // H1
+            _textFormatButton('H1', () {
+              final isH1 = _controller
+                  .getSelectionStyle()
+                  .attributes
+                  .containsKey(quill.Attribute.h1.key);
+              _controller.formatSelection(isH1
+                  ? quill.Attribute.clone(quill.Attribute.h1, null)
+                  : quill.Attribute.h1);
+            }, isDark),
+            const SizedBox(width: 4),
 
-          Container(
-            height: 16,
-            width: 1,
-            color: isDark ? Colors.white24 : const Color(0xFFE2E8F0),
-          ),
-          const SizedBox(width: 8),
+            // H2
+            _textFormatButton('H2', () {
+              final isH2 = _controller
+                  .getSelectionStyle()
+                  .attributes
+                  .containsKey(quill.Attribute.h2.key);
+              _controller.formatSelection(isH2
+                  ? quill.Attribute.clone(quill.Attribute.h2, null)
+                  : quill.Attribute.h2);
+            }, isDark),
+            const SizedBox(width: 6),
 
-          // Bullet List
-          _iconFormatButton(Icons.format_list_bulleted_rounded, () {
-            final isUl = _controller
-                .getSelectionStyle()
-                .attributes
-                .containsKey(quill.Attribute.ul.key);
-            _controller.formatSelection(
-                isUl ? quill.Attribute.clone(quill.Attribute.ul, null) : quill.Attribute.ul);
-          }, isDark),
-          const SizedBox(width: 4),
-          // Numbered List
-          _iconFormatButton(Icons.format_list_numbered_rounded, () {
-            final isOl = _controller
-                .getSelectionStyle()
-                .attributes
-                .containsKey(quill.Attribute.ol.key);
-            _controller.formatSelection(
-                isOl ? quill.Attribute.clone(quill.Attribute.ol, null) : quill.Attribute.ol);
-          }, isDark),
+            // Bold
+            _iconFormatButton(Icons.format_bold_rounded, () {
+              final isBold = _controller
+                  .getSelectionStyle()
+                  .attributes
+                  .containsKey(quill.Attribute.bold.key);
+              _controller.formatSelection(isBold
+                  ? quill.Attribute.clone(quill.Attribute.bold, null)
+                  : quill.Attribute.bold);
+            }, isDark),
+            const SizedBox(width: 4),
 
-          const Spacer(),
+            // Italic
+            _iconFormatButton(Icons.format_italic_rounded, () {
+              final isItalic = _controller
+                  .getSelectionStyle()
+                  .attributes
+                  .containsKey(quill.Attribute.italic.key);
+              _controller.formatSelection(isItalic
+                  ? quill.Attribute.clone(quill.Attribute.italic, null)
+                  : quill.Attribute.italic);
+            }, isDark),
+            const SizedBox(width: 8),
 
-          // Cloud Saved Indicator
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.cloud_done_outlined,
-                size: 15,
-                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'Saved',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color:
-                      isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                ),
-              ),
-            ],
-          ),
-        ],
+            Container(
+              height: 16,
+              width: 1,
+              color: isDark ? Colors.white24 : const Color(0xFFCBD5E1),
+            ),
+            const SizedBox(width: 8),
+
+            // Bullets
+            _iconFormatButton(Icons.format_list_bulleted_rounded, () {
+              final isUl = _controller
+                  .getSelectionStyle()
+                  .attributes
+                  .containsKey(quill.Attribute.ul.key);
+              _controller.formatSelection(isUl
+                  ? quill.Attribute.clone(quill.Attribute.ul, null)
+                  : quill.Attribute.ul);
+            }, isDark),
+            const SizedBox(width: 4),
+
+            // Numbered List
+            _iconFormatButton(Icons.format_list_numbered_rounded, () {
+              final isOl = _controller
+                  .getSelectionStyle()
+                  .attributes
+                  .containsKey(quill.Attribute.ol.key);
+              _controller.formatSelection(isOl
+                  ? quill.Attribute.clone(quill.Attribute.ol, null)
+                  : quill.Attribute.ol);
+            }, isDark),
+            const SizedBox(width: 8),
+
+            Container(
+              height: 16,
+              width: 1,
+              color: isDark ? Colors.white24 : const Color(0xFFCBD5E1),
+            ),
+            const SizedBox(width: 8),
+
+            // Insert Image
+            _iconFormatButton(Icons.image_rounded, _insertImage, isDark,
+                tooltip: 'Insert Image'),
+            const SizedBox(width: 4),
+
+            // Sketch / Draw
+            _iconFormatButton(
+              Icons.draw_rounded,
+              () => setState(() => _isSketchMode = !_isSketchMode),
+              isDark,
+              tooltip: 'Sketch Canvas',
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1075,7 +1025,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Text(
           label,
           style: GoogleFonts.inter(
@@ -1088,179 +1038,142 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     );
   }
 
-  Widget _iconFormatButton(IconData icon, VoidCallback onTap, bool isDark) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        child: Icon(
-          icon,
-          size: 18,
-          color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+  Widget _iconFormatButton(IconData icon, VoidCallback onTap, bool isDark,
+      {String? tooltip}) {
+    return Tooltip(
+      message: tooltip ?? '',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.all(6),
+          child: Icon(
+            icon,
+            size: 19,
+            color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildEditorArea(NoteProvider provider, ThemeData theme,
-      [bool isRecording = false]) {
-    final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
-
-    // 1. Canvas Mode
-    if (_layout == NoteWorkspaceLayout.canvas) {
-      final user = Provider.of<UserModel?>(context, listen: false);
-      return InteractiveCanvasView(
-        isSynthesizing: provider.state == NoteProcessingState.generating ||
-            provider.state == NoteProcessingState.cleaning_up,
-        onSynthesize: () async {
-          if (user == null) return;
-          final folderId = await provider.generateStudyMaterials(user.uid);
-          if (folderId != null && mounted) {
-            context.pushNamed('results-view',
-                pathParameters: {'folderId': folderId});
-          }
-        },
-      );
-    }
-
-    final bottomInset = switch (_mode) {
-      NoteEditorMode.write => 112.0,
-      _ => 172.0,
-    };
-
-    // Note Editor Main Widget
-    final editorWidget = Container(
-      color: isDark ? const Color(0xFF0F172A) : Colors.white,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: SingleChildScrollView(
-              controller: _scrollController,
-              padding: EdgeInsets.fromLTRB(28, 20, 28, bottomInset),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  quill.QuillEditor.basic(
-                    controller: _controller,
-                    config: quill.QuillEditorConfig(
-                      autoFocus: true,
-                      padding: EdgeInsets.zero,
-                      placeholder: 'Start typing, recording, or sketching...',
-                      embedBuilders: [
-                        ImageEmbedBuilder(),
-                      ],
-                      customStyles: quill.DefaultStyles(
-                        paragraph: quill.DefaultTextBlockStyle(
-                          GoogleFonts.inter(
-                              fontSize: 16,
-                              height: 1.8,
-                              color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155)),
-                          const quill.HorizontalSpacing(0, 0),
-                          const quill.VerticalSpacing(0, 0),
-                          const quill.VerticalSpacing(0, 0),
-                          null,
-                        ),
-                        h1: quill.DefaultTextBlockStyle(
-                          GoogleFonts.outfit(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w800,
-                              color: isDark ? Colors.white : const Color(0xFF0F172A)),
-                          const quill.HorizontalSpacing(0, 0),
-                          const quill.VerticalSpacing(16, 0),
-                          const quill.VerticalSpacing(0, 0),
-                          null,
-                        ),
-                        h2: quill.DefaultTextBlockStyle(
-                          GoogleFonts.outfit(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                              color: isDark ? Colors.white : const Color(0xFF0F172A)),
-                          const quill.HorizontalSpacing(0, 0),
-                          const quill.VerticalSpacing(12, 0),
-                          const quill.VerticalSpacing(0, 0),
-                          null,
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (_layout == NoteWorkspaceLayout.focus) ...[
-                    const SizedBox(height: 36),
-                    _buildWordCountFooter(isDark),
-                  ],
-                ],
-              ),
-            ),
+  // ── Sketch Canvas Top Bar ──────────────────────────────────────────────
+  Widget _buildSketchControlBar(NoteProvider provider, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          if (_mode == NoteEditorMode.draw)
-            Positioned.fill(
-              child: HandwritingCanvas(
-                strokes: provider.drawingStrokes,
-                onStrokeComplete: (stroke) => provider.addDrawingStroke(stroke),
-                currentAudioTime: provider.recordingDuration,
-                onStrokeTap: (time) => provider.seekAudio(time),
-              ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: Icon(Icons.edit_rounded,
+                size: 20,
+                color: !_isEraserMode
+                    ? const Color(0xFF6B5CE7)
+                    : (isDark ? Colors.white60 : Colors.black54)),
+            onPressed: () => setState(() => _isEraserMode = false),
+            tooltip: 'Pen',
+          ),
+          IconButton(
+            icon: Icon(Icons.cleaning_services_rounded,
+                size: 20,
+                color: _isEraserMode
+                    ? const Color(0xFF6B5CE7)
+                    : (isDark ? Colors.white60 : Colors.black54)),
+            onPressed: () => setState(() => _isEraserMode = true),
+            tooltip: 'Eraser',
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_sweep_rounded, size: 20),
+            color: Colors.redAccent,
+            onPressed: () => provider.clearDrawingStrokes(),
+            tooltip: 'Clear All Strokes',
+          ),
+          const SizedBox(width: 8),
+          FilledButton(
+            onPressed: () => setState(() => _isSketchMode = false),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF6B5CE7),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              minimumSize: Size.zero,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
             ),
+            child: const Text('Done',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+          ),
         ],
       ),
     );
-
-    // 2. Split Screen Mode (media_1788275813972.png)
-    if (_layout == NoteWorkspaceLayout.splitScreen) {
-      return SplitDocumentViewer(
-        documentName: 'Cellular Biology - Chapter 4.pdf',
-        child: editorWidget,
-      );
-    }
-
-    // 3. Focus Mode
-    return editorWidget;
   }
 
-  Widget _buildWordCountFooter(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      alignment: Alignment.center,
-      child: Text(
-        '$_wordCount words',
-        style: GoogleFonts.inter(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
-        ),
-      ),
-    );
-  }
-
+  // ── Right Sidebar (Entities & Audio Sessions) ──────────────────────────
   Widget _buildRightSidebar(NoteProvider provider, ThemeData theme) {
     final note = provider.currentNote;
     final colorScheme = theme.colorScheme;
 
     return Material(
-      elevation: 12,
-      shadowColor: Colors.black.withValues(alpha: 0.2),
+      elevation: 16,
+      shadowColor: Colors.black.withValues(alpha: 0.25),
       child: Container(
         width: 300,
         decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerLowest,
+          color: colorScheme.surface,
           border: Border(
-              left: BorderSide(
-                  color: colorScheme.outline.withValues(alpha: 0.12))),
-        ),
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-          children: [
-            _buildCollapsibleSidebarSection(
-              theme: theme,
-              title: 'TOPICS & ENTITIES',
-              child: _buildTopicsContent(note?.topicNames ?? [], theme),
+            left: BorderSide(
+              color: colorScheme.outline.withValues(alpha: 0.12),
             ),
-            const SizedBox(height: 4),
-            _buildCollapsibleSidebarSection(
-              theme: theme,
-              title: 'AUDIO SESSIONS',
-              child: _buildRecordingsContent(provider, theme),
+          ),
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 12, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Note Insights',
+                    style: GoogleFonts.outfit(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => setState(() => _showSidebar = false),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  _buildCollapsibleSidebarSection(
+                    theme: theme,
+                    title: 'TOPICS & ENTITIES',
+                    child: _buildTopicsContent(note?.topicNames ?? [], theme),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCollapsibleSidebarSection(
+                    theme: theme,
+                    title: 'AUDIO SESSIONS',
+                    child: _buildRecordingsContent(provider, theme),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -1277,7 +1190,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     return Theme(
       data: theme.copyWith(dividerColor: Colors.transparent),
       child: ExpansionTile(
-        initiallyExpanded: false,
+        initiallyExpanded: true,
         tilePadding: EdgeInsets.zero,
         childrenPadding: const EdgeInsets.only(bottom: 8),
         iconColor: colorScheme.onSurfaceVariant,
@@ -1300,7 +1213,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     final colorScheme = theme.colorScheme;
     if (items.isEmpty) {
       return Text(
-        'Extracting context...',
+        'Sumi will detect topics automatically.',
         style: GoogleFonts.inter(
           fontSize: 13,
           color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
@@ -1312,7 +1225,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: items
           .map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
                   children: [
                     Container(
@@ -1324,7 +1237,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                       child: Icon(Icons.tag_rounded,
                           size: 10, color: colorScheme.tertiary),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         item,
@@ -1341,72 +1254,70 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
 
   Widget _buildRecordingsContent(NoteProvider provider, ThemeData theme) {
     final colorScheme = theme.colorScheme;
+    if (provider.currentNoteRecordings.isEmpty) {
+      return Text(
+        'No recordings yet. Tap 🎙️ to record a lecture.',
+        style: GoogleFonts.inter(
+          fontSize: 13,
+          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+          fontStyle: FontStyle.italic,
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (provider.currentNoteRecordings.isEmpty)
-          Text('No recordings yet.',
-              style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                  fontStyle: FontStyle.italic)),
-        ...provider.currentNoteRecordings.map((rec) => Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                    color: colorScheme.outline.withValues(alpha: 0.1)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.02),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  IconButton.filledTonal(
-                    icon: const Icon(Icons.play_arrow_rounded, size: 20),
-                    onPressed: () => provider.playRecording(rec),
-                    visualDensity: VisualDensity.compact,
-                    style: IconButton.styleFrom(
-                      backgroundColor: colorScheme.primaryContainer,
-                      foregroundColor: colorScheme.primary,
+      children: provider.currentNoteRecordings
+          .map((rec) => Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                      color: colorScheme.outline.withValues(alpha: 0.1)),
+                ),
+                child: Row(
+                  children: [
+                    IconButton.filledTonal(
+                      icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                      onPressed: () => provider.playRecording(rec),
+                      visualDensity: VisualDensity.compact,
+                      style: IconButton.styleFrom(
+                        backgroundColor: colorScheme.primaryContainer,
+                        foregroundColor: colorScheme.primary,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Recording ${rec.createdAt.day}/${rec.createdAt.month}',
-                          style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: colorScheme.onSurface),
-                        ),
-                        Text(
-                          '${rec.durationSeconds}s • ${rec.createdAt.hour}:${rec.createdAt.minute.toString().padLeft(2, '0')}',
-                          style: GoogleFonts.inter(
-                              fontSize: 11,
-                              color: colorScheme.onSurfaceVariant),
-                        ),
-                      ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Session ${rec.createdAt.day}/${rec.createdAt.month}',
+                            style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.onSurface),
+                          ),
+                          Text(
+                            '${rec.durationSeconds}s',
+                            style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: colorScheme.onSurfaceVariant),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                    onPressed: () => provider.deleteRecording(rec.id),
-                    color: colorScheme.error.withValues(alpha: 0.8),
-                  ),
-                ],
-              ),
-            )),
-      ],
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                      onPressed: () => provider.deleteRecording(rec.id),
+                      color: colorScheme.error.withValues(alpha: 0.8),
+                    ),
+                  ],
+                ),
+              ))
+          .toList(),
     );
   }
 }

@@ -702,10 +702,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               isDark: isDark,
                               onTap: () {
                                 Navigator.pop(context);
-                                Provider.of<CreateContentProvider>(context,
-                                        listen: false)
-                                    .reset();
-                                context.go('/create-content');
+                                _openCreate('text');
                               },
                             ),
                           ),
@@ -724,10 +721,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               isDark: isDark,
                               onTap: () {
                                 Navigator.pop(context);
-                                Provider.of<CreateContentProvider>(context,
-                                        listen: false)
-                                    .reset();
-                                context.go('/create-content');
+                                _openCreate('audio');
                               },
                             ),
                           ),
@@ -768,10 +762,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               isDark: isDark,
                               onTap: () {
                                 Navigator.pop(context);
-                                Provider.of<CreateContentProvider>(context,
-                                        listen: false)
-                                    .reset();
-                                context.go('/create-content');
+                                _openCreate('pdf');
                               },
                             ),
                           ),
@@ -790,10 +781,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               isDark: isDark,
                               onTap: () {
                                 Navigator.pop(context);
-                                Provider.of<CreateContentProvider>(context,
-                                        listen: false)
-                                    .reset();
-                                context.go('/create-content');
+                                _openCreate('image');
                               },
                             ),
                           ),
@@ -815,10 +803,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               isDark: isDark,
                               onTap: () {
                                 Navigator.pop(context);
-                                Provider.of<CreateContentProvider>(context,
-                                        listen: false)
-                                    .reset();
-                                context.go('/create-content');
+                                _openCreate('link');
                               },
                             ),
                           ),
@@ -837,10 +822,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
                               isDark: isDark,
                               onTap: () {
                                 Navigator.pop(context);
-                                Provider.of<CreateContentProvider>(context,
-                                        listen: false)
-                                    .reset();
-                                context.go('/create-content');
+                                _openCreate('link');
                               },
                             ),
                           ),
@@ -913,6 +895,14 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar> {
         ),
       ),
     );
+  }
+
+  /// Opens the create screen straight into [method]'s picker so the user
+  /// doesn't see a second, duplicate upload chooser after the sheet.
+  void _openCreate(String method) {
+    Provider.of<CreateContentProvider>(context, listen: false).reset();
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    context.go('/create-content?method=$method&t=$ts');
   }
 
   Widget _sheetItem({
