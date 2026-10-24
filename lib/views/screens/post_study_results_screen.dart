@@ -1,3 +1,4 @@
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:share_plus/share_plus.dart';
@@ -5,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../widgets/sumi_mascot.dart';
 import '../../models/sumi_emotion.dart';
 
-class PostStudyResultsScreen extends StatelessWidget {
+class PostStudyResultsScreen extends StatefulWidget {
   final int score;
   final int totalQuestions;
   final int timeSpentSeconds; // In seconds
@@ -21,10 +22,36 @@ class PostStudyResultsScreen extends StatelessWidget {
     this.type = 'quiz',
   });
 
-  double get accuracy => (score / totalQuestions) * 100;
+  @override
+  State<PostStudyResultsScreen> createState() => _PostStudyResultsScreenState();
+}
+
+class _PostStudyResultsScreenState extends State<PostStudyResultsScreen> {
+  late final ConfettiController _confettiController;
+
+  @override
+  void initState() {
+    super.initState();
+    _confettiController =
+        ConfettiController(duration: const Duration(seconds: 3));
+    if (accuracy >= 50) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _confettiController.play();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
+  }
+
+  double get accuracy =>
+      widget.totalQuestions > 0 ? (widget.score / widget.totalQuestions) * 100 : 0;
   String get timeFormatted {
-    final minutes = timeSpentSeconds ~/ 60;
-    final seconds = timeSpentSeconds % 60;
+    final minutes = widget.timeSpentSeconds ~/ 60;
+    final seconds = widget.timeSpentSeconds % 60;
     return '${minutes}m ${seconds}s';
   }
 
@@ -49,7 +76,7 @@ class PostStudyResultsScreen extends StatelessWidget {
 
   void _shareResult(BuildContext context) {
     final message =
-        "🔥 Just crushed my $type on '$title' with ${accuracy.toStringAsFixed(0)}% accuracy! \n\nLearning is faster with Sumi. Try it on SumQuiz! #SumQuiz #AI #StudySmart";
+        "🔥 Just completed my ${widget.type} on '${widget.title}' with ${accuracy.toStringAsFixed(0)}% accuracy! \n\nLearning is faster with Sumi. Try it on SumQuiz! #SumQuiz #AI #StudySmart";
     Share.share(message);
   }
 
@@ -59,125 +86,146 @@ class PostStudyResultsScreen extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: isDark
-                ? [
-                    theme.colorScheme.surface,
-                    theme.colorScheme.surface.withValues(alpha: 0.8)
-                  ]
-                : [
-                    theme.colorScheme.primary.withValues(alpha: 0.05),
-                    Colors.white
-                  ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              const SizedBox(height: 40),
-
-              // Sumi Mascot Reaction
-              SumiMascot(
-                state: _mascotState,
-                size: 200,
-                dialogue: _sumiMessage,
-              )
-                  .animate()
-                  .fadeIn(duration: 800.ms)
-                  .scale(begin: const Offset(0.8, 0.8)),
-
-              const SizedBox(height: 40),
-
-              // Title & Type
-              Text(
-                type.toUpperCase(),
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2,
-                ),
-              ).animate().fadeIn(delay: 400.ms),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2),
-
-              const SizedBox(height: 40),
-
-              // Metrics Grid
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Row(
-                  children: [
-                    _buildMetricCard(
-                      context,
-                      "Accuracy",
-                      "${accuracy.toStringAsFixed(0)}%",
-                      Icons.insights,
-                      theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 16),
-                    _buildMetricCard(
-                      context,
-                      "Time",
-                      timeFormatted,
-                      Icons.timer_outlined,
-                      Colors.orange,
-                    ),
-                    const SizedBox(width: 16),
-                    _buildMetricCard(
-                      context,
-                      "Score",
-                      "$score/$totalQuestions",
-                      Icons.star_outline,
-                      Colors.amber,
-                    ),
-                  ],
-                ),
-              ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.1),
-
-              const Spacer(),
-
-              // Action Buttons
-              Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: () => _shareResult(context),
-                      icon: const Icon(Icons.share_rounded),
-                      label: const Text("SHARE MY SUCCESS"),
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 56),
-                        backgroundColor: theme.colorScheme.primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16)),
-                      ),
-                    ).animate().fadeIn(delay: 1000.ms),
-                    const SizedBox(height: 12),
-                    TextButton(
-                      onPressed: () => context.go('/'),
-                      child: const Text("Back to Library"),
-                    ).animate().fadeIn(delay: 1100.ms),
-                  ],
-                ),
+      body: Stack(
+        children: [
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: isDark
+                    ? [
+                        theme.colorScheme.surface,
+                        theme.colorScheme.surface.withValues(alpha: 0.8)
+                      ]
+                    : [
+                        theme.colorScheme.primary.withValues(alpha: 0.05),
+                        Colors.white
+                      ],
               ),
-            ],
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  const SizedBox(height: 40),
+
+                  // Sumi Mascot Reaction
+                  SumiMascot(
+                    state: _mascotState,
+                    size: 200,
+                    dialogue: _sumiMessage,
+                  )
+                      .animate()
+                      .fadeIn(duration: 800.ms)
+                      .scale(begin: const Offset(0.8, 0.8)),
+
+                  const SizedBox(height: 40),
+
+                  // Title & Type
+                  Text(
+                    widget.type.toUpperCase(),
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
+                    ),
+                  ).animate().fadeIn(delay: 400.ms),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Text(
+                      widget.title,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2),
+
+                  const SizedBox(height: 40),
+
+                  // Metrics Grid
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Row(
+                      children: [
+                        _buildMetricCard(
+                          context,
+                          "Accuracy",
+                          "${accuracy.toStringAsFixed(0)}%",
+                          Icons.insights,
+                          theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 16),
+                        _buildMetricCard(
+                          context,
+                          "Time",
+                          timeFormatted,
+                          Icons.timer_outlined,
+                          Colors.orange,
+                        ),
+                        const SizedBox(width: 16),
+                        _buildMetricCard(
+                          context,
+                          "Score",
+                          "${widget.score}/${widget.totalQuestions}",
+                          Icons.star_outline,
+                          Colors.amber,
+                        ),
+                      ],
+                    ),
+                  ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.1),
+
+                  const Spacer(),
+
+                  // Action Buttons
+                  Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: () => _shareResult(context),
+                          icon: const Icon(Icons.share_rounded),
+                          label: const Text("SHARE MY SUCCESS"),
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(double.infinity, 56),
+                            backgroundColor: theme.colorScheme.primary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
+                          ),
+                        ).animate().fadeIn(delay: 1000.ms),
+                        const SizedBox(height: 12),
+                        TextButton(
+                          onPressed: () => context.go('/'),
+                          child: const Text("Back to Library"),
+                        ).animate().fadeIn(delay: 1100.ms),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirectionality: BlastDirectionality.explosive,
+              shouldLoop: false,
+              numberOfParticles: 35,
+              colors: const [
+                Colors.amber,
+                Colors.blue,
+                Colors.green,
+                Colors.purple,
+                Colors.pink,
+                Colors.orange,
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

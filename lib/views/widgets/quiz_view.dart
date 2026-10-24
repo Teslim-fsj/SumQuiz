@@ -43,8 +43,9 @@ class QuizView extends StatefulWidget {
   final VoidCallback? onFinish;
   final bool showSaveButton;
   final VoidCallback? onSaveProgress;
-  final void Function(bool isCorrect, LocalQuizQuestion question)? onAnswer;
-  final EnhancedAIService? aiService;
+  final void Function(
+          bool isCorrect, LocalQuizQuestion question, String? userAnswer)?
+      onAnswer;
 
   const QuizView({
     super.key,
@@ -84,14 +85,14 @@ class _QuizViewState extends State<QuizView> {
 
   void _onAnswerSelected(int index) {
     if (_answerWasSelected) return;
+    final selectedOption = _currentQuestion.options[index];
     setState(() {
       _selectedAnswerIndex = index;
       _answerWasSelected = true;
     });
     if (widget.onAnswer != null) {
-      final isCorrect =
-          _currentQuestion.options[index] == _currentQuestion.correctAnswer;
-      widget.onAnswer!(isCorrect, _currentQuestion);
+      final isCorrect = selectedOption == _currentQuestion.correctAnswer;
+      widget.onAnswer!(isCorrect, _currentQuestion, selectedOption);
     }
   }
 
@@ -120,7 +121,7 @@ class _QuizViewState extends State<QuizView> {
       });
 
       final isCorrect = (result['isCorrect'] as bool?) ?? false;
-      widget.onAnswer?.call(isCorrect, _currentQuestion);
+      widget.onAnswer?.call(isCorrect, _currentQuestion, text);
     } catch (e) {
       if (!mounted) return;
       setState(() {

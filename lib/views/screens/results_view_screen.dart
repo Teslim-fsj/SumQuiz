@@ -45,6 +45,9 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
   LocalQuiz? _quiz;
   LocalFlashcardSet? _flashcardSet;
 
+  int _quizCorrectCount = 0;
+  final Stopwatch _quizStopwatch = Stopwatch();
+
   final List<String> _availableTabs = [];
 
   String get _currentTitle {
@@ -380,10 +383,24 @@ class _ResultsViewScreenState extends State<ResultsViewScreen> {
     return QuizView(
       title: _quiz!.title,
       questions: _quiz!.questions,
-      onAnswer: (bool isCorrect, LocalQuizQuestion question) {},
+      onAnswer: (bool isCorrect, LocalQuizQuestion question, [String? userAnswer]) {
+        if (!_quizStopwatch.isRunning) _quizStopwatch.start();
+        if (isCorrect) _quizCorrectCount++;
+      },
       onFinish: () {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Practice complete!')));
+        _quizStopwatch.stop();
+        final timeSpent = _quizStopwatch.elapsed.inSeconds;
+        final score = _quizCorrectCount;
+        _quizCorrectCount = 0;
+        _quizStopwatch.reset();
+
+        context.push('/post-study-results', extra: {
+          'score': score,
+          'totalQuestions': _quiz!.questions.length,
+          'timeSpentSeconds': timeSpent,
+          'title': _quiz!.title,
+          'type': 'quiz',
+        });
       },
     );
   }
