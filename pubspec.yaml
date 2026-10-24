@@ -99,6 +99,9 @@ dev_dependencies:
   mocktail: ^1.0.5
   clock: ^1.1.2
 
+dependency_overrides:
+  image: 4.8.0
+
 
 flutter:
   uses-material-design: true
