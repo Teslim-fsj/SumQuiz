@@ -71,6 +71,7 @@ class _QuizScreenState extends State<QuizScreen> {
   int _score = 0;
   final Map<String, dynamic> _questionAnswers = {};
   String? _quizId;
+  List<LocalFlashcard> _relatedFlashcards = [];
   late final ConfettiController _confettiController;
   int _quizAttempt = 0;
   bool _showQuestionReview = true;

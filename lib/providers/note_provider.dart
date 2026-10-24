@@ -281,6 +281,8 @@ class NoteProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> clearDrawingStrokes() => clearStrokes();
+
   Future<void> clearStrokes() async {
     if (_currentNote == null) return;
     _currentNote =

@@ -46,6 +46,7 @@ class QuizView extends StatefulWidget {
   final void Function(
           bool isCorrect, LocalQuizQuestion question, String? userAnswer)?
       onAnswer;
+  final EnhancedAIService? aiService;
 
   const QuizView({
     super.key,

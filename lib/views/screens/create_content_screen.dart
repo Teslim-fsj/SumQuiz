@@ -19,7 +19,8 @@ import '../../models/sumi_emotion.dart';
 import '../../theme/web_theme.dart';
 
 class CreateContentScreen extends StatefulWidget {
-  const CreateContentScreen({super.key});
+  final String? initialMethod;
+  const CreateContentScreen({super.key, this.initialMethod});
 
   @override
   State<CreateContentScreen> createState() => _CreateContentScreenState();

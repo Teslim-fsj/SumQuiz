@@ -1096,7 +1096,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           IconButton(
             icon: const Icon(Icons.delete_sweep_rounded, size: 20),
             color: Colors.redAccent,
-            onPressed: () => provider.clearDrawingStrokes(),
+            onPressed: () => provider.clearStrokes(),
             tooltip: 'Clear All Strokes',
           ),
           const SizedBox(width: 8),
